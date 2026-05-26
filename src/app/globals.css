@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  background: #0b0d12;
+  color: #e5e7eb;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-bg-border bg-bg-surface p-6;
+  }
+  .card-hover {
+    @apply transition-colors hover:border-bg-elevated/80;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .stat-label {
+    @apply text-xs uppercase tracking-wider text-muted;
+  }
+  .stat-value {
+    @apply font-mono text-base text-white;
+  }
+}
