@@ -64,9 +64,23 @@ export function BucketCard({ bucket }: { bucket: BucketSummary }) {
           </div>
         </div>
         <div>
+          <div className="stat-label">Entry / exit fee</div>
+          <div className="mt-1 font-mono text-sm text-white">
+            {bucket.entryFeeEnabled
+              ? `${(bucket.entryFeeBps / 100).toFixed(2)}%`
+              : "—"}
+            {" / "}
+            {bucket.exitFeeEnabled
+              ? `${(bucket.exitFeeBps / 100).toFixed(2)}%`
+              : "—"}
+          </div>
+        </div>
+        <div>
           <div className="stat-label">Performance fee</div>
           <div className="mt-1 font-mono text-sm text-white">
-            {(bucket.performanceFeeBps / 100).toFixed(0)}%
+            {bucket.performanceFeeBps > 0
+              ? `${(bucket.performanceFeeBps / 100).toFixed(0)}%`
+              : "—"}
           </div>
         </div>
         <div>

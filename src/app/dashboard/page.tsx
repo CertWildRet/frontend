@@ -5,6 +5,7 @@ import { getUserPosition } from "@/lib/api";
 import { Stat } from "@/components/Stat";
 import { StatusBadge } from "@/components/StatusBadge";
 import { BackendBanner } from "@/components/BackendBanner";
+import { StorePerformance } from "@/components/StorePerformance";
 import { formatSol, formatNum, formatTime } from "@/lib/format";
 import type { UserPosition } from "@/lib/types";
 
@@ -105,6 +106,12 @@ export default function DashboardPage() {
                         }
                       />
                     )}
+                    <StorePerformance
+                      stOreBalance={slot.stOreBalance}
+                      dcaStoreBaseline={slot.dcaStoreBaseline}
+                      outperformanceMultiplier={slot.outperformanceMultiplier}
+                      shares={slot.shares}
+                    />
                   </div>
                   <div className="flex gap-2 pt-2">
                     <button

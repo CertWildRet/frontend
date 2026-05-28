@@ -28,12 +28,21 @@ async function fetchJson<T>(path: string, fallback: T): Promise<T> {
 
 // ── Buckets ──────────────────────────────────────────────────────────────
 
+// V5 default: 100 bps entry + 100 bps exit, both enabled. Performance fee
+// kept on each bucket for backwards-compat but expected to be 0 going forward.
+const V5_DEFAULT_ENTRY_BPS = 100;
+const V5_DEFAULT_EXIT_BPS = 100;
+
 const MOCK_BUCKETS: BucketSummary[] = [
   {
     kind: "simple",
     label: "Simple",
     lockupDays: 0,
-    performanceFeeBps: 5000,
+    performanceFeeBps: 0,
+    entryFeeBps: V5_DEFAULT_ENTRY_BPS,
+    exitFeeBps: V5_DEFAULT_EXIT_BPS,
+    entryFeeEnabled: true,
+    exitFeeEnabled: true,
     headlineApy: "~290% target / 19% realistic at 1k SOL TVL",
     maxDrawdownPct: 10,
     totalNavSol: 0,
@@ -47,7 +56,11 @@ const MOCK_BUCKETS: BucketSummary[] = [
     kind: "refined",
     label: "Refined",
     lockupDays: 7,
-    performanceFeeBps: 2500,
+    performanceFeeBps: 0,
+    entryFeeBps: V5_DEFAULT_ENTRY_BPS,
+    exitFeeBps: V5_DEFAULT_EXIT_BPS,
+    entryFeeEnabled: true,
+    exitFeeEnabled: true,
     headlineApy: "~76% realistic at 1k SOL TVL",
     maxDrawdownPct: 9,
     totalNavSol: 0,
@@ -61,7 +74,11 @@ const MOCK_BUCKETS: BucketSummary[] = [
     kind: "ultra",
     label: "Ultra",
     lockupDays: 30,
-    performanceFeeBps: 1000,
+    performanceFeeBps: 0,
+    entryFeeBps: V5_DEFAULT_ENTRY_BPS,
+    exitFeeBps: V5_DEFAULT_EXIT_BPS,
+    entryFeeEnabled: true,
+    exitFeeEnabled: true,
     headlineApy: "~290% at 1k SOL pilot / ~32% at 10k SOL realistic",
     maxDrawdownPct: 14,
     totalNavSol: 0,
@@ -117,14 +134,22 @@ export async function getRoundState(): Promise<OreRoundState> {
 
 export async function getUserPosition(wallet: string): Promise<UserPosition | null> {
   if (!wallet) return null;
+  const empty = {
+    shares: 0,
+    valueSol: 0,
+    pendingWithdrawShares: 0,
+    stOreBalance: 0,
+    dcaStoreBaseline: 0,
+    outperformanceMultiplier: 1,
+  };
   return fetchJson<UserPosition | null>(
     `/api/user/${encodeURIComponent(wallet)}`,
     {
       wallet,
       perBucket: {
-        simple: { shares: 0, valueSol: 0, pendingWithdrawShares: 0 },
-        refined: { shares: 0, valueSol: 0, pendingWithdrawShares: 0 },
-        ultra: { shares: 0, valueSol: 0, pendingWithdrawShares: 0 },
+        simple: { ...empty },
+        refined: { ...empty },
+        ultra: { ...empty },
       },
     },
   );

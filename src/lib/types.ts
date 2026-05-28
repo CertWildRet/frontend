@@ -12,6 +12,14 @@ export type BucketSummary = {
   lockupDays: number;
   /** Performance fee in basis points (10000 = 100%). */
   performanceFeeBps: number;
+  /** V5 — flat entry fee in basis points (skimmed at deposit). */
+  entryFeeBps: number;
+  /** V5 — flat exit fee in basis points (skimmed at withdraw). */
+  exitFeeBps: number;
+  /** V5 — entry fee currently active? */
+  entryFeeEnabled: boolean;
+  /** V5 — exit fee currently active? */
+  exitFeeEnabled: boolean;
   /** Headline APY (gross, before fee) — string so the brain can return ranges. */
   headlineApy: string;
   /** Worst-case max drawdown observed in V3 backtest, as %. */
@@ -78,5 +86,13 @@ export type UserPosition = {
     valueSol: number;
     canWithdrawAfter?: number;     // unix ts; undefined if no pending withdraw
     pendingWithdrawShares: number;
+    // V5 — stORE basket payout. All values in human ORE (1 = 1 stORE).
+    /** Pro-rata stORE the user currently has claim on via their shares. */
+    stOreBalance: number;
+    /** stORE the user WOULD have if they'd just bought stORE directly with
+     *  the same SOL at the time of their deposits (DCA baseline). */
+    dcaStoreBaseline: number;
+    /** stOreBalance / dcaStoreBaseline — > 1.0 means CWR outperformed DCA. */
+    outperformanceMultiplier: number;
   }>;
 };
