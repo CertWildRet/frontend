@@ -9,18 +9,35 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
+  "comment-security": "Versions PINNED (no ^) to verified-good releases so a future install cannot silently pull a newer/compromised version. wallet-adapter-wallets is intentionally OMITTED — wallet-adapter-react auto-detects Wallet-Standard wallets (Phantom/Solflare/Backpack) with an empty wallets list, avoiding the huge multi-chain (Trezor/Stellar/USB/Torus) subtree. Re-verify on any bump; commit package-lock.json.",
   "dependencies": {
-    "next": "^14.2.5",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "@coral-xyz/anchor": "0.31.1",
+    "@cwr/sdk": "github:CertWildRet/sdk#main",
+    "@solana/spl-token": "0.4.14",
+    "@solana/wallet-adapter-base": "0.9.27",
+    "@solana/wallet-adapter-react": "0.15.39",
+    "@solana/wallet-adapter-react-ui": "0.9.39",
+    "@solana/web3.js": "1.98.4",
+    "bn.js": "5.2.3",
+    "next": "14.2.35",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@types/bn.js": "^5.1.5",
     "@types/node": "^20.14.0",
-    "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0",
+    "@types/react": "18.3.31",
+    "@types/react-dom": "18.3.7",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.5.0"
+  },
+  "comment-overrides": "Single-version the things that MATTER at runtime — React core + its types. @solana-mobile (a wallet-adapter transitive) nests react@19 / @types/react@19; two React runtimes cause invalid-hook-call bugs, so we pin the whole tree to 18. (Build-tooling transitives like yargs/commander/chalk are intentionally left alone — they never ship to the browser.)",
+  "overrides": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "@types/react": "18.3.31",
+    "@types/react-dom": "18.3.7"
   }
 }
