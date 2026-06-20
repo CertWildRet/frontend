@@ -16,7 +16,7 @@ export type LastCrank = {
 /** Shape pushed by the brain SSE broadcaster (cwr-brains/simple/src/broadcaster.ts). */
 export type LiveStats = {
   roundId: string;
-  perTileSol: number[]; // 25 — GLOBAL ORE board deploys
+  perTileSol: number[]; // 25 - GLOBAL ORE board deploys
   totalDeployedSol: number;
   totalMiners: number;
   motherlodePoolOre: number;

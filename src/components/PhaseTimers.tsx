@@ -3,58 +3,51 @@
 import { usePhaseClock, fmtCountdown } from "@/hooks/usePhaseClock";
 import type { VaultData } from "@/hooks/useVaultData";
 
-/**
- * The two phase clocks: the OPEN "deposit / claim" window and the BETTING
- * "cranking" window. Exactly one is active at a time (the contract alternates).
- */
 export function PhaseTimers({ data }: { data: VaultData | null }) {
   const clock = usePhaseClock(data);
 
   if (!data?.initialized) {
     return (
       <div className="card">
-        <p className="text-sm text-muted">
-          Pool isn&apos;t live on-chain yet — timers start once the Simple bucket is initialized.
+        <p className="font-mono text-sm text-fog-muted">
+          Pool isn&apos;t live on-chain yet. Timers start once the Simple bucket is initialized.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="card">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-medium text-gray-300">Pool cycle</h2>
-        <span
-          className={`badge ${
-            clock.isOpen ? "bg-accent-simple/15 text-accent-simple" : "bg-accent-info/15 text-accent-info"
-          }`}
-        >
-          {clock.isOpen ? "● Deposit / Claim open" : "● Mining live"}
+    <div className="panel">
+      <div className="mb-5 flex items-center justify-between">
+        <h2 className="label text-fog-dim">Pool cycle</h2>
+        <span className={`chip ${clock.isOpen ? "border-gold/30 text-gold" : "border-amber/30 text-amber"}`}>
+          <span className={`live-dot ${clock.isOpen ? "text-gold" : "text-amber"}`} />
+          {clock.isOpen ? "deposit / claim open" : "mining live"}
         </span>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <TimerTile
-          title="Deposit & Claim window"
-          subtitle="Mint CWR or claim rewards"
+          title="Deposit & Claim"
+          subtitle="mint CWR or claim rewards"
           active={clock.isOpen}
           remaining={clock.isOpen ? clock.remainingSecs : null}
           progress={clock.isOpen ? clock.progress : 0}
-          accent="simple"
-          idleNote="Opens after the mining round"
+          accent="gold"
+          idleNote="opens after the mining round"
         />
         <TimerTile
-          title="Cranking (mining)"
-          subtitle="Capital deployed across 25 ORE tiles"
+          title="Cranking"
+          subtitle="capital working the 25 tiles"
           active={clock.isBetting}
           remaining={clock.isBetting ? clock.remainingSecs : null}
           progress={clock.isBetting ? clock.progress : 0}
-          accent="info"
-          idleNote="Runs after the window closes"
+          accent="amber"
+          idleNote="runs after the window closes"
         />
       </div>
       {data.paused && (
-        <p className="mt-4 text-xs text-accent-ultra">Pool is paused by admin — actions disabled.</p>
+        <p className="mt-4 font-mono text-xs text-red">Pool is paused by admin. Actions disabled.</p>
       )}
     </div>
   );
@@ -74,31 +67,32 @@ function TimerTile({
   active: boolean;
   remaining: number | null;
   progress: number;
-  accent: "simple" | "info";
+  accent: "gold" | "amber";
   idleNote: string;
 }) {
-  const accentText = accent === "simple" ? "text-accent-simple" : "text-accent-info";
-  const accentBg = accent === "simple" ? "bg-accent-simple" : "bg-accent-info";
+  const text = accent === "gold" ? "text-gold" : "text-amber";
+  const bar = accent === "gold" ? "bg-gold" : "bg-amber";
+  const glow = "shadow-glow-gold";
   return (
     <div
-      className={`rounded-lg border p-4 transition-colors ${
-        active ? "border-bg-elevated bg-bg-elevated/40" : "border-bg-border bg-bg/40 opacity-60"
+      className={`relative overflow-hidden rounded-xl border p-4 transition-all duration-300 ${
+        active ? `border-line-bright bg-ink-800/60 ${glow}` : "border-line bg-ink-900/40 opacity-55"
       }`}
     >
       <div className="flex items-baseline justify-between">
-        <span className="text-sm font-medium text-white">{title}</span>
+        <span className="font-display text-sm font-semibold text-white">{title}</span>
         {active ? (
-          <span className={`font-mono text-lg ${accentText}`}>
-            {remaining !== null ? fmtCountdown(remaining) : "—"}
+          <span className={`num text-2xl font-medium ${text} text-glow-gold`}>
+            {remaining !== null ? fmtCountdown(remaining) : "··"}
           </span>
         ) : (
-          <span className="text-xs text-muted">idle</span>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-fog-muted">idle</span>
         )}
       </div>
-      <p className="mt-0.5 text-xs text-muted">{active ? subtitle : idleNote}</p>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-bg-border">
+      <p className="mt-1 font-mono text-[11px] text-fog-muted">{active ? subtitle : idleNote}</p>
+      <div className="mt-3 h-1 overflow-hidden rounded-full bg-line">
         <div
-          className={`h-full ${accentBg} transition-all duration-1000 ease-linear`}
+          className={`h-full ${bar} transition-all duration-1000 ease-linear`}
           style={{ width: `${active ? Math.round(progress * 100) : 0}%` }}
         />
       </div>

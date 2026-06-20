@@ -1,9 +1,9 @@
 // Chain layer for the CWR frontend.
 //
-// Reads use the SDK's read-only client (a dummy wallet — no signer needed).
+// Reads use the SDK's read-only client (a dummy wallet - no signer needed).
 // Deposit/withdraw are built as raw instructions (the user pubkey is explicit),
 // assembled into a tx, and signed+sent by the connected wallet adapter, then
-// confirmed by POLLING getSignatureStatus — NO websocket subscription, so it
+// confirmed by POLLING getSignatureStatus - NO websocket subscription, so it
 // works through the key-hiding /api/rpc proxy as well as a direct RPC.
 
 import { BN } from "@coral-xyz/anchor";
@@ -52,7 +52,7 @@ export function rpcEndpoint(): string {
   if (direct && direct.length > 0) return direct;
   if (typeof window !== "undefined") return `${window.location.origin}/api/rpc`;
   // Server/prerender: no origin to build the proxy URL from. Return a valid
-  // absolute placeholder so `new Connection()` doesn't throw — it's never
+  // absolute placeholder so `new Connection()` doesn't throw - it's never
   // actually called during prerender (pages fetch client-side in effects);
   // the client re-resolves to the same-origin /api/rpc proxy on hydration.
   return "https://api.mainnet-beta.solana.com";

@@ -6,38 +6,200 @@
   color-scheme: dark;
 }
 
-html, body {
-  background: #0b0d12;
-  color: #e5e7eb;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+@layer base {
+  html,
+  body {
+    @apply bg-ink text-fog font-sans antialiased;
+    font-feature-settings: "ss01", "cv01";
+  }
+  ::selection {
+    background: rgba(245, 197, 24, 0.3);
+    color: #000;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #26241a;
+    border-radius: 6px;
+    border: 2px solid #050506;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3a3621;
+  }
+}
+
+/* ── Atmosphere: gold-on-black mesh glow + grid + grain ───────────────── */
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(56% 44% at 50% -6%, rgba(245, 197, 24, 0.12), transparent 70%),
+    radial-gradient(44% 40% at 100% 4%, rgba(245, 197, 24, 0.06), transparent 70%),
+    radial-gradient(50% 50% at 0% 100%, rgba(194, 144, 26, 0.05), transparent 70%),
+    #050506;
+}
+.atmosphere::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(245, 197, 24, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 197, 24, 0.05) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(circle at 50% 18%, #000, transparent 78%);
+  mask-image: radial-gradient(circle at 50% 18%, #000, transparent 78%);
+  opacity: 0.4;
+}
+.atmosphere::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 @layer components {
   .card {
-    @apply rounded-xl border border-bg-border bg-bg-surface p-6;
+    @apply rounded-xl border border-line bg-ink-900/80 p-5 shadow-card backdrop-blur-sm;
   }
   .card-hover {
-    @apply transition-colors hover:border-bg-elevated/80;
+    @apply transition-all duration-200 hover:border-line-bright;
   }
-  .badge {
-    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  .panel {
+    @apply rounded-2xl border border-line bg-ink-900/70 p-6 backdrop-blur-sm;
   }
-  .stat-label {
-    @apply text-xs uppercase tracking-wider text-muted;
+
+  .frame-brand {
+    position: relative;
   }
-  .stat-value {
-    @apply font-mono text-base text-white;
+  .frame-brand::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(120deg, rgba(245, 197, 24, 0.6), rgba(194, 144, 26, 0.35), transparent 60%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium tracking-wide transition-all duration-150 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-grad-gold font-semibold text-ink shadow-glow-gold hover:brightness-110 disabled:opacity-50 disabled:shadow-none;
+  }
+  .btn-outline {
+    @apply btn border border-line-bright bg-ink-800/60 text-fog hover:border-gold hover:text-white;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 font-mono text-[11px] tracking-wide;
+  }
+
+  .label {
+    @apply font-mono text-[10px] uppercase tracking-[0.18em] text-fog-muted;
+  }
+  .num {
+    @apply font-mono tabular-nums text-fog;
+  }
+  .gradient-text {
+    @apply bg-grad-gold bg-clip-text text-transparent;
+  }
+
+  .live-dot {
+    @apply inline-block h-1.5 w-1.5 rounded-full bg-current;
+    box-shadow: 0 0 8px 1px currentColor;
+    animation: pulseDot 1.8s ease-in-out infinite;
+  }
+
+  .tile {
+    @apply relative flex aspect-square flex-col justify-end overflow-hidden rounded-lg border border-line bg-ink-800/60 p-2 transition-all duration-300;
   }
 }
 
-@keyframes fadeIn {
+@layer utilities {
+  .text-glow-gold {
+    text-shadow: 0 0 20px rgba(245, 197, 24, 0.5);
+  }
+  /* moving metallic sheen for headline accents + the logo */
+  .text-sheen {
+    background: linear-gradient(100deg, #c2901a 18%, #ffebb0 48%, #f5c518 52%, #c2901a 82%);
+    background-size: 220% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: sheen 6s linear infinite;
+  }
+  .stagger > * {
+    animation: fadeUp 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .stagger > *:nth-child(1) { animation-delay: 0.02s; }
+  .stagger > *:nth-child(2) { animation-delay: 0.09s; }
+  .stagger > *:nth-child(3) { animation-delay: 0.16s; }
+  .stagger > *:nth-child(4) { animation-delay: 0.23s; }
+  .stagger > *:nth-child(5) { animation-delay: 0.3s; }
+}
+
+@keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+@keyframes pulseDot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(2.5deg);
+  }
+}
+@keyframes sheen {
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 250% 0;
+  }
+}
+.animate-float {
+  animation: float 7s ease-in-out infinite;
+}
+
+/* ── wallet-adapter modal: gold/black reskin ─────────────────────────── */
+.wallet-adapter-modal-wrapper {
+  background: #0a0a0c !important;
+  border: 1px solid #33322b !important;
+  border-radius: 16px !important;
+  box-shadow: 0 0 40px -8px rgba(245, 197, 24, 0.4) !important;
+  font-family: "Sora Variable", sans-serif !important;
+}
+.wallet-adapter-modal-title {
+  font-family: "Chakra Petch", sans-serif !important;
+  color: #ededf0 !important;
+}
+.wallet-adapter-button {
+  font-family: "Sora Variable", sans-serif !important;
 }

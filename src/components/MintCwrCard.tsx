@@ -41,65 +41,59 @@ export function MintCwrCard({ data, onDone }: { data: VaultData | null; onDone: 
   }
 
   return (
-    <div className="card flex flex-col">
+    <div className="card card-hover flex flex-col">
       <div className="mb-1 flex items-center justify-between">
-        <h3 className="text-base font-semibold text-white">Mint CWR</h3>
-        <span className="badge bg-accent-simple/15 text-accent-simple">deposit SOL</span>
+        <h3 className="font-display text-base font-semibold text-white">Mint CWR</h3>
+        <span className="chip border-gold/30 text-gold">deposit SOL</span>
       </div>
-      <p className="mb-4 text-xs text-muted">
-        Deposit SOL to mint CWR — your share of the pool. Withdraw anytime the claim window is open.
+      <p className="mb-4 font-mono text-[11px] leading-relaxed text-fog-muted">
+        Deposit SOL to mint CWR, your share of the pool. Withdraw any time the claim window is open.
       </p>
 
-      <label className="stat-label mb-1.5 block">Amount (SOL)</label>
-      <div className="flex items-center gap-2">
-        <input
-          inputMode="decimal"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
-          placeholder="0.0"
-          className="w-full rounded-md border border-bg-border bg-bg px-3 py-2 font-mono text-white outline-none focus:border-accent-simple"
-        />
-      </div>
+      <span className="label mb-1.5 block">Amount (SOL)</span>
+      <input
+        inputMode="decimal"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+        placeholder="0.0"
+        className="w-full rounded-lg border border-line bg-ink-800 px-3 py-2.5 font-mono text-lg text-white outline-none transition focus:border-gold"
+      />
       <div className="mt-2 flex gap-1.5">
         {QUICK.map((q) => (
           <button
             key={q}
             onClick={() => setAmount(String(q))}
-            className="rounded-md border border-bg-border px-2.5 py-1 text-xs text-gray-300 hover:border-accent-simple hover:text-white"
+            className="rounded-md border border-line px-2.5 py-1 font-mono text-xs text-fog-dim transition hover:border-gold hover:text-white"
           >
             {q}
           </button>
         ))}
       </div>
 
-      <div className="mt-3 flex items-center justify-between text-xs">
-        <span className="text-muted">You receive ≈</span>
-        <span className="font-mono text-gray-200">{formatNum(estShares, 4)} CWR</span>
+      <div className="mt-3 flex items-center justify-between font-mono text-xs">
+        <span className="text-fog-muted">you receive ≈</span>
+        <span className="num text-gray-200">{formatNum(estShares, 4)} CWR</span>
       </div>
 
       <div className="mt-4">
         {!connected ? (
           <WalletButton />
         ) : (
-          <button
-            disabled={!actionable}
-            onClick={onMint}
-            className="w-full rounded-md bg-accent-simple px-4 py-2.5 text-sm font-semibold text-black transition disabled:cursor-not-allowed disabled:bg-bg-elevated disabled:text-muted"
-          >
+          <button disabled={!actionable} onClick={onMint} className="btn-primary w-full py-2.5">
             {busy ? "Confirming…" : "Mint CWR"}
           </button>
         )}
       </div>
 
       {connected && !windowOpen && (
-        <p className="mt-2 text-center text-xs text-muted">
+        <p className="mt-2 text-center font-mono text-[11px] text-fog-muted">
           {data?.paused
             ? "Pool paused."
             : !data?.initialized
               ? "Pool not live yet."
               : data.phase !== 1
-                ? `Deposits open in the claim window — opens in ${fmtCountdown(clock.remainingSecs)}.`
-                : "Window settling — open in a moment."}
+                ? `Deposits open in the claim window. Opens in ${fmtCountdown(clock.remainingSecs)}.`
+                : "Window settling, open in a moment."}
         </p>
       )}
 

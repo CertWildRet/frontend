@@ -40,19 +40,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={t.id}
             role="status"
-            className={`pointer-events-auto animate-[fadeIn_150ms_ease-out] rounded-lg border bg-bg-surface p-4 shadow-lg ${
-              t.variant === "warn" ? "border-accent-refined/40" : "border-bg-border"
+            className={`pointer-events-auto animate-fade-up rounded-xl border bg-ink-900/95 p-4 shadow-glow-gold backdrop-blur-md ${
+              t.variant === "warn" ? "border-amber/40" : "border-line-bright"
             }`}
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-white">{t.title}</p>
-                {t.body && <div className="mt-1 text-xs leading-relaxed text-gray-400">{t.body}</div>}
+                <p className="font-display text-sm font-semibold text-white">{t.title}</p>
+                {t.body && <div className="mt-1 text-xs leading-relaxed text-fog-dim">{t.body}</div>}
               </div>
               <button
                 onClick={() => dismiss(t.id)}
                 aria-label="Dismiss"
-                className="text-muted transition hover:text-white"
+                className="text-fog-muted transition hover:text-white"
               >
                 ✕
               </button>

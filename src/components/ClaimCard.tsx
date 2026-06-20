@@ -47,18 +47,18 @@ export function ClaimCard({
   }
 
   return (
-    <div className="card flex flex-col">
+    <div className="card card-hover flex flex-col">
       <div className="mb-1 flex items-center justify-between">
-        <h3 className="text-base font-semibold text-white">Claim rewards</h3>
-        <span className="badge bg-accent-info/15 text-accent-info">burn CWR</span>
+        <h3 className="font-display text-base font-semibold text-white">Claim rewards</h3>
+        <span className="chip border-gold/30 text-gold">burn CWR</span>
       </div>
-      <p className="mb-4 text-xs text-muted">
-        Burn CWR to withdraw your SOL at the frozen window price, plus your pro-rata stORE.
+      <p className="mb-4 font-mono text-[11px] leading-relaxed text-fog-muted">
+        Burn CWR to take your SOL at the frozen window price, plus your pro rata stORE.
       </p>
 
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-muted">Your CWR</span>
-        <span className="font-mono text-gray-200">{formatNum(shares, 4)}</span>
+      <div className="flex items-center justify-between font-mono text-xs">
+        <span className="text-fog-muted">your CWR</span>
+        <span className="num text-gray-200">{formatNum(shares, 4)}</span>
       </div>
 
       <div className="mt-3 flex gap-1.5">
@@ -66,10 +66,8 @@ export function ClaimCard({
           <button
             key={p}
             onClick={() => setPct(p)}
-            className={`flex-1 rounded-md border px-2 py-1 text-xs ${
-              pct === p
-                ? "border-accent-info text-white"
-                : "border-bg-border text-gray-300 hover:border-accent-info"
+            className={`flex-1 rounded-md border px-2 py-1.5 font-mono text-xs transition ${
+              pct === p ? "border-gold text-white" : "border-line text-fog-dim hover:border-gold"
             }`}
           >
             {p === 100 ? "Max" : `${p}%`}
@@ -77,9 +75,9 @@ export function ClaimCard({
         ))}
       </div>
 
-      <div className="mt-3 flex items-center justify-between text-xs">
-        <span className="text-muted">You receive ≈</span>
-        <span className="font-mono text-gray-200">{formatSol(estSol, 4)} SOL + stORE</span>
+      <div className="mt-3 flex items-center justify-between font-mono text-xs">
+        <span className="text-fog-muted">you receive ≈</span>
+        <span className="num text-gray-200">{formatSol(estSol, 4)} SOL + stORE</span>
       </div>
 
       <div className="mt-4">
@@ -89,7 +87,7 @@ export function ClaimCard({
           <button
             disabled={!actionable}
             onClick={onClaim}
-            className="w-full rounded-md border border-accent-info px-4 py-2.5 text-sm font-semibold text-accent-info transition hover:bg-accent-info/10 disabled:cursor-not-allowed disabled:border-bg-border disabled:text-muted disabled:hover:bg-transparent"
+            className="btn w-full border border-gold/60 py-2.5 font-semibold text-gold transition hover:bg-gold/10 disabled:border-line disabled:text-fog-muted"
           >
             {busy ? "Confirming…" : "Claim"}
           </button>
@@ -97,14 +95,14 @@ export function ClaimCard({
       </div>
 
       {connected && shares > 0 && !windowOpen && (
-        <p className="mt-2 text-center text-xs text-muted">
+        <p className="mt-2 text-center font-mono text-[11px] text-fog-muted">
           {data?.phase !== 1
-            ? `Claims open in the window — opens in ${fmtCountdown(clock.remainingSecs)}.`
-            : "Window settling — open in a moment."}
+            ? `Claims open in the window. Opens in ${fmtCountdown(clock.remainingSecs)}.`
+            : "Window settling, open in a moment."}
         </p>
       )}
       {connected && shares === 0 && (
-        <p className="mt-2 text-center text-xs text-muted">No CWR to claim yet.</p>
+        <p className="mt-2 text-center font-mono text-[11px] text-fog-muted">No CWR to claim yet.</p>
       )}
 
       <TxResult sig={sig} err={err} successLabel="Claimed" />

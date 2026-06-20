@@ -1,6 +1,6 @@
 // Same-origin RPC proxy. The browser's Connection points here (default) so the
 // paid RPC key (server-only RPC_URL) is never exposed to clients. Plain JSON-RPC
-// request/response forwarding — works on Vercel serverless (no persistent
+// request/response forwarding - works on Vercel serverless (no persistent
 // socket). The live crank feed is a separate SSE stream from the brain.
 
 import { NextRequest } from "next/server";

@@ -17,12 +17,12 @@ export const formatNum = (n: number, decimals = 0): string =>
   });
 
 export const formatTime = (ts: number): string => {
-  if (!ts) return "—";
+  if (!ts) return "·";
   return new Date(ts).toLocaleString();
 };
 
 export const formatRelative = (ts: number): string => {
-  if (!ts) return "—";
+  if (!ts) return "·";
   const diff = Date.now() - ts;
   if (diff < 0) return "in the future";
   const s = Math.floor(diff / 1000);
@@ -35,7 +35,7 @@ export const formatRelative = (ts: number): string => {
 };
 
 export const formatUptime = (ms: number): string => {
-  if (!ms) return "—";
+  if (!ms) return "·";
   const s = Math.floor(ms / 1000);
   if (s < 60) return `${s}s`;
   const m = Math.floor(s / 60);

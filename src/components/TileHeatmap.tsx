@@ -5,7 +5,7 @@ type Props = {
   perTileCount?: number[]; // length 25, optional
 };
 
-/** Visualize the 25-tile ORE board. Color intensity scales with SOL deployed. */
+/** The 25-tile ORE board. Tile intensity scales with SOL deployed. */
 export function TileHeatmap({ perTileSol, perTileCount }: Props) {
   const tiles = Array.from({ length: 25 }, (_, i) => perTileSol[i] ?? 0);
   const maxSol = Math.max(0.0001, ...tiles);
@@ -13,34 +13,35 @@ export function TileHeatmap({ perTileSol, perTileCount }: Props) {
 
   if (!hasData) {
     return (
-      <div className="rounded-md border border-bg-border bg-bg-elevated p-6 text-center text-sm text-muted">
+      <div className="rounded-xl border border-line bg-ink-800/40 p-8 text-center font-mono text-sm text-fog-muted">
         No deploys on the current round yet.
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-5 gap-1.5">
+    <div className="grid grid-cols-5 gap-2">
       {tiles.map((sol, i) => {
         const intensity = sol / maxSol; // 0..1
-        const bg = `rgba(34, 197, 94, ${(0.06 + intensity * 0.55).toFixed(3)})`;
-        const ring = intensity > 0.85 ? "ring-1 ring-accent-simple/60" : "";
+        const hot = intensity > 0.82;
         return (
           <div
             key={i}
-            className={`relative rounded-md border border-bg-border p-2 text-xs ${ring} transition`}
-            style={{ backgroundColor: bg }}
-            title={`Tile ${i + 1}: ${formatSol(sol, 4)} SOL${
-              perTileCount ? ` · ${perTileCount[i] ?? 0} miners` : ""
-            }`}
+            title={`Tile ${i + 1}: ${formatSol(sol, 4)} SOL${perTileCount ? ` · ${perTileCount[i] ?? 0} miners` : ""}`}
+            className={`tile ${hot ? "border-gold/50 shadow-glow-gold" : ""}`}
+            style={{
+              background: `linear-gradient(160deg, rgba(245,197,24,${(intensity * 0.18).toFixed(3)}), rgba(194,144,26,${(0.05 + intensity * 0.28).toFixed(3)}))`,
+            }}
           >
-            <div className="flex items-baseline justify-between">
-              <span className="text-[10px] text-muted">#{i + 1}</span>
-              {perTileCount && (
-                <span className="font-mono text-[10px] text-gray-300">{perTileCount[i] ?? 0} 👤</span>
-              )}
-            </div>
-            <div className="mt-1 font-mono text-xs text-white">{formatSol(sol, 4)}</div>
+            <span className="absolute left-2 top-1.5 font-mono text-[10px] text-fog-muted">
+              #{i + 1}
+            </span>
+            {perTileCount ? (
+              <span className="absolute right-2 top-1.5 font-mono text-[10px] text-fog-dim">
+                {perTileCount[i] ?? 0}
+              </span>
+            ) : null}
+            <span className={`num text-xs ${hot ? "text-gold" : "text-white"}`}>{formatSol(sol, 3)}</span>
           </div>
         );
       })}

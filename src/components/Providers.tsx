@@ -10,7 +10,7 @@ import { ToastProvider } from "./Toast";
 /**
  * Client-side provider boundary: RPC connection + wallet adapter + connect modal.
  *
- * `wallets={[]}` is intentional — modern wallet-adapter auto-detects any wallet
+ * `wallets={[]}` is intentional - modern wallet-adapter auto-detects any wallet
  * implementing the Wallet Standard (Phantom, Solflare, Backpack, …), so we
  * don't bundle per-wallet adapter packages (that's what dragged in the
  * Trezor/Stellar/USB multi-chain subtree we removed).

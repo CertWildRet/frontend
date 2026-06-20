@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export type PhaseClock = {
-  phaseLabel: "OPEN" | "BETTING" | "—";
+  phaseLabel: "OPEN" | "BETTING" | "··";
   isOpen: boolean;
   isBetting: boolean;
   /** seconds until this window is eligible to flip (0 = ready). */
@@ -25,7 +25,7 @@ type ClockInput = {
 } | null;
 
 const EMPTY: PhaseClock = {
-  phaseLabel: "—",
+  phaseLabel: "··",
   isOpen: false,
   isBetting: false,
   remainingSecs: 0,

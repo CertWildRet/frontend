@@ -14,13 +14,13 @@ export function TxResult({
   if (!sig && !err) return null;
   if (err) {
     return (
-      <p className="mt-3 break-words rounded-md border border-accent-ultra/40 bg-accent-ultra/10 px-3 py-2 text-xs text-accent-ultra">
+      <p className="mt-3 break-words rounded-lg border border-red/40 bg-red/10 px-3 py-2 font-mono text-xs text-red">
         {err}
       </p>
     );
   }
   return (
-    <p className="mt-3 rounded-md border border-accent-simple/40 bg-accent-simple/10 px-3 py-2 text-xs text-accent-simple">
+    <p className="mt-3 rounded-lg border border-gold/40 bg-gold/10 px-3 py-2 font-mono text-xs text-gold">
       {successLabel} ·{" "}
       <a href={explorerTx(sig!)} target="_blank" rel="noreferrer" className="underline">
         view tx
