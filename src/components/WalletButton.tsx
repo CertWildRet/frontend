@@ -42,7 +42,7 @@ export function WalletButton() {
               href="https://phantom.app/"
               target="_blank"
               rel="noreferrer"
-              className="text-accent-simple underline"
+              className="text-gold underline"
             >
               Phantom
             </a>{" "}
@@ -51,7 +51,7 @@ export function WalletButton() {
               href="https://solflare.com/"
               target="_blank"
               rel="noreferrer"
-              className="text-accent-simple underline"
+              className="text-gold underline"
             >
               Solflare
             </a>
