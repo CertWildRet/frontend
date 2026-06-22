@@ -1,0 +1,156 @@
+/* ════════════════════════════════════════════════════════════════
+   PRESSURE — Concept 1
+   Diamonds form under pressure. One cold light source. Obsidian depth.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ---- Page-load: crystallize under pressure ---- */
+@keyframes ignite {
+  0%   { opacity: 0; transform: scale(0.7) rotate(-8deg); filter: brightness(0.2) blur(8px); }
+  55%  { opacity: 1; filter: brightness(1.8) blur(0px); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); filter: brightness(1) blur(0px); }
+}
+
+@keyframes caustic-sweep {
+  0%   { opacity: 0; transform: translateX(-40%) scaleX(0.4); }
+  30%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translateX(60%) scaleX(1.6); }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Hero stone: very slow rotation + breathing light ---- */
+@keyframes stone-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes stone-breathe {
+  0%, 100% { filter: drop-shadow(0 0 60px rgba(157,183,216,0.35)) brightness(1); }
+  50%      { filter: drop-shadow(0 0 110px rgba(244,248,255,0.55)) brightness(1.12); }
+}
+
+@keyframes caustic-drift {
+  0%   { transform: translate(-2%, 0) rotate(0deg); opacity: 0.5; }
+  50%  { transform: translate(3%, -2%) rotate(4deg); opacity: 0.85; }
+  100% { transform: translate(-2%, 0) rotate(0deg); opacity: 0.5; }
+}
+
+/* occasional pinpoint sparkle on a facet */
+@keyframes sparkle {
+  0%, 92%, 100% { opacity: 0; transform: scale(0.4); }
+  95%           { opacity: 1; transform: scale(1); }
+  98%           { opacity: 0; transform: scale(0.6); }
+}
+
+/* specular glint travels across a bevel on hover */
+@keyframes glint-sweep {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(220%); }
+}
+
+@keyframes gauge-pulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
+@keyframes tile-flare {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.06); }
+}
+
+/* ---- Helpers ---- */
+.ignite        { animation: ignite 1.5s cubic-bezier(.2,.7,.2,1) both; }
+.rise          { animation: rise .9s cubic-bezier(.2,.7,.2,1) both; }
+.stoneSpin     { animation: stone-spin 90s linear infinite; transform-origin: center; }
+.stoneBreathe  { animation: stone-breathe 7s ease-in-out infinite; }
+.causticDrift  { animation: caustic-drift 14s ease-in-out infinite; }
+.causticSweep  { animation: caustic-sweep 2.2s cubic-bezier(.2,.7,.2,1) .3s both; }
+.sparkle       { animation: sparkle 9s ease-in-out infinite; }
+.gaugePulse    { animation: gauge-pulse 2.4s ease-in-out infinite; }
+.tileFlare     { animation: tile-flare 3.2s ease-in-out infinite; }
+
+/* Bevel/facet button — chamfered corners + glossy top edge */
+.facet {
+  position: relative;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  overflow: hidden;
+  transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s ease;
+}
+.facet::before {
+  /* thin platinum top-edge highlight */
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(244,248,255,0.85), transparent);
+  opacity: 0.7;
+}
+.facet::after {
+  /* traveling specular glint */
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 40%; height: 100%;
+  background: linear-gradient(105deg, transparent, rgba(244,248,255,0.28), transparent);
+  transform: translateX(-160%);
+  pointer-events: none;
+}
+.facet:hover { transform: translateY(-2px); }
+.facet:hover::after { animation: glint-sweep .7s cubic-bezier(.2,.7,.2,1); }
+.facet:active { transform: translateY(1px); }
+
+/* Chamfered panel — milled obsidian block */
+.slab {
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  position: relative;
+  transition: transform .3s cubic-bezier(.2,.7,.2,1), box-shadow .3s ease;
+}
+.slab::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 8%, rgba(201,210,222,0.5) 50%, transparent 92%);
+  pointer-events: none;
+}
+.slabHover:hover { transform: translateY(-3px); }
+
+/* recessed input well */
+.well {
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.75), inset 0 0 0 1px rgba(201,210,222,0.08);
+}
+
+/* chamfered small chip */
+.chip {
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+}
+
+/* debossed cut-into-surface text */
+.deboss {
+  text-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 -1px 1px rgba(0,0,0,0.9);
+}
+.embossNum {
+  text-shadow: 0 0 18px rgba(157,183,216,0.35), 0 1px 0 rgba(0,0,0,0.8);
+}
+
+/* faceted heatmap tile */
+.lattice {
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  transition: transform .3s ease, filter .3s ease;
+}
+
+/* hide scrollbar gold theme inside the takeover */
+.canvas::-webkit-scrollbar { width: 10px; height: 10px; }
+.canvas::-webkit-scrollbar-track { background: #05060A; }
+.canvas::-webkit-scrollbar-thumb { background: #1C2029; border-radius: 0; border: 2px solid #05060A; }
+.canvas::-webkit-scrollbar-thumb:hover { background: #2a303c; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ignite, .rise, .stoneSpin, .stoneBreathe, .causticDrift,
+  .causticSweep, .sparkle, .gaugePulse, .tileFlare { animation: none !important; }
+  .facet:hover, .slabHover:hover { transform: none; }
+}
