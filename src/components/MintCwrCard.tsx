@@ -5,7 +5,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { useCwrActions } from "@/hooks/useCwrActions";
 import { usePhaseClock, fmtCountdown } from "@/hooks/usePhaseClock";
 import type { VaultData } from "@/hooks/useVaultData";
-import { WalletButton } from "./WalletButton";
+import { ConnectHint } from "./ConnectHint";
 import { TxResult } from "./TxResult";
 import { formatNum } from "@/lib/format";
 
@@ -75,9 +75,9 @@ export function MintCwrCard({ data, onDone }: { data: VaultData | null; onDone: 
         <span className="num text-gray-200">{formatNum(estShares, 4)} CWR</span>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-auto pt-4">
         {!connected ? (
-          <WalletButton />
+          <ConnectHint />
         ) : (
           <button disabled={!actionable} onClick={onMint} className="btn-primary w-full py-2.5">
             {busy ? "Confirming…" : "Mint CWR"}

@@ -2,7 +2,7 @@
 
 import { useWallet } from "@solana/wallet-adapter-react";
 import type { UserPos } from "@/hooks/useUserPosition";
-import { WalletButton } from "./WalletButton";
+import { ConnectHint } from "./ConnectHint";
 import { formatNum, formatSol } from "@/lib/format";
 
 export function PositionCard({ pos }: { pos: UserPos | null }) {
@@ -10,12 +10,14 @@ export function PositionCard({ pos }: { pos: UserPos | null }) {
 
   if (!connected) {
     return (
-      <div className="card flex flex-col items-start gap-4">
+      <div className="card flex flex-col">
         <div>
           <h3 className="font-display text-base font-semibold text-white">Your position</h3>
           <p className="mt-1 font-mono text-[11px] text-fog-muted">Connect a wallet to see your CWR.</p>
         </div>
-        <WalletButton />
+        <div className="mt-auto pt-4">
+          <ConnectHint />
+        </div>
       </div>
     );
   }

@@ -6,7 +6,7 @@ import { useCwrActions } from "@/hooks/useCwrActions";
 import { usePhaseClock, fmtCountdown } from "@/hooks/usePhaseClock";
 import type { VaultData } from "@/hooks/useVaultData";
 import type { UserPos } from "@/hooks/useUserPosition";
-import { WalletButton } from "./WalletButton";
+import { ConnectHint } from "./ConnectHint";
 import { TxResult } from "./TxResult";
 import { formatNum, formatSol } from "@/lib/format";
 
@@ -80,9 +80,9 @@ export function ClaimCard({
         <span className="num text-gray-200">{formatSol(estSol, 4)} SOL + stORE</span>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-auto pt-4">
         {!connected ? (
-          <WalletButton />
+          <ConnectHint />
         ) : (
           <button
             disabled={!actionable}
