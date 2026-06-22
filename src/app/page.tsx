@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { RefinedComingSoon } from "@/components/RefinedComingSoon";
 import { OreMark } from "@/components/OreMark";
 
@@ -160,8 +161,8 @@ export default function HomePage() {
           variance, slow accumulation, and flows that worked but were never convenient.
         </p>
         <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <TeamCard handle="br0wnD3v" role="Infrastructure" blurb="Contracts, keeper, and the rails. Builds the machine that runs the board nonstop." />
-          <TeamCard handle="Willd" role="Product Manager" blurb="Product, brand, and direction. Makes pooled mining read clean and feel serious." />
+          <TeamCard handle="br0wnD3v" role="Infrastructure" avatar="/brown.png" blurb="Contracts, keeper, and the rails. Builds the machine that runs the board nonstop." />
+          <TeamCard handle="Willd" role="Product Manager" avatar="/will.png" blurb="Product, brand, and direction. Makes pooled mining read clean and feel serious." />
         </div>
       </section>
     </div>
@@ -217,11 +218,21 @@ function ProofRow({ t, d }: { t: string; d: string }) {
   );
 }
 
-function TeamCard({ handle, role, blurb }: { handle: string; role: string; blurb: string }) {
+function TeamCard({
+  handle,
+  role,
+  blurb,
+  avatar,
+}: {
+  handle: string;
+  role: string;
+  blurb: string;
+  avatar: string;
+}) {
   return (
     <div className="card card-hover flex items-start gap-4">
-      <span className="flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-grad-gold font-display text-lg font-bold text-ink shadow-glow-gold">
-        {handle[0].toUpperCase()}
+      <span className="relative h-12 w-12 flex-none overflow-hidden rounded-xl shadow-glow-gold ring-1 ring-gold/40">
+        <Image src={avatar} alt={handle} fill sizes="48px" className="object-cover" />
       </span>
       <div>
         <div className="flex items-baseline gap-2">
