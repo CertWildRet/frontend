@@ -15,6 +15,49 @@ npm run dev
 # open http://localhost:3000
 ```
 
+## Local UI design (mock mode)
+
+When you only want to work on the **frontend UI** — layout, styling, motion — and
+not wire up a wallet, an RPC endpoint, or the live keeper feed, run the app in
+**mock mode**. Every data hook returns realistic placeholder data and **skips all
+network calls** (RPC, wallet, SSE), so every screen renders fully populated,
+including the wallet-connected states.
+
+Enable it in `.env.local`:
+
+```
+NEXT_PUBLIC_MOCK=1
+```
+
+Then `npm run dev` and open http://localhost:3000. The home page and the `/crank`
+dashboard render with a funded demo pool, an open deposit/claim window, a
+live-looking crank panel + 25-tile heatmap, and a "connected" demo wallet.
+Deposit/Claim buttons simulate a confirmation and show the success state.
+**Nothing is ever signed or broadcast.**
+
+What mock mode adds (all dormant when `NEXT_PUBLIC_MOCK` ≠ `1`):
+
+- `src/lib/mock.ts` — the placeholder data (pool stats, user position, live crank/heatmap).
+- `src/lib/mockWallet.tsx` — a no-op wallet adapter that auto-connects to a demo pubkey.
+- `src/components/Providers.tsx` — injects the mock wallet only in mock mode.
+- `src/hooks/{useVaultData,useUserPosition,useLiveStats,useCwrActions}.ts` — short-circuit to mock data.
+
+No component files are modified — the mock layer is entirely opt-in via the flag.
+
+### Getting out of mock mode
+
+Turn the flag off (or delete the line) in `.env.local` and restart the dev server:
+
+```
+NEXT_PUBLIC_MOCK=0
+```
+
+With the flag off, the app talks to the real chain backend again and needs the
+live config below (program id, RPC, brain feed). No code changes are required —
+the mock paths are fully bypassed. To strip the scaffolding entirely, delete
+`src/lib/mock.ts` and `src/lib/mockWallet.tsx` and revert the small `MOCK`
+guards in `Providers.tsx` and the four hooks above.
+
 ## Configuration
 
 One env var:

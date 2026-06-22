@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { makeVault, SIMPLE, lamportsToSol, sharesToNumber, navX18ToNumber } from "@/lib/cwr";
+import { MOCK, mockVaultData } from "@/lib/mock";
 
 const ORE_GRAMS_PER_ORE = 1e11;
 
@@ -34,6 +35,14 @@ export function useVaultData(pollMs = 12_000) {
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
+    if (MOCK) {
+      // Static placeholder; fresh phaseStartedTs (client-side) keeps the
+      // countdown live without an SSR/CSR hydration mismatch.
+      setData({ ...mockVaultData, phaseStartedTs: Math.floor(Date.now() / 1000) - 90 });
+      setError(null);
+      setLoading(false);
+      return;
+    }
     try {
       const vault = makeVault(connection);
       const b = await vault.read.bucket(SIMPLE);

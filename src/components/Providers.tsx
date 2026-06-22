@@ -5,6 +5,8 @@ import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { rpcEndpoint } from "@/lib/cwr";
+import { MOCK } from "@/lib/mock";
+import { MockWalletAdapter, MockAutoConnect } from "@/lib/mockWallet";
 import { ToastProvider } from "./Toast";
 
 /**
@@ -17,11 +19,18 @@ import { ToastProvider } from "./Toast";
  */
 export function Providers({ children }: { children: React.ReactNode }) {
   const endpoint = useMemo(() => rpcEndpoint(), []);
+  // Mock mode injects a no-op "connected" wallet so the connected UI is
+  // designable; otherwise the empty list lets wallet-adapter auto-detect real
+  // Wallet-Standard wallets (Phantom, Solflare, …).
+  const wallets = useMemo(() => (MOCK ? [new MockWalletAdapter()] : []), []);
   return (
     <ConnectionProvider endpoint={endpoint} config={{ commitment: "confirmed" }}>
-      <WalletProvider wallets={[]} autoConnect>
+      <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>
+            {MOCK && <MockAutoConnect />}
+            {children}
+          </ToastProvider>
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>

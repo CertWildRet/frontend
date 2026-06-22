@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { MOCK, mockLiveStats } from "@/lib/mock";
 
 export type LastCrank = {
   ts: number;
@@ -33,6 +34,16 @@ export function useLiveStats() {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
+    if (MOCK) {
+      setStats({
+        ...mockLiveStats,
+        lastCrank: mockLiveStats.lastCrank
+          ? { ...mockLiveStats.lastCrank, ts: Date.now() - 8_000 }
+          : null,
+      });
+      setConnected(true);
+      return;
+    }
     if (!BRAIN || typeof window === "undefined") return;
     let es: EventSource | null = null;
     let closed = false;
@@ -61,5 +72,5 @@ export function useLiveStats() {
     };
   }, []);
 
-  return { stats, connected, enabled: !!BRAIN };
+  return { stats, connected, enabled: MOCK || !!BRAIN };
 }

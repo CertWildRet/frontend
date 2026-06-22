@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { makeVault, SIMPLE, sharesToNumber, lamportsToSol } from "@/lib/cwr";
+import { MOCK, mockUserPos } from "@/lib/mock";
 
 export type UserPos = {
   shares: number;
@@ -18,6 +19,10 @@ export function useUserPosition(totalShares: number, pollMs = 12_000) {
   const [loading, setLoading] = useState(false);
 
   const refresh = useCallback(async () => {
+    if (MOCK) {
+      setPos(mockUserPos);
+      return;
+    }
     if (!publicKey) {
       setPos(null);
       return;
