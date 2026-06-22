@@ -37,6 +37,7 @@ export function useLiveStats() {
     if (MOCK) {
       setStats({
         ...mockLiveStats,
+        updatedAt: Date.now(),
         lastCrank: mockLiveStats.lastCrank
           ? { ...mockLiveStats.lastCrank, ts: Date.now() - 8_000 }
           : null,

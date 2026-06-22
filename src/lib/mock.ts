@@ -63,6 +63,7 @@ export const mockLiveStats: LiveStats = {
     roundId: "48213",
     sig: null,
   },
+  updatedAt: 0, // filled in by the hook (client-side) so it stays a live "Xs ago"
 };
 
 // A fake, never-broadcast signature used by mocked deposit/withdraw actions.
