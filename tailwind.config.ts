@@ -22,11 +22,11 @@ const config: Config = {
         red: { DEFAULT: "#FF5C66" },
         pos: { DEFAULT: "#4ADE80", bright: "#86EFAC" },
         silver: { DEFAULT: "#C8CCD4", bright: "#EEF0F4", deep: "#9AA0AB" },
-        fog: { DEFAULT: "#EDEDF0", dim: "#9A9AA4", muted: "#5E5E68" },
+        fog: { DEFAULT: "#EDEDF0", dim: "#9A9AA4", muted: "#84848E" },
         // legacy aliases (kept so older class names still resolve to gold/black)
         bg: { DEFAULT: "#050506", surface: "#0A0A0C", elevated: "#17171C", border: "#1C1C20" },
         accent: { simple: "#F5C518", refined: "#E8881A", ultra: "#FF5C66", info: "#F5C518" },
-        muted: "#5E5E68",
+        muted: "#84848E",
       },
       fontFamily: {
         display: ['"Chakra Petch"', "ui-sans-serif", "system-ui", "sans-serif"],
