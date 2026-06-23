@@ -13,7 +13,7 @@ export function PositionCard({ pos }: { pos: UserPos | null }) {
       <div className="card flex flex-col">
         <div>
           <h3 className="font-display text-base font-semibold text-white">Your position</h3>
-          <p className="mt-1 font-mono text-[11px] text-fog-muted">Connect a wallet to see your CWR.</p>
+          <p className="mt-1 font-mono text-[12px] text-fog-muted">Connect a wallet to see your CWR.</p>
         </div>
         <div className="mt-auto pt-4">
           <ConnectHint />
@@ -32,7 +32,7 @@ export function PositionCard({ pos }: { pos: UserPos | null }) {
         <Metric label="Pool share" value={`${formatNum(pos?.poolSharePct ?? 0, 2)}%`} />
       </div>
       {shares === 0 && (
-        <p className="mt-4 font-mono text-[11px] text-fog-muted">
+        <p className="mt-4 font-mono text-[12px] text-fog-muted">
           No CWR yet. Mint some during the deposit window to start earning.
         </p>
       )}
@@ -46,7 +46,7 @@ function Metric({ label, value, unit }: { label: string; value: string; unit?: s
       <div className="label">{label}</div>
       <div className="mt-1 flex items-baseline gap-1">
         <span className="num text-base text-white">{value}</span>
-        {unit && <span className="font-mono text-[10px] text-fog-muted">{unit}</span>}
+        {unit && <span className="font-mono text-[12px] text-fog-muted">{unit}</span>}
       </div>
     </div>
   );

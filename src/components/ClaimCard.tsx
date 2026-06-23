@@ -52,7 +52,7 @@ export function ClaimCard({
         <h3 className="font-display text-base font-semibold text-white">Claim rewards</h3>
         <span className="chip border-gold/30 text-gold">burn CWR</span>
       </div>
-      <p className="mb-4 font-mono text-[11px] leading-relaxed text-fog-muted">
+      <p className="mb-4 font-mono text-[12px] leading-relaxed text-fog-muted">
         Burn CWR to take your SOL at the frozen window price, plus your pro rata stORE.
       </p>
 
@@ -95,14 +95,14 @@ export function ClaimCard({
       </div>
 
       {connected && shares > 0 && !windowOpen && (
-        <p className="mt-2 text-center font-mono text-[11px] text-fog-muted">
+        <p className="mt-2 text-center font-mono text-[12px] text-fog-muted">
           {data?.phase !== 1
             ? `Claims open in the window. Opens in ${fmtCountdown(clock.remainingSecs)}.`
             : "Open the claim window above to claim."}
         </p>
       )}
       {connected && shares === 0 && (
-        <p className="mt-2 text-center font-mono text-[11px] text-fog-muted">No CWR to claim yet.</p>
+        <p className="mt-2 text-center font-mono text-[12px] text-fog-muted">No CWR to claim yet.</p>
       )}
 
       <TxResult sig={sig} err={err} successLabel="Claimed" />

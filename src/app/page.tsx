@@ -294,7 +294,7 @@ function OnchainVisual() {
       </div>
       <div className="mb-2 flex items-center justify-between">
         <span className="label text-gold">mining now</span>
-        <span className="font-mono text-[10px] text-fog-muted">25-tile board</span>
+        <span className="font-mono text-[12px] text-fog-muted">25-tile board</span>
       </div>
       <div className="grid grid-cols-5 gap-1.5">
         {Array.from({ length: 25 }).map((_, i) => {

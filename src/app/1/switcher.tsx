@@ -36,7 +36,7 @@ export function ConceptSwitcher() {
             <Link
               key={c.label}
               href={c.href}
-              className={`${styles.chip} px-2.5 py-1 text-[11px] tracking-[0.18em] transition-colors ${
+              className={`${styles.chip} px-2.5 py-1 text-[12px] tracking-[0.18em] transition-colors ${
                 active
                   ? "bg-[rgba(244,248,255,0.92)] text-[#05060A]"
                   : "text-[#9AA7B8] hover:text-[#F4F8FF]"
@@ -54,7 +54,7 @@ export function ConceptSwitcher() {
             <Link
               key={v.label}
               href={v.href}
-              className={`${styles.chip} px-2.5 py-1 text-[11px] tracking-[0.14em] transition-colors ${
+              className={`${styles.chip} px-2.5 py-1 text-[12px] tracking-[0.14em] transition-colors ${
                 active
                   ? "text-[#F4F8FF]"
                   : "text-[#6A7689] hover:text-[#C9D2DE]"

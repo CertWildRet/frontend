@@ -79,7 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <Social label="X" href="#" />
                     <Social label="Discord" href="#" />
                   </div>
-                  <span className="flex items-center gap-2 font-mono text-[11px] text-fog-muted">
+                  <span className="flex items-center gap-2 font-mono text-[12px] text-fog-muted">
                     <OreMark className="h-3.5 w-3.5 text-gold" /> built on Solana
                   </span>
                 </div>

@@ -44,7 +44,7 @@ function Tile({
         <span className={`num text-xl ${accent ? "gradient-text" : "text-white"}`}>{value}</span>
         {unit && <span className="font-mono text-xs text-fog-muted">{unit}</span>}
       </div>
-      {hint && <div className="mt-0.5 font-mono text-[10px] text-fog-muted">{hint}</div>}
+      {hint && <div className="mt-0.5 font-mono text-[12px] text-fog-muted">{hint}</div>}
     </div>
   );
 }

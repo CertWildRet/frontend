@@ -20,7 +20,7 @@ export function PoolEconomics({ stats }: { stats: PoolStatsData | null }) {
         <h3 className="font-display text-base font-semibold text-white">Pool economics</h3>
         <span className="chip border-gold/30 text-gold">full transparency</span>
       </div>
-      <p className="mb-5 font-mono text-[11px] leading-relaxed text-fog-muted">
+      <p className="mb-5 font-mono text-[12px] leading-relaxed text-fog-muted">
         Every lamport, live. The contract&apos;s NAV reads ~0 while a mining round is in flight —
         it only credits mined SOL + ORE at settle. These are the <span className="text-gray-200">true</span>{" "}
         recoverable values, read straight from the ORE miner.
@@ -54,7 +54,7 @@ export function PoolEconomics({ stats }: { stats: PoolStatsData | null }) {
         <Row k="Total ORE mined" v={ore(s?.miner.lifetimeRewardsOre)} unit="ORE" />
       </Section>
 
-      <div className="mt-4 flex items-center justify-between border-t border-line pt-3 font-mono text-[10px] text-fog-muted">
+      <div className="mt-4 flex items-center justify-between border-t border-line pt-3 font-mono text-[12px] text-fog-muted">
         <span>
           per-round deploy {s ? `${formatNum(s.keeper.minSolPerRound, 3)} SOL` : "···"} · keeper{" "}
           {s?.keeper.mode ?? "···"}
@@ -86,9 +86,9 @@ function Big({
       <div className="label">{label}</div>
       <div className="mt-1 flex items-baseline gap-1">
         <span className={`num text-lg ${accent ? "gradient-text" : "text-white"}`}>{value}</span>
-        {unit && <span className="font-mono text-[10px] text-fog-muted">{unit}</span>}
+        {unit && <span className="font-mono text-[12px] text-fog-muted">{unit}</span>}
       </div>
-      {sub && <div className="mt-0.5 font-mono text-[9px] text-fog-muted">{sub}</div>}
+      {sub && <div className="mt-0.5 font-mono text-[12px] text-fog-muted">{sub}</div>}
     </div>
   );
 }
@@ -119,9 +119,9 @@ function Row({
     <div className="flex items-baseline justify-between font-mono text-xs">
       <span className="text-fog-muted">{k}</span>
       <span className="flex items-baseline gap-1.5">
-        {sub && <span className="text-[10px] text-fog-muted">{sub}</span>}
+        {sub && <span className="text-[12px] text-fog-muted">{sub}</span>}
         <span className={`num ${strong ? "text-gold" : "text-gray-200"}`}>{v}</span>
-        {unit && <span className="text-[10px] text-fog-muted">{unit}</span>}
+        {unit && <span className="text-[12px] text-fog-muted">{unit}</span>}
       </span>
     </div>
   );

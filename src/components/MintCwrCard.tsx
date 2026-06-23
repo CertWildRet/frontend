@@ -48,7 +48,7 @@ export function MintCwrCard({ data, onDone }: { data: VaultData | null; onDone: 
         <h3 className="font-display text-base font-semibold text-white">Mint CWR</h3>
         <span className="chip border-gold/30 text-gold">deposit SOL</span>
       </div>
-      <p className="mb-4 font-mono text-[11px] leading-relaxed text-fog-muted">
+      <p className="mb-4 font-mono text-[12px] leading-relaxed text-fog-muted">
         Deposit SOL to mint CWR, your share of the pool. Withdraw any time the claim window is open.
       </p>
 
@@ -77,7 +77,7 @@ export function MintCwrCard({ data, onDone }: { data: VaultData | null; onDone: 
         <span className="num text-gray-200">{formatNum(estShares, 4)} CWR</span>
       </div>
       {belowMin && (
-        <p className="mt-1.5 font-mono text-[11px] text-amber-400/80">
+        <p className="mt-1.5 font-mono text-[12px] text-amber-400/80">
           Minimum deposit is {MIN_DEPOSIT_SOL} SOL.
         </p>
       )}
@@ -93,7 +93,7 @@ export function MintCwrCard({ data, onDone }: { data: VaultData | null; onDone: 
       </div>
 
       {connected && !windowOpen && (
-        <p className="mt-2 text-center font-mono text-[11px] text-fog-muted">
+        <p className="mt-2 text-center font-mono text-[12px] text-fog-muted">
           {data?.paused
             ? "Pool paused."
             : !data?.initialized

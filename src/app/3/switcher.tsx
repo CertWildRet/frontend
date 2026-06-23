@@ -35,7 +35,7 @@ export function ConceptSwitcher() {
             <Link
               key={c.label}
               href={c.href}
-              className={`rounded-full px-2.5 py-1 text-[11px] tracking-[0.22em] transition-colors ${
+              className={`rounded-full px-2.5 py-1 text-[12px] tracking-[0.22em] transition-colors ${
                 active
                   ? "bg-[rgba(234,236,246,0.92)] text-[#070912]"
                   : "text-[#9AA7C8] hover:text-[#EAECF6]"
@@ -53,7 +53,7 @@ export function ConceptSwitcher() {
             <Link
               key={v.label}
               href={v.href}
-              className={`rounded-full px-2.5 py-1 text-[11px] tracking-[0.14em] transition-colors ${
+              className={`rounded-full px-2.5 py-1 text-[12px] tracking-[0.14em] transition-colors ${
                 active ? "text-[#EAECF6]" : "text-[#6E7AA0] hover:text-[#C6CCEC]"
               }`}
               style={{ fontFamily: "'Chakra Petch', sans-serif" }}

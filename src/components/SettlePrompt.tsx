@@ -43,7 +43,7 @@ export function SettlePrompt({ data, onDone }: { data: VaultData | null; onDone:
         <h3 className="font-display text-base font-semibold text-white">Open the claim window</h3>
         <span className="chip border-gold/30 text-gold">first action</span>
       </div>
-      <p className="mb-4 font-mono text-[11px] leading-relaxed text-fog-muted">
+      <p className="mb-4 font-mono text-[12px] leading-relaxed text-fog-muted">
         The window just opened. The first action settles the mined round — claiming its SOL and
         wrapping the ORE into stORE — which unlocks deposits and claims for everyone. Anyone can run
         it; you only pay the network fee.

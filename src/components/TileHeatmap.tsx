@@ -33,11 +33,11 @@ export function TileHeatmap({ perTileSol, perTileCount }: Props) {
               background: `linear-gradient(160deg, rgba(245,197,24,${(intensity * 0.18).toFixed(3)}), rgba(194,144,26,${(0.05 + intensity * 0.28).toFixed(3)}))`,
             }}
           >
-            <span className="absolute left-2 top-1.5 font-mono text-[10px] text-fog-muted">
+            <span className="absolute left-2 top-1.5 font-mono text-[12px] text-fog-muted">
               #{i + 1}
             </span>
             {perTileCount ? (
-              <span className="absolute right-2 top-1.5 font-mono text-[10px] text-fog-dim">
+              <span className="absolute right-2 top-1.5 font-mono text-[12px] text-fog-dim">
                 {perTileCount[i] ?? 0}
               </span>
             ) : null}

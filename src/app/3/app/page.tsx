@@ -90,7 +90,7 @@ export default function DispersionDashboard() {
 
         <div className="flex items-center gap-2.5">
           <span
-            className="hidden items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] tracking-[0.16em] sm:inline-flex"
+            className="hidden items-center gap-2 rounded-full px-3.5 py-1.5 text-[12px] tracking-[0.16em] sm:inline-flex"
             style={{
               ...mono,
               background: "rgba(34,224,230,0.1)",
@@ -160,7 +160,7 @@ export default function DispersionDashboard() {
               />
             )}
             <span
-              className="relative text-[11px] uppercase tracking-[0.22em] text-[#6E7AA0]"
+              className="relative text-[12px] uppercase tracking-[0.22em] text-[#6E7AA0]"
               style={mono}
             >
               {s.k}
@@ -210,7 +210,7 @@ export default function DispersionDashboard() {
               </span>
             </div>
             <span
-              className="rounded-full px-2.5 py-0.5 text-[10px] tracking-[0.2em]"
+              className="rounded-full px-2.5 py-0.5 text-[12px] tracking-[0.2em]"
               style={{
                 ...mono,
                 background: "rgba(34,224,230,0.12)",
@@ -242,7 +242,7 @@ export default function DispersionDashboard() {
               </span>
             </div>
             <span
-              className="rounded-full px-2.5 py-0.5 text-[10px] tracking-[0.2em] text-[#8A92B4]"
+              className="rounded-full px-2.5 py-0.5 text-[12px] tracking-[0.2em] text-[#8A92B4]"
               style={{
                 ...mono,
                 background: "rgba(154,167,216,0.08)",
@@ -439,7 +439,7 @@ export default function DispersionDashboard() {
               <div className="h-2 overflow-hidden rounded-full bg-[rgba(154,167,216,0.12)]">
                 <div className={`${styles.spectralBar} h-full rounded-full`} style={{ width: "7.06%" }} />
               </div>
-              <span className="mt-2 block text-[11px] text-[#7E86A8]" style={mono}>
+              <span className="mt-2 block text-[12px] text-[#7E86A8]" style={mono}>
                 your slice of the pool
               </span>
             </div>
@@ -458,7 +458,7 @@ export default function DispersionDashboard() {
                   Live crank
                 </h3>
                 <span
-                  className="rounded-full px-2.5 py-0.5 text-[10px] tracking-[0.22em]"
+                  className="rounded-full px-2.5 py-0.5 text-[12px] tracking-[0.22em]"
                   style={{
                     ...mono,
                     background: "rgba(34,224,230,0.12)",
@@ -477,12 +477,12 @@ export default function DispersionDashboard() {
             <div className="flex flex-wrap gap-x-6 gap-y-2">
               {CRANK.map((c) => (
                 <div key={c.k}>
-                  <span className="block text-[10px] uppercase tracking-[0.2em] text-[#6E7AA0]" style={mono}>
+                  <span className="block text-[12px] uppercase tracking-[0.2em] text-[#6E7AA0]" style={mono}>
                     {c.k}
                   </span>
                   <span className="text-[15px] font-semibold text-[#EAECF6]" style={mono}>
                     {c.v}
-                    {c.u && <span className="ml-1 text-[11px] text-[#7E86A8]">{c.u}</span>}
+                    {c.u && <span className="ml-1 text-[12px] text-[#7E86A8]">{c.u}</span>}
                   </span>
                 </div>
               ))}
@@ -524,7 +524,7 @@ export default function DispersionDashboard() {
               </div>
               {/* spectrum legend */}
               <div className="mt-3 flex items-center gap-2">
-                <span className="text-[10px] text-[#7E86A8]" style={mono}>cool</span>
+                <span className="text-[12px] text-[#7E86A8]" style={mono}>cool</span>
                 <span
                   className="h-1.5 flex-1 rounded-full"
                   style={{
@@ -532,7 +532,7 @@ export default function DispersionDashboard() {
                       "linear-gradient(90deg,#22E0E6,#5B6CFF,#9A6BFF,#FF5AC8,#FFC061)",
                   }}
                 />
-                <span className="text-[10px] text-[#7E86A8]" style={mono}>hot</span>
+                <span className="text-[12px] text-[#7E86A8]" style={mono}>hot</span>
               </div>
             </div>
 
@@ -545,7 +545,7 @@ export default function DispersionDashboard() {
                   <span className="text-[12px] uppercase tracking-[0.2em] text-[#6E7AA0]" style={mono}>
                     Keeper&apos;s last move
                   </span>
-                  <span className="text-[11px] text-[#7E86A8]" style={mono}>
+                  <span className="text-[12px] text-[#7E86A8]" style={mono}>
                     8s ago
                   </span>
                 </div>
@@ -576,12 +576,12 @@ export default function DispersionDashboard() {
                     className="rounded-lg px-3 py-2.5"
                     style={{ background: "rgba(154,167,216,0.06)", boxShadow: "inset 0 0 0 1px rgba(154,167,216,0.1)" }}
                   >
-                    <span className="block text-[10px] uppercase tracking-[0.16em] text-[#6E7AA0]" style={mono}>
+                    <span className="block text-[12px] uppercase tracking-[0.16em] text-[#6E7AA0]" style={mono}>
                       {d.k}
                     </span>
                     <span className="text-[14px] font-semibold text-[#EAECF6]" style={mono}>
                       {d.v}
-                      {d.u && <span className="ml-0.5 text-[10px] text-[#7E86A8]">{d.u}</span>}
+                      {d.u && <span className="ml-0.5 text-[12px] text-[#7E86A8]">{d.u}</span>}
                     </span>
                   </div>
                 ))}
@@ -592,7 +592,7 @@ export default function DispersionDashboard() {
       </section>
 
       {/* footer note */}
-      <p className="mt-10 text-center text-[11px] tracking-[0.2em] text-[#6E769A]" style={mono}>
+      <p className="mt-10 text-center text-[12px] tracking-[0.2em] text-[#6E769A]" style={mono}>
         static mockup · non-custodial ORE mining on Solana
       </p>
     </main>
@@ -603,7 +603,7 @@ export default function DispersionDashboard() {
 function Chip({ children, color }: { children: React.ReactNode; color: string }) {
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] tracking-[0.16em]"
+      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] tracking-[0.16em]"
       style={{
         fontFamily: "'JetBrains Mono Variable', monospace",
         background: `${color}1A`,

@@ -114,7 +114,7 @@ export default function PressureLanding() {
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#F4F8FF]" />
           </span>
           <span
-            className="text-[11px] tracking-[0.16em] text-[#9AA7B8]"
+            className="text-[12px] tracking-[0.16em] text-[#9AA7B8]"
             style={{ fontFamily: MONO }}
           >
             keeper online · 24/7
@@ -341,7 +341,7 @@ export default function PressureLanding() {
                 </h3>
               </div>
               <span
-                className={`${styles.chip} flex items-center gap-2 border border-[rgba(157,183,216,0.4)] bg-[rgba(157,183,216,0.08)] px-3 py-1 text-[11px] tracking-[0.16em] text-[#C9D2DE]`}
+                className={`${styles.chip} flex items-center gap-2 border border-[rgba(157,183,216,0.4)] bg-[rgba(157,183,216,0.08)] px-3 py-1 text-[12px] tracking-[0.16em] text-[#C9D2DE]`}
                 style={{ fontFamily: MONO }}
               >
                 <span className={`h-1.5 w-1.5 rounded-full bg-[#F4F8FF] ${styles.gaugePulse}`} />
@@ -391,7 +391,7 @@ export default function PressureLanding() {
                   Refined
                 </h3>
                 <span
-                  className={`${styles.chip} border border-[rgba(201,210,222,0.16)] px-3 py-1 text-[11px] tracking-[0.16em] text-[#6A7689]`}
+                  className={`${styles.chip} border border-[rgba(201,210,222,0.16)] px-3 py-1 text-[12px] tracking-[0.16em] text-[#6A7689]`}
                   style={{ fontFamily: MONO }}
                 >
                   COMING SOON
@@ -448,7 +448,7 @@ export default function PressureLanding() {
                     {m.name}
                   </h3>
                   <span
-                    className="text-[11px] uppercase tracking-[0.16em] text-[#5A6E8C]"
+                    className="text-[12px] uppercase tracking-[0.16em] text-[#5A6E8C]"
                     style={{ fontFamily: MONO }}
                   >
                     {m.role}
@@ -483,7 +483,7 @@ export default function PressureLanding() {
             <FooterCol title="Legal" links={["Terms", "Privacy", "Disclosures"]} />
             <div>
               <div
-                className="text-[11px] uppercase tracking-[0.2em] text-[#5A6E8C]"
+                className="text-[12px] uppercase tracking-[0.2em] text-[#5A6E8C]"
                 style={{ fontFamily: MONO }}
               >
                 Socials
@@ -560,7 +560,7 @@ function FooterCol({ title, links }: { title: string; links: string[] }) {
   return (
     <div>
       <div
-        className="text-[11px] uppercase tracking-[0.2em] text-[#5A6E8C]"
+        className="text-[12px] uppercase tracking-[0.2em] text-[#5A6E8C]"
         style={{ fontFamily: "'JetBrains Mono Variable', monospace" }}
       >
         {title}

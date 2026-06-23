@@ -25,7 +25,7 @@ export function ConceptSwitcher() {
       className="fixed bottom-4 left-1/2 z-[200] flex -translate-x-1/2 items-center gap-1 rounded-[4px] border border-[rgba(180,200,225,0.14)] bg-[#0F141D]/92 px-1.5 py-1.5 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.7)] backdrop-blur-md"
     >
       <span
-        className="hidden px-1.5 text-[9px] uppercase tracking-[0.22em] text-[#626E7E] sm:inline"
+        className="hidden px-1.5 text-[12px] uppercase tracking-[0.22em] text-[#626E7E] sm:inline"
         style={mono}
       >
         concept
@@ -36,7 +36,7 @@ export function ConceptSwitcher() {
           <Link
             key={c.href}
             href={c.href}
-            className={`flex h-7 w-7 items-center justify-center rounded-[3px] text-[11px] transition ${
+            className={`flex h-7 w-7 items-center justify-center rounded-[3px] text-[12px] transition ${
               active
                 ? "bg-[#EAEEF4] text-[#0A0E15]"
                 : "text-[#94A1B3] hover:bg-[#131926]"
@@ -54,7 +54,7 @@ export function ConceptSwitcher() {
           <Link
             key={v.href}
             href={v.href}
-            className={`rounded-[3px] px-2.5 py-1 text-[11px] transition ${
+            className={`rounded-[3px] px-2.5 py-1 text-[12px] transition ${
               active
                 ? "bg-[#4D82FF] text-white"
                 : "text-[#94A1B3] hover:bg-[#131926]"

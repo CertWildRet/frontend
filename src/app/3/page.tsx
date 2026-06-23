@@ -119,7 +119,7 @@ export default function DispersionLanding() {
           className={`${styles.glass} ${styles.spectralEdge} hidden items-center gap-2 rounded-full px-3.5 py-1.5 sm:flex`}
         >
           <span className={`${styles.liveDot} h-1.5 w-1.5 rounded-full bg-[#22E0E6]`} />
-          <span className="text-[11px] tracking-[0.22em] text-[#B9C0E0]" style={mono}>
+          <span className="text-[12px] tracking-[0.22em] text-[#B9C0E0]" style={mono}>
             keeper online · 24/7
           </span>
         </div>
@@ -376,9 +376,9 @@ export default function DispersionLanding() {
             className="grid grid-cols-[72px_1fr_104px] items-center border-b border-[rgba(255,255,255,0.10)] px-5 py-3 sm:grid-cols-[104px_1fr_148px] sm:px-7"
             style={mono}
           >
-            <span className="text-[10px] uppercase tracking-[0.22em] text-[#6E7AA0]">grade</span>
-            <span className="text-[10px] uppercase tracking-[0.22em] text-[#6E7AA0]">property</span>
-            <span className="text-right text-[10px] uppercase tracking-[0.22em] text-[#6E7AA0]">
+            <span className="text-[12px] uppercase tracking-[0.22em] text-[#6E7AA0]">grade</span>
+            <span className="text-[12px] uppercase tracking-[0.22em] text-[#6E7AA0]">property</span>
+            <span className="text-right text-[12px] uppercase tracking-[0.22em] text-[#6E7AA0]">
               reading
             </span>
           </div>
@@ -391,7 +391,7 @@ export default function DispersionLanding() {
             >
               <span
                 style={mono}
-                className="w-fit rounded-md border border-[rgba(34,224,230,0.4)] bg-[rgba(34,224,230,0.08)] px-2 py-1 text-[11px] text-[#22E0E6]"
+                className="w-fit rounded-md border border-[rgba(34,224,230,0.4)] bg-[rgba(34,224,230,0.08)] px-2 py-1 text-[12px] text-[#22E0E6]"
               >
                 {e.grade}
               </span>
@@ -529,7 +529,7 @@ export default function DispersionLanding() {
                   Simple
                 </h3>
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] tracking-[0.2em]"
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] tracking-[0.2em]"
                   style={{
                     ...mono,
                     background: "rgba(34,224,230,0.12)",
@@ -583,7 +583,7 @@ export default function DispersionLanding() {
                 Refined
               </h3>
               <span
-                className="rounded-full px-3 py-1 text-[11px] tracking-[0.2em] text-[#7A82A4]"
+                className="rounded-full px-3 py-1 text-[12px] tracking-[0.2em] text-[#7A82A4]"
                 style={{
                   ...mono,
                   background: "rgba(154,167,216,0.08)",

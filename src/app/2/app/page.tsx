@@ -16,7 +16,7 @@ function Label({ children, className = "" }: { children: React.ReactNode; classN
   return (
     <span
       style={mono}
-      className={`text-[10px] uppercase tracking-[0.18em] text-[#626E7E] ${className}`}
+      className={`text-[12px] uppercase tracking-[0.18em] text-[#626E7E] ${className}`}
     >
       {children}
     </span>
@@ -63,7 +63,7 @@ export default function LoupeDashboard() {
             <h1 style={sora} className="text-[16px] font-semibold tracking-tight leading-none text-[#EAEEF4]">
               Simple Pool
             </h1>
-            <span style={mono} className="mt-1 block text-[9px] uppercase tracking-[0.2em] text-[#626E7E]">
+            <span style={mono} className="mt-1 block text-[12px] uppercase tracking-[0.2em] text-[#626E7E]">
               CWR-001 · live readout
             </span>
           </div>
@@ -72,7 +72,7 @@ export default function LoupeDashboard() {
         <div className="flex items-center gap-3">
           <span
             style={mono}
-            className="inline-flex items-center gap-2 rounded-[3px] border border-[#4D82FF]/40 bg-[#4D82FF]/10 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-[#4D82FF] shadow-[0_0_18px_-8px_rgba(77,130,255,0.6)]"
+            className="inline-flex items-center gap-2 rounded-[3px] border border-[#4D82FF]/40 bg-[#4D82FF]/10 px-3 py-1.5 text-[12px] uppercase tracking-[0.16em] text-[#4D82FF] shadow-[0_0_18px_-8px_rgba(77,130,255,0.6)]"
           >
             <span className={`h-1.5 w-1.5 rounded-full bg-[#4D82FF] ${styles.blink}`} />
             deposit / claim open
@@ -80,7 +80,7 @@ export default function LoupeDashboard() {
           {/* wallet = certificate ID chip */}
           <span
             style={mono}
-            className="inline-flex items-center gap-2 rounded-[3px] border border-[#EAEEF4]/70 bg-[#131926] px-3 py-1.5 text-[11px] text-[#EAEEF4]"
+            className="inline-flex items-center gap-2 rounded-[3px] border border-[#EAEEF4]/70 bg-[#131926] px-3 py-1.5 text-[12px] text-[#EAEEF4]"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-[#2BD4E0]" />
             ID · 7xKf…q39A
@@ -123,7 +123,7 @@ export default function LoupeDashboard() {
               <span style={mono} className="text-[26px] font-medium tracking-tight text-[#EAEEF4]">
                 {s.v}
               </span>
-              <span style={mono} className="text-[11px] uppercase tracking-[0.1em] text-[#626E7E]">
+              <span style={mono} className="text-[12px] uppercase tracking-[0.1em] text-[#626E7E]">
                 {s.u}
               </span>
             </div>
@@ -142,7 +142,7 @@ export default function LoupeDashboard() {
                 Deposit &amp; Claim
               </h3>
             </div>
-            <span style={mono} className="rounded-[3px] bg-[#4D82FF]/12 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-[#4D82FF]">
+            <span style={mono} className="rounded-[3px] bg-[#4D82FF]/12 px-2 py-0.5 text-[12px] uppercase tracking-[0.16em] text-[#4D82FF]">
               active · the table
             </span>
           </div>
@@ -150,7 +150,7 @@ export default function LoupeDashboard() {
             <span style={mono} className="text-[40px] font-light leading-none tracking-tight text-[#EAEEF4]">
               03:30
             </span>
-            <span style={mono} className="text-[11px] text-[#626E7E]">mm:ss</span>
+            <span style={mono} className="text-[12px] text-[#626E7E]">mm:ss</span>
           </div>
           {/* gauge with tick marks */}
           <div className="relative mt-4 h-2 overflow-hidden rounded-full bg-[#131926]">
@@ -175,7 +175,7 @@ export default function LoupeDashboard() {
                 Cranking
               </h3>
             </div>
-            <span style={mono} className="rounded-[3px] border border-[rgba(180,200,225,0.14)] px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-[#626E7E]">
+            <span style={mono} className="rounded-[3px] border border-[rgba(180,200,225,0.14)] px-2 py-0.5 text-[12px] uppercase tracking-[0.16em] text-[#626E7E]">
               idle · in the press
             </span>
           </div>
@@ -183,7 +183,7 @@ export default function LoupeDashboard() {
             <span style={mono} className="text-[40px] font-light leading-none tracking-tight text-[#3A4252]">
               —:—
             </span>
-            <span style={mono} className="text-[11px] text-[#626E7E]">queued</span>
+            <span style={mono} className="text-[12px] text-[#626E7E]">queued</span>
           </div>
           <div className="relative mt-4 h-2 overflow-hidden rounded-full bg-[#131926]">
             <div className="h-full w-0 bg-[rgba(180,200,225,0.14)]" />
@@ -204,7 +204,7 @@ export default function LoupeDashboard() {
         {/* MINT */}
         <div className="rounded-[4px] border border-[rgba(180,200,225,0.14)] bg-[#0F141D] p-6">
           <div className="flex items-center justify-between">
-            <span style={mono} className="rounded-[3px] bg-[#131926] px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-[#4D82FF]">
+            <span style={mono} className="rounded-[3px] bg-[#131926] px-2.5 py-1 text-[12px] uppercase tracking-[0.16em] text-[#4D82FF]">
               deposit SOL
             </span>
             <Label>step 01</Label>
@@ -262,7 +262,7 @@ export default function LoupeDashboard() {
         {/* CLAIM */}
         <div className="rounded-[4px] border border-[rgba(180,200,225,0.14)] bg-[#0F141D] p-6">
           <div className="flex items-center justify-between">
-            <span style={mono} className="rounded-[3px] bg-[#131926] px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-[#2BD4E0]">
+            <span style={mono} className="rounded-[3px] bg-[#131926] px-2.5 py-1 text-[12px] uppercase tracking-[0.16em] text-[#2BD4E0]">
               burn CWR
             </span>
             <Label>step 02</Label>
@@ -319,7 +319,7 @@ export default function LoupeDashboard() {
         <div className="rounded-[4px] border-2 border-[#EAEEF4]/70 bg-[#0F141D] p-6 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]">
           <div className="flex items-center justify-between border-b border-dashed border-[rgba(180,200,225,0.14)] pb-3">
             <Label>your position</Label>
-            <span style={mono} className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-[#3DD68C]">
+            <span style={mono} className="inline-flex items-center gap-1.5 text-[12px] uppercase tracking-[0.14em] text-[#3DD68C]">
               <Tick className="h-3 w-3" /> graded
             </span>
           </div>
@@ -333,7 +333,7 @@ export default function LoupeDashboard() {
               <div key={f.k} className="flex items-center justify-between py-3.5">
                 <Label>{f.k}</Label>
                 <span style={mono} className="text-[16px] text-[#EAEEF4]">
-                  {f.v} <span className="text-[11px] text-[#626E7E]">{f.u}</span>
+                  {f.v} <span className="text-[12px] text-[#626E7E]">{f.u}</span>
                 </span>
               </div>
             ))}
@@ -361,7 +361,7 @@ export default function LoupeDashboard() {
           </div>
           <span
             style={mono}
-            className="inline-flex items-center gap-2 rounded-[3px] bg-[#2BD4E0]/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-[#2BD4E0] shadow-[0_0_18px_-8px_rgba(43,212,224,0.6)]"
+            className="inline-flex items-center gap-2 rounded-[3px] bg-[#2BD4E0]/12 px-2.5 py-1 text-[12px] uppercase tracking-[0.18em] text-[#2BD4E0] shadow-[0_0_18px_-8px_rgba(43,212,224,0.6)]"
           >
             <span className={`h-1.5 w-1.5 rounded-full bg-[#2BD4E0] ${styles.blink}`} /> live
           </span>
@@ -384,7 +384,7 @@ export default function LoupeDashboard() {
                       {m.v}
                     </span>
                     {m.u && (
-                      <span style={mono} className="text-[10px] uppercase tracking-[0.1em] text-[#626E7E]">
+                      <span style={mono} className="text-[12px] uppercase tracking-[0.1em] text-[#626E7E]">
                         {m.u}
                       </span>
                     )}
@@ -402,7 +402,7 @@ export default function LoupeDashboard() {
                   <span className="text-[#EAEEF4]">deployed 0.0472 SOL × 25 tiles</span>
                   <span className="text-[#626E7E]">·</span>
                   <span className="text-[#4D82FF]">edge $3.27</span>
-                  <span className="ml-auto text-[10px] text-[#626E7E]">8s ago</span>
+                  <span className="ml-auto text-[12px] text-[#626E7E]">8s ago</span>
                 </div>
               </div>
             </div>
@@ -435,7 +435,7 @@ export default function LoupeDashboard() {
                     </span>
                     <span
                       style={{ ...mono, color: ink, opacity: 0.55 }}
-                      className="absolute left-1 top-0.5 text-[7px]"
+                      className="absolute left-1 top-0.5 text-[12px]"
                     >
                       {String(i + 1).padStart(2, "0")}
                     </span>
@@ -444,14 +444,14 @@ export default function LoupeDashboard() {
               })}
             </div>
             <div className="mt-4 flex items-center justify-between" style={mono}>
-              <span className="text-[10px] text-[#626E7E]">intensity ∝ SOL deployed</span>
+              <span className="text-[12px] text-[#626E7E]">intensity ∝ SOL deployed</span>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-[#626E7E]">0.00</span>
+                <span className="text-[12px] text-[#626E7E]">0.00</span>
                 <span
                   className="h-2 w-24 rounded-full"
                   style={{ background: "linear-gradient(90deg, rgb(15,20,29), rgb(43,212,224))" }}
                 />
-                <span className="text-[10px] text-[#626E7E]">0.95</span>
+                <span className="text-[12px] text-[#626E7E]">0.95</span>
               </div>
             </div>
           </div>
@@ -463,11 +463,11 @@ export default function LoupeDashboard() {
         <Link
           href="/2"
           style={mono}
-          className="text-[11px] uppercase tracking-[0.18em] text-[#626E7E] transition hover:text-[#4D82FF]"
+          className="text-[12px] uppercase tracking-[0.18em] text-[#626E7E] transition hover:text-[#4D82FF]"
         >
           ← back to report
         </Link>
-        <span style={mono} className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-[#626E7E]">
+        <span style={mono} className="inline-flex items-center gap-2 text-[12px] uppercase tracking-[0.18em] text-[#626E7E]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#4D82FF]" /> readout verified onchain
         </span>
       </div>

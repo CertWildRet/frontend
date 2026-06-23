@@ -72,7 +72,7 @@ export default function PressureDashboard() {
         </Link>
         <div className="flex items-center gap-3">
           <span
-            className={`${styles.chip} flex items-center gap-2 border border-[rgba(157,183,216,0.4)] bg-[rgba(157,183,216,0.08)] px-3.5 py-1.5 text-[11px] tracking-[0.14em] text-[#C9D2DE]`}
+            className={`${styles.chip} flex items-center gap-2 border border-[rgba(157,183,216,0.4)] bg-[rgba(157,183,216,0.08)] px-3.5 py-1.5 text-[12px] tracking-[0.14em] text-[#C9D2DE]`}
             style={{ fontFamily: MONO }}
           >
             <span className={`h-1.5 w-1.5 rounded-full bg-[#F4F8FF] ${styles.gaugePulse}`} />
@@ -101,7 +101,7 @@ export default function PressureDashboard() {
               style={{ boxShadow: "0 24px 60px -28px rgba(0,0,0,0.85)" }}
             >
               <div
-                className={`${styles.deboss} text-[11px] uppercase tracking-[0.18em] text-[#5A6E8C]`}
+                className={`${styles.deboss} text-[12px] uppercase tracking-[0.18em] text-[#5A6E8C]`}
                 style={{ fontFamily: MONO }}
               >
                 {s.label}
@@ -124,7 +124,7 @@ export default function PressureDashboard() {
               {s.sub && <div className="mt-1.5 text-[11.5px] text-[#6A7689]">{s.sub}</div>}
               {s.hero && (
                 <div
-                  className="mt-2 text-[10px] uppercase tracking-[0.22em] text-[#3A4A63]"
+                  className="mt-2 text-[12px] uppercase tracking-[0.22em] text-[#3A4A63]"
                   style={{ fontFamily: MONO }}
                 >
                   carat weight
@@ -207,7 +207,7 @@ function PhaseTimers() {
                 Deposit &amp; Claim
               </span>
               <span
-                className="text-[10px] tracking-[0.18em] text-[#9DB7D8]"
+                className="text-[12px] tracking-[0.18em] text-[#9DB7D8]"
                 style={{ fontFamily: MONO }}
               >
                 ● ACTIVE
@@ -244,7 +244,7 @@ function PhaseTimers() {
                 Cranking
               </span>
               <span
-                className="text-[10px] tracking-[0.18em] text-[#5A6E8C]"
+                className="text-[12px] tracking-[0.18em] text-[#5A6E8C]"
                 style={{ fontFamily: MONO }}
               >
                 ○ IDLE
@@ -288,7 +288,7 @@ function MintCard() {
       </h3>
 
       <label className="mt-5 block">
-        <span className="text-[11px] uppercase tracking-[0.16em] text-[#5A6E8C]" style={{ fontFamily: MONO }}>
+        <span className="text-[12px] uppercase tracking-[0.16em] text-[#5A6E8C]" style={{ fontFamily: MONO }}>
           Amount
         </span>
         <div
@@ -353,7 +353,7 @@ function ClaimCard() {
       </h3>
 
       <div className="mt-5 flex items-center justify-between">
-        <span className="text-[11px] uppercase tracking-[0.16em] text-[#5A6E8C]" style={{ fontFamily: MONO }}>
+        <span className="text-[12px] uppercase tracking-[0.16em] text-[#5A6E8C]" style={{ fontFamily: MONO }}>
           your CWR
         </span>
         <span className="text-[16px] font-semibold tabular-nums text-[#C9D2DE]" style={{ fontFamily: MONO }}>
@@ -440,7 +440,7 @@ function PositionCard() {
 
       <div className="mt-auto pt-6">
         {/* pool-share facet meter */}
-        <div className="text-[11px] uppercase tracking-[0.16em] text-[#5A6E8C]" style={{ fontFamily: MONO }}>
+        <div className="text-[12px] uppercase tracking-[0.16em] text-[#5A6E8C]" style={{ fontFamily: MONO }}>
           share of pool
         </div>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[rgba(201,210,222,0.08)]">
@@ -486,7 +486,7 @@ function CrankPanel() {
             </p>
           </div>
           <span
-            className={`${styles.chip} flex items-center gap-2 border border-[rgba(157,183,216,0.4)] bg-[rgba(157,183,216,0.08)] px-3 py-1.5 text-[11px] tracking-[0.16em] text-[#C9D2DE]`}
+            className={`${styles.chip} flex items-center gap-2 border border-[rgba(157,183,216,0.4)] bg-[rgba(157,183,216,0.08)] px-3 py-1.5 text-[12px] tracking-[0.16em] text-[#C9D2DE]`}
             style={{ fontFamily: MONO }}
           >
             <span className={`h-1.5 w-1.5 rounded-full bg-[#F4F8FF] ${styles.gaugePulse}`} />
@@ -512,7 +512,7 @@ function CrankPanel() {
                   {m.v}
                 </span>
                 {m.u && (
-                  <span className="text-[11px] text-[#6A7689]" style={{ fontFamily: MONO }}>
+                  <span className="text-[12px] text-[#6A7689]" style={{ fontFamily: MONO }}>
                     {m.u}
                   </span>
                 )}
@@ -525,7 +525,7 @@ function CrankPanel() {
           {/* board */}
           <div>
             <div
-              className="mb-3 text-[11px] uppercase tracking-[0.18em] text-[#5A6E8C]"
+              className="mb-3 text-[12px] uppercase tracking-[0.18em] text-[#5A6E8C]"
               style={{ fontFamily: MONO }}
             >
               25-tile board · intensity ∝ SOL
@@ -573,7 +573,7 @@ function CrankPanel() {
           {/* keeper's last move — etched ticker */}
           <div className="flex flex-col">
             <div
-              className="mb-3 text-[11px] uppercase tracking-[0.18em] text-[#5A6E8C]"
+              className="mb-3 text-[12px] uppercase tracking-[0.18em] text-[#5A6E8C]"
               style={{ fontFamily: MONO }}
             >
               Keeper&apos;s last move
@@ -584,7 +584,7 @@ function CrankPanel() {
             >
               <div className="flex items-center gap-2">
                 <span className={`h-1.5 w-1.5 rounded-full bg-[#9DB7D8] ${styles.gaugePulse}`} />
-                <span className="text-[11px] tracking-[0.14em] text-[#9DB7D8]" style={{ fontFamily: MONO }}>
+                <span className="text-[12px] tracking-[0.14em] text-[#9DB7D8]" style={{ fontFamily: MONO }}>
                   8s ago
                 </span>
               </div>

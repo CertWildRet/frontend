@@ -86,10 +86,10 @@ function TimerTile({
             {remaining !== null ? fmtCountdown(remaining) : "··"}
           </span>
         ) : (
-          <span className="font-mono text-[10px] uppercase tracking-widest text-fog-muted">idle</span>
+          <span className="font-mono text-[12px] uppercase tracking-widest text-fog-muted">idle</span>
         )}
       </div>
-      <p className="mt-1 font-mono text-[11px] text-fog-muted">{active ? subtitle : idleNote}</p>
+      <p className="mt-1 font-mono text-[12px] text-fog-muted">{active ? subtitle : idleNote}</p>
       <div className="mt-3 h-1 overflow-hidden rounded-full bg-line">
         <div
           className={`h-full ${bar} transition-all duration-1000 ease-linear`}

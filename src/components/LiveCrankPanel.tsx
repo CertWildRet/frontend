@@ -15,7 +15,7 @@ export function LiveCrankPanel() {
           <OreMark className="h-7 w-7 text-gold/70 drop-shadow-[0_0_12px_rgba(194,144,26,0.4)]" />
           <div>
             <h2 className="font-display text-lg font-semibold text-white">Live crank</h2>
-            <p className="font-mono text-[11px] text-fog-muted">What the keeper is doing on the board, right now.</p>
+            <p className="font-mono text-[12px] text-fog-muted">What the keeper is doing on the board, right now.</p>
           </div>
         </div>
         <span className={`chip ${enabled && connected ? "border-gold/30 text-gold" : "border-line text-fog-muted"}`}>
@@ -36,7 +36,7 @@ export function LiveCrankPanel() {
           <div className="w-full max-w-[440px]">
             <div className="mb-2 flex items-baseline justify-between">
               <h3 className="label text-fog-dim">Board · per-tile deploys</h3>
-              <span className="font-mono text-[10px] text-fog-muted">shade ∝ SOL</span>
+              <span className="font-mono text-[12px] text-fog-muted">shade ∝ SOL</span>
             </div>
             <TileHeatmap perTileSol={stats.perTileSol} />
           </div>
@@ -54,7 +54,7 @@ export function LiveCrankPanel() {
               <div className="flex items-center justify-between">
                 <span className="label">Keeper&apos;s last move</span>
                 {stats.lastCrank && (
-                  <span className="font-mono text-[11px] text-fog-muted">{formatRelative(stats.lastCrank.ts)}</span>
+                  <span className="font-mono text-[12px] text-fog-muted">{formatRelative(stats.lastCrank.ts)}</span>
                 )}
               </div>
               {stats.lastCrank ? (
@@ -95,7 +95,7 @@ function Metric({ label, value, unit, accent }: { label: string; value: string; 
       <div className="label">{label}</div>
       <div className="mt-1 flex items-baseline gap-1.5">
         <span className={`num text-lg ${accent ? "gradient-text" : "text-white"}`}>{value}</span>
-        {unit && <span className="font-mono text-[10px] text-fog-muted">{unit}</span>}
+        {unit && <span className="font-mono text-[12px] text-fog-muted">{unit}</span>}
       </div>
     </div>
   );

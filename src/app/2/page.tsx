@@ -15,7 +15,7 @@ function Field({ children, className = "" }: { children: React.ReactNode; classN
   return (
     <span
       style={mono}
-      className={`text-[10px] uppercase tracking-[0.2em] text-[#626E7E] ${className}`}
+      className={`text-[12px] uppercase tracking-[0.2em] text-[#626E7E] ${className}`}
     >
       {children}
     </span>
@@ -38,7 +38,7 @@ function Clause({
         <div className="mb-2 flex items-center gap-3">
           <span
             style={mono}
-            className="rounded-[3px] border border-[rgba(180,200,225,0.14)] px-1.5 py-0.5 text-[11px] text-[#4D82FF]"
+            className="rounded-[3px] border border-[rgba(180,200,225,0.14)] px-1.5 py-0.5 text-[12px] text-[#4D82FF]"
           >
             §{no}
           </span>
@@ -51,7 +51,7 @@ function Clause({
           {title}
         </h2>
       </div>
-      <span style={mono} className="hidden shrink-0 text-[11px] text-[#4A5563] sm:block">
+      <span style={mono} className="hidden shrink-0 text-[12px] text-[#4A5563] sm:block">
         FIG. {no}
       </span>
     </div>
@@ -227,7 +227,7 @@ export default function LoupeLanding() {
             <div style={sora} className="text-[15px] font-semibold tracking-tight text-[#EAEEF4]">
               CWR
             </div>
-            <div style={mono} className="mt-0.5 text-[9px] uppercase tracking-[0.22em] text-[#626E7E]">
+            <div style={mono} className="mt-0.5 text-[12px] uppercase tracking-[0.22em] text-[#626E7E]">
               grading report
             </div>
           </div>
@@ -235,7 +235,7 @@ export default function LoupeLanding() {
         <div className="flex items-center gap-2.5">
           <span
             style={mono}
-            className="inline-flex items-center gap-2 rounded-[3px] border border-[#2BD4E0]/40 bg-[#2BD4E0]/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-[#2BD4E0] shadow-[0_0_18px_-8px_rgba(43,212,224,0.6)]"
+            className="inline-flex items-center gap-2 rounded-[3px] border border-[#2BD4E0]/40 bg-[#2BD4E0]/10 px-2.5 py-1 text-[12px] uppercase tracking-[0.18em] text-[#2BD4E0] shadow-[0_0_18px_-8px_rgba(43,212,224,0.6)]"
           >
             <span className={`h-1.5 w-1.5 rounded-full bg-[#2BD4E0] ${styles.blink}`} />
             keeper online · 24/7
@@ -289,7 +289,7 @@ export default function LoupeLanding() {
               ["hands-off", "zero transactions to sign"],
             ].map(([k, v]) => (
               <div key={k} className="bg-[#0F141D] px-4 py-3.5">
-                <dt style={mono} className="text-[10px] uppercase tracking-[0.16em] text-[#4D82FF]">
+                <dt style={mono} className="text-[12px] uppercase tracking-[0.16em] text-[#4D82FF]">
                   {k}
                 </dt>
                 <dd style={sora} className="mt-1 text-[12.5px] leading-snug text-[#94A1B3]">
@@ -312,10 +312,10 @@ export default function LoupeLanding() {
               <DiamondWireframe className="mx-auto h-auto w-full max-w-[400px]" />
             </div>
             <div className="flex items-center justify-between border-t border-[rgba(180,200,225,0.14)] px-4 py-2.5">
-              <span style={mono} className="text-[10px] text-[#626E7E]">
+              <span style={mono} className="text-[12px] text-[#626E7E]">
                 proportions verified
               </span>
-              <span style={mono} className="inline-flex items-center gap-1.5 text-[10px] text-[#3DD68C]">
+              <span style={mono} className="inline-flex items-center gap-1.5 text-[12px] text-[#3DD68C]">
                 <Tick className="h-3 w-3" /> graded onchain
               </span>
             </div>
@@ -323,7 +323,7 @@ export default function LoupeLanding() {
           {/* corner annotation */}
           <span
             style={mono}
-            className="absolute -left-2 -top-3 hidden rounded-[2px] bg-[#4D82FF] px-1.5 py-0.5 text-[9px] uppercase tracking-[0.16em] text-white sm:block"
+            className="absolute -left-2 -top-3 hidden rounded-[2px] bg-[#4D82FF] px-1.5 py-0.5 text-[12px] uppercase tracking-[0.16em] text-white sm:block"
           >
             fig. A
           </span>
@@ -352,7 +352,7 @@ export default function LoupeLanding() {
                 {s.body}
               </p>
               <div className="mt-5 border-t border-dashed border-[rgba(180,200,225,0.1)] pt-3">
-                <span style={mono} className="text-[10px] uppercase tracking-[0.12em] text-[#626E7E]">
+                <span style={mono} className="text-[12px] uppercase tracking-[0.12em] text-[#626E7E]">
                   {s.spec}
                 </span>
               </div>
@@ -370,9 +370,9 @@ export default function LoupeLanding() {
             className="grid grid-cols-[88px_1fr_120px] items-center border-b border-[rgba(180,200,225,0.14)] bg-[#131926] px-5 py-3"
             style={mono}
           >
-            <span className="text-[10px] uppercase tracking-[0.16em] text-[#626E7E]">grade</span>
-            <span className="text-[10px] uppercase tracking-[0.16em] text-[#626E7E]">property</span>
-            <span className="text-right text-[10px] uppercase tracking-[0.16em] text-[#626E7E]">
+            <span className="text-[12px] uppercase tracking-[0.16em] text-[#626E7E]">grade</span>
+            <span className="text-[12px] uppercase tracking-[0.16em] text-[#626E7E]">property</span>
+            <span className="text-right text-[12px] uppercase tracking-[0.16em] text-[#626E7E]">
               reading
             </span>
           </div>
@@ -385,7 +385,7 @@ export default function LoupeLanding() {
             >
               <span
                 style={mono}
-                className="w-fit rounded-[3px] border border-[#4D82FF]/40 bg-[#4D82FF]/10 px-2 py-1 text-[11px] text-[#4D82FF]"
+                className="w-fit rounded-[3px] border border-[#4D82FF]/40 bg-[#4D82FF]/10 px-2 py-1 text-[12px] text-[#4D82FF]"
               >
                 {e.grade}
               </span>
@@ -495,7 +495,7 @@ export default function LoupeLanding() {
                   <p style={sora} className="mt-1.5 text-[13px] leading-relaxed text-[#94A1B3]">
                     {p.body}
                   </p>
-                  <span style={mono} className="mt-4 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-[#3DD68C]">
+                  <span style={mono} className="mt-4 inline-flex items-center gap-1.5 text-[12px] uppercase tracking-[0.14em] text-[#3DD68C]">
                     <Tick className="h-3 w-3" /> graded onchain
                   </span>
                 </div>
@@ -509,7 +509,7 @@ export default function LoupeLanding() {
                   <div style={sora} className="text-[15px] font-semibold tracking-tight text-[#EAEEF4]">
                     {f.c}
                   </div>
-                  <div style={mono} className="mt-1 text-[10px] uppercase tracking-[0.14em] text-[#626E7E]">
+                  <div style={mono} className="mt-1 text-[12px] uppercase tracking-[0.14em] text-[#626E7E]">
                     = {f.maps}
                   </div>
                   <div style={mono} className="mt-3 text-[13px] text-[#4D82FF]">
@@ -537,7 +537,7 @@ export default function LoupeLanding() {
               </div>
               <span
                 style={mono}
-                className="inline-flex items-center gap-2 rounded-[3px] bg-[#2BD4E0]/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-[#2BD4E0]"
+                className="inline-flex items-center gap-2 rounded-[3px] bg-[#2BD4E0]/12 px-2.5 py-1 text-[12px] uppercase tracking-[0.18em] text-[#2BD4E0]"
               >
                 <span className={`h-1.5 w-1.5 rounded-full bg-[#2BD4E0] ${styles.blink}`} /> live
               </span>
@@ -585,7 +585,7 @@ export default function LoupeLanding() {
               </div>
               <span
                 style={mono}
-                className="rounded-[3px] border border-[rgba(180,200,225,0.12)] bg-[#131926] px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-[#626E7E]"
+                className="rounded-[3px] border border-[rgba(180,200,225,0.12)] bg-[#131926] px-2.5 py-1 text-[12px] uppercase tracking-[0.18em] text-[#626E7E]"
               >
                 coming soon
               </span>
@@ -632,7 +632,7 @@ export default function LoupeLanding() {
                   <h3 style={sora} className="text-[17px] font-semibold tracking-tight text-[#EAEEF4]">
                     {t.handle}
                   </h3>
-                  <span style={mono} className="rounded-[2px] bg-[#131926] px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-[#4D82FF]">
+                  <span style={mono} className="rounded-[2px] bg-[#131926] px-2 py-0.5 text-[12px] uppercase tracking-[0.14em] text-[#4D82FF]">
                     {t.role}
                   </span>
                 </div>
@@ -669,7 +669,7 @@ export default function LoupeLanding() {
                   key={s}
                   href="#"
                   style={mono}
-                  className="rounded-[3px] border border-[rgba(180,200,225,0.14)] px-3 py-1.5 text-[11px] text-[#94A1B3] transition hover:border-[#4D82FF] hover:text-[#4D82FF]"
+                  className="rounded-[3px] border border-[rgba(180,200,225,0.14)] px-3 py-1.5 text-[12px] text-[#94A1B3] transition hover:border-[#4D82FF] hover:text-[#4D82FF]"
                 >
                   {s}
                 </a>
@@ -694,10 +694,10 @@ export default function LoupeLanding() {
           </div>
         </div>
         <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[rgba(180,200,225,0.14)] pt-5">
-          <span style={mono} className="text-[10px] uppercase tracking-[0.18em] text-[#626E7E]">
+          <span style={mono} className="text-[12px] uppercase tracking-[0.18em] text-[#626E7E]">
             CWR-001 · graded onchain
           </span>
-          <span style={mono} className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-[#626E7E]">
+          <span style={mono} className="inline-flex items-center gap-2 text-[12px] uppercase tracking-[0.18em] text-[#626E7E]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#4D82FF]" /> built on Solana
           </span>
         </div>
