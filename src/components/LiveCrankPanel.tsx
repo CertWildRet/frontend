@@ -65,9 +65,7 @@ export function LiveCrankPanel() {
                       tiles · edge ${formatNum(stats.lastCrank.evUsd, 2)}
                     </>
                   ) : (
-                    <span className="text-fog-dim">
-                      {stats.lastCrank.action}: {stats.lastCrank.reason}
-                    </span>
+                    <span className="text-fog-dim">{humanizeMove(stats.lastCrank.reason)}</span>
                   )}
                 </p>
               ) : (
@@ -79,6 +77,23 @@ export function LiveCrankPanel() {
       )}
     </section>
   );
+}
+
+// Turn the keeper's internal skip/idle reason into plain English (the raw
+// strings like "no idle SOL in vault (sol_in_vault == 0)" come from the brain's
+// decision engine and shouldn't surface to users).
+function humanizeMove(reason: string): string {
+  const r = reason.toLowerCase();
+  if (r.includes("no idle sol") || r.includes("sol_in_vault == 0"))
+    return "All SOL is working the board — it recycles into the vault at the next claim window.";
+  if (r.includes("per-round budget") || r.includes("near-empty"))
+    return "Vault almost empty — it refills at the next claim window.";
+  if (r.includes("margin") || r.includes("production cost"))
+    return "Holding this round — mining isn't profitable enough right now.";
+  if (r.includes("dry_run")) return "Simulating — dry run, no live transaction.";
+  if (r.includes("not readable") || r.includes("not initialized") || r.includes("skipping"))
+    return "Waiting on a fresh read from the chain.";
+  return "Holding — will resume next round.";
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
