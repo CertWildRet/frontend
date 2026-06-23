@@ -34,6 +34,9 @@ import {
   findFeeSchedule,
   findFeeBucket,
   findPosition,
+  findPendingState,
+  findPendingTreasury,
+  findPendingDeposit,
   findMiningAuthority,
   oreMinerPda,
   oreBoardPda,
@@ -177,6 +180,79 @@ export async function buildWithdrawIxs(
     .instruction();
   ixs.push(withdrawIx);
   return ixs;
+}
+
+// ── park / cancel (parked-capital buffer: deposit while cranking) ────────────
+// Park escrows SOL during the BETTING window (when normal deposit is closed)
+// with NO shares minted; it converts to shares via finalize_pending once the
+// next OPEN window has settled (the keeper does that automatically). Cancel
+// pulls the un-shared escrow back any time. Raw ixs (wallet-signed), mirroring
+// the SDK UserApi.parkDeposit / cancelPending account wiring.
+
+export async function buildParkDepositIxs(
+  connection: Connection,
+  owner: PublicKey,
+  lamports: BN,
+): Promise<TransactionInstruction[]> {
+  const vault = makeVault(connection);
+  const program = vault.client.program;
+  const addrs = deriveBucketAddresses(PROGRAM_ID, SIMPLE);
+  const [pendingState] = findPendingState(PROGRAM_ID, SIMPLE);
+  const [pendingTreasury] = findPendingTreasury(PROGRAM_ID, SIMPLE);
+  const [pendingDeposit] = findPendingDeposit(PROGRAM_ID, SIMPLE, owner);
+  const [miningAuthority] = findMiningAuthority(PROGRAM_ID, SIMPLE);
+  const [oreMiner] = oreMinerPda(miningAuthority);
+
+  const ix = await program.methods
+    .parkDeposit(lamports)
+    .accountsPartial({
+      config: vault.client.configPda,
+      bucket: addrs.bucket,
+      pendingState,
+      pendingTreasury,
+      oreMiner,
+      user: owner,
+      pendingDeposit,
+      systemProgram: SystemProgram.programId,
+    })
+    .instruction();
+  return [ix];
+}
+
+export async function buildCancelPendingIxs(
+  connection: Connection,
+  owner: PublicKey,
+): Promise<TransactionInstruction[]> {
+  const vault = makeVault(connection);
+  const program = vault.client.program;
+  const addrs = deriveBucketAddresses(PROGRAM_ID, SIMPLE);
+  const [pendingState] = findPendingState(PROGRAM_ID, SIMPLE);
+  const [pendingTreasury] = findPendingTreasury(PROGRAM_ID, SIMPLE);
+  const [pendingDeposit] = findPendingDeposit(PROGRAM_ID, SIMPLE, owner);
+
+  const ix = await program.methods
+    .cancelPending()
+    .accountsPartial({
+      bucket: addrs.bucket,
+      pendingState,
+      pendingTreasury,
+      owner,
+      pendingDeposit,
+      systemProgram: SystemProgram.programId,
+    })
+    .instruction();
+  return [ix];
+}
+
+/** Read a wallet's open parked-deposit ticket (null if none). */
+export async function readPendingTicket(
+  connection: Connection,
+  owner: PublicKey,
+): Promise<{ amountLamports: BN; parkedAt: number } | null> {
+  const vault = makeVault(connection);
+  const pd: any = await vault.read.pendingDeposit(SIMPLE, owner).catch(() => null);
+  if (!pd) return null;
+  return { amountLamports: new BN(pd.amount.toString()), parkedAt: Number(pd.parkedAt?.toString?.() ?? 0) };
 }
 
 // ── settle_harvest (lazy-settle, permissionless user action) ─────────────────

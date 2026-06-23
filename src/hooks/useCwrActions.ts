@@ -6,6 +6,8 @@ import {
   buildDepositIxs,
   buildWithdrawIxs,
   buildSettleHarvestIxs,
+  buildParkDepositIxs,
+  buildCancelPendingIxs,
   sendIxs,
   solToLamports,
   sharesToRaw,
@@ -93,5 +95,45 @@ export function useCwrActions() {
     }
   }, [connection, publicKey, sendTransaction]);
 
-  return { deposit, withdraw, settle, busy, connected: MOCK || !!publicKey };
+  // park_deposit - commit SOL during the BETTING window (deposit closed). No
+  // shares yet; the keeper converts it to CWR automatically at the next settled
+  // OPEN window. Reversible via cancelPark.
+  const park = useCallback(
+    async (sol: number): Promise<string> => {
+      if (!(sol > 0)) throw new Error("Enter an amount greater than 0.");
+      if (sol < MIN_DEPOSIT_SOL) throw new Error(`Minimum is ${MIN_DEPOSIT_SOL} SOL.`);
+      if (MOCK) {
+        setBusy(true);
+        try { return await mockSend(); } finally { setBusy(false); }
+      }
+      if (!publicKey || !sendTransaction) throw new Error("Connect a wallet first.");
+      setBusy(true);
+      try {
+        const ixs = await buildParkDepositIxs(connection, publicKey, solToLamports(sol));
+        return await sendIxs(connection, sendTransaction, ixs, publicKey);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [connection, publicKey, sendTransaction],
+  );
+
+  // cancel_pending - pull a parked (not-yet-converted) deposit back out. Always
+  // available (any phase, even paused): the no-stuck-capital escape.
+  const cancelPark = useCallback(async (): Promise<string> => {
+    if (MOCK) {
+      setBusy(true);
+      try { return await mockSend(); } finally { setBusy(false); }
+    }
+    if (!publicKey || !sendTransaction) throw new Error("Connect a wallet first.");
+    setBusy(true);
+    try {
+      const ixs = await buildCancelPendingIxs(connection, publicKey);
+      return await sendIxs(connection, sendTransaction, ixs, publicKey);
+    } finally {
+      setBusy(false);
+    }
+  }, [connection, publicKey, sendTransaction]);
+
+  return { deposit, withdraw, settle, park, cancelPark, busy, connected: MOCK || !!publicKey };
 }

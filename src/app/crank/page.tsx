@@ -7,6 +7,7 @@ import { PoolStats } from "@/components/PoolStats";
 import { PoolEconomics } from "@/components/PoolEconomics";
 import { PhaseTimers } from "@/components/PhaseTimers";
 import { MintCwrCard } from "@/components/MintCwrCard";
+import { ParkCard } from "@/components/ParkCard";
 import { ClaimCard } from "@/components/ClaimCard";
 import { SettlePrompt } from "@/components/SettlePrompt";
 import { PositionCard } from "@/components/PositionCard";
@@ -42,7 +43,11 @@ export default function CrankPage() {
       <SettlePrompt data={data} onDone={onDone} />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <MintCwrCard data={data} onDone={onDone} />
+        {data?.phase === 0 ? (
+          <ParkCard data={data} onDone={onDone} />
+        ) : (
+          <MintCwrCard data={data} onDone={onDone} />
+        )}
         <ClaimCard data={data} pos={pos} onDone={onDone} />
         <PositionCard pos={pos} />
       </div>
