@@ -10,7 +10,7 @@ import { TxResult } from "./TxResult";
 import { formatNum } from "@/lib/format";
 import { MIN_DEPOSIT_SOL } from "@/lib/cwr";
 
-const QUICK = [0.1, 0.5, 1, 5];
+const QUICK = [1, 5, 10, 25, 50];
 
 export function MintCwrCard({ data, onDone }: { data: VaultData | null; onDone: () => void }) {
   const { connected } = useWallet();
