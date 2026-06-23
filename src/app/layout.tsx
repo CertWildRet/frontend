@@ -37,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     className="h-8 w-8 drop-shadow-[0_0_9px_rgba(245,197,24,0.22)] transition group-hover:drop-shadow-[0_0_12px_rgba(245,197,24,0.4)]"
                   />
                   <span className="font-display text-lg font-bold tracking-tight">
-                    <span className="gradient-text">CWR</span>
+                    <span className="gradient-silver text-glow-silver">CWR</span>
                   </span>
                 </Link>
                 <nav className="hidden gap-1 sm:flex">
@@ -63,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <div className="max-w-xs">
                   <div className="flex items-center gap-1.5">
                     <DiamondMark uid="foot" className="h-8 w-8 drop-shadow-[0_0_8px_rgba(245,197,24,0.2)]" />
-                    <span className="gradient-text font-display text-lg font-bold tracking-tight">CWR</span>
+                    <span className="gradient-silver text-glow-silver font-display text-lg font-bold tracking-tight">CWR</span>
                   </div>
                   <p className="mt-3 text-xs leading-relaxed text-fog-muted">
                     Pooled, non-custodial ORE mining on Solana. Funds only ever flow vault to ORE and back.

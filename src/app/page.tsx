@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { RefinedComingSoon } from "@/components/RefinedComingSoon";
 import { DiamondMark } from "@/components/DiamondMark";
+import { HeroStone } from "@/components/HeroStone";
 
 export const metadata = {
   title: "CWR · autonomous ORE mining",
@@ -246,23 +247,23 @@ function TeamCard({
 function OreHeroVisual() {
   return (
     <div className="relative mx-auto hidden aspect-square w-full max-w-[400px] items-center justify-center lg:flex">
-      <div className="absolute inset-6 rounded-full bg-grad-gold-soft blur-3xl" aria-hidden />
+      <div
+        className="absolute inset-6 rounded-full blur-3xl"
+        aria-hidden
+        style={{ background: "radial-gradient(circle, rgba(157,183,216,0.3), transparent 70%)" }}
+      />
       <div
         className="absolute inset-0 rounded-[2rem] border border-line/60"
         aria-hidden
         style={{
           backgroundImage:
-            "linear-gradient(rgba(245,197,24,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(245,197,24,.07) 1px, transparent 1px)",
+            "linear-gradient(rgba(157,183,216,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(157,183,216,.06) 1px, transparent 1px)",
           backgroundSize: "34px 34px",
           WebkitMaskImage: "radial-gradient(circle at 50% 50%, #000, transparent 76%)",
           maskImage: "radial-gradient(circle at 50% 50%, #000, transparent 76%)",
         }}
       />
-      <DiamondMark
-        uid="hero"
-        title="CWR"
-        className="animate-float relative w-[58%] drop-shadow-[0_0_46px_rgba(157,183,216,0.4)]"
-      />
+      <HeroStone size={340} />
       <span className="chip absolute bottom-5 right-5 border-pos/40 text-white">
         <span className="live-dot text-pos" /> mining ORE
       </span>
