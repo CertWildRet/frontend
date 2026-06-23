@@ -13,7 +13,7 @@
     font-feature-settings: "ss01", "cv01";
   }
   ::selection {
-    background: rgba(245, 197, 24, 0.3);
+    background: rgba(157, 183, 216, 0.3);
     color: #000;
   }
   ::-webkit-scrollbar {
@@ -21,12 +21,12 @@
     height: 10px;
   }
   ::-webkit-scrollbar-thumb {
-    background: #26241a;
+    background: #23262e;
     border-radius: 6px;
     border: 2px solid #050506;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #3a3621;
+    background: #343a45;
   }
 }
 
@@ -37,9 +37,9 @@
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(56% 44% at 50% -6%, rgba(245, 197, 24, 0.12), transparent 70%),
-    radial-gradient(44% 40% at 100% 4%, rgba(245, 197, 24, 0.06), transparent 70%),
-    radial-gradient(50% 50% at 0% 100%, rgba(194, 144, 26, 0.05), transparent 70%),
+    radial-gradient(56% 44% at 50% -6%, rgba(157, 183, 216, 0.12), transparent 70%),
+    radial-gradient(44% 40% at 100% 4%, rgba(157, 183, 216, 0.06), transparent 70%),
+    radial-gradient(50% 50% at 0% 100%, rgba(90, 110, 140, 0.05), transparent 70%),
     #050506;
 }
 .atmosphere::before {
@@ -47,8 +47,8 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(245, 197, 24, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(245, 197, 24, 0.05) 1px, transparent 1px);
+    linear-gradient(rgba(157, 183, 216, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(157, 183, 216, 0.05) 1px, transparent 1px);
   background-size: 46px 46px;
   -webkit-mask-image: radial-gradient(circle at 50% 18%, #000, transparent 78%);
   mask-image: radial-gradient(circle at 50% 18%, #000, transparent 78%);
@@ -83,7 +83,7 @@
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(120deg, rgba(245, 197, 24, 0.6), rgba(194, 144, 26, 0.35), transparent 60%);
+    background: linear-gradient(120deg, rgba(157, 183, 216, 0.6), rgba(90, 110, 140, 0.35), transparent 60%);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -135,11 +135,11 @@
 
 @layer utilities {
   .text-glow-gold {
-    text-shadow: 0 0 20px rgba(245, 197, 24, 0.5);
+    text-shadow: 0 0 20px rgba(157, 183, 216, 0.5);
   }
   /* moving metallic sheen for headline accents + the logo */
   .text-sheen {
-    background: linear-gradient(100deg, #c2901a 18%, #ffebb0 48%, #f5c518 52%, #c2901a 82%);
+    background: linear-gradient(100deg, #5a6e8c 18%, #e8effa 48%, #9db7d8 52%, #5a6e8c 82%);
     background-size: 220% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -199,9 +199,9 @@
 /* ── wallet-adapter modal: gold/black reskin ─────────────────────────── */
 .wallet-adapter-modal-wrapper {
   background: #0a0a0c !important;
-  border: 1px solid #33322b !important;
+  border: 1px solid #2c313b !important;
   border-radius: 16px !important;
-  box-shadow: 0 0 40px -8px rgba(245, 197, 24, 0.4) !important;
+  box-shadow: 0 0 40px -8px rgba(157, 183, 216, 0.4) !important;
   font-family: "Sora Variable", sans-serif !important;
 }
 .wallet-adapter-modal-title {

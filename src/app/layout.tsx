@@ -8,7 +8,7 @@ import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { WalletButton } from "@/components/WalletButton";
-import { DiamondMark } from "@/components/DiamondMark";
+import { FacetMark } from "@/components/FacetMark";
 import { StatTicker } from "@/components/StatTicker";
 
 export const metadata: Metadata = {
@@ -31,13 +31,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <header className="sticky top-0 z-30 border-b border-line/80 bg-ink/70 backdrop-blur-xl">
             <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
               <div className="flex items-center gap-8">
-                <Link href="/" className="group flex items-center gap-1.5">
-                  <DiamondMark
-                    uid="nav"
-                    className="h-8 w-8 drop-shadow-[0_0_9px_rgba(245,197,24,0.22)] transition group-hover:drop-shadow-[0_0_12px_rgba(245,197,24,0.4)]"
-                  />
-                  <span className="font-display text-lg font-bold tracking-tight">
-                    <span className="gradient-silver text-glow-silver">CWR</span>
+                <Link href="/" className="group flex items-center gap-3">
+                  <FacetMark className="h-7 w-7 transition group-hover:drop-shadow-[0_0_10px_rgba(157,183,216,0.45)]" />
+                  <span className="font-display text-[18px] font-bold tracking-[0.22em] text-[#F4F8FF]">
+                    CWR
                   </span>
                 </Link>
                 <nav className="hidden gap-1 sm:flex">
@@ -61,9 +58,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="mx-auto max-w-6xl px-6 py-10">
               <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
                 <div className="max-w-xs">
-                  <div className="flex items-center gap-1.5">
-                    <DiamondMark uid="foot" className="h-8 w-8 drop-shadow-[0_0_8px_rgba(245,197,24,0.2)]" />
-                    <span className="gradient-silver text-glow-silver font-display text-lg font-bold tracking-tight">CWR</span>
+                  <div className="flex items-center gap-3">
+                    <FacetMark className="h-7 w-7" />
+                    <span className="font-display text-[18px] font-bold tracking-[0.22em] text-[#F4F8FF]">CWR</span>
                   </div>
                   <p className="mt-3 text-xs leading-relaxed text-fog-muted">
                     Pooled, non-custodial ORE mining on Solana. Funds only ever flow vault to ORE and back.
@@ -79,7 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <Social label="Discord" href="#" />
                   </div>
                   <span className="flex items-center gap-2 font-mono text-[12px] text-fog-muted">
-                    <DiamondMark uid="sol" className="h-4 w-4" /> built on Solana
+                    <FacetMark className="h-4 w-4" /> built on Solana
                   </span>
                 </div>
               </div>

@@ -23,8 +23,9 @@
 
 /* ---- Hero stone: very slow rotation + breathing light ---- */
 @keyframes stone-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  0%   { transform: rotate(-12deg); }
+  50%  { transform: rotate(12deg); }
+  100% { transform: rotate(-12deg); }
 }
 
 @keyframes stone-breathe {
@@ -64,7 +65,7 @@
 /* ---- Helpers ---- */
 .ignite        { animation: ignite 1.5s cubic-bezier(.2,.7,.2,1) both; }
 .rise          { animation: rise .9s cubic-bezier(.2,.7,.2,1) both; }
-.stoneSpin     { animation: stone-spin 90s linear infinite; transform-origin: center; }
+.stoneSpin     { animation: stone-spin 9s ease-in-out infinite; transform-origin: center; }
 .stoneBreathe  { animation: stone-breathe 7s ease-in-out infinite; }
 .causticDrift  { animation: caustic-drift 14s ease-in-out infinite; }
 .causticSweep  { animation: caustic-sweep 2.2s cubic-bezier(.2,.7,.2,1) .3s both; }

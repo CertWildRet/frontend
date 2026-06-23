@@ -2,7 +2,7 @@
 
 import { useLiveStats } from "@/hooks/useLiveStats";
 import { TileHeatmap } from "./TileHeatmap";
-import { DiamondMark } from "./DiamondMark";
+import { FacetMark } from "./FacetMark";
 import { formatNum, formatSol, formatRelative } from "@/lib/format";
 
 export function LiveCrankPanel() {
@@ -12,7 +12,7 @@ export function LiveCrankPanel() {
     <section className="panel">
       <div className="mb-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <DiamondMark uid="panel" className="h-7 w-7 drop-shadow-[0_0_12px_rgba(157,183,216,0.4)]" />
+          <FacetMark className="h-7 w-7 drop-shadow-[0_0_12px_rgba(157,183,216,0.4)]" />
           <div>
             <h2 className="font-display text-lg font-semibold text-white">Live crank</h2>
             <p className="font-mono text-[12px] text-fog-muted">What the keeper is doing on the board, right now.</p>

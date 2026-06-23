@@ -15,9 +15,11 @@ const config: Config = {
         },
         line: {
           DEFAULT: "#1C1C20",
-          bright: "#33322B",
+          bright: "#2C313B",
         },
-        gold: { DEFAULT: "#F5C518", soft: "#FFE08A", deep: "#C2901A", bright: "#FFEBB0" },
+        // Primary brand accent — retheme to silver-blue (the diamond). Class names
+        // keep the "gold" key so every `text-gold` / `bg-gold` etc. retints at once.
+        gold: { DEFAULT: "#9DB7D8", soft: "#C9D2DE", deep: "#5A6E8C", bright: "#E8EFFA" },
         amber: { DEFAULT: "#E8881A" },
         red: { DEFAULT: "#FF5C66" },
         pos: { DEFAULT: "#4ADE80", bright: "#86EFAC" },
@@ -25,7 +27,7 @@ const config: Config = {
         fog: { DEFAULT: "#EDEDF0", dim: "#9A9AA4", muted: "#84848E" },
         // legacy aliases (kept so older class names still resolve to gold/black)
         bg: { DEFAULT: "#050506", surface: "#0A0A0C", elevated: "#17171C", border: "#1C1C20" },
-        accent: { simple: "#F5C518", refined: "#E8881A", ultra: "#FF5C66", info: "#F5C518" },
+        accent: { simple: "#9DB7D8", refined: "#E8881A", ultra: "#FF5C66", info: "#9DB7D8" },
         muted: "#84848E",
       },
       fontFamily: {
@@ -34,17 +36,17 @@ const config: Config = {
         mono: ['"JetBrains Mono Variable"', "ui-monospace", "SFMono-Regular", "monospace"],
       },
       boxShadow: {
-        "glow-gold": "0 0 0 1px rgba(245,197,24,.28), 0 0 30px -6px rgba(245,197,24,.55)",
-        "glow-gold-lg": "0 0 60px -10px rgba(245,197,24,.55)",
+        "glow-gold": "0 0 0 1px rgba(157,183,216,.3), 0 0 30px -6px rgba(157,183,216,.5)",
+        "glow-gold-lg": "0 0 60px -10px rgba(157,183,216,.5)",
         "glow-red": "0 0 0 1px rgba(255,92,102,.28), 0 0 28px -6px rgba(255,92,102,.5)",
         card: "inset 0 1px 0 0 rgba(255,255,255,.04)",
       },
       backgroundImage: {
-        "grad-gold": "linear-gradient(100deg, #FFE9A8 0%, #F5C518 45%, #C2901A 100%)",
+        "grad-gold": "linear-gradient(100deg, #E8EFFA 0%, #9DB7D8 45%, #5A6E8C 100%)",
         "grad-gold-soft":
-          "linear-gradient(100deg, rgba(245,197,24,.16) 0%, rgba(194,144,26,.10) 100%)",
+          "linear-gradient(100deg, rgba(157,183,216,.16) 0%, rgba(90,110,140,.10) 100%)",
         "grad-sheen":
-          "linear-gradient(180deg, #FFEBB0 0%, #F5C518 38%, #C2901A 100%)",
+          "linear-gradient(180deg, #E8EFFA 0%, #9DB7D8 38%, #5A6E8C 100%)",
       },
       keyframes: {
         fadeUp: {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { RefinedComingSoon } from "@/components/RefinedComingSoon";
-import { DiamondMark } from "@/components/DiamondMark";
+import { FacetMark } from "@/components/FacetMark";
 import { HeroStone } from "@/components/HeroStone";
 
 export const metadata = {
@@ -263,7 +263,10 @@ function OreHeroVisual() {
           maskImage: "radial-gradient(circle at 50% 50%, #000, transparent 76%)",
         }}
       />
-      <HeroStone size={340} />
+      {/* big stone: width +20% only (scaleX), not overall bigger */}
+      <div className="relative" style={{ transform: "scaleX(1.2)" }}>
+        <HeroStone size={340} />
+      </div>
       <span className="chip absolute bottom-5 right-5 border-pos/40 text-white">
         <span className="live-dot text-pos" /> mining ORE
       </span>
@@ -277,7 +280,7 @@ function OnchainVisual() {
     <div className="frame-brand relative overflow-hidden rounded-2xl border border-line bg-ink-900/60 p-5 backdrop-blur-sm">
       <div className="flex items-center justify-between rounded-xl border border-line bg-ink-800/60 px-4 py-3">
         <div className="flex items-center gap-3">
-          <DiamondMark uid="vault" className="h-6 w-6" />
+          <FacetMark className="h-6 w-6" />
           <div>
             <div className="label">vault treasury</div>
             <div className="font-mono text-xs text-fog-dim">program-owned PDA</div>

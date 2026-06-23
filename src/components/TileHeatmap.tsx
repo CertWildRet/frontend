@@ -30,7 +30,7 @@ export function TileHeatmap({ perTileSol, perTileCount }: Props) {
             title={`Tile ${i + 1}: ${formatSol(sol, 4)} SOL${perTileCount ? ` · ${perTileCount[i] ?? 0} miners` : ""}`}
             className={`tile ${hot ? "border-gold/50 shadow-glow-gold" : ""}`}
             style={{
-              background: `linear-gradient(160deg, rgba(245,197,24,${(intensity * 0.18).toFixed(3)}), rgba(194,144,26,${(0.05 + intensity * 0.28).toFixed(3)}))`,
+              background: `linear-gradient(160deg, rgba(157, 183, 216,${(intensity * 0.18).toFixed(3)}), rgba(90, 110, 140,${(0.05 + intensity * 0.28).toFixed(3)}))`,
             }}
           >
             <span className="absolute left-2 top-1.5 font-mono text-[12px] text-fog-muted">
