@@ -11,7 +11,6 @@ import { ClaimCard } from "@/components/ClaimCard";
 import { SettlePrompt } from "@/components/SettlePrompt";
 import { PositionCard } from "@/components/PositionCard";
 import { LiveCrankPanel } from "@/components/LiveCrankPanel";
-import { StatusBadge } from "@/components/StatusBadge";
 
 export default function CrankPage() {
   const { data, refresh } = useVaultData();
@@ -23,22 +22,11 @@ export default function CrankPage() {
     refreshPos();
   };
 
-  const phaseBadge = !data?.initialized
-    ? { status: "warn" as const, label: "not live" }
-    : data.paused
-      ? { status: "down" as const, label: "paused" }
-      : data.phase === 1
-        ? { status: "ok" as const, label: "deposit / claim open" }
-        : { status: "info" as const, label: "mining" };
-
   return (
     <div className="space-y-8">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="font-display text-2xl font-bold tracking-tight text-white">Simple Pool</h1>
-            <StatusBadge status={phaseBadge.status} label={phaseBadge.label} />
-          </div>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-white">Simple Pool</h1>
           <p className="mt-1.5 max-w-2xl text-sm text-fog-dim">
             Deposit SOL to mint CWR. A keeper mines the ORE board with it around the clock. Claim your
             SOL plus stORE whenever the window is open.
