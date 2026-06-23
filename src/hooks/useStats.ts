@@ -11,7 +11,7 @@ export type PoolStatsData = {
   phaseLabel: string;
   windowSettled: boolean;
   prices: { solUsd: number | null; oreUsd: number | null };
-  /** The transparency headline — TRUE recoverable value incl. unclaimed miner rewards. */
+  /** The transparency headline - TRUE recoverable value incl. unclaimed miner rewards. */
   value: {
     tvlSol: number;
     navPerShareTrue: number;
@@ -45,7 +45,7 @@ export type PoolStatsData = {
 const BRAIN = (process.env.NEXT_PUBLIC_BRAIN_URL || "").replace(/\/$/, "");
 
 /**
- * Polls the brain's /api/stats for the TRUE economic state — including the ORE
+ * Polls the brain's /api/stats for the TRUE economic state - including the ORE
  * miner's unclaimed rewards, which the on-chain NAV omits during a BETTING
  * window (so the contract-derived TVL/NAV read 0 even while SOL+ORE is
  * recoverable). Read-only, cached server-side (8s), so a slow poll is fine.

@@ -330,9 +330,9 @@ export default function LoupeLanding() {
         </div>
       </section>
 
-      {/* ---------- HOW IT WORKS — spec sheet ---------- */}
+      {/* ---------- HOW IT WORKS - spec sheet ---------- */}
       <section className="py-12">
-        <Clause no="01" kicker="procedure" title="How it works — three certified steps." />
+        <Clause no="01" kicker="procedure" title="How it works - three certified steps." />
         <div className="grid gap-px overflow-hidden rounded-[4px] border border-[rgba(180,200,225,0.14)] bg-[rgba(180,200,225,0.14)] md:grid-cols-3">
           {STEPS.map((s) => (
             <div
@@ -361,9 +361,9 @@ export default function LoupeLanding() {
         </div>
       </section>
 
-      {/* ---------- THE EDGE — comparison table ---------- */}
+      {/* ---------- THE EDGE - comparison table ---------- */}
       <section className="py-12">
-        <Clause no="02" kicker="evaluation" title="The edge — graded, not guessed." />
+        <Clause no="02" kicker="evaluation" title="The edge - graded, not guessed." />
         <div className="overflow-hidden rounded-[4px] border border-[rgba(180,200,225,0.14)]">
           {/* table head */}
           <div
@@ -431,7 +431,7 @@ export default function LoupeLanding() {
         </div>
       </section>
 
-      {/* ---------- ONCHAIN — grading certificate ---------- */}
+      {/* ---------- ONCHAIN - grading certificate ---------- */}
       <section className="py-12">
         <Clause no="04" kicker="custody" title="You keep custody. Always." />
         <div className="relative overflow-hidden rounded-[4px] border-2 border-[#EAEEF4]/70 bg-[#0F141D] shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]">
@@ -522,11 +522,11 @@ export default function LoupeLanding() {
         </div>
       </section>
 
-      {/* ---------- POOLS — two certificates ---------- */}
+      {/* ---------- POOLS - two certificates ---------- */}
       <section id="live" className="py-12">
-        <Clause no="05" kicker="instruments" title="Pools — issued and pending." />
+        <Clause no="05" kicker="instruments" title="Pools - issued and pending." />
         <div className="grid gap-5 md:grid-cols-2">
-          {/* Simple — ISSUED */}
+          {/* Simple - ISSUED */}
           <div className="relative overflow-hidden rounded-[4px] border border-[#EAEEF4]/70 bg-[#0F141D] shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]">
             <div className="flex items-center justify-between border-b border-[#EAEEF4]/70 px-6 py-4">
               <div>
@@ -573,7 +573,7 @@ export default function LoupeLanding() {
             </div>
           </div>
 
-          {/* Refined — PENDING (frosted) */}
+          {/* Refined - PENDING (frosted) */}
           <div className="relative overflow-hidden rounded-[4px] border border-dashed border-[rgba(180,200,225,0.12)] bg-[#0C111A]">
             <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(135deg,transparent,transparent_11px,rgba(120,160,210,0.05)_11px,rgba(120,160,210,0.05)_12px)]" />
             <div className="relative flex items-center justify-between border-b border-dashed border-[rgba(180,200,225,0.12)] px-6 py-4">

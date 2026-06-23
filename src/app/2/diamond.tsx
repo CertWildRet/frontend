@@ -32,7 +32,7 @@ export function DiamondWireframe({
       {/* girdle outline (step-cut, octagonal) */}
       <polygon points="110,150 150,110 270,110 310,150 310,170 270,210 150,210 110,170" fill="url(#loupe-sheen)" />
 
-      {/* CROWN — table + step facets (top half) */}
+      {/* CROWN - table + step facets (top half) */}
       <g stroke="#CFE9F1" strokeWidth="1.4" className={d(styles.draw)}>
         {/* outer crown silhouette */}
         <polygon points="110,150 150,110 270,110 310,150 310,170 270,210 150,210 110,170" />
@@ -51,7 +51,7 @@ export function DiamondWireframe({
         <line x1="310" y1="170" x2="280" y2="180" />
       </g>
 
-      {/* PAVILION — step facets converging to culet (bottom) */}
+      {/* PAVILION - step facets converging to culet (bottom) */}
       <g stroke="#D6E4F5" strokeWidth="1.4" className={d(styles.draw3)}>
         <line x1="110" y1="170" x2="180" y2="370" />
         <line x1="310" y1="170" x2="240" y2="370" />

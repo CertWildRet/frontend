@@ -101,7 +101,7 @@ export default function DispersionDashboard() {
             <span className={`${styles.liveDot} h-1.5 w-1.5 rounded-full bg-[#22E0E6]`} />
             deposit / claim open
           </span>
-          {/* wallet pill — glass chip with spectral rim */}
+          {/* wallet pill - glass chip with spectral rim */}
           <span
             className={`${styles.glass} ${styles.spectralEdge} inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px]`}
             style={mono}
@@ -200,7 +200,7 @@ export default function DispersionDashboard() {
 
       {/* ══ PHASE TIMERS ═══════════════════════════════════════════ */}
       <section className="mt-4 grid gap-4 md:grid-cols-2">
-        {/* Deposit & Claim — ACTIVE (disperses into spectrum) */}
+        {/* Deposit & Claim - ACTIVE (disperses into spectrum) */}
         <div className={`${styles.glass} ${styles.spectralEdge} ${styles.cutBL} rounded-2xl p-6`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -232,7 +232,7 @@ export default function DispersionDashboard() {
           </div>
         </div>
 
-        {/* Cranking — IDLE (compressed white) */}
+        {/* Cranking - IDLE (compressed white) */}
         <div className={`${styles.glass} ${styles.cutTR} rounded-2xl p-6`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -254,10 +254,10 @@ export default function DispersionDashboard() {
           </div>
           <div className="mt-5 flex items-end justify-between">
             <span className="text-[40px] font-bold leading-none text-[#8A92B4]" style={mono}>
-              —:—
+              -:-
             </span>
             <span className="max-w-[170px] text-right text-[12px] text-[#7E86A8]">
-              capital working the 25 tiles — runs after the window closes
+              capital working the 25 tiles - runs after the window closes
             </span>
           </div>
           <div className="mt-5 h-2 overflow-hidden rounded-full bg-[rgba(154,167,216,0.1)]">

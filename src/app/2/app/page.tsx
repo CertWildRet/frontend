@@ -133,7 +133,7 @@ export default function LoupeDashboard() {
 
       {/* ---------- phase gauges ---------- */}
       <section className="mt-5 grid gap-px overflow-hidden rounded-[4px] border border-[rgba(180,200,225,0.14)] bg-[rgba(180,200,225,0.14)] md:grid-cols-2">
-        {/* deposit & claim — ACTIVE */}
+        {/* deposit & claim - ACTIVE */}
         <div className="bg-[#0F141D] p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -166,7 +166,7 @@ export default function LoupeDashboard() {
           </p>
         </div>
 
-        {/* cranking — IDLE */}
+        {/* cranking - IDLE */}
         <div className="bg-[#0F141D] p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -181,7 +181,7 @@ export default function LoupeDashboard() {
           </div>
           <div className="mt-5 flex items-end justify-between">
             <span style={mono} className="text-[40px] font-light leading-none tracking-tight text-[#3A4252]">
-              —:—
+              -:-
             </span>
             <span style={mono} className="text-[12px] text-[#626E7E]">queued</span>
           </div>
@@ -194,7 +194,7 @@ export default function LoupeDashboard() {
             ))}
           </div>
           <p style={sora} className="mt-3 text-[12.5px] text-[#94A1B3]">
-            capital working the 25 tiles — runs after the window closes
+            capital working the 25 tiles - runs after the window closes
           </p>
         </div>
       </section>
@@ -315,7 +315,7 @@ export default function LoupeDashboard() {
           </button>
         </div>
 
-        {/* POSITION — mini grading report */}
+        {/* POSITION - mini grading report */}
         <div className="rounded-[4px] border-2 border-[#EAEEF4]/70 bg-[#0F141D] p-6 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]">
           <div className="flex items-center justify-between border-b border-dashed border-[rgba(180,200,225,0.14)] pb-3">
             <Label>your position</Label>
@@ -393,7 +393,7 @@ export default function LoupeDashboard() {
               ))}
             </div>
 
-            {/* keeper last move — mono log line */}
+            {/* keeper last move - mono log line */}
             <div className="mt-5">
               <Label>keeper&apos;s last move</Label>
               <div className="mt-2 rounded-[3px] border border-[rgba(180,200,225,0.14)] bg-[#0A0E15] px-4 py-3.5">

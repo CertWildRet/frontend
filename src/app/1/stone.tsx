@@ -1,7 +1,7 @@
 import styles from "./pressure.module.css";
 
 /**
- * HeroStone — a layered brilliant-cut diamond, the single light source.
+ * HeroStone - a layered brilliant-cut diamond, the single light source.
  * Built as inline SVG facets with specular highlights. Slowly rotates,
  * breathes light, throws caustic streaks. Pure CSS/SVG, no deps.
  */

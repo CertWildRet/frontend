@@ -9,7 +9,7 @@ import { TxResult } from "./TxResult";
 
 /**
  * Shown only when the claim window is OPEN but not yet settled
- * (window_settled=false). settle_harvest is a permissionless USER action — the
+ * (window_settled=false). settle_harvest is a permissionless USER action - the
  * first visitor to run it claims the mined round into the treasury, wraps the
  * ORE to stORE, and flips window_settled=true, which unlocks deposits + claims
  * for everyone for this window. Until it runs, deposit/withdraw revert
@@ -44,8 +44,8 @@ export function SettlePrompt({ data, onDone }: { data: VaultData | null; onDone:
         <span className="chip border-gold/30 text-gold">first action</span>
       </div>
       <p className="mb-4 font-mono text-[12px] leading-relaxed text-fog-muted">
-        The window just opened. The first action settles the mined round — claiming its SOL and
-        wrapping the ORE into stORE — which unlocks deposits and claims for everyone. Anyone can run
+        The window just opened. The first action settles the mined round (claiming its SOL and
+        wrapping the ORE into stORE), which unlocks deposits and claims for everyone. Anyone can run
         it; you only pay the network fee.
       </p>
       {!connected ? (

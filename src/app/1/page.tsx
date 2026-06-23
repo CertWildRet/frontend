@@ -195,7 +195,7 @@ export default function PressureLanding() {
         </div>
       </section>
 
-      {/* ══ HOW IT WORKS — three milled slabs ══ */}
+      {/* ══ HOW IT WORKS - three milled slabs ══ */}
       <Section kicker="The mechanism" title="How it works">
         <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
           {STEPS.map((s) => (
@@ -295,7 +295,7 @@ export default function PressureLanding() {
         </div>
       </section>
 
-      {/* ══ ONCHAIN — read the stone ══ */}
+      {/* ══ ONCHAIN - read the stone ══ */}
       <Section kicker="Read the stone" title="You keep custody. Always.">
         <p className="mb-9 max-w-[52rem] text-[15px] leading-relaxed text-[#9AA7B8]">
           Every deposit, balance, and flow lives on Solana, readable by any
@@ -326,7 +326,7 @@ export default function PressureLanding() {
       {/* ══ POOLS ══ */}
       <Section kicker="Choose your facet" title="Pools" id="live">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* Simple — LIVE */}
+          {/* Simple - LIVE */}
           <article
             className={`${styles.slab} ${styles.slabHover} relative overflow-hidden border border-[rgba(201,210,222,0.2)] bg-[linear-gradient(160deg,#161A22,#0A0C12)] p-8`}
             style={{ boxShadow: "0 36px 90px -34px rgba(0,0,0,0.9), inset 0 0 40px rgba(157,183,216,0.05)" }}
@@ -373,7 +373,7 @@ export default function PressureLanding() {
             </Link>
           </article>
 
-          {/* Refined — COMING SOON, frosted */}
+          {/* Refined - COMING SOON, frosted */}
           <article
             className={`${styles.slab} relative overflow-hidden border border-[rgba(201,210,222,0.08)] bg-[linear-gradient(160deg,#0E1015,#080910)] p-8`}
           >

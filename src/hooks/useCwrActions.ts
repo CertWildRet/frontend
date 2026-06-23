@@ -71,7 +71,7 @@ export function useCwrActions() {
     [connection, publicKey, sendTransaction],
   );
 
-  // settle_harvest — the first action of a fresh OPEN window (window_settled
+  // settle_harvest - the first action of a fresh OPEN window (window_settled
   // starts false; deposit/withdraw revert WindowNotSettled until this runs).
   // Permissionless: any connected wallet can open the window for everyone.
   const settle = useCallback(async (): Promise<string> => {

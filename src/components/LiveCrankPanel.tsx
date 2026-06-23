@@ -85,15 +85,15 @@ export function LiveCrankPanel() {
 function humanizeMove(reason: string): string {
   const r = reason.toLowerCase();
   if (r.includes("no idle sol") || r.includes("sol_in_vault == 0"))
-    return "All SOL is working the board — it recycles into the vault at the next claim window.";
+    return "All SOL is working the board. It recycles into the vault at the next claim window.";
   if (r.includes("per-round budget") || r.includes("near-empty"))
-    return "Vault almost empty — it refills at the next claim window.";
+    return "Vault almost empty. It refills at the next claim window.";
   if (r.includes("margin") || r.includes("production cost"))
-    return "Holding this round — mining isn't profitable enough right now.";
-  if (r.includes("dry_run")) return "Simulating — dry run, no live transaction.";
+    return "Holding this round. Mining isn't profitable enough right now.";
+  if (r.includes("dry_run")) return "Simulating a dry run, no live transaction.";
   if (r.includes("not readable") || r.includes("not initialized") || r.includes("skipping"))
     return "Waiting on a fresh read from the chain.";
-  return "Holding — will resume next round.";
+  return "Holding for now, will resume next round.";
 }
 
 function Empty({ children }: { children: React.ReactNode }) {

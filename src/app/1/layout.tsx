@@ -8,7 +8,7 @@ export default function PressureLayout({ children }: { children: ReactNode }) {
       className={`fixed inset-0 z-[100] overflow-y-auto bg-[#05060A] text-[#F4F8FF] ${styles.canvas}`}
       style={{ fontFamily: "'Sora Variable', system-ui, sans-serif" }}
     >
-      {/* ambient void texture — fine grid + vignette, one cold falloff */}
+      {/* ambient void texture - fine grid + vignette, one cold falloff */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 z-0"

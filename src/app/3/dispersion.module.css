@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   DISPERSION — Concept 3
+   DISPERSION - Concept 3
    Optical fire: white light splitting into a controlled spectrum.
    Indigo-black base, glass crystal surfaces, refractive spectral edges.
    ════════════════════════════════════════════════════════════════ */
@@ -30,7 +30,7 @@
   100% { transform: translate3d(-1%, 2%, 0) scale(1.03) rotate(0.5deg); }
 }
 
-/* iridescent foil grain — very low opacity */
+/* iridescent foil grain - very low opacity */
 .foil {
   position: fixed;
   inset: 0;
@@ -138,7 +138,7 @@
   );
 }
 
-/* ONE sharp cut corner per card — crystal character */
+/* ONE sharp cut corner per card - crystal character */
 .cutTR {
   clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
 }
@@ -212,7 +212,7 @@
   background: rgba(234, 236, 246, 0.07);
 }
 
-/* iridescent refractive CTA pill — hue shifts continuously */
+/* iridescent refractive CTA pill - hue shifts continuously */
 .prismPill {
   position: relative;
   overflow: hidden;

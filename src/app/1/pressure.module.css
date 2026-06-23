@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   PRESSURE — Concept 1
+   PRESSURE - Concept 1
    Diamonds form under pressure. One cold light source. Obsidian depth.
    ════════════════════════════════════════════════════════════════ */
 
@@ -72,7 +72,7 @@
 .gaugePulse    { animation: gauge-pulse 2.4s ease-in-out infinite; }
 .tileFlare     { animation: tile-flare 3.2s ease-in-out infinite; }
 
-/* Bevel/facet button — chamfered corners + glossy top edge */
+/* Bevel/facet button - chamfered corners + glossy top edge */
 .facet {
   position: relative;
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
@@ -102,7 +102,7 @@
 .facet:hover::after { animation: glint-sweep .7s cubic-bezier(.2,.7,.2,1); }
 .facet:active { transform: translateY(1px); }
 
-/* Chamfered panel — milled obsidian block */
+/* Chamfered panel - milled obsidian block */
 .slab {
   clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
   position: relative;

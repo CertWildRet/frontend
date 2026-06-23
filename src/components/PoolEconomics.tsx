@@ -21,8 +21,8 @@ export function PoolEconomics({ stats }: { stats: PoolStatsData | null }) {
         <span className="chip border-gold/30 text-gold">full transparency</span>
       </div>
       <p className="mb-5 font-mono text-[12px] leading-relaxed text-fog-muted">
-        Every lamport, live. The contract&apos;s NAV reads ~0 while a mining round is in flight —
-        it only credits mined SOL + ORE at settle. These are the <span className="text-gray-200">true</span>{" "}
+        Every lamport, live. The contract&apos;s NAV reads ~0 while a mining round is in flight; it
+        only credits mined SOL + ORE at settle. These are the <span className="text-gray-200">true</span>{" "}
         recoverable values, read straight from the ORE miner.
       </p>
 

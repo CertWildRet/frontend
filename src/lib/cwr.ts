@@ -183,7 +183,7 @@ export async function buildWithdrawIxs(
 // A fresh OPEN window starts window_settled=false; deposit AND withdraw both
 // require window_settled (contract reverts WindowNotSettled otherwise), and the
 // keeper NEVER settles by design. So the first user to interact in a window must
-// run settle_harvest — it claims the mined round's SOL+ORE into the treasury and
+// run settle_harvest - it claims the mined round's SOL+ORE into the treasury and
 // wraps the ORE to stORE, flipping window_settled=true and unlocking the window
 // for everyone. Permissionless: any wallet can call it (it just pays the gas).
 // Raw ix (wallet-signed) mirroring the SDK CrankApi.settleHarvest wiring.
@@ -244,7 +244,7 @@ export async function buildSettleHarvestIxs(
     })
     .instruction();
   // settle does up to 2 ATA creates + ClaimSOL + ClaimORE + the 17-account
-  // ore-lst Wrap — well past the 200k default CU. Raise the ceiling (free; no
+  // ore-lst Wrap - well past the 200k default CU. Raise the ceiling (free; no
   // CU price set, so no extra priority fee).
   return [ComputeBudgetProgram.setComputeUnitLimit({ units: 1_000_000 }), settleIx];
 }

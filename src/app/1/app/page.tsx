@@ -135,7 +135,7 @@ export default function PressureDashboard() {
         </div>
       </section>
 
-      {/* ══ PHASE TIMERS — pressure gauges ══ */}
+      {/* ══ PHASE TIMERS - pressure gauges ══ */}
       <PhaseTimers />
 
       {/* ══ ACTION ROW: Mint / Claim / Position ══ */}
@@ -194,7 +194,7 @@ function PhaseTimers() {
         </div>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {/* Deposit & Claim — ACTIVE (cold glow) */}
+          {/* Deposit & Claim - ACTIVE (cold glow) */}
           <div
             className={`${styles.slab} relative overflow-hidden border border-[rgba(157,183,216,0.35)] bg-[linear-gradient(160deg,#0E1726,#0A0F1A)] p-5`}
             style={{ boxShadow: "inset 0 0 50px rgba(157,183,216,0.12)" }}
@@ -232,7 +232,7 @@ function PhaseTimers() {
             <div className="mt-3 text-[12px] text-[#9AA7B8]">mint CWR or claim rewards</div>
           </div>
 
-          {/* Cranking — IDLE (under pressure) */}
+          {/* Cranking - IDLE (under pressure) */}
           <div
             className={`${styles.slab} relative overflow-hidden border border-[rgba(201,210,222,0.1)] bg-[linear-gradient(160deg,#0E1015,#080910)] p-5`}
           >
@@ -260,7 +260,7 @@ function PhaseTimers() {
               <div className="h-full w-0 rounded-full bg-[#3A4A63]" />
             </div>
             <div className="mt-3 text-[12px] text-[#6A7689]">
-              capital working the 25 tiles — runs after the window closes
+              capital working the 25 tiles - runs after the window closes
             </div>
           </div>
         </div>
@@ -570,7 +570,7 @@ function CrankPanel() {
             </div>
           </div>
 
-          {/* keeper's last move — etched ticker */}
+          {/* keeper's last move - etched ticker */}
           <div className="flex flex-col">
             <div
               className="mb-3 text-[12px] uppercase tracking-[0.18em] text-[#5A6E8C]"

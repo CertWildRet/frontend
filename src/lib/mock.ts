@@ -1,7 +1,7 @@
 // ── Local UI-design mock layer ───────────────────────────────────────────────
 // When NEXT_PUBLIC_MOCK === "1", the data hooks return this static placeholder
 // data and skip EVERY network call (RPC, wallet, SSE). This lets you design the
-// UI with all screens rendered fully "lit up" — no backend, no wallet, no keys.
+// UI with all screens rendered fully "lit up" - no backend, no wallet, no keys.
 // Flip NEXT_PUBLIC_MOCK to 0 (or delete it) in .env.local to use the real chain
 // backend again; no other code changes are needed.
 

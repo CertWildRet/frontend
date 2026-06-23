@@ -6,7 +6,7 @@ import { formatNum, formatSol } from "@/lib/format";
 
 export function PoolStats({ data, stats }: { data: VaultData | null; stats?: PoolStatsData | null }) {
   const feeBps = data?.pullFeeEnabled ? (data?.pullFeeBps ?? 0) : 0;
-  // Prefer the brain's TRUE value (incl. unclaimed miner rewards) — the on-chain
+  // Prefer the brain's TRUE value (incl. unclaimed miner rewards) - the on-chain
   // NAV reads ~0 mid-round. Fall back to on-chain when the brain isn't reachable.
   const tvl = stats ? formatSol(stats.value.tvlSol, 2) : data?.initialized ? formatSol(data.totalNavSol, 2) : "···";
   const price = stats

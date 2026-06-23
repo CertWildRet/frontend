@@ -87,9 +87,9 @@ const TEAM = [
 ];
 
 const HERO_SPECS = [
-  "non-custodial — funds never leave the vault",
-  "no lockup — leave any open window",
-  "hands-off — zero transactions to sign",
+  "non-custodial - funds never leave the vault",
+  "no lockup - leave any open window",
+  "hands-off - zero transactions to sign",
 ];
 
 const display = { fontFamily: "'Chakra Petch', sans-serif" } as const;
@@ -133,7 +133,7 @@ export default function DispersionLanding() {
           <div className={styles.fan} />
         </div>
 
-        {/* floating 3D brilliant-cut diamond, top-right — the refractor */}
+        {/* floating 3D brilliant-cut diamond, top-right - the refractor */}
         <div
           aria-hidden
           className="pointer-events-none absolute right-[0%] top-[-6%] hidden h-[360px] w-[360px] lg:block xl:h-[400px] xl:w-[400px]"
@@ -195,19 +195,19 @@ export default function DispersionLanding() {
                 </radialGradient>
               </defs>
 
-              {/* pavilion (lower point) — luminous, reflective facets */}
+              {/* pavilion (lower point) - luminous, reflective facets */}
               <polygon points="30,72 100,72 100,180" fill="url(#d3-pavilion)" opacity="0.97" />
               <polygon points="170,72 100,72 100,180" fill="url(#d3-pavR)" opacity="0.95" />
               <polygon points="30,72 60,72 100,180" fill="url(#d3-pavOuterL)" opacity="0.95" />
               <polygon points="170,72 140,72 100,180" fill="url(#d3-pavOuterR)" opacity="0.93" />
 
-              {/* specular shine — bright belt + glints converging to the culet */}
+              {/* specular shine - bright belt + glints converging to the culet */}
               <polygon points="30,72 170,72 138,99 62,99" fill="#FFFFFF" opacity="0.14" />
               <polygon points="60,73 67,73 100,180" fill="#CFFAFF" opacity="0.24" />
               <polygon points="86,73 97,73 100,180" fill="#FFFFFF" opacity="0.32" />
               <polygon points="104,73 116,73 100,180" fill="#FFE7F6" opacity="0.24" />
 
-              {/* girdle band — bright reflective belt */}
+              {/* girdle band - bright reflective belt */}
               <polygon points="30,68 170,68 170,74 30,74" fill="#D7CBFF" opacity="0.45" />
               <line x1="30" y1="69" x2="170" y2="69" stroke="#FFFFFF" strokeOpacity="0.5" strokeWidth="0.7" />
 
@@ -221,7 +221,7 @@ export default function DispersionLanding() {
               <polygon points="55,30 72,30 50,52 30,68" fill="url(#d3-crownL)" opacity="0.9" />
               <polygon points="145,30 128,30 150,52 170,68" fill="url(#d3-crownR)" opacity="0.9" />
               <polygon points="50,52 150,52 170,68 30,68" fill="#6E7BFF" opacity="0.4" />
-              {/* bright kite facets — cyan + fire */}
+              {/* bright kite facets - cyan + fire */}
               <polygon points="72,30 100,42 100,30" fill="#3BF0F2" opacity="0.7" />
               <polygon points="128,30 100,42 100,30" fill="url(#d3-fire)" opacity="0.6" />
 
@@ -305,7 +305,7 @@ export default function DispersionLanding() {
           {/* spec row */}
           <div className="mt-11 grid gap-x-6 gap-y-3 sm:grid-cols-3">
             {HERO_SPECS.map((s) => {
-              const [head, tail] = s.split(" — ");
+              const [head, tail] = s.split(" - ");
               return (
                 <div key={s} className="flex items-start gap-2.5">
                   <span
@@ -365,7 +365,7 @@ export default function DispersionLanding() {
         </div>
       </section>
 
-      {/* ══ THE EDGE — graded comparison table ═════════════════════ */}
+      {/* ══ THE EDGE - graded comparison table ═════════════════════ */}
       <section className="mt-28">
         <SectionLabel k="the edge" t="Graded, not guessed." />
         <div
@@ -507,11 +507,11 @@ export default function DispersionLanding() {
         </div>
       </section>
 
-      {/* ══ POOLS — two crystal shards ═════════════════════════════ */}
+      {/* ══ POOLS - two crystal shards ═════════════════════════════ */}
       <section className="mt-28">
         <SectionLabel k="pools" t="Two shards. One lit, one forming." />
         <div className="mt-9 grid gap-6 md:grid-cols-2">
-          {/* Simple — LIVE */}
+          {/* Simple - LIVE */}
           <Tilt>
             <div
               className={`${styles.glass} ${styles.spectralEdge} ${styles.cutTR} relative h-full overflow-hidden rounded-3xl p-8`}
@@ -571,7 +571,7 @@ export default function DispersionLanding() {
             </div>
           </Tilt>
 
-          {/* Refined — COMING SOON (frosted) */}
+          {/* Refined - COMING SOON (frosted) */}
           <div
             className={`${styles.frosted} ${styles.cutBL} relative flex h-full flex-col rounded-3xl p-8`}
           >
@@ -595,7 +595,7 @@ export default function DispersionLanding() {
             </div>
             <p className="mt-4 max-w-[360px] text-[14.5px] leading-relaxed text-[#7E86A8]">
               A higher-refinement strategy is taking shape. Frosted colorless
-              now — it gains its spectrum when the engine goes live.
+              now - it gains its spectrum when the engine goes live.
             </p>
             <div className="mt-auto pt-8">
               <div className="flex items-center gap-2 text-[12px] tracking-[0.18em] text-[#6E769A]" style={mono}>
