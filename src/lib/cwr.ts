@@ -34,9 +34,6 @@ import {
   findFeeSchedule,
   findFeeBucket,
   findPosition,
-  findPendingState,
-  findPendingTreasury,
-  findPendingDeposit,
   findMiningAuthority,
   oreMinerPda,
   oreBoardPda,
@@ -46,9 +43,6 @@ import {
   oreStakeTreasuryPda,
   oreStakeVestingPda,
 } from "@cwr/sdk";
-// Diagnostic namespace import: lets us inspect which exports the DEPLOYED bundle
-// actually carries (used by the park/cancel logging below to catch a stale SDK).
-import * as CwrSdkNS from "@cwr/sdk";
 
 export { BN, Bucket };
 
@@ -189,111 +183,92 @@ export async function buildWithdrawIxs(
 // Park escrows SOL during the BETTING window (when normal deposit is closed)
 // with NO shares minted; it converts to shares via finalize_pending once the
 // next OPEN window has settled (the keeper does that automatically). Cancel
-// pulls the un-shared escrow back any time. Raw ixs (wallet-signed), mirroring
-// the SDK UserApi.parkDeposit / cancelPending account wiring.
+// pulls the un-shared escrow back any time.
+//
+// These two are built FROM THE DISCRIMINATOR + account layout directly (not via
+// the SDK's program.methods / findPending* helpers) on purpose: park/cancel are
+// new instructions, and a stale cached @cwr/abi/@cwr/sdk on the host can lack
+// them. Building them by hand makes the park UI immune to that — it only needs
+// the program id and the (stable) PDA seeds, both pinned here.
+
+const CONFIG_SEED_BUF = Buffer.from("config");
+const PENDING_STATE_SEED_BUF = Buffer.from("pending_state");
+const PENDING_TREASURY_SEED_BUF = Buffer.from("pending_treasury");
+const PENDING_SEED_BUF = Buffer.from("pending");
+const SIMPLE_BUCKET_BYTE = Buffer.from([SIMPLE as number]);
+// Anchor 8-byte discriminators (sha256("global:<ix>")[:8]) from the IDL.
+const PARK_DEPOSIT_DISC = Buffer.from([78, 114, 71, 170, 175, 185, 137, 182]);
+const CANCEL_PENDING_DISC = Buffer.from([74, 87, 109, 242, 64, 192, 151, 71]);
+
+const findPda = (seeds: (Buffer | Uint8Array)[], pid: PublicKey = PROGRAM_ID): PublicKey =>
+  PublicKey.findProgramAddressSync(seeds, pid)[0];
+const meta = (pubkey: PublicKey, isSigner: boolean, isWritable: boolean) => ({ pubkey, isSigner, isWritable });
 
 export async function buildParkDepositIxs(
-  connection: Connection,
+  _connection: Connection,
   owner: PublicKey,
   lamports: BN,
 ): Promise<TransactionInstruction[]> {
-  // ── DIAGNOSTICS ──────────────────────────────────────────────────────────
-  // Surfaces the exact failing piece (the prod error was
-  // "(0, c.findPendingState) is not a function" — a stale bundled @cwr/sdk).
-  try {
-    const sdkKeys = Object.keys(CwrSdkNS);
-    console.log("[park] @cwr/sdk export check", {
-      typeof_findPendingState: typeof findPendingState,
-      typeof_findPendingTreasury: typeof findPendingTreasury,
-      typeof_findPendingDeposit: typeof findPendingDeposit,
-      sdk_pending_exports: sdkKeys.filter((k) => k.toLowerCase().includes("pending")),
-      sdk_export_count: sdkKeys.length,
-    });
-  } catch (e) {
-    console.error("[park] sdk export check threw", e);
-  }
-
-  const vault = makeVault(connection);
-  const program = vault.client.program;
-  try {
-    const methodNames = Object.keys((program as { methods?: object }).methods ?? {});
-    console.log("[park] program.methods check", {
-      has_parkDeposit: methodNames.includes("parkDeposit"),
-      has_cancelPending: methodNames.includes("cancelPending"),
-      method_count: methodNames.length,
-      idl_address: (program as { idl?: { address?: string } }).idl?.address,
-      idl_ix_count: (program as { idl?: { instructions?: unknown[] } }).idl?.instructions?.length,
-    });
-  } catch (e) {
-    console.error("[park] program.methods check threw", e);
-  }
-
-  // Step-by-step so the console shows WHICH derivation/call blows up.
-  const log = (label: string, v: unknown) => console.log(`[park] ${label}`, String(v));
-  const addrs = deriveBucketAddresses(PROGRAM_ID, SIMPLE);
-  log("bucket", addrs.bucket);
-  const [pendingState] = findPendingState(PROGRAM_ID, SIMPLE);
-  log("pendingState", pendingState);
-  const [pendingTreasury] = findPendingTreasury(PROGRAM_ID, SIMPLE);
-  log("pendingTreasury", pendingTreasury);
-  const [pendingDeposit] = findPendingDeposit(PROGRAM_ID, SIMPLE, owner);
-  log("pendingDeposit", pendingDeposit);
+  const config = findPda([CONFIG_SEED_BUF]);
+  const bucket = deriveBucketAddresses(PROGRAM_ID, SIMPLE).bucket;
+  const pendingState = findPda([PENDING_STATE_SEED_BUF, SIMPLE_BUCKET_BYTE]);
+  const pendingTreasury = findPda([PENDING_TREASURY_SEED_BUF, SIMPLE_BUCKET_BYTE]);
+  const pendingDeposit = findPda([PENDING_SEED_BUF, SIMPLE_BUCKET_BYTE, owner.toBuffer()]);
   const [miningAuthority] = findMiningAuthority(PROGRAM_ID, SIMPLE);
   const [oreMiner] = oreMinerPda(miningAuthority);
-  log("oreMiner", oreMiner);
 
-  console.log("[park] building parkDeposit ix", { amount: lamports.toString() });
-  const ix = await program.methods
-    .parkDeposit(lamports)
-    .accountsPartial({
-      config: vault.client.configPda,
-      bucket: addrs.bucket,
-      pendingState,
-      pendingTreasury,
-      oreMiner,
-      user: owner,
-      pendingDeposit,
-      systemProgram: SystemProgram.programId,
-    })
-    .instruction();
-  console.log("[park] ix built OK", { programId: String(ix.programId), keys: ix.keys.length, dataLen: ix.data.length });
-  return [ix];
+  // ParkDeposit accounts, in IDL order. data = disc(8) + amount(u64 LE).
+  const keys = [
+    meta(config, false, false),
+    meta(bucket, false, false),
+    meta(pendingState, false, true),
+    meta(pendingTreasury, false, true),
+    meta(oreMiner, false, false),
+    meta(owner, true, true),
+    meta(pendingDeposit, false, true),
+    meta(SystemProgram.programId, false, false),
+  ];
+  const data = Buffer.concat([PARK_DEPOSIT_DISC, lamports.toArrayLike(Buffer, "le", 8)]);
+  return [new TransactionInstruction({ programId: PROGRAM_ID, keys, data })];
 }
 
 export async function buildCancelPendingIxs(
-  connection: Connection,
+  _connection: Connection,
   owner: PublicKey,
 ): Promise<TransactionInstruction[]> {
-  const vault = makeVault(connection);
-  const program = vault.client.program;
-  const addrs = deriveBucketAddresses(PROGRAM_ID, SIMPLE);
-  const [pendingState] = findPendingState(PROGRAM_ID, SIMPLE);
-  const [pendingTreasury] = findPendingTreasury(PROGRAM_ID, SIMPLE);
-  const [pendingDeposit] = findPendingDeposit(PROGRAM_ID, SIMPLE, owner);
+  const bucket = deriveBucketAddresses(PROGRAM_ID, SIMPLE).bucket;
+  const pendingState = findPda([PENDING_STATE_SEED_BUF, SIMPLE_BUCKET_BYTE]);
+  const pendingTreasury = findPda([PENDING_TREASURY_SEED_BUF, SIMPLE_BUCKET_BYTE]);
+  const pendingDeposit = findPda([PENDING_SEED_BUF, SIMPLE_BUCKET_BYTE, owner.toBuffer()]);
 
-  const ix = await program.methods
-    .cancelPending()
-    .accountsPartial({
-      bucket: addrs.bucket,
-      pendingState,
-      pendingTreasury,
-      owner,
-      pendingDeposit,
-      systemProgram: SystemProgram.programId,
-    })
-    .instruction();
-  return [ix];
+  // CancelPending accounts, in IDL order. data = disc(8), no args.
+  const keys = [
+    meta(bucket, false, false),
+    meta(pendingState, false, true),
+    meta(pendingTreasury, false, true),
+    meta(owner, true, true),
+    meta(pendingDeposit, false, true),
+    meta(SystemProgram.programId, false, false),
+  ];
+  return [new TransactionInstruction({ programId: PROGRAM_ID, keys, data: Buffer.from(CANCEL_PENDING_DISC) })];
 }
 
-/** Read a wallet's open parked-deposit ticket (null if none). */
+/**
+ * Read a wallet's open parked-deposit ticket (null if none). Decodes the
+ * PendingDeposit account by hand (no SDK dependency): the Borsh layout is
+ * disc(8) + owner(32) + bucket_id(1) + bump(1) + amount(u64@42) + parked_at(i64@50).
+ */
 export async function readPendingTicket(
   connection: Connection,
   owner: PublicKey,
 ): Promise<{ amountLamports: BN; parkedAt: number } | null> {
-  const vault = makeVault(connection);
-  const pd: any = await vault.read.pendingDeposit(SIMPLE, owner).catch(() => null);
-  if (!pd) return null;
-  return { amountLamports: new BN(pd.amount.toString()), parkedAt: Number(pd.parkedAt?.toString?.() ?? 0) };
+  const pendingDeposit = findPda([PENDING_SEED_BUF, SIMPLE_BUCKET_BYTE, owner.toBuffer()]);
+  const info = await connection.getAccountInfo(pendingDeposit).catch(() => null);
+  if (!info || info.data.length < 58) return null;
+  const amountLamports = new BN(info.data.subarray(42, 50), "le");
+  if (amountLamports.isZero()) return null;
+  const parkedAt = new BN(info.data.subarray(50, 58), "le").toNumber();
+  return { amountLamports, parkedAt };
 }
 
 // ── settle_harvest (lazy-settle, permissionless user action) ─────────────────
