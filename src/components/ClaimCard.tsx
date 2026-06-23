@@ -98,7 +98,7 @@ export function ClaimCard({
         <p className="mt-2 text-center font-mono text-[11px] text-fog-muted">
           {data?.phase !== 1
             ? `Claims open in the window. Opens in ${fmtCountdown(clock.remainingSecs)}.`
-            : "Window settling, open in a moment."}
+            : "Open the claim window above to claim."}
         </p>
       )}
       {connected && shares === 0 && (

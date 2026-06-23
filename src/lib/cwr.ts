@@ -13,10 +13,12 @@ import {
   Transaction,
   TransactionInstruction,
   SystemProgram,
+  ComputeBudgetProgram,
   type TransactionSignature,
 } from "@solana/web3.js";
 import {
   TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountIdempotentInstruction,
 } from "@solana/spl-token";
@@ -24,12 +26,22 @@ import {
   CwrVault,
   Bucket,
   STORE_MINT,
+  ORE_MINT,
+  ORE_PROGRAM_ID,
+  ORE_STAKE_PROGRAM_ID,
+  ORE_LST_PROGRAM_ID,
   deriveBucketAddresses,
   findFeeSchedule,
   findFeeBucket,
   findPosition,
   findMiningAuthority,
   oreMinerPda,
+  oreBoardPda,
+  oreTreasuryPda,
+  oreLstVaultPda,
+  oreStakeStakePda,
+  oreStakeTreasuryPda,
+  oreStakeVestingPda,
 } from "@cwr/sdk";
 
 export { BN, Bucket };
@@ -40,6 +52,8 @@ export const PROGRAM_ID = new PublicKey(
 );
 /** V1 ships the Simple bucket only. */
 export const SIMPLE: Bucket = Bucket.Simple;
+/** Contract min_deposit for the Simple bucket (DepositBelowMinimum below this). */
+export const MIN_DEPOSIT_SOL = 1;
 export const SHARE_DECIMALS = 9;
 export const LAMPORTS_PER_SOL = 1_000_000_000;
 export const NAV_SCALE = 1e18;
@@ -163,6 +177,76 @@ export async function buildWithdrawIxs(
     .instruction();
   ixs.push(withdrawIx);
   return ixs;
+}
+
+// ── settle_harvest (lazy-settle, permissionless user action) ─────────────────
+// A fresh OPEN window starts window_settled=false; deposit AND withdraw both
+// require window_settled (contract reverts WindowNotSettled otherwise), and the
+// keeper NEVER settles by design. So the first user to interact in a window must
+// run settle_harvest — it claims the mined round's SOL+ORE into the treasury and
+// wraps the ORE to stORE, flipping window_settled=true and unlocking the window
+// for everyone. Permissionless: any wallet can call it (it just pays the gas).
+// Raw ix (wallet-signed) mirroring the SDK CrankApi.settleHarvest wiring.
+export async function buildSettleHarvestIxs(
+  connection: Connection,
+  owner: PublicKey,
+): Promise<TransactionInstruction[]> {
+  const vault = makeVault(connection);
+  const program = vault.client.program;
+  const addrs = deriveBucketAddresses(PROGRAM_ID, SIMPLE);
+  const [miningAuthority] = findMiningAuthority(PROGRAM_ID, SIMPLE);
+  const [oreMiner] = oreMinerPda(miningAuthority);
+  const [oreBoard] = oreBoardPda();
+  const [oreTreasury] = oreTreasuryPda();
+  const [oreLstVault] = oreLstVaultPda();
+  const [oreLstStake] = oreStakeStakePda(oreLstVault);
+  const [oreLstTreasury] = oreStakeTreasuryPda();
+  const [oreLstVesting] = oreStakeVestingPda();
+
+  const ata = (mint: PublicKey, ownerPk: PublicKey) =>
+    getAssociatedTokenAddressSync(mint, ownerPk, true);
+  const miningAuthorityOreAta = ata(ORE_MINT, miningAuthority);
+  const miningAuthorityStoreAta = ata(STORE_MINT, miningAuthority);
+  const oreTreasuryOreAta = ata(ORE_MINT, oreTreasury);
+  const oreLstVaultOreAta = ata(ORE_MINT, oreLstVault);
+  const oreLstStakeOreAta = ata(ORE_MINT, oreLstStake);
+  const oreLstTreasuryOreAta = ata(ORE_MINT, oreLstTreasury);
+
+  const settleIx = await program.methods
+    .settleHarvest()
+    .accountsPartial({
+      bucket: addrs.bucket,
+      treasury: addrs.treasury,
+      miningAuthority,
+      storeTreasury: addrs.storeTreasury,
+      miningAuthorityOreAta,
+      miningAuthorityStoreAta,
+      oreMint: ORE_MINT,
+      storeMint: STORE_MINT,
+      oreMiner,
+      oreBoard,
+      oreTreasury,
+      oreTreasuryOreAta,
+      oreProgram: ORE_PROGRAM_ID,
+      oreLstVault,
+      oreLstVaultOreAta,
+      oreLstStake,
+      oreLstStakeOreAta,
+      oreLstTreasury,
+      oreLstTreasuryOreAta,
+      oreLstVesting,
+      oreStakeProgram: ORE_STAKE_PROGRAM_ID,
+      oreLstProgram: ORE_LST_PROGRAM_ID,
+      caller: owner,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+    })
+    .instruction();
+  // settle does up to 2 ATA creates + ClaimSOL + ClaimORE + the 17-account
+  // ore-lst Wrap — well past the 200k default CU. Raise the ceiling (free; no
+  // CU price set, so no extra priority fee).
+  return [ComputeBudgetProgram.setComputeUnitLimit({ units: 1_000_000 }), settleIx];
 }
 
 // ── Send + poll-confirm (no websocket) ───────────────────────────────────────

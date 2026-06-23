@@ -5,9 +5,11 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import {
   buildDepositIxs,
   buildWithdrawIxs,
+  buildSettleHarvestIxs,
   sendIxs,
   solToLamports,
   sharesToRaw,
+  MIN_DEPOSIT_SOL,
 } from "@/lib/cwr";
 import { MOCK, MOCK_TX_SIG } from "@/lib/mock";
 
@@ -25,6 +27,7 @@ export function useCwrActions() {
   const deposit = useCallback(
     async (sol: number): Promise<string> => {
       if (!(sol > 0)) throw new Error("Enter an amount greater than 0.");
+      if (sol < MIN_DEPOSIT_SOL) throw new Error(`Minimum deposit is ${MIN_DEPOSIT_SOL} SOL.`);
       if (MOCK) {
         setBusy(true);
         try {
@@ -68,5 +71,27 @@ export function useCwrActions() {
     [connection, publicKey, sendTransaction],
   );
 
-  return { deposit, withdraw, busy, connected: MOCK || !!publicKey };
+  // settle_harvest — the first action of a fresh OPEN window (window_settled
+  // starts false; deposit/withdraw revert WindowNotSettled until this runs).
+  // Permissionless: any connected wallet can open the window for everyone.
+  const settle = useCallback(async (): Promise<string> => {
+    if (MOCK) {
+      setBusy(true);
+      try {
+        return await mockSend();
+      } finally {
+        setBusy(false);
+      }
+    }
+    if (!publicKey || !sendTransaction) throw new Error("Connect a wallet first.");
+    setBusy(true);
+    try {
+      const ixs = await buildSettleHarvestIxs(connection, publicKey);
+      return await sendIxs(connection, sendTransaction, ixs, publicKey);
+    } finally {
+      setBusy(false);
+    }
+  }, [connection, publicKey, sendTransaction]);
+
+  return { deposit, withdraw, settle, busy, connected: MOCK || !!publicKey };
 }

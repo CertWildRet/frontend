@@ -8,6 +8,7 @@ import type { VaultData } from "@/hooks/useVaultData";
 import { ConnectHint } from "./ConnectHint";
 import { TxResult } from "./TxResult";
 import { formatNum } from "@/lib/format";
+import { MIN_DEPOSIT_SOL } from "@/lib/cwr";
 
 const QUICK = [0.1, 0.5, 1, 5];
 
@@ -21,11 +22,12 @@ export function MintCwrCard({ data, onDone }: { data: VaultData | null; onDone: 
 
   const sol = Number(amount);
   const valid = sol > 0 && Number.isFinite(sol);
+  const belowMin = valid && sol < MIN_DEPOSIT_SOL;
   const navPerShare = data?.navPerShare && data.navPerShare > 0 ? data.navPerShare : 1;
   const estShares = valid ? sol / navPerShare : 0;
 
   const windowOpen = !!data?.initialized && data.phase === 1 && data.windowSettled && !data.paused;
-  const actionable = connected && windowOpen && valid && !busy;
+  const actionable = connected && windowOpen && valid && !belowMin && !busy;
 
   async function onMint() {
     setErr(null);
@@ -74,6 +76,11 @@ export function MintCwrCard({ data, onDone }: { data: VaultData | null; onDone: 
         <span className="text-fog-muted">you receive ≈</span>
         <span className="num text-gray-200">{formatNum(estShares, 4)} CWR</span>
       </div>
+      {belowMin && (
+        <p className="mt-1.5 font-mono text-[11px] text-amber-400/80">
+          Minimum deposit is {MIN_DEPOSIT_SOL} SOL.
+        </p>
+      )}
 
       <div className="mt-auto pt-4">
         {!connected ? (
@@ -93,7 +100,7 @@ export function MintCwrCard({ data, onDone }: { data: VaultData | null; onDone: 
               ? "Pool not live yet."
               : data.phase !== 1
                 ? `Deposits open in the claim window. Opens in ${fmtCountdown(clock.remainingSecs)}.`
-                : "Window settling, open in a moment."}
+                : "Open the claim window above to deposit."}
         </p>
       )}
 
