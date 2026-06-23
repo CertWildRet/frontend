@@ -46,6 +46,9 @@ import {
   oreStakeTreasuryPda,
   oreStakeVestingPda,
 } from "@cwr/sdk";
+// Diagnostic namespace import: lets us inspect which exports the DEPLOYED bundle
+// actually carries (used by the park/cancel logging below to catch a stale SDK).
+import * as CwrSdkNS from "@cwr/sdk";
 
 export { BN, Bucket };
 
@@ -194,15 +197,52 @@ export async function buildParkDepositIxs(
   owner: PublicKey,
   lamports: BN,
 ): Promise<TransactionInstruction[]> {
+  // ── DIAGNOSTICS ──────────────────────────────────────────────────────────
+  // Surfaces the exact failing piece (the prod error was
+  // "(0, c.findPendingState) is not a function" — a stale bundled @cwr/sdk).
+  try {
+    const sdkKeys = Object.keys(CwrSdkNS);
+    console.log("[park] @cwr/sdk export check", {
+      typeof_findPendingState: typeof findPendingState,
+      typeof_findPendingTreasury: typeof findPendingTreasury,
+      typeof_findPendingDeposit: typeof findPendingDeposit,
+      sdk_pending_exports: sdkKeys.filter((k) => k.toLowerCase().includes("pending")),
+      sdk_export_count: sdkKeys.length,
+    });
+  } catch (e) {
+    console.error("[park] sdk export check threw", e);
+  }
+
   const vault = makeVault(connection);
   const program = vault.client.program;
+  try {
+    const methodNames = Object.keys((program as { methods?: object }).methods ?? {});
+    console.log("[park] program.methods check", {
+      has_parkDeposit: methodNames.includes("parkDeposit"),
+      has_cancelPending: methodNames.includes("cancelPending"),
+      method_count: methodNames.length,
+      idl_address: (program as { idl?: { address?: string } }).idl?.address,
+      idl_ix_count: (program as { idl?: { instructions?: unknown[] } }).idl?.instructions?.length,
+    });
+  } catch (e) {
+    console.error("[park] program.methods check threw", e);
+  }
+
+  // Step-by-step so the console shows WHICH derivation/call blows up.
+  const log = (label: string, v: unknown) => console.log(`[park] ${label}`, String(v));
   const addrs = deriveBucketAddresses(PROGRAM_ID, SIMPLE);
+  log("bucket", addrs.bucket);
   const [pendingState] = findPendingState(PROGRAM_ID, SIMPLE);
+  log("pendingState", pendingState);
   const [pendingTreasury] = findPendingTreasury(PROGRAM_ID, SIMPLE);
+  log("pendingTreasury", pendingTreasury);
   const [pendingDeposit] = findPendingDeposit(PROGRAM_ID, SIMPLE, owner);
+  log("pendingDeposit", pendingDeposit);
   const [miningAuthority] = findMiningAuthority(PROGRAM_ID, SIMPLE);
   const [oreMiner] = oreMinerPda(miningAuthority);
+  log("oreMiner", oreMiner);
 
+  console.log("[park] building parkDeposit ix", { amount: lamports.toString() });
   const ix = await program.methods
     .parkDeposit(lamports)
     .accountsPartial({
@@ -216,6 +256,7 @@ export async function buildParkDepositIxs(
       systemProgram: SystemProgram.programId,
     })
     .instruction();
+  console.log("[park] ix built OK", { programId: String(ix.programId), keys: ix.keys.length, dataLen: ix.data.length });
   return [ix];
 }
 
