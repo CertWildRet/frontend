@@ -113,6 +113,14 @@
   .gradient-text {
     @apply bg-grad-gold bg-clip-text text-transparent;
   }
+  /* Shiny metallic silver, for the individual SOL / ORE shares of the value. */
+  .gradient-silver {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #ffffff 0%, #cdd2da 48%, #9aa0ab 100%);
+  }
+  .text-glow-silver {
+    text-shadow: 0 0 10px rgba(205, 210, 218, 0.45);
+  }
 
   .live-dot {
     @apply inline-block h-1.5 w-1.5 rounded-full bg-current;

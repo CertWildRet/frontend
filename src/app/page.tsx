@@ -14,7 +14,7 @@ export default function HomePage() {
       <section className="grid grid-cols-1 items-center gap-10 pt-4 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="stagger">
           <span className="chip border-gold/30 text-gold">
-            <span className="live-dot text-gold" /> keeper online · 24 / 7
+            <span className="live-dot text-pos" /> keeper online · 24 / 7
           </span>
           <h1 className="mt-6 font-display text-5xl font-bold leading-[1.04] tracking-tight md:text-6xl">
             Pool your SOL.
@@ -133,7 +133,7 @@ export default function HomePage() {
         <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
           <Link href="/crank" className="card card-hover frame-brand group relative overflow-hidden">
             <span className="chip absolute right-5 top-5 border-gold/30 text-gold">
-              <span className="live-dot text-gold" /> live
+              <span className="live-dot text-pos" /> live
             </span>
             <h3 className="font-display text-lg font-semibold text-white">Simple</h3>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-fog-dim">
@@ -267,7 +267,7 @@ function OreHeroVisual() {
         className="animate-float relative w-[56%] drop-shadow-[0_0_44px_rgba(245,197,24,0.45)]"
       />
       <span className="chip absolute bottom-5 right-5 border-gold/30 text-gold">
-        <span className="live-dot text-gold" /> mining ORE
+        <span className="live-dot text-pos" /> mining ORE
       </span>
     </div>
   );
@@ -286,7 +286,7 @@ function OnchainVisual() {
           </div>
         </div>
         <span className="chip border-gold/30 text-gold">
-          <span className="live-dot text-gold" /> live
+          <span className="live-dot text-pos" /> live
         </span>
       </div>
       <div className="my-3 flex justify-center">

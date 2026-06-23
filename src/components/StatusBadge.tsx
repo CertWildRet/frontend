@@ -3,11 +3,12 @@ type Props = {
   label: string;
 };
 
+// Active / live states (open, mining) read green; warn/paused keep amber/red.
 const COLORS: Record<Props["status"], string> = {
-  ok: "border-gold/30 text-gold",
+  ok: "border-pos/30 text-pos",
   warn: "border-amber/30 text-amber",
   down: "border-red/30 text-red",
-  info: "border-gold/30 text-gold",
+  info: "border-pos/30 text-pos",
 };
 
 export function StatusBadge({ status, label }: Props) {

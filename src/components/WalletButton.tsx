@@ -19,7 +19,7 @@ export function WalletButton() {
         title="Disconnect"
         className="chip border-line-bright px-3 py-1.5 font-mono text-fog transition hover:border-red hover:text-white"
       >
-        <span className="live-dot text-gold" />
+        <span className="live-dot text-pos" />
         {a.slice(0, 4)}…{a.slice(-4)}
       </button>
     );

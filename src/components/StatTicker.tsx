@@ -26,9 +26,9 @@ export function StatTicker() {
       <div className="mx-auto flex max-w-6xl items-center gap-5 overflow-x-auto px-6 py-2 font-mono text-[12px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((it, i) => (
           <div key={i} className="flex shrink-0 items-center gap-1.5">
-            {it.live ? <span className="live-dot text-gold" /> : null}
+            {it.live ? <span className="live-dot text-pos" /> : null}
             <span className="uppercase tracking-wider text-fog-muted">{it.k}</span>
-            <span className={it.live ? "text-gold" : "text-fog"}>{it.v}</span>
+            <span className={it.live ? "text-pos" : "text-fog"}>{it.v}</span>
             {i < items.length - 1 && <span className="pl-3 text-line-bright">·</span>}
           </div>
         ))}

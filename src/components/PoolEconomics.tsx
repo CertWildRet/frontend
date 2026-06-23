@@ -26,10 +26,20 @@ export function PoolEconomics({ stats }: { stats: PoolStatsData | null }) {
         recoverable values, read straight from the ORE miner.
       </p>
 
-      {/* headline */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <Big label="True TVL" value={sol(s?.value.tvlSol)} unit="SOL" accent />
-        <Big label="True value / share" value={s ? formatNum(s.value.navPerShareTrue, 4) : "···"} unit="SOL" />
+      {/* headline: combined TVL (gold) split into its SOL + ORE shares (silver) */}
+      <div className="grid grid-cols-3 gap-3">
+        <Big label="True TVL" value={sol(s?.value.tvlSol)} unit="SOL" tone="gold" sub="SOL + ORE combined" />
+        <Big label="SOL share" value={sol(s?.value.recoverableSol)} unit="SOL" tone="silver" />
+        <Big
+          label="ORE share"
+          value={ore(s?.value.recoverableOre)}
+          unit="ORE"
+          tone="silver"
+          sub={s ? `≈ ${formatSol(s.value.oreAsSol, 4)} SOL` : undefined}
+        />
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <Big label="Value / share" value={s ? formatNum(s.value.navPerShareTrue, 4) : "···"} unit="SOL" />
         <Big
           label="On-chain NAV"
           value={sol(s?.vault.totalNavOnchain)}
@@ -73,19 +83,25 @@ function Big({
   value,
   unit,
   sub,
-  accent,
+  tone,
 }: {
   label: string;
   value: string;
   unit?: string;
   sub?: string;
-  accent?: boolean;
+  tone?: "gold" | "silver";
 }) {
+  const valueClass =
+    tone === "gold"
+      ? "gradient-text"
+      : tone === "silver"
+        ? "gradient-silver text-glow-silver"
+        : "text-white";
   return (
     <div className="rounded-lg border border-line bg-ink-800 px-3 py-2.5">
       <div className="label">{label}</div>
       <div className="mt-1 flex items-baseline gap-1">
-        <span className={`num text-lg ${accent ? "gradient-text" : "text-white"}`}>{value}</span>
+        <span className={`num text-lg ${valueClass}`}>{value}</span>
         {unit && <span className="font-mono text-[12px] text-fog-muted">{unit}</span>}
       </div>
       {sub && <div className="mt-0.5 font-mono text-[12px] text-fog-muted">{sub}</div>}

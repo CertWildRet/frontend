@@ -18,8 +18,8 @@ export function LiveCrankPanel() {
             <p className="font-mono text-[12px] text-fog-muted">What the keeper is doing on the board, right now.</p>
           </div>
         </div>
-        <span className={`chip ${enabled && connected ? "border-gold/30 text-gold" : "border-line text-fog-muted"}`}>
-          {enabled && connected ? <span className="live-dot text-gold" /> : null}
+        <span className={`chip ${enabled && connected ? "border-pos/30 text-pos" : "border-line text-fog-muted"}`}>
+          {enabled && connected ? <span className="live-dot text-pos" /> : null}
           {enabled ? (connected ? "live" : "reconnecting") : "feed offline"}
         </span>
       </div>
@@ -85,7 +85,7 @@ export function LiveCrankPanel() {
 function humanizeMove(reason: string): string {
   const r = reason.toLowerCase();
   if (r.includes("no idle sol") || r.includes("sol_in_vault == 0"))
-    return "All SOL is working the board. It recycles into the vault at the next claim window.";
+    return "All SOL has been deployed and mined. It returns to the vault as rewards at the next claim window.";
   if (r.includes("per-round budget") || r.includes("near-empty"))
     return "Vault almost empty. It refills at the next claim window.";
   if (r.includes("margin") || r.includes("production cost"))

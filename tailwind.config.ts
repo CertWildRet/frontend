@@ -20,7 +20,8 @@ const config: Config = {
         gold: { DEFAULT: "#F5C518", soft: "#FFE08A", deep: "#C2901A", bright: "#FFEBB0" },
         amber: { DEFAULT: "#E8881A" },
         red: { DEFAULT: "#FF5C66" },
-        pos: { DEFAULT: "#4ADE80" },
+        pos: { DEFAULT: "#4ADE80", bright: "#86EFAC" },
+        silver: { DEFAULT: "#C8CCD4", bright: "#EEF0F4", deep: "#9AA0AB" },
         fog: { DEFAULT: "#EDEDF0", dim: "#9A9AA4", muted: "#5E5E68" },
         // legacy aliases (kept so older class names still resolve to gold/black)
         bg: { DEFAULT: "#050506", surface: "#0A0A0C", elevated: "#17171C", border: "#1C1C20" },
