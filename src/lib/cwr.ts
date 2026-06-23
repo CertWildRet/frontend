@@ -53,7 +53,7 @@ export const PROGRAM_ID = new PublicKey(
 /** V1 ships the Simple bucket only. */
 export const SIMPLE: Bucket = Bucket.Simple;
 /** Contract min_deposit for the Simple bucket (DepositBelowMinimum below this). */
-export const MIN_DEPOSIT_SOL = 1;
+export const MIN_DEPOSIT_SOL = 0.1;
 export const SHARE_DECIMALS = 9;
 export const LAMPORTS_PER_SOL = 1_000_000_000;
 export const NAV_SCALE = 1e18;
