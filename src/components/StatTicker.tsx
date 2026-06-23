@@ -28,7 +28,7 @@ export function StatTicker() {
           <div key={i} className="flex shrink-0 items-center gap-1.5">
             {it.live ? <span className="live-dot text-pos" /> : null}
             <span className="uppercase tracking-wider text-fog-muted">{it.k}</span>
-            <span className={it.live ? "text-pos" : "text-fog"}>{it.v}</span>
+            <span className={it.live ? "text-white" : "text-fog"}>{it.v}</span>
             {i < items.length - 1 && <span className="pl-3 text-line-bright">·</span>}
           </div>
         ))}

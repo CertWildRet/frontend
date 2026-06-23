@@ -13,6 +13,10 @@ export function PoolEconomics({ stats }: { stats: PoolStatsData | null }) {
   const s = stats;
   const sol = (n: number | undefined) => (s ? `${formatSol(n ?? 0, 4)}` : "···");
   const ore = (n: number | undefined) => (s ? `${formatNum(n ?? 0, 4)}` : "···");
+  // ORE mined all-time = still unclaimed (recoverable now) + already claimed and
+  // withdrawn (during earlier settle cycles). This reconciles the lifetime total
+  // with the small "unclaimed" figure above.
+  const claimedOre = s ? Math.max(0, s.miner.lifetimeRewardsOre - s.value.recoverableOre) : 0;
 
   return (
     <div className="card">
@@ -57,12 +61,18 @@ export function PoolEconomics({ stats }: { stats: PoolStatsData | null }) {
         <Row k="Total recoverable" v={sol(s?.value.tvlSol)} unit="SOL" strong />
       </Section>
 
-      {/* lifetime mining */}
-      <Section title="Lifetime mining">
+      {/* lifetime mining (all-time, includes ORE already claimed + withdrawn) */}
+      <Section title="Lifetime mining (all-time)">
         <Row k="Total SOL deployed" v={sol(s?.miner.lifetimeDeployed)} unit="SOL" />
         <Row k="Total SOL recovered" v={sol(s?.miner.lifetimeRewardsSol)} unit="SOL" />
-        <Row k="Total ORE mined" v={ore(s?.miner.lifetimeRewardsOre)} unit="ORE" />
+        <Row k="Total ORE mined" v={ore(s?.miner.lifetimeRewardsOre)} unit="ORE" strong />
+        <Row k="↳ already claimed + withdrawn" v={ore(claimedOre)} unit="ORE" />
+        <Row k="↳ still unclaimed (above)" v={ore(s?.value.recoverableOre)} unit="ORE" />
       </Section>
+      <p className="mt-2 font-mono text-[12px] leading-relaxed text-fog-muted">
+        &quot;Total ORE mined&quot; is all-time. Most was claimed and withdrawn in earlier settle
+        cycles, so only the &quot;still unclaimed&quot; slice is recoverable by this pool now.
+      </p>
 
       <div className="mt-4 flex items-center justify-between border-t border-line pt-3 font-mono text-[12px] text-fog-muted">
         <span>

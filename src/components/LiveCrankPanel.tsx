@@ -18,7 +18,7 @@ export function LiveCrankPanel() {
             <p className="font-mono text-[12px] text-fog-muted">What the keeper is doing on the board, right now.</p>
           </div>
         </div>
-        <span className={`chip ${enabled && connected ? "border-pos/30 text-pos" : "border-line text-fog-muted"}`}>
+        <span className={`chip ${enabled && connected ? "border-pos/40 text-white" : "border-line text-fog-muted"}`}>
           {enabled && connected ? <span className="live-dot text-pos" /> : null}
           {enabled ? (connected ? "live" : "reconnecting") : "feed offline"}
         </span>

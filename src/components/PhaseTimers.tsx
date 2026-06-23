@@ -20,7 +20,7 @@ export function PhaseTimers({ data }: { data: VaultData | null }) {
     <div className="panel">
       <div className="mb-5 flex items-center justify-between">
         <h2 className="label text-fog-dim">Pool cycle</h2>
-        <span className="chip border-pos/30 text-pos">
+        <span className="chip border-pos/40 text-white">
           <span className="live-dot text-pos" />
           {clock.isOpen ? "deposit / claim open" : "mining live"}
         </span>
