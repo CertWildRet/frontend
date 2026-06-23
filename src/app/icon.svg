@@ -1,0 +1,43 @@
+<svg width="48" height="48" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ic-table" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F4F8FF"/>
+      <stop offset="0.5" stop-color="#9DB7D8"/>
+      <stop offset="1" stop-color="#3A4A63"/>
+    </linearGradient>
+    <linearGradient id="ic-crownL" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#C9D2DE"/>
+      <stop offset="1" stop-color="#1C2029"/>
+    </linearGradient>
+    <linearGradient id="ic-crownR" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E8EFFA"/>
+      <stop offset="1" stop-color="#2A3445"/>
+    </linearGradient>
+    <linearGradient id="ic-pav" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#5A6E8C"/>
+      <stop offset="0.6" stop-color="#1C2333"/>
+      <stop offset="1" stop-color="#0B1426"/>
+    </linearGradient>
+    <radialGradient id="ic-gold" cx="0.5" cy="0.34" r="0.5">
+      <stop offset="0" stop-color="#FFE08A" stop-opacity="0.8"/>
+      <stop offset="0.55" stop-color="#F5C518" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#F5C518" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="200" height="200" rx="46" fill="#0A0A0C"/>
+  <g transform="translate(0,4)">
+    <polygon points="30,72 100,72 100,180" fill="url(#ic-pav)" opacity="0.92"/>
+    <polygon points="170,72 100,72 100,180" fill="url(#ic-pav)" opacity="0.78"/>
+    <polygon points="30,72 60,72 100,180" fill="#0B1426" opacity="0.85"/>
+    <polygon points="170,72 140,72 100,180" fill="#0B1426" opacity="0.7"/>
+    <polygon points="30,68 170,68 170,74 30,74" fill="#C9D2DE" opacity="0.25"/>
+    <polygon points="30,68 170,68 170,70 30,70" fill="#F5C518" opacity="0.3"/>
+    <polygon points="55,30 145,30 170,68 30,68" fill="url(#ic-table)" opacity="0.95"/>
+    <polygon points="72,30 128,30 150,52 50,52" fill="url(#ic-table)"/>
+    <polygon points="72,30 128,30 100,42" fill="#FFFFFF" opacity="0.85"/>
+    <polygon points="55,30 72,30 50,52 30,68" fill="url(#ic-crownL)" opacity="0.9"/>
+    <polygon points="145,30 128,30 150,52 170,68" fill="url(#ic-crownR)" opacity="0.9"/>
+    <polygon points="50,52 150,52 170,68 30,68" fill="#7E93B2" opacity="0.4"/>
+    <ellipse cx="100" cy="41" rx="25" ry="11" fill="url(#ic-gold)"/>
+  </g>
+</svg>

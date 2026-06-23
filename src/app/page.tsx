@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { RefinedComingSoon } from "@/components/RefinedComingSoon";
-import { OreMark } from "@/components/OreMark";
+import { DiamondMark } from "@/components/DiamondMark";
 
 export const metadata = {
   title: "CWR · autonomous ORE mining",
@@ -258,10 +258,10 @@ function OreHeroVisual() {
           maskImage: "radial-gradient(circle at 50% 50%, #000, transparent 76%)",
         }}
       />
-      <OreMark
-        gradientId="oreHero"
-        title="ORE"
-        className="animate-float relative w-[56%] drop-shadow-[0_0_44px_rgba(245,197,24,0.45)]"
+      <DiamondMark
+        uid="hero"
+        title="CWR"
+        className="animate-float relative w-[58%] drop-shadow-[0_0_46px_rgba(157,183,216,0.4)]"
       />
       <span className="chip absolute bottom-5 right-5 border-pos/40 text-white">
         <span className="live-dot text-pos" /> mining ORE
@@ -276,7 +276,7 @@ function OnchainVisual() {
     <div className="frame-brand relative overflow-hidden rounded-2xl border border-line bg-ink-900/60 p-5 backdrop-blur-sm">
       <div className="flex items-center justify-between rounded-xl border border-line bg-ink-800/60 px-4 py-3">
         <div className="flex items-center gap-3">
-          <OreMark className="h-6 w-6 text-gold" />
+          <DiamondMark uid="vault" className="h-6 w-6" />
           <div>
             <div className="label">vault treasury</div>
             <div className="font-mono text-xs text-fog-dim">program-owned PDA</div>

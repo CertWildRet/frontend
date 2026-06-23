@@ -71,7 +71,7 @@ export function ParkCard({ data, onDone }: { data: VaultData | null; onDone: () 
       </div>
       <p className="mb-4 font-mono text-[12px] leading-relaxed text-fog-muted">
         Deposits are closed while the pool is mining. Park SOL now and it converts to CWR
-        automatically the moment the claim window opens. Pull it back any time before then.
+        automatically the moment the deposit/claim window opens. Pull it back any time before then.
       </p>
 
       {ticket && (
@@ -81,7 +81,7 @@ export function ParkCard({ data, onDone }: { data: VaultData | null; onDone: () 
             <span className="num text-pos">{formatNum(ticket.amountSol, 4)} SOL</span>
           </div>
           <p className="mt-1.5 font-mono text-[12px] text-fog-muted">
-            Converts to CWR at the next claim window. Or pull it back now.
+            Converts to CWR at the next deposit/claim window. Or pull it back now.
           </p>
           <button
             disabled={busy}
@@ -133,7 +133,7 @@ export function ParkCard({ data, onDone }: { data: VaultData | null; onDone: () 
             ? "Pool paused."
             : !data?.initialized
               ? "Pool not live yet."
-              : "The claim window is open. Use Mint CWR to deposit directly."}
+              : "The deposit/claim window is open. Use Mint CWR to deposit directly."}
         </p>
       )}
 
