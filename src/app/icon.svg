@@ -1,10 +1,39 @@
 <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-  <rect width="48" height="48" rx="11" fill="#0A0A0C"/>
-  <g transform="translate(12 12) scale(1)" fill="none">
-    <path d="M5 9 L12 3 L19 9 L12 21 Z" fill="#9DB7D8" fill-opacity="0.25"/>
-    <path d="M5 9 L19 9 L12 21 Z" fill="#1C2029"/>
-    <path d="M5 9 L12 3 L19 9" stroke="#C9D2DE" stroke-opacity="0.8" stroke-width="1"/>
-    <path d="M5 9 L12 21 L19 9" stroke="#9DB7D8" stroke-opacity="0.6" stroke-width="0.8"/>
-    <path d="M9 6 L12 3 L15 6" stroke="#F4F8FF" stroke-width="0.8"/>
+  <defs>
+    <linearGradient id="fc-crown" x1="0.1" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.5" stop-color="#D2E2F4"/>
+      <stop offset="1" stop-color="#9DB7D8"/>
+    </linearGradient>
+    <linearGradient id="fc-pav" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#90ACD2"/>
+      <stop offset="0.55" stop-color="#3E5575"/>
+      <stop offset="1" stop-color="#142038"/>
+    </linearGradient>
+    <radialGradient id="fc-glint" cx="0.5" cy="0.32" r="0.5">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="48" height="48" rx="11" fill="#0B0F1A"/>
+  <!-- pavilion (point down) -->
+  <polygon points="8,20 40,20 24,41" fill="url(#fc-pav)"/>
+  <polygon points="8,20 24,20 24,41" fill="#0E1830" opacity="0.55"/>
+  <!-- crown (bright) + table -->
+  <polygon points="15,10 33,10 40,20 8,20" fill="url(#fc-crown)"/>
+  <polygon points="18,10 30,10 35,15.5 13,15.5" fill="#FFFFFF" opacity="0.92"/>
+  <!-- bright facet edges -->
+  <g stroke="#EAF2FF" stroke-opacity="0.85" stroke-width="1" fill="none">
+    <polyline points="15,10 33,10"/>
+    <polyline points="13,15.5 35,15.5"/>
+    <polyline points="8,20 40,20"/>
+    <polyline points="18,10 13,15.5 8,20"/>
+    <polyline points="30,10 35,15.5 40,20"/>
   </g>
+  <g stroke="#AFC6E4" stroke-opacity="0.55" stroke-width="0.9" fill="none">
+    <polyline points="8,20 24,41 40,20"/>
+    <polyline points="24,20 24,41"/>
+  </g>
+  <!-- table glint -->
+  <ellipse cx="24" cy="13.5" rx="7" ry="3" fill="url(#fc-glint)"/>
 </svg>
