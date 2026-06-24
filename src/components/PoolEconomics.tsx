@@ -39,7 +39,8 @@ export function PoolEconomics({
   // Exact on-chain recoverable.
   const recSol = data?.recoverableSol ?? 0;
   const recOre = data?.recoverableOre ?? 0;
-  const unclaimedOre = data?.unclaimedOre ?? 0;
+  const unclaimedOre = data?.unclaimedOre ?? 0; // gross balance in the miner
+  const claimFeeOre = data?.claimFeeOre ?? 0; // 10% protocol fee on the rewards_ore leg
   const storeOre = data?.storeInVaultOre ?? 0;
   const oreAsSol = recOre * oreToSol;
   const tvlSol = recSol + oreAsSol;
@@ -108,7 +109,12 @@ export function PoolEconomics({
         <Row k="Miner rewards (won SOL)" v={sol(data?.rewardsSol ?? 0)} unit="SOL" />
         <Row k="In-flight this round" v={sol(data?.inFlightSol ?? 0)} unit="SOL" />
         <Row k="stORE held (claimed ORE)" v={ore(storeOre)} unit="stORE" />
-        <Row k="Unclaimed ORE" v={ore(unclaimedOre)} unit="ORE" />
+        <Row
+          k="Unclaimed ORE"
+          v={ore(unclaimedOre - claimFeeOre)}
+          unit="ORE"
+          sub={claimFeeOre > 0 ? "net of 10% claim fee" : undefined}
+        />
         <Row
           k="Total recoverable"
           v={priced ? `≈ ${sol(tvlSol)}` : sol(recSol)}

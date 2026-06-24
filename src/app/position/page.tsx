@@ -26,7 +26,9 @@ export default function PositionPage() {
 
   const yourSol = data ? fraction * data.recoverableSol : 0;
   const yourStore = data ? fraction * data.storeInVaultOre : 0;
-  const yourUnclaimedOre = data ? fraction * data.unclaimedOre : 0;
+  // Net of the 10% claim fee the pool pays on the rewards_ore leg at harvest, so
+  // this backing line matches the Total value (which uses the net recoverableOre).
+  const yourUnclaimedOre = data ? fraction * Math.max(0, data.unclaimedOre - data.claimFeeOre) : 0;
   const yourOre = data ? fraction * data.recoverableOre : 0;
 
   const solUsd = stats?.prices.solUsd ?? 0;

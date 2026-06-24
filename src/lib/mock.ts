@@ -30,6 +30,7 @@ export const mockVaultData: VaultData = {
   storeInVaultOre: 36.4,
   storeToOreRate: 1.07,
   unclaimedOre: 8.2,
+  claimFeeOre: 0.35,
   rewardsSol: 120.4,
   inFlightSol: 0,
   recoverableSol: 962.5,
