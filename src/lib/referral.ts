@@ -31,19 +31,42 @@ export const optInMessage = (referrer: string, optIn: boolean) =>
   `CWR referral program: set auto-payout ${optIn ? "on" : "off"} for ${referrer}`;
 
 // ─── Service API ────────────────────────────────────────────────────────────
+const unreachable = () =>
+  new Error(`Can't reach the referral service (${REFERRAL_URL || "NEXT_PUBLIC_REFERRAL_URL not set"}). It may be offline or blocking this origin (CORS).`);
+
 async function post(path: string, body: unknown): Promise<any> {
-  const res = await fetch(`${REFERRAL_URL}${path}`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  const url = `${REFERRAL_URL}${path}`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (e) {
+    console.error("[referral] POST", url, e);
+    throw unreachable();
+  }
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json?.error ?? `request failed (${res.status})`);
+  if (!res.ok) {
+    console.error("[referral] POST", url, res.status, json);
+    throw new Error(json?.error ?? `Request failed (${res.status}) on ${path}`);
+  }
   return json;
 }
 async function get(path: string): Promise<any> {
-  const res = await fetch(`${REFERRAL_URL}${path}`);
-  if (!res.ok) throw new Error(`request failed (${res.status})`);
+  const url = `${REFERRAL_URL}${path}`;
+  let res: Response;
+  try {
+    res = await fetch(url);
+  } catch (e) {
+    console.error("[referral] GET", url, e);
+    throw unreachable();
+  }
+  if (!res.ok) {
+    console.error("[referral] GET", url, res.status);
+    throw new Error(`Request failed (${res.status}) on ${path}`);
+  }
   return res.json();
 }
 

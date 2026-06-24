@@ -142,7 +142,7 @@ export function ReferralClient({ inviteCode }: { inviteCode?: string }) {
           <h3 className="font-display text-base font-semibold text-white">You were invited</h3>
           <p className="mb-4 mt-1 font-mono text-[12px] text-fog-muted">
             Join via code <span className="text-[#9DB7D8]">{inviteCode}</span>. Your future deposits will credit your
-            referrer 0.1% of the volume they work — it costs you nothing.
+            referrer 0.1% of the volume they work, and it costs you nothing.
           </p>
           {joined ? (
             <a href="/crank" className="btn-primary inline-block px-5 py-2">Go deposit →</a>
@@ -157,7 +157,7 @@ export function ReferralClient({ inviteCode }: { inviteCode?: string }) {
           <h3 className="font-display text-base font-semibold text-white">Become a referrer</h3>
           <p className="mb-4 mt-1 font-mono text-[12px] text-fog-muted">
             Get a share link. Earn 0.1% of the deploy volume the pool works from everyone you bring, paid from the
-            protocol fee — not from them. Claim your drip anytime.
+            protocol fee, not from them. Claim your drip anytime.
           </p>
           <button onClick={onRegister} disabled={!!busy} className="btn-primary px-5 py-2 disabled:opacity-50">
             {busy === "register" ? "Signing…" : "Register & get my link"}

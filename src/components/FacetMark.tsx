@@ -1,5 +1,5 @@
 /**
- * FacetMark — the CWR brand logo (the small diamond from the 1/ nav header).
+ * FacetMark: the CWR brand logo (the small diamond from the 1/ nav header).
  * Simple line-art facets in the diamond's blue-silver. Used everywhere a compact
  * mark is needed (nav, footer, panel, vault). The big animated stone is HeroStone.
  */

@@ -141,7 +141,7 @@
   .text-sheen {
     /* edges share the base colour (#9db7d8 at 0% and 100%) so the tiled image
        joins seamlessly; the loop below travels exactly one background-width
-       (200%), so the reset lands on a tile boundary — no jump. */
+       (200%), so the reset lands on a tile boundary, no jump. */
     background-image: linear-gradient(
       100deg,
       #9db7d8 0%,

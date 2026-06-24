@@ -15,7 +15,7 @@ export default function ReferralInvitePage({ params }: { params: { invite: strin
         <h1 className="font-display text-2xl font-bold tracking-tight text-white">You&apos;re invited</h1>
         <p className="mt-1.5 max-w-2xl text-sm text-fog-dim">
           Accept the invite, then deposit on the pool. Your referrer earns a small cut of the volume the
-          pool works on your behalf — it costs you nothing.
+          pool works on your behalf, and it costs you nothing.
         </p>
       </header>
       <ReferralClient inviteCode={code} />

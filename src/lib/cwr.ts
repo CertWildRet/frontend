@@ -188,7 +188,7 @@ export async function buildWithdrawIxs(
 // These two are built FROM THE DISCRIMINATOR + account layout directly (not via
 // the SDK's program.methods / findPending* helpers) on purpose: park/cancel are
 // new instructions, and a stale cached @cwr/abi/@cwr/sdk on the host can lack
-// them. Building them by hand makes the park UI immune to that — it only needs
+// them. Building them by hand makes the park UI immune to that, it only needs
 // the program id and the (stable) PDA seeds, both pinned here.
 
 const CONFIG_SEED_BUF = Buffer.from("config");
