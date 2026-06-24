@@ -52,7 +52,8 @@ export type VaultData = {
   /** stORE -> ORE redemption rate (staked ORE backing / stORE supply, on-chain).
    *  >= 1; the premium is accrued refining yield. Used to value stORE in ORE. */
   storeToOreRate: number;
-  /** Unclaimed ORE = miner.rewards_ore, becomes stORE at next settle (exact). */
+  /** Unclaimed ORE = miner.rewards_ore + miner.refined_ore (both settle to stORE
+   *  at the next harvest; the contract's own watermark sums both). Exact. */
   unclaimedOre: number;
   /** Won SOL not yet swept into the treasury = miner.rewards_sol (exact). */
   rewardsSol: number;
@@ -60,8 +61,11 @@ export type VaultData = {
   inFlightSol: number;
   /** Exact recoverable SOL = sol_in_vault + rewards_sol + in-flight. */
   recoverableSol: number;
-  /** Exact recoverable ORE (ORE-equiv) = unclaimed ORE + stORE held. */
+  /** Exact recoverable ORE (ORE-equiv) = unclaimed ORE + stORE held x redemption rate. */
   recoverableOre: number;
+  /** Frozen NAV-per-share the contract pays withdrawals at during the OPEN window
+   *  (bucket.claims_window_nps, x18-scaled); 0 outside an open window. Exact. */
+  claimsWindowNps: number;
   pullFeeBps: number;
   pullFeeEnabled: boolean;
   entryFeeBps: number;
@@ -96,11 +100,13 @@ export function useVaultData(pollMs = 12_000) {
       // Exact recoverable, read straight from chain (no price, no brain):
       //   SOL = sol_in_vault + miner.rewards_sol + in-flight deployed (if the
       //         current round is unsettled, i.e. checkpoint_id != round_id).
-      //   ORE = miner.rewards_ore (UNCLAIMED) + bucket.store_in_vault (stORE held,
-      //         i.e. CLAIMED-and-wrapped ORE).
-      // Decoded from the documented 544-byte ORE Miner layout (ore_cpi.rs offsets:
+      //   ORE = (miner.rewards_ore + miner.refined_ore) UNCLAIMED + bucket.store_in_vault
+      //         (stORE held, valued at its redemption rate). Both miner legs settle
+      //         to stORE at the next harvest; the contract watermark sums both
+      //         (lib.rs: last_seen_rewards_ore = rewards_ore + refined_ore).
+      // Decoded from the documented 544-byte ORE Miner layout (constants.rs offsets:
       //   deployed[25]@40, checkpoint_id@448, rewards_sol@488, rewards_ore@496,
-      //   round_id@512). u64 LE; ORE/stORE are 11-decimal, SOL 9-decimal.
+      //   refined_ore@504, round_id@512). u64 LE; ORE/stORE 11-decimal, SOL 9-decimal.
       const solInVaultSol = lamportsToSol(b.solInVault);
       const storeInVaultOre = Number(b.storeInVault.toString()) / ORE_GRAMS_PER_ORE;
       let unclaimedOre = 0;
@@ -118,7 +124,10 @@ export function useVaultData(pollMs = 12_000) {
           let deployed = 0n;
           for (let i = 0; i < 25; i++) deployed += u64(40 + i * 8);
           rewardsSol = Number(u64(488)) / LAMPORTS_PER_SOL;
-          unclaimedOre = Number(u64(496)) / ORE_GRAMS_PER_ORE;
+          // Both unclaimed ORE legs: directly-mined (rewards_ore@496) AND the
+          // refining yield the Simple strategy deliberately accumulates by never
+          // claiming mid-betting (refined_ore@504). Both settle to stORE next harvest.
+          unclaimedOre = (Number(u64(496)) + Number(u64(504))) / ORE_GRAMS_PER_ORE;
           inFlightSol = u64(448) !== u64(512) ? Number(deployed) / LAMPORTS_PER_SOL : 0;
         }
       } catch {
@@ -149,6 +158,9 @@ export function useVaultData(pollMs = 12_000) {
         inFlightSol,
         recoverableSol,
         recoverableOre,
+        // Frozen withdraw price for the OPEN window (0 when closed). The contract
+        // pays SOL at this, not the live navPerShare (lib.rs withdraw).
+        claimsWindowNps: b.claimsWindowNps ? navX18ToNumber(b.claimsWindowNps) : 0,
         pullFeeBps: b.params.pullFeeBps,
         pullFeeEnabled: b.params.pullFeeEnabled,
         entryFeeBps: b.params.entryFeeBps,

@@ -34,6 +34,7 @@ export const mockVaultData: VaultData = {
   inFlightSol: 0,
   recoverableSol: 962.5,
   recoverableOre: 44.6,
+  claimsWindowNps: 1.0772,
   pullFeeBps: 100,
   pullFeeEnabled: true,
   entryFeeBps: 0,
@@ -43,7 +44,6 @@ export const mockVaultData: VaultData = {
 // A funded demo position so the Position / Claim cards show real numbers.
 export const mockUserPos: UserPos = {
   shares: 84.21,
-  valueSol: 90.72,
   poolSharePct: 7.06,
 };
 

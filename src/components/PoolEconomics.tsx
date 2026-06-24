@@ -45,18 +45,20 @@ export function PoolEconomics({
   const tvlSol = recSol + oreAsSol;
   const navPerShareTrue = data && data.totalShares > 0 ? tvlSol / data.totalShares : 0;
 
-  // Lifetime + PnL (the lifetime fields come from the brain's miner read).
+  // Lifetime + PnL (the lifetime fields come from the brain's miner read). These
+  // are NET of the 10% claim fee and reset only if the miner PDA is re-created.
   const lifetimeMined = stats?.miner.lifetimeRewardsOre ?? 0;
   const lifetimeDeployed = stats?.miner.lifetimeDeployed ?? 0;
   const lifetimeRecovered = stats?.miner.lifetimeRewardsSol ?? 0;
-  const withdrawnOre = Math.max(0, lifetimeMined - storeOre - unclaimedOre);
   const hasLifetime = !!stats;
 
   const deployedUsd = lifetimeDeployed * solUsd;
   const madeUsd = lifetimeRecovered * solUsd + lifetimeMined * oreUsd;
   const pnlUsd = madeUsd - deployedUsd;
   const pnlPct = deployedUsd > 0 ? (pnlUsd / deployedUsd) * 100 : 0;
-  const pnlReady = hasLifetime && solUsd > 0 && deployedUsd > 0;
+  // Require BOTH prices: with only solUsd, lifetimeMined*oreUsd would silently
+  // zero the (principal) ORE leg and could flip a real profit into a fake loss.
+  const pnlReady = hasLifetime && solUsd > 0 && oreUsd > 0 && deployedUsd > 0;
   const pnlText = pnlReady
     ? `${pnlUsd < 0 ? "-" : ""}$${formatNum(Math.abs(pnlUsd), 2)} (${pnlPct >= 0 ? "+" : ""}${formatNum(pnlPct, 1)}%)`
     : "···";
@@ -76,10 +78,10 @@ export function PoolEconomics({
       <div className="grid grid-cols-3 gap-3">
         <Big
           label="True TVL"
-          value={priced ? sol(tvlSol) : sol(recSol)}
+          value={priced ? `≈ ${sol(tvlSol)}` : sol(recSol)}
           unit="SOL"
           tone="gold"
-          sub={priced ? "SOL + ORE combined" : "SOL only (no ORE price)"}
+          sub={priced ? "SOL + ORE at market price" : "SOL only (no ORE price)"}
         />
         <Big label="SOL share" value={sol(recSol)} unit="SOL" tone="silver" />
         <Big
@@ -91,7 +93,7 @@ export function PoolEconomics({
         />
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <Big label="Value / share" value={priced ? formatNum(navPerShareTrue, 4) : "···"} unit="SOL" />
+        <Big label="Value / share" value={priced ? `≈ ${formatNum(navPerShareTrue, 4)}` : "···"} unit="SOL" />
         <Big
           label="On-chain NAV"
           value={sol(data?.totalNavSol ?? 0)}
@@ -109,7 +111,7 @@ export function PoolEconomics({
         <Row k="Unclaimed ORE" v={ore(unclaimedOre)} unit="ORE" />
         <Row
           k="Total recoverable"
-          v={priced ? sol(tvlSol) : sol(recSol)}
+          v={priced ? `≈ ${sol(tvlSol)}` : sol(recSol)}
           unit="SOL"
           sub={priced ? undefined : "+ ORE"}
           strong
@@ -118,10 +120,14 @@ export function PoolEconomics({
 
       {/* ORE lifecycle (all-time) */}
       <Section title="ORE lifecycle (all-time)">
-        <Row k="Total ORE mined" v={ore(lifetimeMined)} unit="ORE" strong />
+        <Row k="Net ORE mined (lifetime)" v={ore(lifetimeMined)} unit="ORE" strong />
         <Row k="↳ stORE in pool (claimed, held)" v={ore(storeOre)} unit="stORE" />
         <Row k="↳ still unclaimed (in miner)" v={ore(unclaimedOre)} unit="ORE" />
-        <Row k="↳ withdrawn by users (as stORE)" v={ore(withdrawnOre)} unit="stORE" />
+        <p className="mt-1 font-mono text-[11px] leading-relaxed text-fog-muted">
+          Net of the 10% claim fee. The remainder (mined minus held minus unclaimed)
+          is ORE already withdrawn by users as stORE; it is not cleanly separable
+          on-chain, so it is not shown as an exact figure.
+        </p>
       </Section>
 
       {/* lifetime SOL + PnL */}

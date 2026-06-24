@@ -6,14 +6,27 @@ import { formatNum, formatSol } from "@/lib/format";
 
 export function PoolStats({ data, stats }: { data: VaultData | null; stats?: PoolStatsData | null }) {
   const feeBps = data?.pullFeeEnabled ? (data?.pullFeeBps ?? 0) : 0;
-  // Prefer the brain's TRUE value (incl. unclaimed miner rewards) - the on-chain
-  // NAV reads ~0 mid-round. Fall back to on-chain when the brain isn't reachable.
-  const tvl = stats ? formatSol(stats.value.tvlSol, 2) : data?.initialized ? formatSol(data.totalNavSol, 2) : "···";
-  const cwrSol = stats ? stats.value.navPerShareTrue : data?.initialized ? data.navPerShare : null;
-  const price = cwrSol != null ? formatNum(cwrSol, 4) : "···";
-  // Sub-line: the dollar value of the whole CWR supply (supply x value/share x SOL/USD).
-  const totalShares = data?.initialized ? data.totalShares : null;
+  // TVL / value-per-share are built from the SAME exact on-chain recoverable that
+  // useVaultData computes (sol_in_vault + won SOL + in-flight + unclaimed ORE +
+  // stORE x redemption rate) - NEVER the on-chain navSnapshot, which is idle-SOL
+  // only and reads ~0 mid-round. The brain is used ONLY for the ORE->SOL price.
+  // This keeps PoolStats identical to PoolEconomics on the same page.
   const solUsd = stats?.prices.solUsd ?? null;
+  const oreUsd = stats?.prices.oreUsd ?? null;
+  const oreToSol = solUsd && oreUsd && solUsd > 0 ? oreUsd / solUsd : 0;
+  const priced = oreToSol > 0;
+  const totalShares = data?.initialized ? data.totalShares : null;
+
+  // SOL legs are always exact on-chain; the ORE leg is added only when priced.
+  const recSol = data?.initialized ? data.recoverableSol : null;
+  const recOre = data?.initialized ? data.recoverableOre : null;
+  const tvlSol = recSol != null ? (priced && recOre != null ? recSol + recOre * oreToSol : recSol) : null;
+  const cwrSol = tvlSol != null && totalShares ? tvlSol / totalShares : null;
+
+  const tvl = tvlSol != null ? formatSol(tvlSol, 2) : "···";
+  const price = cwrSol != null ? formatNum(cwrSol, 4) : "···";
+  const tvlHint = priced ? "true recoverable value" : "SOL only (ORE not priced)";
+  // Sub-line: the dollar value of the whole CWR supply (supply x value/share x SOL/USD).
   const supplyHint =
     totalShares != null && cwrSol != null && solUsd
       ? `≈ $${formatNum(totalShares * cwrSol * solUsd, 2)}`
@@ -22,7 +35,7 @@ export function PoolStats({ data, stats }: { data: VaultData | null; stats?: Poo
   const unclaimed = data?.initialized ? formatNum(data.unclaimedOre, 4) : "···";
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-      <Tile label="TVL" value={tvl} unit="SOL" accent hint={stats ? "true recoverable value" : undefined} />
+      <Tile label="TVL" value={tvl} unit="SOL" accent hint={tvlHint} />
       <Tile label="CWR price" value={price} unit="SOL" hint="value per share" />
       <Tile label="CWR supply" value={data?.initialized ? formatNum(data.totalShares, 2) : "···"} hint={supplyHint} />
       <Tile label="stORE held" value={store} unit="stORE" hint="claimed ORE in pool" />

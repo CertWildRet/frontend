@@ -1,15 +1,23 @@
 "use client";
 
 import { useLiveStats } from "@/hooks/useLiveStats";
+import { useVaultData } from "@/hooks/useVaultData";
 
 /**
  * Thin live data strip under the header. Honest: live values come from the
- * keeper feed when it's connected, otherwise they read "··". The constants
- * (tiles, fee) are facts.
+ * keeper feed when it's connected, otherwise they read "··". The fee is read
+ * live from the bucket; tiles (25) is a fixed protocol constant.
  */
 export function StatTicker() {
   const { stats, connected, enabled } = useLiveStats();
+  const { data } = useVaultData();
   const online = enabled && connected;
+
+  const fee = data?.initialized
+    ? data.pullFeeEnabled
+      ? `${(data.pullFeeBps / 100).toFixed(1)}%`
+      : "0%"
+    : "··";
 
   const items: { k: string; v: string; live?: boolean }[] = [
     { k: "crank", v: enabled ? (connected ? "online" : "connecting") : "standby", live: online },
@@ -18,7 +26,7 @@ export function StatTicker() {
     { k: "motherlode", v: stats ? `${stats.motherlodePoolOre.toFixed(1)} ORE` : "··" },
     { k: "miners", v: stats ? String(stats.totalMiners) : "··" },
     { k: "tiles", v: "25" },
-    { k: "fee", v: "1%" },
+    { k: "fee", v: fee },
   ];
 
   return (

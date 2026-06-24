@@ -28,8 +28,12 @@ export function ClaimCard({
 
   const shares = pos?.shares ?? 0;
   const claimShares = (shares * pct) / 100;
-  const navPerShare = data?.navPerShare && data.navPerShare > 0 ? data.navPerShare : 1;
-  const estSol = claimShares * navPerShare;
+  // The contract pays withdrawals at the FROZEN claims_window_nps snapshotted when
+  // the window opened (not the live NAV/share). Use it when set (>0, i.e. an open
+  // window); fall back to the live value only before the window snapshot exists.
+  const frozenNps = data?.claimsWindowNps && data.claimsWindowNps > 0 ? data.claimsWindowNps : 0;
+  const liveNps = data?.navPerShare && data.navPerShare > 0 ? data.navPerShare : 1;
+  const estSol = claimShares * (frozenNps > 0 ? frozenNps : liveNps);
 
   const windowOpen = !!data?.initialized && data.phase === 1 && data.windowSettled && !data.paused;
   const actionable = connected && windowOpen && claimShares > 0 && !busy;

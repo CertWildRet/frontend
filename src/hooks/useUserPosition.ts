@@ -2,13 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { makeVault, SIMPLE, sharesToNumber, lamportsToSol } from "@/lib/cwr";
+import { makeVault, SIMPLE, sharesToNumber } from "@/lib/cwr";
 import { MOCK, mockUserPos } from "@/lib/mock";
 
 export type UserPos = {
   shares: number;
-  /** est. SOL redeemable now (gross of exit fee, which is 0 at launch). */
-  valueSol: number;
   poolSharePct: number;
 };
 
@@ -32,17 +30,13 @@ export function useUserPosition(totalShares: number, pollMs = 12_000) {
       const vault = makeVault(connection);
       const sharesBn = await vault.read.userShares(SIMPLE, publicKey);
       const shares = sharesToNumber(sharesBn);
-      let valueSol = 0;
-      if (shares > 0) {
-        try {
-          valueSol = lamportsToSol(await vault.read.previewWithdraw(SIMPLE, sharesBn));
-        } catch {
-          /* preview throws if bucket uninitialized; leave 0 */
-        }
-      }
+      // NOTE: no SOL VALUE here on purpose. previewWithdraw/navSnapshot read the
+      // on-chain NAV, which is idle-SOL-only and ~0 mid-round (it drops won SOL,
+      // in-flight, ORE + stORE) and would understate the position. The display
+      // layer values the position from useVaultData's miner-derived recoverable
+      // (see PositionCard / app/position) instead.
       setPos({
         shares,
-        valueSol,
         poolSharePct: totalShares > 0 ? (shares / totalShares) * 100 : 0,
       });
     } catch {
