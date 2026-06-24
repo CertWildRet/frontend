@@ -149,12 +149,14 @@ function Big({ label, value, unit, sub, tone }: { label: string; value: string; 
 
 function Line({ k, v, unit, usd, strong }: { k: string; v: string; unit?: string; usd?: number | null; strong?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between py-1 font-mono text-xs">
-      <span className="text-fog-muted">{k}</span>
-      <span className="flex items-baseline gap-1.5">
-        {usd != null && <span className="text-[12px] text-fog-muted">≈ ${formatNum(usd, 2)}</span>}
-        <span className={`num ${strong ? "text-gold" : "text-gray-200"}`}>{v}</span>
-        {unit && <span className="text-[12px] text-fog-muted">{unit}</span>}
+    <div className="flex items-start justify-between gap-3 py-1.5 font-mono text-xs">
+      <span className="min-w-0 text-fog-muted">{k}</span>
+      <span className="flex shrink-0 flex-col items-end text-right leading-tight">
+        <span className="whitespace-nowrap">
+          <span className={`num ${strong ? "text-gold" : "text-gray-200"}`}>{v}</span>
+          {unit && <span className="ml-1 text-[12px] text-fog-muted">{unit}</span>}
+        </span>
+        {usd != null && <span className="mt-0.5 text-[11px] text-fog-muted">≈ ${formatNum(usd, 2)}</span>}
       </span>
     </div>
   );

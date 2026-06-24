@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { VaultData } from "@/hooks/useVaultData";
 import type { PoolStatsData } from "@/hooks/useStats";
 import { formatNum, formatSol } from "@/lib/format";
@@ -38,7 +39,12 @@ export function PoolStats({ data, stats }: { data: VaultData | null; stats?: Poo
       <Tile label="TVL" value={tvl} unit="SOL" accent hint={tvlHint} />
       <Tile label="CWR price" value={price} unit="SOL" hint="value per share" />
       <Tile label="CWR supply" value={data?.initialized ? formatNum(data.totalShares, 2) : "···"} hint={supplyHint} />
-      <Tile label="stORE held" value={store} unit="stORE" hint="claimed ORE in pool" />
+      <Tile
+        label={<><span className="normal-case">stORE</span> held</>}
+        value={store}
+        unit="stORE"
+        hint="claimed ORE in pool"
+      />
       <Tile label="Unclaimed ORE" value={unclaimed} unit="ORE" hint="in the miner" />
       <Tile label="Fee" value={`${(feeBps / 100).toFixed(1)}%`} hint="on deploy volume" />
     </div>
@@ -52,7 +58,7 @@ function Tile({
   hint,
   accent,
 }: {
-  label: string;
+  label: ReactNode;
   value: string;
   unit?: string;
   hint?: string;

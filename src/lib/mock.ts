@@ -8,6 +8,7 @@
 import type { VaultData } from "@/hooks/useVaultData";
 import type { UserPos } from "@/hooks/useUserPosition";
 import type { LiveStats } from "@/hooks/useLiveStats";
+import type { PoolStatsData } from "@/hooks/useStats";
 
 export const MOCK = process.env.NEXT_PUBLIC_MOCK === "1";
 
@@ -40,6 +41,41 @@ export const mockVaultData: VaultData = {
   pullFeeEnabled: true,
   entryFeeBps: 0,
   exitFeeBps: 0,
+};
+
+// Brain /api/stats mock so MOCK mode renders the fully PRICED UI (USD columns,
+// PnL, true TVL) - the state real users see once the brain feed is live.
+export const mockStats: PoolStatsData = {
+  initialized: true,
+  ts: 0,
+  phase: 1,
+  phaseLabel: "OPEN",
+  windowSettled: true,
+  prices: { solUsd: 152.4, oreUsd: 61.8 },
+  value: {
+    tvlSol: 980.34,
+    navPerShareTrue: 0.8222,
+    recoverableSol: 962.5,
+    recoverableOre: 44.6,
+    oreAsSol: 18.08,
+    totalShares: 1192.37,
+  },
+  vault: {
+    solInVault: 842.1,
+    storeInVaultOre: 36.4,
+    totalShares: 1192.37,
+    totalNavOnchain: 842.1,
+    navPerShareOnchain: 0.7062,
+  },
+  miner: {
+    rewardsSol: 120.4,
+    rewardsOre: 8.2,
+    inFlightSol: 0,
+    lifetimeDeployed: 5120.7,
+    lifetimeRewardsSol: 3380.5,
+    lifetimeRewardsOre: 9240.8,
+  },
+  keeper: { mode: "active", minSolPerRound: 0.05, lastDeployedRoundId: "48213" },
 };
 
 // A funded demo position so the Position / Claim cards show real numbers.

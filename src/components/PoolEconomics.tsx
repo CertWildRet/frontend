@@ -148,7 +148,7 @@ export function PoolEconomics({
         </div>
       </Section>
 
-      <div className="mt-4 flex items-center justify-between border-t border-line pt-3 font-mono text-[12px] text-fog-muted">
+      <div className="mt-4 flex flex-col gap-1.5 border-t border-line pt-3 font-mono text-[12px] text-fog-muted sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <span>
           per-round deploy {stats ? `${formatNum(stats.keeper.minSolPerRound, 3)} SOL` : "···"} · keeper{" "}
           {stats?.keeper.mode ?? "···"}
@@ -212,12 +212,14 @@ function Row({
   strong?: boolean;
 }) {
   return (
-    <div className="flex items-baseline justify-between font-mono text-xs">
-      <span className="text-fog-muted">{k}</span>
-      <span className="flex items-baseline gap-1.5">
-        {sub && <span className="text-[12px] text-fog-muted">{sub}</span>}
-        <span className={`num ${strong ? "text-gold" : "text-gray-200"}`}>{v}</span>
-        {unit && <span className="text-[12px] text-fog-muted">{unit}</span>}
+    <div className="flex items-start justify-between gap-3 font-mono text-xs">
+      <span className="min-w-0 text-fog-muted">{k}</span>
+      <span className="flex shrink-0 flex-col items-end text-right leading-tight">
+        <span className="whitespace-nowrap">
+          <span className={`num ${strong ? "text-gold" : "text-gray-200"}`}>{v}</span>
+          {unit && <span className="ml-1 text-[12px] text-fog-muted">{unit}</span>}
+        </span>
+        {sub && <span className="mt-0.5 text-[11px] text-fog-muted">{sub}</span>}
       </span>
     </div>
   );

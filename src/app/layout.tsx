@@ -10,6 +10,7 @@ import { Providers } from "@/components/Providers";
 import { WalletButton } from "@/components/WalletButton";
 import { FacetMark } from "@/components/FacetMark";
 import { StatTicker } from "@/components/StatTicker";
+import { MobileNav } from "@/components/MobileNav";
 
 export const metadata: Metadata = {
   title: "CWR · autonomous ORE mining",
@@ -51,7 +52,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   ))}
                 </nav>
               </div>
-              <WalletButton />
+              <div className="flex items-center gap-2">
+                <WalletButton />
+                <MobileNav />
+              </div>
             </div>
           </header>
           <StatTicker />

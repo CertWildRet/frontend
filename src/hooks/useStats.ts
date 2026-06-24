@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MOCK } from "@/lib/mock";
+import { MOCK, mockStats } from "@/lib/mock";
 
 /** Shape returned by the brain's GET /api/stats (cwr-brains/simple/src/http.ts). */
 export type PoolStatsData = {
@@ -51,7 +51,7 @@ const BRAIN = (process.env.NEXT_PUBLIC_BRAIN_URL || "").replace(/\/$/, "");
  * recoverable). Read-only, cached server-side (8s), so a slow poll is fine.
  */
 export function useStats(pollMs = 20_000): PoolStatsData | null {
-  const [stats, setStats] = useState<PoolStatsData | null>(null);
+  const [stats, setStats] = useState<PoolStatsData | null>(MOCK ? mockStats : null);
 
   useEffect(() => {
     if (MOCK || !BRAIN || typeof window === "undefined") return;

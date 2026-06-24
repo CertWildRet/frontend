@@ -109,12 +109,12 @@ function Metric({
   accent?: boolean;
 }) {
   return (
-    <div className="flex flex-1 items-center justify-between rounded-xl border border-[#9DB7D8]/25 bg-gradient-to-b from-[#9DB7D8]/[0.09] to-[#9DB7D8]/[0.02] px-4 py-3.5 shadow-[inset_0_1px_0_rgba(157,183,216,0.22),0_3px_10px_-3px_rgba(0,0,0,0.7)]">
-      <div>
+    <div className="flex flex-1 items-center justify-between gap-3 rounded-xl border border-[#9DB7D8]/25 bg-gradient-to-b from-[#9DB7D8]/[0.09] to-[#9DB7D8]/[0.02] px-4 py-3.5 shadow-[inset_0_1px_0_rgba(157,183,216,0.22),0_3px_10px_-3px_rgba(0,0,0,0.7)]">
+      <div className="min-w-0">
         <span className="label">{label}</span>
         {sub && <div className="mt-0.5 font-mono text-[11px] text-fog-muted">{sub}</div>}
       </div>
-      <span className="flex items-baseline gap-1">
+      <span className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
         <span className={`num text-lg ${accent ? "gradient-text" : "text-white"}`}>{value}</span>
         {unit && <span className="font-mono text-[12px] text-fog-muted">{unit}</span>}
       </span>
@@ -124,11 +124,11 @@ function Metric({
 
 function Row({ k, v, unit }: { k: string; v: string; unit?: string }) {
   return (
-    <div className="flex items-baseline justify-between font-mono text-xs">
-      <span className="text-fog-muted">{k}</span>
-      <span className="flex items-baseline gap-1.5">
+    <div className="flex items-start justify-between gap-3 py-0.5 font-mono text-xs">
+      <span className="min-w-0 text-fog-muted">{k}</span>
+      <span className="shrink-0 whitespace-nowrap text-right">
         <span className="num text-gray-200">{v}</span>
-        {unit && <span className="text-[12px] text-fog-muted">{unit}</span>}
+        {unit && <span className="ml-1 text-[12px] text-fog-muted">{unit}</span>}
       </span>
     </div>
   );

@@ -60,9 +60,9 @@ export function ClaimCard({
         Burn CWR to take your SOL at the frozen window price, plus your pro rata stORE.
       </p>
 
-      <div className="flex items-center justify-between font-mono text-xs">
-        <span className="text-fog-muted">your CWR</span>
-        <span className="num text-gray-200">{formatNum(shares, 4)}</span>
+      <div className="flex items-center justify-between gap-3 font-mono text-xs">
+        <span className="min-w-0 text-fog-muted">your CWR</span>
+        <span className="num shrink-0 text-gray-200">{formatNum(shares, 4)}</span>
       </div>
 
       <div className="mt-3 flex gap-1.5">
@@ -79,9 +79,9 @@ export function ClaimCard({
         ))}
       </div>
 
-      <div className="mt-3 flex items-center justify-between font-mono text-xs">
-        <span className="text-fog-muted">you receive ≈</span>
-        <span className="num text-gray-200">{formatSol(estSol, 4)} SOL + stORE</span>
+      <div className="mt-3 flex items-center justify-between gap-3 font-mono text-xs">
+        <span className="min-w-0 text-fog-muted">you receive ≈</span>
+        <span className="num shrink-0 whitespace-nowrap text-right text-gray-200">{formatSol(estSol, 4)} SOL + stORE</span>
       </div>
 
       <div className="mt-auto pt-4">
