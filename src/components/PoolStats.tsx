@@ -18,11 +18,15 @@ export function PoolStats({ data, stats }: { data: VaultData | null; stats?: Poo
     totalShares != null && cwrSol != null && solUsd
       ? `≈ $${formatNum(totalShares * cwrSol * solUsd, 2)}`
       : undefined;
+  const store = data?.initialized ? formatNum(data.storeInVaultOre, 4) : "···";
+  const unclaimed = data?.initialized ? formatNum(data.unclaimedOre, 4) : "···";
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
       <Tile label="TVL" value={tvl} unit="SOL" accent hint={stats ? "true recoverable value" : undefined} />
       <Tile label="CWR price" value={price} unit="SOL" hint="value per share" />
       <Tile label="CWR supply" value={data?.initialized ? formatNum(data.totalShares, 2) : "···"} hint={supplyHint} />
+      <Tile label="stORE held" value={store} unit="stORE" hint="claimed ORE in pool" />
+      <Tile label="Unclaimed ORE" value={unclaimed} unit="ORE" hint="in the miner" />
       <Tile label="Fee" value={`${(feeBps / 100).toFixed(1)}%`} hint="on deploy volume" />
     </div>
   );

@@ -38,7 +38,7 @@ export default function CrankPage() {
       <PoolStats data={data} stats={stats} />
       <PhaseTimers data={data} />
 
-      <PoolEconomics stats={stats} />
+      <PoolEconomics stats={stats} data={data} />
 
       <SettlePrompt data={data} onDone={onDone} />
 
@@ -49,7 +49,7 @@ export default function CrankPage() {
           <MintCwrCard data={data} onDone={onDone} />
         )}
         <ClaimCard data={data} pos={pos} onDone={onDone} />
-        <PositionCard pos={pos} />
+        <PositionCard pos={pos} data={data} stats={stats} />
       </div>
 
       <LiveCrankPanel />
