@@ -67,12 +67,8 @@ export function PoolEconomics({ stats }: { stats: PoolStatsData | null }) {
         <Row k="Total SOL recovered" v={sol(s?.miner.lifetimeRewardsSol)} unit="SOL" />
         <Row k="Total ORE mined" v={ore(s?.miner.lifetimeRewardsOre)} unit="ORE" strong />
         <Row k="↳ already claimed + withdrawn" v={ore(claimedOre)} unit="ORE" />
-        <Row k="↳ still unclaimed (above)" v={ore(s?.value.recoverableOre)} unit="ORE" />
+        <Row k="↳ still unclaimed" v={ore(s?.value.recoverableOre)} unit="ORE" />
       </Section>
-      <p className="mt-2 font-mono text-[12px] leading-relaxed text-fog-muted">
-        &quot;Total ORE mined&quot; is all-time. Most was claimed and withdrawn in earlier settle
-        cycles, so only the &quot;still unclaimed&quot; slice is recoverable by this pool now.
-      </p>
 
       <div className="mt-4 flex items-center justify-between border-t border-line pt-3 font-mono text-[12px] text-fog-muted">
         <span>
