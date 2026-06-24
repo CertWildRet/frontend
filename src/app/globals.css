@@ -139,12 +139,24 @@
   }
   /* moving metallic sheen for headline accents + the logo */
   .text-sheen {
-    background: linear-gradient(100deg, #5a6e8c 18%, #e8effa 48%, #9db7d8 52%, #5a6e8c 82%);
-    background-size: 220% auto;
+    /* edges share the base colour (#9db7d8 at 0% and 100%) so the tiled image
+       joins seamlessly; the loop below travels exactly one background-width
+       (200%), so the reset lands on a tile boundary — no jump. */
+    background-image: linear-gradient(
+      100deg,
+      #9db7d8 0%,
+      #9db7d8 38%,
+      #e8effa 47%,
+      #ffffff 50%,
+      #e8effa 53%,
+      #9db7d8 62%,
+      #9db7d8 100%
+    );
+    background-size: 200% 100%;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    animation: sheen 6s linear infinite;
+    animation: sheen 5.5s linear infinite;
   }
   .stagger > * {
     animation: fadeUp 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -186,10 +198,10 @@
 }
 @keyframes sheen {
   0% {
-    background-position: -150% 0;
+    background-position: 100% 0;
   }
   100% {
-    background-position: 250% 0;
+    background-position: -100% 0;
   }
 }
 .animate-float {

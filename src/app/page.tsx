@@ -246,7 +246,7 @@ function TeamCard({
 /** Hero centerpiece: the glowing ORE mark over a faint board grid. */
 function OreHeroVisual() {
   return (
-    <div className="relative mx-auto hidden aspect-square w-full max-w-[400px] items-center justify-center lg:flex">
+    <div className="relative mx-auto hidden aspect-square w-full max-w-[560px] items-center justify-center lg:flex">
       <div
         className="absolute inset-6 rounded-full blur-3xl"
         aria-hidden
@@ -263,9 +263,9 @@ function OreHeroVisual() {
           maskImage: "radial-gradient(circle at 50% 50%, #000, transparent 76%)",
         }}
       />
-      {/* big stone: width +20% only (scaleX), not overall bigger */}
+      {/* big stone: +30% overall to fill its space, keeping the +20% width boost */}
       <div className="relative" style={{ transform: "scaleX(1.2)" }}>
-        <HeroStone size={340} />
+        <HeroStone size={442} />
       </div>
       <span className="chip absolute bottom-5 right-5 border-pos/40 text-white">
         <span className="live-dot text-pos" /> mining ORE
