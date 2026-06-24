@@ -75,9 +75,11 @@ export function PoolEconomics({
         not estimated. The contract&apos;s NAV reads ~0 mid-round; these are the true recoverable amounts.
       </p>
 
-      {/* headline: combined TVL split into its SOL + ORE shares */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* headline: combined TVL split into its SOL + ORE shares. True TVL goes
+          full-width on mobile so the priced "≈ value SOL" never gets cramped. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Big
+          className="col-span-2 sm:col-span-1"
           label="True TVL"
           value={priced ? `≈ ${sol(tvlSol)}` : sol(recSol)}
           unit="SOL"
@@ -168,23 +170,26 @@ function Big({
   unit,
   sub,
   tone,
+  className,
 }: {
   label: string;
   value: string;
   unit?: string;
   sub?: string;
   tone?: "gold" | "silver";
+  className?: string;
 }) {
   const valueClass =
     tone === "gold" ? "gradient-text" : tone === "silver" ? "gradient-silver text-glow-silver" : "text-white";
   return (
-    <div className="rounded-lg border border-line bg-ink-800 px-3 py-2.5">
+    <div className={`rounded-lg border border-line bg-ink-800 px-3 py-2.5 ${className ?? ""}`}>
       <div className="label">{label}</div>
-      <div className="mt-1 flex items-baseline gap-1">
-        <span className={`num text-lg ${valueClass}`}>{value}</span>
+      {/* nowrap so a long number never breaks mid-value and collides with the unit */}
+      <div className="mt-1 flex items-baseline gap-1 whitespace-nowrap">
+        <span className={`num text-base sm:text-lg ${valueClass}`}>{value}</span>
         {unit && <span className="font-mono text-[12px] text-fog-muted">{unit}</span>}
       </div>
-      {sub && <div className="mt-0.5 font-mono text-[12px] text-fog-muted">{sub}</div>}
+      {sub && <div className="mt-0.5 font-mono text-[12px] leading-tight text-fog-muted">{sub}</div>}
     </div>
   );
 }

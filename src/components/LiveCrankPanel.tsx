@@ -14,17 +14,17 @@ export function LiveCrankPanel() {
 
   return (
     <section className="panel">
-      <div className="mb-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <FacetMark className="h-7 w-7 drop-shadow-[0_0_12px_rgba(157,183,216,0.4)]" />
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h2 className="font-display text-lg font-semibold text-white">Live crank</h2>
+      <div className="mb-5 flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-3">
+          <FacetMark className="h-7 w-7 shrink-0 drop-shadow-[0_0_12px_rgba(157,183,216,0.4)]" />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
+              <h2 className="whitespace-nowrap font-display text-lg font-semibold text-white">Live crank</h2>
               <a
                 href={`https://solscan.io/account/${CRANK_WALLET}`}
                 target="_blank"
                 rel="noreferrer"
-                className="font-mono text-[11px] text-[#9DB7D8] transition-colors hover:text-[#E8EFFA]"
+                className="whitespace-nowrap font-mono text-[11px] text-[#9DB7D8] transition-colors hover:text-[#E8EFFA]"
               >
                 {CRANK_WALLET.slice(0, 4)}…{CRANK_WALLET.slice(-4)} ↗
               </a>
@@ -32,7 +32,7 @@ export function LiveCrankPanel() {
             <p className="font-mono text-[12px] text-fog-muted">What the keeper is doing on the board, right now.</p>
           </div>
         </div>
-        <span className={`chip ${enabled && connected ? "border-pos/40 text-white" : "border-line text-fog-muted"}`}>
+        <span className={`chip shrink-0 ${enabled && connected ? "border-pos/40 text-white" : "border-line text-fog-muted"}`}>
           {enabled && connected ? <span className="live-dot text-pos" /> : null}
           {enabled ? (connected ? "live" : "reconnecting") : "feed offline"}
         </span>
@@ -120,10 +120,10 @@ function Empty({ children }: { children: React.ReactNode }) {
 
 function Metric({ label, value, unit, accent }: { label: string; value: string; unit?: string; accent?: boolean }) {
   return (
-    <div>
+    <div className="min-w-0">
       <div className="label">{label}</div>
-      <div className="mt-1 flex items-baseline gap-1.5">
-        <span className={`num text-lg ${accent ? "gradient-text" : "text-white"}`}>{value}</span>
+      <div className="mt-1 flex items-baseline gap-1.5 whitespace-nowrap">
+        <span className={`num text-base sm:text-lg ${accent ? "gradient-text" : "text-white"}`}>{value}</span>
         {unit && <span className="font-mono text-[12px] text-fog-muted">{unit}</span>}
       </div>
     </div>
