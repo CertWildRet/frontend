@@ -5,6 +5,10 @@ import { TileHeatmap } from "./TileHeatmap";
 import { FacetMark } from "./FacetMark";
 import { formatNum, formatSol, formatRelative } from "@/lib/format";
 
+// The sole keeper wallet that signs every crank_mine on-chain. Public by design:
+// anyone can verify the crank's moves on an explorer.
+const CRANK_WALLET = "58QKD3siCxvLzgHFezbu8aTacjZFxy7LaYvgMmwQFiCe";
+
 export function LiveCrankPanel() {
   const { stats, connected, enabled } = useLiveStats();
 
@@ -16,6 +20,14 @@ export function LiveCrankPanel() {
           <div>
             <h2 className="font-display text-lg font-semibold text-white">Live crank</h2>
             <p className="font-mono text-[12px] text-fog-muted">What the keeper is doing on the board, right now.</p>
+            <a
+              href={`https://solscan.io/account/${CRANK_WALLET}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1 inline-block font-mono text-[11px] text-fog-muted transition-colors hover:text-[#9DB7D8]"
+            >
+              crank {CRANK_WALLET.slice(0, 4)}…{CRANK_WALLET.slice(-4)} ↗
+            </a>
           </div>
         </div>
         <span className={`chip ${enabled && connected ? "border-pos/40 text-white" : "border-line text-fog-muted"}`}>

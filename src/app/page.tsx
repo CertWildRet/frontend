@@ -27,9 +27,6 @@ export default function HomePage() {
             <Link href="/crank" className="btn-primary px-6 py-2.5">
               Enter the pool →
             </Link>
-            <Link href="/crank" className="btn-outline px-6 py-2.5">
-              Watch it live
-            </Link>
           </div>
           <div className="mt-9 flex flex-wrap gap-x-8 gap-y-3">
             <Spec k="non-custodial" v="funds never leave the vault" />

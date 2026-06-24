@@ -12,7 +12,7 @@ export function StatTicker() {
   const online = enabled && connected;
 
   const items: { k: string; v: string; live?: boolean }[] = [
-    { k: "keeper", v: enabled ? (connected ? "online" : "connecting") : "standby", live: online },
+    { k: "crank", v: enabled ? (connected ? "online" : "connecting") : "standby", live: online },
     { k: "round", v: stats ? `#${stats.roundId}` : "··" },
     { k: "deployed", v: stats ? `${stats.totalDeployedSol.toFixed(2)} SOL` : "··" },
     { k: "motherlode", v: stats ? `${stats.motherlodePoolOre.toFixed(1)} ORE` : "··" },

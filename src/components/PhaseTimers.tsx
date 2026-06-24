@@ -22,7 +22,7 @@ export function PhaseTimers({ data }: { data: VaultData | null }) {
         <h2 className="label text-fog-dim">Pool cycle</h2>
         <span className="chip border-pos/40 text-white">
           <span className="live-dot text-pos" />
-          {clock.isOpen ? "deposit / claim open" : "mining live"}
+          {clock.isOpen ? "deposit & claim" : "cranking"}
         </span>
       </div>
 
@@ -79,17 +79,19 @@ function TimerTile({
         active ? `border-line-bright bg-ink-800/60 ${glow}` : "border-line bg-ink-900/40 opacity-55"
       }`}
     >
-      <div className="flex items-baseline justify-between">
-        <span className="font-display text-sm font-semibold text-white">{title}</span>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <span className="font-display text-sm font-semibold text-white">{title}</span>
+          <p className="mt-1 font-mono text-[12px] text-fog-muted">{active ? subtitle : idleNote}</p>
+        </div>
         {active ? (
-          <span className={`num text-2xl font-medium ${text} text-glow-gold`}>
+          <span className={`num shrink-0 whitespace-nowrap text-2xl font-medium ${text} text-glow-gold`}>
             {remaining !== null ? fmtCountdown(remaining) : "··"}
           </span>
         ) : (
-          <span className="font-mono text-[12px] uppercase tracking-widest text-fog-muted">idle</span>
+          <span className="shrink-0 font-mono text-[12px] uppercase tracking-widest text-fog-muted">idle</span>
         )}
       </div>
-      <p className="mt-1 font-mono text-[12px] text-fog-muted">{active ? subtitle : idleNote}</p>
       <div className="mt-3 h-1 overflow-hidden rounded-full bg-line">
         <div
           className={`h-full ${bar} transition-all duration-1000 ease-linear`}

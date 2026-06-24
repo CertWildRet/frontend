@@ -9,16 +9,20 @@ export function PoolStats({ data, stats }: { data: VaultData | null; stats?: Poo
   // Prefer the brain's TRUE value (incl. unclaimed miner rewards) - the on-chain
   // NAV reads ~0 mid-round. Fall back to on-chain when the brain isn't reachable.
   const tvl = stats ? formatSol(stats.value.tvlSol, 2) : data?.initialized ? formatSol(data.totalNavSol, 2) : "···";
-  const price = stats
-    ? formatNum(stats.value.navPerShareTrue, 4)
-    : data?.initialized
-      ? formatNum(data.navPerShare, 4)
-      : "···";
+  const cwrSol = stats ? stats.value.navPerShareTrue : data?.initialized ? data.navPerShare : null;
+  const price = cwrSol != null ? formatNum(cwrSol, 4) : "···";
+  // Sub-line: the dollar value of the whole CWR supply (supply x value/share x SOL/USD).
+  const totalShares = data?.initialized ? data.totalShares : null;
+  const solUsd = stats?.prices.solUsd ?? null;
+  const supplyHint =
+    totalShares != null && cwrSol != null && solUsd
+      ? `≈ $${formatNum(totalShares * cwrSol * solUsd, 2)}`
+      : undefined;
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
       <Tile label="TVL" value={tvl} unit="SOL" accent hint={stats ? "true recoverable value" : undefined} />
       <Tile label="CWR price" value={price} unit="SOL" hint="value per share" />
-      <Tile label="CWR supply" value={data?.initialized ? formatNum(data.totalShares, 2) : "···"} />
+      <Tile label="CWR supply" value={data?.initialized ? formatNum(data.totalShares, 2) : "···"} hint={supplyHint} />
       <Tile label="Fee" value={`${(feeBps / 100).toFixed(1)}%`} hint="on deploy volume" />
     </div>
   );

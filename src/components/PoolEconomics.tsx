@@ -118,7 +118,7 @@ function Big({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mt-5">
-      <div className="label mb-2">{title}</div>
+      <div className="label mb-2 text-white">{title}</div>
       <div className="space-y-1.5">{children}</div>
     </div>
   );
