@@ -246,7 +246,7 @@ function TeamCard({
 /** Hero centerpiece: the glowing ORE mark over a faint board grid. */
 function OreHeroVisual() {
   return (
-    <div className="relative mx-auto hidden aspect-square w-full max-w-[560px] items-center justify-center lg:flex">
+    <div className="relative mx-auto hidden w-full max-w-[560px] items-center justify-center lg:flex">
       <div
         className="absolute inset-6 rounded-full blur-3xl"
         aria-hidden
