@@ -33,6 +33,7 @@ export default function PositionPage() {
   const oreUsd = stats?.prices.oreUsd ?? 0;
   const oreToSol = solUsd > 0 && oreUsd > 0 ? oreUsd / solUsd : 0;
   const priced = oreToSol > 0;
+  const storeUsd = oreUsd * (data?.storeToOreRate ?? 1); // stORE price (rate x ORE)
   const valueSol = yourSol + yourOre * oreToSol;
   const valueUsd = valueSol * solUsd;
 
@@ -77,7 +78,7 @@ export default function PositionPage() {
               Your pro-rata slice of the pool. On withdraw you receive your SOL plus your stORE token.
             </p>
             <Line k="Recoverable SOL" v={formatSol(yourSol, 6)} unit="SOL" usd={priced ? yourSol * solUsd : null} />
-            <Line k="stORE held (claimed ORE)" v={formatNum(yourStore, 6)} unit="stORE" usd={priced ? yourStore * oreUsd : null} />
+            <Line k="stORE held (claimed ORE)" v={formatNum(yourStore, 6)} unit="stORE" usd={priced ? yourStore * storeUsd : null} />
             <Line k="Unclaimed ORE (settles to stORE)" v={formatNum(yourUnclaimedOre, 6)} unit="ORE" usd={priced ? yourUnclaimedOre * oreUsd : null} />
             <div className="mt-2 border-t border-line pt-2">
               <Line k="Total value" v={priced ? formatSol(valueSol, 6) : formatSol(yourSol, 6)} unit="SOL" usd={priced ? valueUsd : null} strong />

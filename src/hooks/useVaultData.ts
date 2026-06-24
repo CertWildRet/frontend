@@ -2,10 +2,36 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useConnection } from "@solana/wallet-adapter-react";
+import { PublicKey } from "@solana/web3.js";
+import { getMint, getAccount, getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { makeVault, SIMPLE, lamportsToSol, sharesToNumber, navX18ToNumber, LAMPORTS_PER_SOL } from "@/lib/cwr";
 import { MOCK, mockVaultData } from "@/lib/mock";
 
 const ORE_GRAMS_PER_ORE = 1e11;
+// ore-lst / ore-stake (for the stORE -> ORE redemption rate). Stable on-chain ids.
+const ORE_MINT = new PublicKey("oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp");
+const STORE_MINT = new PublicKey("sTorERYB6xAZ1SSbwpK3zoK2EEwbBrc7TZAzg1uCGiH");
+const ORE_LST_PROGRAM = new PublicKey("LStwN2E5Uw6MCtuxHRLhy8RY9hxqW2XRpLzettb696y");
+const ORE_STAKE_PROGRAM = new PublicKey("STkEAu2cEyQp5ktgUauRVq8es6mEP2w6ixw4NEd5tDJ");
+
+// stORE -> ORE redemption rate = staked ORE backing / stORE supply (>= 1; the
+// premium is accrued refining yield). Global, slow-moving; read straight from
+// chain. Falls back to 1.0 (par) if the read fails.
+async function readStoreToOreRate(connection: import("@solana/web3.js").Connection): Promise<number> {
+  try {
+    const vault = PublicKey.findProgramAddressSync([Buffer.from("vault")], ORE_LST_PROGRAM)[0];
+    const stake = PublicKey.findProgramAddressSync([Buffer.from("stake"), vault.toBuffer()], ORE_STAKE_PROGRAM)[0];
+    const stakeOreAta = getAssociatedTokenAddressSync(ORE_MINT, stake, true);
+    const [supply, stakeAcc] = await Promise.all([
+      getMint(connection, STORE_MINT),
+      getAccount(connection, stakeOreAta),
+    ]);
+    if (supply.supply > 0n) return Number(stakeAcc.amount) / Number(supply.supply);
+  } catch {
+    /* fall back to par */
+  }
+  return 1;
+}
 
 export type VaultData = {
   initialized: boolean;
@@ -21,8 +47,11 @@ export type VaultData = {
   totalShares: number;
   navPerShare: number;
   solInVaultSol: number;
-  /** stORE held by the vault = claimed-and-wrapped ORE (exact, on-chain). */
+  /** stORE held by the vault, in stORE token units (= bucket.store_in_vault). */
   storeInVaultOre: number;
+  /** stORE -> ORE redemption rate (staked ORE backing / stORE supply, on-chain).
+   *  >= 1; the premium is accrued refining yield. Used to value stORE in ORE. */
+  storeToOreRate: number;
   /** Unclaimed ORE = miner.rewards_ore, becomes stORE at next settle (exact). */
   unclaimedOre: number;
   /** Won SOL not yet swept into the treasury = miner.rewards_sol (exact). */
@@ -95,8 +124,10 @@ export function useVaultData(pollMs = 12_000) {
       } catch {
         // miner not created yet (pre-first-crank) -> SOL/ORE rewards stay 0.
       }
+      const storeToOreRate = await readStoreToOreRate(connection);
       const recoverableSol = solInVaultSol + rewardsSol + inFlightSol;
-      const recoverableOre = unclaimedOre + storeInVaultOre;
+      // ORE-equivalent: unclaimed ORE (1:1) + stORE valued at its redemption rate.
+      const recoverableOre = unclaimedOre + storeInVaultOre * storeToOreRate;
 
       setData({
         initialized: true,
@@ -112,6 +143,7 @@ export function useVaultData(pollMs = 12_000) {
         navPerShare: nav ? navX18ToNumber(nav.navPerShareX18) : 1,
         solInVaultSol,
         storeInVaultOre,
+        storeToOreRate,
         unclaimedOre,
         rewardsSol,
         inFlightSol,

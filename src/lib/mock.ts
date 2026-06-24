@@ -28,6 +28,7 @@ export const mockVaultData: VaultData = {
   navPerShare: 1.0772,
   solInVaultSol: 842.1,
   storeInVaultOre: 36.4,
+  storeToOreRate: 1.07,
   unclaimedOre: 8.2,
   rewardsSol: 120.4,
   inFlightSol: 0,

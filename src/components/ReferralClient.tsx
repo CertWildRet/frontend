@@ -195,6 +195,10 @@ function Dashboard({
   const claimable = lamportsToSol(stats.claimableLamports);
   const accrued = lamportsToSol(stats.accruedLamports);
   const claimed = lamportsToSol(stats.claimedLamports);
+  // Don't let anyone claim dust - the tx fee would exceed the payout. Below this
+  // the rewards keep accruing and can be claimed later (or pushed by the keeper).
+  const MIN_CLAIM_SOL = 0.001;
+  const canClaim = claimable >= MIN_CLAIM_SOL;
 
   return (
     <Card>
@@ -228,10 +232,16 @@ function Dashboard({
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button
           onClick={onClaim}
-          disabled={!!busy || claimable <= 0}
+          disabled={!!busy || !canClaim}
           className="btn-primary px-5 py-2 disabled:opacity-50"
         >
-          {busy === "claim" ? "Claiming…" : claimable > 0 ? `Claim ${fmt(claimable)} SOL` : "Nothing to claim"}
+          {busy === "claim"
+            ? "Claiming…"
+            : canClaim
+              ? `Claim ${fmt(claimable)} SOL`
+              : claimable > 0
+                ? "Not enough to claim"
+                : "Nothing to claim"}
         </button>
         <label className="flex cursor-pointer items-center gap-2 font-mono text-[12px] text-fog-muted">
           <input

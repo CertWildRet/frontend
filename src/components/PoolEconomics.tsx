@@ -32,6 +32,9 @@ export function PoolEconomics({
   const oreUsd = stats?.prices.oreUsd ?? 0;
   const oreToSol = solUsd > 0 && oreUsd > 0 ? oreUsd / solUsd : 0;
   const priced = oreToSol > 0;
+  // stORE price = its on-chain redemption rate (ORE per stORE) x ORE price.
+  const storeRate = data?.storeToOreRate ?? 1;
+  const storeUsd = oreUsd * storeRate;
 
   // Exact on-chain recoverable.
   const recSol = data?.recoverableSol ?? 0;
@@ -118,7 +121,7 @@ export function PoolEconomics({
         <Row k="Total ORE mined" v={ore(lifetimeMined)} unit="ORE" strong />
         <Row k="↳ stORE in pool (claimed, held)" v={ore(storeOre)} unit="stORE" />
         <Row k="↳ still unclaimed (in miner)" v={ore(unclaimedOre)} unit="ORE" />
-        <Row k="↳ withdrawn by users" v={ore(withdrawnOre)} unit="ORE" />
+        <Row k="↳ withdrawn by users (as stORE)" v={ore(withdrawnOre)} unit="stORE" />
       </Section>
 
       {/* lifetime SOL + PnL */}
@@ -139,7 +142,8 @@ export function PoolEconomics({
           {stats?.keeper.mode ?? "···"}
         </span>
         <span>
-          SOL ${solUsd ? formatNum(solUsd, 2) : "··"} · ORE ${oreUsd ? formatNum(oreUsd, 2) : "··"}
+          SOL ${solUsd ? formatNum(solUsd, 2) : "··"} · ORE ${oreUsd ? formatNum(oreUsd, 2) : "··"} · stORE $
+          {storeUsd ? formatNum(storeUsd, 2) : "··"}{storeRate ? ` (${formatNum(storeRate, 3)}×)` : ""}
         </span>
       </div>
     </div>
