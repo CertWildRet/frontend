@@ -12,7 +12,7 @@ export default function HomePage() {
   return (
     <div className="space-y-28">
       {/* Hero */}
-      <section className="grid grid-cols-1 items-center gap-10 pt-4 lg:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid grid-cols-1 items-center gap-10 pt-[72px] lg:grid-cols-[1.1fr_0.9fr]">
         <div className="stagger">
           <h1 className="font-display text-5xl font-bold leading-[1.04] tracking-tight md:text-6xl">
             Pool your SOL.
