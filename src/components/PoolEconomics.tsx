@@ -18,6 +18,19 @@ export function PoolEconomics({ stats }: { stats: PoolStatsData | null }) {
   // with the small "unclaimed" figure above.
   const claimedOre = s ? Math.max(0, s.miner.lifetimeRewardsOre - s.value.recoverableOre) : 0;
 
+  // All-time PnL in $: made = recovered SOL + ORE winnings (both at live price);
+  // deployed = SOL deployed (at live price). PnL = made - deployed; % over deployed.
+  const solUsd = s?.prices.solUsd ?? 0;
+  const oreUsd = s?.prices.oreUsd ?? 0;
+  const deployedUsd = s ? s.miner.lifetimeDeployed * solUsd : 0;
+  const madeUsd = s ? s.miner.lifetimeRewardsSol * solUsd + s.miner.lifetimeRewardsOre * oreUsd : 0;
+  const pnlUsd = madeUsd - deployedUsd;
+  const pnlPct = deployedUsd > 0 ? (pnlUsd / deployedUsd) * 100 : 0;
+  const pnlReady = !!s && solUsd > 0 && deployedUsd > 0;
+  const pnlText = pnlReady
+    ? `${pnlUsd < 0 ? "-" : ""}$${formatNum(Math.abs(pnlUsd), 2)} (${pnlPct >= 0 ? "+" : ""}${formatNum(pnlPct, 1)}%)`
+    : "···";
+
   return (
     <div className="card">
       <div className="mb-1 flex items-center justify-between">
@@ -68,6 +81,12 @@ export function PoolEconomics({ stats }: { stats: PoolStatsData | null }) {
         <Row k="Total ORE mined" v={ore(s?.miner.lifetimeRewardsOre)} unit="ORE" strong />
         <Row k="↳ already claimed + withdrawn" v={ore(claimedOre)} unit="ORE" />
         <Row k="↳ still unclaimed" v={ore(s?.value.recoverableOre)} unit="ORE" />
+        <div className="mt-2 flex items-baseline justify-between border-t border-line pt-2 font-mono text-xs">
+          <span className="text-white">All-time PnL</span>
+          <span className={`num text-sm font-semibold ${pnlUsd >= 0 ? "text-pos" : "text-[#ec9b9b]"}`}>
+            {pnlText}
+          </span>
+        </div>
       </Section>
 
       <div className="mt-4 flex items-center justify-between border-t border-line pt-3 font-mono text-[12px] text-fog-muted">
