@@ -18,16 +18,18 @@ export function LiveCrankPanel() {
         <div className="flex items-center gap-3">
           <FacetMark className="h-7 w-7 drop-shadow-[0_0_12px_rgba(157,183,216,0.4)]" />
           <div>
-            <h2 className="font-display text-lg font-semibold text-white">Live crank</h2>
+            <div className="flex items-center gap-2.5">
+              <h2 className="font-display text-lg font-semibold text-white">Live crank</h2>
+              <a
+                href={`https://solscan.io/account/${CRANK_WALLET}`}
+                target="_blank"
+                rel="noreferrer"
+                className="font-mono text-[11px] text-[#9DB7D8] transition-colors hover:text-[#E8EFFA]"
+              >
+                {CRANK_WALLET.slice(0, 4)}…{CRANK_WALLET.slice(-4)} ↗
+              </a>
+            </div>
             <p className="font-mono text-[12px] text-fog-muted">What the keeper is doing on the board, right now.</p>
-            <a
-              href={`https://solscan.io/account/${CRANK_WALLET}`}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-1 inline-block font-mono text-[11px] text-fog-muted transition-colors hover:text-[#9DB7D8]"
-            >
-              crank {CRANK_WALLET.slice(0, 4)}…{CRANK_WALLET.slice(-4)} ↗
-            </a>
           </div>
         </div>
         <span className={`chip ${enabled && connected ? "border-pos/40 text-white" : "border-line text-fog-muted"}`}>
