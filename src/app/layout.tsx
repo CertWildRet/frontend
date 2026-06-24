@@ -31,9 +31,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <header className="sticky top-0 z-30 border-b border-line/80 bg-ink/70 backdrop-blur-xl">
             <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
               <div className="flex items-center gap-8">
-                <Link href="/" className="group flex items-center gap-3">
-                  <FacetMark className="h-7 w-7 transition group-hover:drop-shadow-[0_0_10px_rgba(157,183,216,0.45)]" />
-                  <span className="font-display text-[18px] font-bold tracking-[0.22em] text-[#F4F8FF]">
+                <Link href="/" className="group flex items-center gap-1.5">
+                  <FacetMark className="h-9 w-9 transition group-hover:drop-shadow-[0_0_10px_rgba(157,183,216,0.45)]" />
+                  <span className="font-display text-[23px] font-bold tracking-[0.22em] text-[#F4F8FF]">
                     CWR
                   </span>
                 </Link>
@@ -58,9 +58,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="mx-auto max-w-6xl px-6 py-10">
               <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
                 <div className="max-w-xs">
-                  <div className="flex items-center gap-3">
-                    <FacetMark className="h-7 w-7" />
-                    <span className="font-display text-[18px] font-bold tracking-[0.22em] text-[#F4F8FF]">CWR</span>
+                  <div className="flex items-center gap-1.5">
+                    <FacetMark className="h-8 w-8" />
+                    <span className="font-display text-[20px] font-bold tracking-[0.22em] text-[#F4F8FF]">CWR</span>
                   </div>
                   <p className="mt-3 text-xs leading-relaxed text-fog-muted">
                     Pooled, non-custodial ORE mining on Solana. Funds only ever flow vault to ORE and back.
