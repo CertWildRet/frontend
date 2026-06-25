@@ -8,7 +8,7 @@ import { MobileNav } from "@/components/MobileNav";
 const display = { fontFamily: "'Chakra Petch', sans-serif" } as const;
 
 const NAV = [
-  { label: "Pools", href: "/crank" },
+  { label: "Pools", href: "/pools" },
   { label: "Position", href: "/position" },
   { label: "Referral", href: "/referral" },
 ];

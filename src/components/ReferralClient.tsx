@@ -145,7 +145,7 @@ export function ReferralClient({ inviteCode }: { inviteCode?: string }) {
             referrer 0.1% of the volume they work, and it costs you nothing.
           </p>
           {joined ? (
-            <a href="/crank" className="btn-primary inline-block px-5 py-2">Go deposit →</a>
+            <a href="/pools" className="btn-primary inline-block px-5 py-2">Go deposit →</a>
           ) : (
             <button onClick={onJoin} disabled={!!busy} className="btn-primary px-5 py-2 disabled:opacity-50">
               {busy === "join" ? "Signing…" : "Accept invite"}
