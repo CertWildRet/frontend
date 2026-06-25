@@ -6,16 +6,16 @@ const config: Config = {
     extend: {
       colors: {
         ink: {
-          DEFAULT: "#050506",
-          950: "#050506",
-          900: "#0A0A0C",
-          800: "#101013",
-          700: "#17171C",
-          600: "#23232A",
+          DEFAULT: "#070912",
+          950: "#070912",
+          900: "#0A0C14",
+          800: "#0E1222",
+          700: "#141828",
+          600: "#1A1E32",
         },
         line: {
-          DEFAULT: "#1C1C20",
-          bright: "#2C313B",
+          DEFAULT: "rgba(255,255,255,0.08)",
+          bright: "rgba(255,255,255,0.15)",
         },
         // Primary brand accent — retheme to silver-blue (the diamond). Class names
         // keep the "gold" key so every `text-gold` / `bg-gold` etc. retints at once.

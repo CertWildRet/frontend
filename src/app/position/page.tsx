@@ -42,8 +42,8 @@ export default function PositionPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="font-display text-2xl font-bold tracking-tight text-white">Your position</h1>
-        <p className="mt-1.5 max-w-2xl text-sm text-fog-dim">
+        <h1 className="font-display text-2xl font-bold tracking-tight text-[#EAECF6]">Your position</h1>
+        <p className="mt-1.5 max-w-2xl text-sm text-[#9AA3C8]">
           A high-level view of what you hold and exactly what backs it, read straight from the vault and
           the ORE miner. The pool mines as one; your CWR is a pro-rata claim on everything below.
         </p>
@@ -51,7 +51,7 @@ export default function PositionPage() {
 
       {!connected ? (
         <div className="card">
-          <h3 className="font-display text-base font-semibold text-white">Connect to view your position</h3>
+          <h3 className="font-display text-base font-semibold text-[#EAECF6]">Connect to view your position</h3>
           <p className="mb-4 mt-1 font-mono text-[12px] text-fog-muted">Your holdings + exact backing appear once connected.</p>
           <WalletButton />
         </div>
@@ -73,8 +73,8 @@ export default function PositionPage() {
           {/* exact backing */}
           <div className="card">
             <div className="mb-1 flex items-center justify-between">
-              <h3 className="font-display text-base font-semibold text-white">What backs your CWR</h3>
-              <span className="chip border-gold/30 text-gold">exact on-chain</span>
+              <h3 className="font-display text-base font-semibold text-[#EAECF6]">What backs your CWR</h3>
+              <span className="chip text-[#7FA0E0]" style={{ background: 'rgba(14,18,34,0.4)', border: '1px solid rgba(91,108,255,0.3)' }}>exact on-chain</span>
             </div>
             <p className="mb-4 font-mono text-[12px] text-fog-muted">
               Your pro-rata slice of the pool. On withdraw you receive your SOL plus your stORE token.
@@ -90,8 +90,8 @@ export default function PositionPage() {
           {/* what the pool is mining for you */}
           <div className="card">
             <div className="mb-1 flex items-center justify-between">
-              <h3 className="font-display text-base font-semibold text-white">What the pool is mining for you</h3>
-              <span className={`chip ${liveOn ? "border-pos/40 text-white" : "border-line text-fog-muted"}`}>
+              <h3 className="font-display text-base font-semibold text-[#EAECF6]">What the pool is mining for you</h3>
+              <span className={`chip ${liveOn ? "border-pos/40 text-[#EAECF6]" : "border-line text-fog-muted"}`}>
                 {liveOn ? <span className="live-dot text-pos" /> : null}
                 {liveOn ? "live" : "feed offline"}
               </span>
@@ -102,7 +102,7 @@ export default function PositionPage() {
               <Mini label="Motherlode pool" value={live ? `${formatNum(live.motherlodePoolOre, 1)} ORE` : "···"} />
               <Mini label="Miners on board" value={live ? String(live.totalMiners) : "···"} />
             </div>
-            <div className="mt-4 rounded-xl border border-line bg-ink-800/50 p-4">
+            <div className="mt-4 rounded-xl p-4" style={{ background: 'rgba(14,18,34,0.35)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex items-center justify-between">
                 <span className="label">Keeper&apos;s last move</span>
                 {live?.lastCrank && (
@@ -113,10 +113,10 @@ export default function PositionPage() {
                 <p className="mt-1.5 num text-sm">
                   {live.lastCrank.action === "crank_mine" ? (
                     <>
-                      deployed <span className="text-gold">{formatSol(live.lastCrank.perTileSol, 4)} SOL</span> × 25 tiles
+                      deployed <span className="text-[#7FA0E0]">{formatSol(live.lastCrank.perTileSol, 4)} SOL</span> × 25 tiles
                     </>
                   ) : (
-                    <span className="text-fog-dim">holding this round</span>
+                    <span className="text-[#9AA3C8]">holding this round</span>
                   )}
                 </p>
               ) : (
@@ -136,10 +136,10 @@ export default function PositionPage() {
 
 function Big({ label, value, unit, sub, tone }: { label: string; value: string; unit?: string; sub?: string; tone?: "gold" }) {
   return (
-    <div className="rounded-xl border border-[#9DB7D8]/25 bg-gradient-to-b from-[#9DB7D8]/[0.09] to-[#9DB7D8]/[0.02] px-4 py-4 shadow-[inset_0_1px_0_rgba(157,183,216,0.22),0_3px_10px_-3px_rgba(0,0,0,0.7)]">
+    <div className="card rounded-xl px-4 py-4">
       <div className="label">{label}</div>
       <div className="mt-1.5 flex items-baseline gap-1.5">
-        <span className={`num text-2xl ${tone === "gold" ? "gradient-text" : "text-white"}`}>{value}</span>
+        <span className={`num text-2xl ${tone === "gold" ? "gradient-text" : "text-[#EAECF6]"}`}>{value}</span>
         {unit && <span className="font-mono text-xs text-fog-muted">{unit}</span>}
       </div>
       {sub && <div className="mt-1 font-mono text-[11px] text-fog-muted">{sub}</div>}
@@ -153,7 +153,7 @@ function Line({ k, v, unit, usd, strong }: { k: string; v: string; unit?: string
       <span className="min-w-0 text-fog-muted">{k}</span>
       <span className="flex shrink-0 flex-col items-end text-right leading-tight">
         <span className="whitespace-nowrap">
-          <span className={`num ${strong ? "text-gold" : "text-gray-200"}`}>{v}</span>
+          <span className={`num ${strong ? "text-[#7FA0E0]" : "text-gray-200"}`}>{v}</span>
           {unit && <span className="ml-1 text-[12px] text-fog-muted">{unit}</span>}
         </span>
         {usd != null && <span className="mt-0.5 text-[11px] text-fog-muted">≈ ${formatNum(usd, 2)}</span>}
@@ -164,9 +164,9 @@ function Line({ k, v, unit, usd, strong }: { k: string; v: string; unit?: string
 
 function Mini({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-line bg-ink-800/60 px-3 py-2.5">
+    <div className="rounded-lg px-3 py-2.5" style={{ background: 'rgba(14,18,34,0.4)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(14px)' }}>
       <div className="label">{label}</div>
-      <div className="num mt-1 text-base text-white">{value}</div>
+      <div className="num mt-1 text-base text-[#EAECF6]">{value}</div>
     </div>
   );
 }

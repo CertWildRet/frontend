@@ -1,0 +1,414 @@
+/* ════════════════════════════════════════════════════════════════
+   DISPERSION — Concept 3
+   Optical fire: white light splitting into a controlled spectrum.
+   Indigo-black base, glass crystal surfaces, refractive spectral edges.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Spectral animated borders ──────────────────────────────────────── */
+.spectralEdge {
+  position: relative;
+}
+.spectralEdge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(34, 224, 230, 0.55),
+    rgba(91, 108, 255, 0.4),
+    rgba(154, 107, 255, 0.45),
+    rgba(255, 90, 200, 0.4),
+    rgba(255, 192, 97, 0.5)
+  );
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.55;
+  animation: hueShift 12s linear infinite;
+}
+
+@keyframes hueShift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+/* brighter refractive top edge for glass surfaces */
+.glass {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012) 30%, rgba(7, 9, 18, 0.18)),
+    rgba(14, 18, 34, 0.55);
+  backdrop-filter: blur(22px) saturate(120%);
+  -webkit-backdrop-filter: blur(22px) saturate(120%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 24px 60px -28px rgba(0, 0, 0, 0.85),
+    0 0 40px -16px rgba(91, 108, 255, 0.35);
+}
+/* faint inner spectral rim on glass */
+.glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    140deg,
+    rgba(34, 224, 230, 0.05),
+    transparent 30%,
+    transparent 70%,
+    rgba(255, 90, 200, 0.05)
+  );
+}
+
+/* ONE sharp cut corner per card — crystal character */
+.cutTR {
+  clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
+}
+.cutBL {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 22px 100%, 0 calc(100% - 22px));
+}
+
+/* ── Holographic pointer tilt ───────────────────────────────────────── */
+.tilt {
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.4s ease;
+  will-change: transform;
+}
+
+/* ── Mint button: dispersion ignite on hover ────────────────────────── */
+.ignite {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(110deg, rgba(91, 108, 255, 0.22), rgba(154, 107, 255, 0.18));
+  transition: transform 0.18s ease, box-shadow 0.3s ease;
+}
+.ignite::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(110deg, #22e0e6, #5b6cff, #9a6bff, #ff5ac8, #ffc061);
+  background-size: 300% 100%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+.ignite:hover::before {
+  opacity: 1;
+  animation: hueShift 2.4s linear infinite;
+}
+.ignite::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(234, 236, 246, 0.6), transparent);
+  transform: skewX(-18deg);
+  opacity: 0;
+}
+.ignite:hover::after {
+  animation: sweep 0.9s ease;
+}
+.ignite:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(154, 107, 255, 0.5), 0 14px 40px -10px rgba(91, 108, 255, 0.7);
+}
+.ignite:active {
+  transform: translateY(0) scale(0.985);
+}
+@keyframes sweep {
+  to { left: 120%; opacity: 1; }
+}
+
+/* glass ghost secondary */
+.ghost {
+  background: rgba(234, 236, 246, 0.03);
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+.ghost:hover {
+  background: rgba(234, 236, 246, 0.07);
+}
+
+/* iridescent refractive CTA pill — hue shifts continuously */
+.prismPill {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)),
+    rgba(14, 18, 34, 0.6);
+  backdrop-filter: blur(14px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 12px 36px -12px rgba(91, 108, 255, 0.6);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+.prismPill::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(110deg, #22e0e6, #5b6cff, #9a6bff, #ff5ac8, #ffc061, #22e0e6);
+  background-size: 400% 100%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: hueShift 5s linear infinite;
+}
+.prismPill:hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 18px 50px -10px rgba(154, 107, 255, 0.75);
+}
+.prismPill:active { transform: translateY(0) scale(0.985); }
+
+/* ── Hero prism: white beam fanning into spectrum ───────────────────── */
+.heroBeam {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+/* incoming white beam */
+.whiteBeam {
+  position: absolute;
+  top: 30%;
+  left: -10%;
+  width: 55%;
+  height: 4px;
+  transform: translateY(-50%) rotate(0deg);
+  background: linear-gradient(90deg, transparent, rgba(234, 236, 246, 0.0) 30%, rgba(234, 236, 246, 0.95));
+  filter: blur(1px) drop-shadow(0 0 10px rgba(234, 236, 246, 0.7));
+  animation: beamIn 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+/* the fanned spectrum */
+.fan {
+  position: absolute;
+  top: 30%;
+  left: 44%;
+  width: 60%;
+  height: 70%;
+  transform-origin: left center;
+  background: conic-gradient(
+    from 78deg at 0% 0%,
+    transparent 0deg,
+    rgba(255, 90, 200, 0.14) 4deg,
+    rgba(154, 107, 255, 0.18) 8deg,
+    rgba(91, 108, 255, 0.2) 12deg,
+    rgba(34, 224, 230, 0.16) 16deg,
+    rgba(255, 192, 97, 0.12) 20deg,
+    transparent 26deg
+  );
+  filter: blur(14px) saturate(140%);
+  opacity: 0;
+  animation: fanOut 1.4s 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+@keyframes beamIn {
+  from { opacity: 0; transform: translateY(-50%) translateX(-30%); }
+  to { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+@keyframes fanOut {
+  from { opacity: 0; transform: scaleX(0.4) scaleY(0.7); }
+  to { opacity: 1; transform: scaleX(1) scaleY(1); }
+}
+
+/* the diamond/prism shard itself */
+.prismShard {
+  animation: prismFloat 9s ease-in-out infinite, prismGlow 6s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+@keyframes prismFloat {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-8deg); }
+  75% { transform: rotate(8deg); }
+}
+@keyframes prismGlow {
+  0%, 100% { filter: drop-shadow(0 0 30px rgba(91, 108, 255, 0.45)); }
+  50% { filter: drop-shadow(0 0 46px rgba(154, 107, 255, 0.6)); }
+}
+
+/* ── Chromatic aberration on a key word ─────────────────────────────── */
+.chroma {
+  position: relative;
+  display: inline-block;
+  color: #eaecf6;
+}
+.chroma::before,
+.chroma::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.chroma::before {
+  color: #22e0e6;
+  transform: translate(-1.5px, 0);
+  mix-blend-mode: screen;
+  opacity: 0.7;
+  animation: chromaA 5s ease-in-out infinite;
+}
+.chroma::after {
+  color: #ff5ac8;
+  transform: translate(1.5px, 0);
+  mix-blend-mode: screen;
+  opacity: 0.7;
+  animation: chromaB 5s ease-in-out infinite;
+}
+@keyframes chromaA {
+  0%, 100% { transform: translate(-1.5px, 0); }
+  50% { transform: translate(-2.5px, 0.5px); }
+}
+@keyframes chromaB {
+  0%, 100% { transform: translate(1.5px, 0); }
+  50% { transform: translate(2.5px, -0.5px); }
+}
+
+/* ── Spectral progress bars ─────────────────────────────────────────── */
+.spectralBar {
+  background: linear-gradient(90deg, #22e0e6, #5b6cff, #9a6bff, #ff5ac8, #ffc061);
+  background-size: 200% 100%;
+  animation: barFlow 4s linear infinite;
+  box-shadow: 0 0 14px -2px rgba(91, 108, 255, 0.8);
+}
+@keyframes barFlow {
+  0% { background-position: 0% 0; }
+  100% { background-position: 200% 0; }
+}
+/* compressed white (mining/pressure) */
+.whiteBar {
+  background: linear-gradient(90deg, rgba(234, 236, 246, 0.85), rgba(234, 236, 246, 0.35));
+}
+
+/* ── Crystal tile board ─────────────────────────────────────────────── */
+.tile {
+  position: relative;
+  transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.25s ease;
+}
+.tile:hover {
+  transform: translateY(-3px) scale(1.04);
+  z-index: 5;
+}
+/* hottest tile prism flare */
+.flare {
+  position: absolute;
+  inset: -40%;
+  pointer-events: none;
+  background:
+    conic-gradient(from 0deg,
+      rgba(255, 90, 200, 0.5), rgba(255, 192, 97, 0.5), rgba(34, 224, 230, 0.5),
+      rgba(91, 108, 255, 0.5), rgba(154, 107, 255, 0.5), rgba(255, 90, 200, 0.5));
+  filter: blur(6px);
+  opacity: 0.55;
+  mix-blend-mode: screen;
+  animation: flareSpin 7s linear infinite, flarePulse 2.4s ease-in-out infinite;
+}
+@keyframes flareSpin { to { transform: rotate(360deg); } }
+@keyframes flarePulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.75; }
+}
+/* a thin cross sparkle on the hot tile */
+.flareCross {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent 46%, rgba(234, 236, 246, 0.9) 50%, transparent 54%),
+    linear-gradient(0deg, transparent 46%, rgba(234, 236, 246, 0.9) 50%, transparent 54%);
+  filter: blur(0.4px);
+  opacity: 0.8;
+  animation: flarePulse 2.4s ease-in-out infinite;
+}
+
+/* ── Live status dot ────────────────────────────────────────────────── */
+.liveDot {
+  animation: livePulse 1.8s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34, 224, 230, 0.6); }
+  50% { opacity: 0.5; box-shadow: 0 0 0 5px rgba(34, 224, 230, 0); }
+}
+
+/* ── Chromatic streaming trail for keeper move ──────────────────────── */
+.chromaTrail {
+  position: relative;
+}
+.chromaTrail::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  height: 1.5px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, #22e0e6, #9a6bff, #ff5ac8, transparent);
+  background-size: 200% 100%;
+  animation: barFlow 3s linear infinite;
+  opacity: 0.7;
+}
+
+/* ── Card entrance: refract into place from depth ───────────────────── */
+.rise {
+  animation: rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(20px) scale(0.985); filter: blur(6px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+/* lit-from-within data underline */
+.dataLit {
+  position: relative;
+}
+.dataLit::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(91, 108, 255, 0.8), rgba(154, 107, 255, 0.5), transparent);
+  opacity: 0.7;
+}
+
+/* focus bloom */
+.focusBloom:focus-within {
+  box-shadow:
+    inset 0 0 0 1px rgba(91, 108, 255, 0.5),
+    0 0 28px -6px rgba(91, 108, 255, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+/* refined / frosted (disabled) shard */
+.frosted {
+  filter: grayscale(0.7) brightness(0.85);
+  background: rgba(20, 24, 38, 0.45);
+  backdrop-filter: blur(18px) saturate(60%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 14px 40px -24px rgba(0, 0, 0, 0.8);
+}
+
+/* spectral text fill for marks/numbers */
+.spectralText {
+  background: linear-gradient(110deg, #22e0e6, #5b6cff, #9a6bff, #ff5ac8, #ffc061);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: barFlow 8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spectralEdge::before, .prismShard,
+  .fan, .whiteBeam, .spectralBar, .chroma::before, .chroma::after,
+  .flare, .flareCross, .liveDot, .chromaTrail::after, .rise, .spectralText,
+  .prismPill::before, .ignite:hover::before {
+    animation: none !important;
+  }
+}

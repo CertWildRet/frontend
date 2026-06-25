@@ -1,8 +1,8 @@
-# cwr-frontend
+# Diamond Pools
 
-Minimal Next.js dashboard that exposes the user-facing parts of CWR — buckets,
-user position, brain health — wired to the cwr-slaves/brain backend via a
-single env var.
+Pooled, non-custodial ORE mining on Solana. Deposit SOL, mine ORE around the
+clock, and let a keeper work the board for you. Funds only ever flow vault to
+ORE and back.
 
 ## Quick start
 
