@@ -33,35 +33,13 @@ async function readStoreToOreRate(connection: import("@solana/web3.js").Connecti
   return 1;
 }
 
-// ORE mining program (declare_id! in ore/api/src/lib.rs).
-const ORE_PROGRAM = new PublicKey("oreV3EG1i9BEgiAJ8b177Z2S2rMarzak4NMv1kULvWv");
-
-// The ORE protocol's claim fee, modelled EXACTLY from chain (not estimated). At
-// claim, claim_ore (ore/api/src/state/miner.rs) charges 10% of the rewards_ore
-// leg ONLY (never refined_ore), and ONLY while other miners still hold unclaimed
-// rewards (`treasury.total_unclaimed > 0` after subtracting ours). The fee is
-// redistributed to those miners. We read the live treasury and replicate it so
-// recoverable value never overstates what the pool nets at harvest. Returns ORE.
-async function readOreClaimFee(
-  connection: import("@solana/web3.js").Connection,
-  rewardsOreRaw: bigint,
-): Promise<number> {
-  if (rewardsOreRaw <= 0n) return 0;
-  const feeIfApplied = Number(rewardsOreRaw / 10n) / ORE_GRAMS_PER_ORE;
-  try {
-    const treasury = PublicKey.findProgramAddressSync([Buffer.from("treasury")], ORE_PROGRAM)[0];
-    const acc = await connection.getAccountInfo(treasury);
-    if (acc && acc.data.length >= 96) {
-      // total_unclaimed @ disc(8) + 80 = 88, u64 LE (ore/api/src/state/treasury.rs).
-      let totalUnclaimed = 0n;
-      for (let i = 0; i < 8; i++) totalUnclaimed |= BigInt(acc.data[88 + i]) << BigInt(8 * i);
-      // claim_ore subtracts ours first, then fees only if others remain unclaimed.
-      if (totalUnclaimed <= rewardsOreRaw) return 0;
-    }
-  } catch {
-    /* treasury unreadable -> assume the fee applies (never overstate) */
-  }
-  return feeIfApplied;
+// The ORE protocol's claim fee: at claim, ORE charges 10% of the rewards_ore leg
+// ONLY (never refined_ore) while other miners are still unclaimed (in practice
+// always). ORE's V4 treasury restructure removed the field we used to gate this
+// exactly, so apply it conservatively so recoverable value never overstates what
+// the pool nets at harvest. Returns ORE.
+function oreClaimFee(rewardsOreRaw: bigint): number {
+  return rewardsOreRaw > 0n ? Number(rewardsOreRaw / 10n) / ORE_GRAMS_PER_ORE : 0;
 }
 
 export type VaultData = {
@@ -139,9 +117,12 @@ export function useVaultData(pollMs = 12_000) {
       //         (stORE held, valued at its redemption rate). Both miner legs settle
       //         to stORE at the next harvest; the contract watermark sums both
       //         (lib.rs: last_seen_rewards_ore = rewards_ore + refined_ore).
-      // Decoded from the documented 544-byte ORE Miner layout (constants.rs offsets:
+      // Decoded from the MinerV1 544-byte layout (constants.rs offsets:
       //   deployed[25]@40, checkpoint_id@448, rewards_sol@488, rewards_ore@496,
       //   refined_ore@504, round_id@512). u64 LE; ORE/stORE 11-decimal, SOL 9-decimal.
+      // NOTE: ORE also has a MinerV4 (752-byte) layout that reorders every field.
+      // The CWR miner is V1 today; we gate on the EXACT V1 size so a future V4
+      // migration degrades to 0 (understate) rather than reading garbage money.
       const solInVaultSol = lamportsToSol(b.solInVault);
       const storeInVaultOre = Number(b.storeInVault.toString()) / ORE_GRAMS_PER_ORE;
       let unclaimedOre = 0;
@@ -150,7 +131,7 @@ export function useVaultData(pollMs = 12_000) {
       let inFlightSol = 0;
       try {
         const mi = await vault.read.oreMiner(SIMPLE);
-        if (mi && mi.data.length >= 544) {
+        if (mi && mi.data.length === 544) {
           const d = mi.data;
           const u64 = (o: number) => {
             let v = 0n;
@@ -172,9 +153,9 @@ export function useVaultData(pollMs = 12_000) {
         // miner not created yet (pre-first-crank) -> SOL/ORE rewards stay 0.
       }
       const storeToOreRate = await readStoreToOreRate(connection);
-      // 10% claim fee the pool pays on the rewards_ore leg at harvest (exact, from
-      // the live treasury). Subtracted from recoverable so value never overstates.
-      const claimFeeOre = await readOreClaimFee(connection, rewardsOreRaw);
+      // 10% claim fee the pool pays on the rewards_ore leg at harvest. Subtracted
+      // from recoverable so value never overstates (conservative; see oreClaimFee).
+      const claimFeeOre = oreClaimFee(rewardsOreRaw);
       const recoverableSol = solInVaultSol + rewardsSol + inFlightSol;
       // ORE-equivalent: net-of-claim-fee unclaimed + stORE at its redemption rate.
       const recoverableOre = unclaimedOre - claimFeeOre + storeInVaultOre * storeToOreRate;
