@@ -99,15 +99,15 @@ const mono = { fontFamily: "'JetBrains Mono Variable', monospace" } as const;
 
 export default function DispersionLanding() {
   return (
-    <div className="relative mx-auto w-full max-w-[1180px] px-5 pb-28 pt-8 sm:px-8">
+    <div className="relative mx-auto w-full max-w-[1180px] px-5 pb-28 pt-4 sm:px-8">
       <SpectralDefs />
 
       {/* ══ HERO ═══════════════════════════════════════════════════ */}
-      <section className="relative mt-10 sm:mt-16">
+      <section className="relative mt-4 sm:mt-6">
         {/* floating 3D brilliant-cut diamond, top-right — the refractor */}
         <div
           aria-hidden
-          className="pointer-events-none absolute right-[0%] top-[-6%] hidden h-[291px] w-[336px] md:block lg:h-[374px] lg:w-[432px] xl:h-[416px] xl:w-[480px]"
+          className="pointer-events-none absolute right-[0%] top-1/2 hidden h-[291px] w-[336px] -translate-y-1/2 md:block lg:h-[374px] lg:w-[432px] xl:h-[416px] xl:w-[480px]"
         >
           {/* spectral halo */}
           <div
