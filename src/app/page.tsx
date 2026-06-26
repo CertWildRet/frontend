@@ -3,9 +3,6 @@ import Image from "next/image";
 import styles from "./dispersion.module.css";
 import {
   SpectralDefs,
-  VaultIcon,
-  SignerIcon,
-  ClaimIcon,
   ArrowIcon,
   Tilt,
 } from "./parts";
@@ -53,24 +50,6 @@ const EDGE = [
   },
 ];
 
-const PROOF = [
-  {
-    t: "Vault treasury",
-    d: "where pooled SOL lives onchain before each round.",
-    Icon: VaultIcon,
-  },
-  {
-    t: "Mining authority",
-    d: "a program-owned signer. It can mine, never withdraw to a human.",
-    Icon: SignerIcon,
-  },
-  {
-    t: "Verifiable claims",
-    d: "mint, burn, and payout are all onchain. Read them yourself.",
-    Icon: ClaimIcon,
-  },
-];
-
 const TEAM = [
   {
     name: "br0wnD3v",
@@ -90,6 +69,7 @@ const HERO_SPECS = [
   "Non-custodial",
   "Transparent",
   "No Claim fee",
+  "Built by miners for miners",
 ];
 
 const display = { fontFamily: "'Chakra Petch', sans-serif" } as const;
@@ -264,7 +244,7 @@ export default function DispersionLanding() {
           </div>
 
           {/* spec row */}
-          <div className="mt-11 grid gap-x-6 gap-y-3 sm:grid-cols-3">
+          <div className="mt-11 grid gap-x-6 gap-y-3 sm:grid-cols-2">
             {HERO_SPECS.map((s) => (
               <div key={s} className="flex items-center gap-2.5">
                 <span
@@ -283,7 +263,7 @@ export default function DispersionLanding() {
 
       {/* ══ HOW IT WORKS ═══════════════════════════════════════════ */}
       <section className="mt-28">
-        <SectionLabel k="how it works" t="Three moves. Zero rounds to sign." />
+        <SectionLabel t="How it works" />
         <div className="mt-12 flex flex-col gap-6 sm:gap-7">
           {STEPS.map((step, i) => (
             <HowRow key={step.n} step={step} flip={i % 2 === 1} />
@@ -395,41 +375,25 @@ export default function DispersionLanding() {
               Structure over hopium.
             </span>
           </div>
-        </div>
-      </section>
 
-      {/* ══ ONCHAIN ════════════════════════════════════════════════ */}
-      <section className="mt-28">
-        <SectionLabel k="onchain, not a black box" t="You keep custody. Always." />
-        <p className="mt-5 max-w-[680px] text-[15px] leading-relaxed text-[#A8B0D4]">
-          Every deposit, balance, and flow lives on Solana, readable by any
-          explorer at any time. The vault holds the SOL, the program mines it,
-          and funds only ever move{" "}
-          <span className="text-[#EAECF6]" style={mono}>
-            vault → ORE → back
-          </span>
-          .
-        </p>
-        <div className="mt-9 grid gap-5 md:grid-cols-3">
-          {PROOF.map(({ t, d, Icon }) => (
-            <Tilt key={t}>
-              <div
-                className={`${styles.glass} ${styles.cutTR} flex h-full items-start gap-4 rounded-2xl p-6`}
-              >
-                <span className={`${styles.glass} grid h-12 w-12 shrink-0 place-items-center rounded-xl`}>
-                  <Icon className="h-6 w-6" />
-                </span>
-                <div>
-                  <h3 className="text-[16px] font-semibold text-[#EAECF6]" style={display}>
-                    {t}
-                  </h3>
-                  <p className="mt-1.5 text-[13.5px] leading-relaxed text-[#9AA3C8]">
-                    {d}
-                  </p>
-                </div>
-              </div>
-            </Tilt>
-          ))}
+          {/* transparency — blended in from the onchain section */}
+          <div className="mt-10 border-t border-[rgba(255,255,255,0.08)] pt-8">
+            <h2
+              className="max-w-[720px] text-[clamp(1.5rem,3vw,2.1rem)] font-bold leading-[1.08] text-[#EAECF6]"
+              style={display}
+            >
+              Fully transparent, not a red box.
+            </h2>
+            <p className="mt-5 max-w-[680px] text-[15px] leading-relaxed text-[#A8B0D4]">
+              Every deposit, balance, and flow lives on Solana, readable by any
+              explorer at any time. The vault holds the SOL, the program mines it,
+              and funds only ever move{" "}
+              <span className="text-[#EAECF6]" style={mono}>
+                vault → ORE → back
+              </span>
+              .
+            </p>
+          </div>
         </div>
       </section>
 
@@ -761,26 +725,28 @@ function StepYieldGraphic() {
   );
 }
 
-function SectionLabel({ k, t }: { k: string; t: string }) {
+function SectionLabel({ k, t }: { k?: string; t: string }) {
   return (
     <div>
-      <div className="flex items-center gap-3">
-        <span
-          className="h-2 w-2 rotate-45"
-          style={{
-            background: "linear-gradient(135deg,#22E0E6,#FF5AC8)",
-            boxShadow: "0 0 8px rgba(91,108,255,0.7)",
-          }}
-        />
-        <span
-          className="text-[12px] uppercase tracking-[0.35em] text-[#6E7AA0]"
-          style={{ fontFamily: "'JetBrains Mono Variable', monospace" }}
-        >
-          {k}
-        </span>
-      </div>
+      {k && (
+        <div className="flex items-center gap-3">
+          <span
+            className="h-2 w-2 rotate-45"
+            style={{
+              background: "linear-gradient(135deg,#22E0E6,#FF5AC8)",
+              boxShadow: "0 0 8px rgba(91,108,255,0.7)",
+            }}
+          />
+          <span
+            className="text-[12px] uppercase tracking-[0.35em] text-[#6E7AA0]"
+            style={{ fontFamily: "'JetBrains Mono Variable', monospace" }}
+          >
+            {k}
+          </span>
+        </div>
+      )}
       <h2
-        className="mt-4 text-[clamp(1.6rem,3.4vw,2.4rem)] font-bold leading-[1.05] text-[#EAECF6]"
+        className={`${k ? "mt-4 " : ""}text-[clamp(1.6rem,3.4vw,2.4rem)] font-bold leading-[1.05] text-[#EAECF6]`}
         style={{ fontFamily: "'Chakra Petch', sans-serif" }}
       >
         {t}
