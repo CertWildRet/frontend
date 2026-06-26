@@ -30,7 +30,7 @@ export function StatTicker() {
   ];
 
   return (
-    <div className="border-b border-line/60 bg-ink-950/70 backdrop-blur">
+    <div className="relative bg-ink-950/70 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center gap-5 overflow-x-auto px-6 py-2 font-mono text-[12px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((it, i) => (
           <div key={i} className="flex shrink-0 items-center gap-1.5">
@@ -41,6 +41,16 @@ export function StatTicker() {
           </div>
         ))}
       </div>
+      {/* spectral (rainbow) divider under the stats strip */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 block h-[1.5px]"
+        style={{
+          background:
+            "linear-gradient(90deg,#22E0E6,#5B6CFF,#9A6BFF,#FF5AC8,#FFC061)",
+          opacity: 0.85,
+        }}
+      />
     </div>
   );
 }

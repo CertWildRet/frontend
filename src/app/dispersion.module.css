@@ -180,11 +180,12 @@
 /* incoming white beam */
 .whiteBeam {
   position: absolute;
-  top: 30%;
-  left: -10%;
-  width: 55%;
+  bottom: 16%;
+  left: -8%;
+  width: 72%; /* +30% overall width */
   height: 4px;
-  transform: translateY(-50%) rotate(0deg);
+  transform-origin: left center;
+  transform: rotate(-30deg); /* travel from lower-left up toward the top-right */
   background: linear-gradient(90deg, transparent, rgba(234, 236, 246, 0.0) 30%, rgba(234, 236, 246, 0.95));
   filter: blur(1px) drop-shadow(0 0 10px rgba(234, 236, 246, 0.7));
   animation: beamIn 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -192,32 +193,37 @@
 /* the fanned spectrum */
 .fan {
   position: absolute;
-  top: 30%;
-  left: 44%;
-  width: 60%;
-  height: 70%;
-  transform-origin: left center;
+  bottom: 6%;
+  left: 26%;
+  width: 78%; /* +30% overall width (was 60%) */
+  height: 82%;
+  transform-origin: left bottom;
+  transform: rotate(-30deg); /* spectrum fans from lower-left up to the top-right */
   background: conic-gradient(
-    from 78deg at 0% 0%,
+    from 66deg at 0% 100%,
     transparent 0deg,
     rgba(255, 90, 200, 0.14) 4deg,
-    rgba(154, 107, 255, 0.18) 8deg,
-    rgba(91, 108, 255, 0.2) 12deg,
-    rgba(34, 224, 230, 0.16) 16deg,
-    rgba(255, 192, 97, 0.12) 20deg,
-    transparent 26deg
+    rgba(154, 107, 255, 0.18) 9deg,
+    rgba(91, 108, 255, 0.2) 14deg,
+    rgba(34, 224, 230, 0.16) 19deg,
+    rgba(255, 192, 97, 0.12) 24deg,
+    transparent 30deg
   );
-  filter: blur(14px) saturate(140%);
+  filter: blur(16px) saturate(140%);
+  /* feather the far (right) end so the rays decay to 0 opacity instead of
+     stopping on a hard clip edge */
+  -webkit-mask-image: linear-gradient(to right, #000 32%, rgba(0, 0, 0, 0.35) 68%, transparent 90%);
+  mask-image: linear-gradient(to right, #000 32%, rgba(0, 0, 0, 0.35) 68%, transparent 90%);
   opacity: 0;
   animation: fanOut 1.4s 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
 }
 @keyframes beamIn {
-  from { opacity: 0; transform: translateY(-50%) translateX(-30%); }
-  to { opacity: 1; transform: translateY(-50%) translateX(0); }
+  from { opacity: 0; transform: rotate(-30deg) translateX(-30%); }
+  to { opacity: 1; transform: rotate(-30deg) translateX(0); }
 }
 @keyframes fanOut {
-  from { opacity: 0; transform: scaleX(0.4) scaleY(0.7); }
-  to { opacity: 1; transform: scaleX(1) scaleY(1); }
+  from { opacity: 0; transform: rotate(-30deg) scaleX(0.4) scaleY(0.7); }
+  to { opacity: 1; transform: rotate(-30deg) scaleX(1) scaleY(1); }
 }
 
 /* the diamond/prism shard itself */
