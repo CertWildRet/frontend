@@ -113,7 +113,7 @@ export default function DispersionLanding() {
         {/* floating 3D brilliant-cut diamond, top-right — the refractor */}
         <div
           aria-hidden
-          className="pointer-events-none absolute right-[0%] top-[-6%] hidden h-[268px] w-[268px] md:block lg:h-[346px] lg:w-[346px] xl:h-[384px] xl:w-[384px]"
+          className="pointer-events-none absolute right-[0%] top-[-6%] hidden h-[224px] w-[224px] md:block lg:h-[288px] lg:w-[288px] xl:h-[320px] xl:w-[320px]"
         >
           {/* spectral halo */}
           <div
