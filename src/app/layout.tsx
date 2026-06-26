@@ -7,7 +7,7 @@ import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { FacetMark } from "@/components/FacetMark";
-import { StatTicker } from "@/components/StatTicker";
+import { StatTickerGate } from "@/components/StatTickerGate";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
         <Providers>
           <SiteHeader />
-          <StatTicker />
+          <StatTickerGate />
           <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
           <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(7,9,18,0.5)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
             <div className="mx-auto max-w-6xl px-6 py-10">

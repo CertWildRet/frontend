@@ -6,8 +6,6 @@ import {
   VaultIcon,
   SignerIcon,
   ClaimIcon,
-  BoltIcon,
-  FacetIcon,
   ArrowIcon,
   Tilt,
 } from "./parts";
@@ -16,21 +14,21 @@ import {
 const STEPS = [
   {
     n: "01",
-    t: "Deposit SOL, mint CWR",
-    d: "Your SOL joins the pool and you receive CWR, a streamlined share of everything the pool mines. Burn it any open window to walk away.",
-    Icon: VaultIcon,
+    t: "Get dOre tokens",
+    d: "These represent your share of the Diamond Pool.",
+    Graphic: StepTokenGraphic,
   },
   {
     n: "02",
-    t: "The engine works the board",
-    d: "A keeper runs the 25-tile ORE board nonstop, committing capital only when conditions line up in the pool's favor. You never sign a thing in between.",
-    Icon: BoltIcon,
+    t: "Let our algorithms do the work",
+    d: "It mines all 25 tiles only when it is EV positive.",
+    Graphic: StepBoardGraphic,
   },
   {
     n: "03",
-    t: "ORE compounds into stORE",
-    d: "Winnings ride instead of cashing out early, sidestepping the claim fee and stacking refining yield, then settle into stORE. Claim to take SOL plus your pro-rata stORE.",
-    Icon: FacetIcon,
+    t: "Claim or let it earn APY",
+    d: "Pull out to SOL whenever you want, or hold your dOre and let it keep compounding.",
+    Graphic: StepYieldGraphic,
   },
 ];
 
@@ -43,9 +41,9 @@ const EDGE = [
   },
   {
     grade: "VVS2",
-    t: "Hold to compound.",
-    d: "Winnings stay in and refine instead of cashing out early. The patient capture yield the impatient leave behind.",
-    metric: "yield ↑",
+    t: "More +1 ORE wins",
+    d: "Your odds of landing a +1 ORE win scale with how much is deployed each round. A solo miner covers little; the pool deploys as one whale, lifting everyone's chance of hitting a win.",
+    metric: "win odds ↑",
   },
   {
     grade: "VS1",
@@ -89,9 +87,9 @@ const TEAM = [
 ];
 
 const HERO_SPECS = [
-  "non-custodial — funds never leave the vault",
-  "no lockup — leave any open window",
-  "hands-off — zero transactions to sign",
+  "Non-custodial",
+  "Transparent",
+  "No Claim fee",
 ];
 
 const display = { fontFamily: "'Chakra Petch', sans-serif" } as const;
@@ -241,20 +239,18 @@ export default function DispersionLanding() {
             className="text-[clamp(2.6rem,7vw,5.2rem)] font-bold leading-[0.98] tracking-[-0.01em] text-[#EAECF6]"
             style={display}
           >
-            Pool your SOL.
+            Pool SOL,
             <br />
+            Mine Like a{" "}
             <span
               className={styles.chroma}
-              data-text="Mine ORE"
+              data-text="Whale"
             >
-              Mine ORE
-            </span>{" "}
-            as one.
+              Whale
+            </span>
           </h1>
           <p className="mt-7 max-w-[560px] text-[17px] leading-relaxed text-[#A8B0D4]">
-            Drop in SOL, mint CWR, and a tireless keeper works the ORE board for
-            you. Pooled capital, smoother outcomes, and you never sign a single
-            round.
+            Join the Diamond Pool and Mine More together.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3.5">
@@ -269,26 +265,18 @@ export default function DispersionLanding() {
 
           {/* spec row */}
           <div className="mt-11 grid gap-x-6 gap-y-3 sm:grid-cols-3">
-            {HERO_SPECS.map((s) => {
-              const [head, tail] = s.split(" — ");
-              return (
-                <div key={s} className="flex items-start gap-2.5">
-                  <span
-                    className="mt-1 h-3 w-3 shrink-0 rotate-45"
-                    style={{
-                      background:
-                        "linear-gradient(135deg,#22E0E6,#9A6BFF)",
-                      boxShadow: "0 0 8px rgba(91,108,255,0.7)",
-                    }}
-                  />
-                  <p className="text-[13px] leading-snug text-[#9AA3C8]">
-                    <span className="text-[#EAECF6]">{head}</span>
-                    <br />
-                    {tail}
-                  </p>
-                </div>
-              );
-            })}
+            {HERO_SPECS.map((s) => (
+              <div key={s} className="flex items-center gap-2.5">
+                <span
+                  className="h-3 w-3 shrink-0 rotate-45"
+                  style={{
+                    background: "linear-gradient(135deg,#22E0E6,#9A6BFF)",
+                    boxShadow: "0 0 8px rgba(91,108,255,0.7)",
+                  }}
+                />
+                <p className="text-[13px] font-medium leading-snug text-[#EAECF6]">{s}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -296,43 +284,16 @@ export default function DispersionLanding() {
       {/* ══ HOW IT WORKS ═══════════════════════════════════════════ */}
       <section className="mt-28">
         <SectionLabel k="how it works" t="Three moves. Zero rounds to sign." />
-        <div className="mt-9 grid gap-5 md:grid-cols-3">
-          {STEPS.map(({ n, t, d, Icon }, i) => (
-            <Tilt key={n} className="h-full">
-              <div
-                className={`${styles.glass} ${styles.spectralEdge} ${
-                  i % 2 ? styles.cutBL : styles.cutTR
-                } ${styles.rise} flex h-full flex-col gap-4 rounded-2xl p-6`}
-              >
-                <div className="flex items-center justify-between">
-                  <span
-                    className="text-[13px] tracking-[0.3em] text-[#6E7AA0]"
-                    style={mono}
-                  >
-                    {n}
-                  </span>
-                  <span
-                    className={`${styles.glass} grid h-11 w-11 place-items-center rounded-xl`}
-                  >
-                    <Icon className="h-6 w-6" />
-                  </span>
-                </div>
-                <h3
-                  className="text-[19px] font-semibold leading-tight text-[#EAECF6]"
-                  style={display}
-                >
-                  {t}
-                </h3>
-                <p className="text-[14px] leading-relaxed text-[#9AA3C8]">{d}</p>
-              </div>
-            </Tilt>
+        <div className="mt-12 flex flex-col gap-6 sm:gap-7">
+          {STEPS.map((step, i) => (
+            <HowRow key={step.n} step={step} flip={i % 2 === 1} />
           ))}
         </div>
       </section>
 
       {/* ══ THE EDGE — graded comparison table ═════════════════════ */}
       <section className="mt-28">
-        <SectionLabel k="the edge" t="Graded, not guessed." />
+        <SectionLabel k="the edge" t="Whale-like performance." />
         <div
           className={`${styles.glass} ${styles.spectralEdge} ${styles.cutTR} mt-9 overflow-hidden rounded-3xl`}
         >
@@ -344,7 +305,7 @@ export default function DispersionLanding() {
             <span className="text-[10px] uppercase tracking-[0.22em] text-[#6E7AA0]">grade</span>
             <span className="text-[10px] uppercase tracking-[0.22em] text-[#6E7AA0]">property</span>
             <span className="text-right text-[10px] uppercase tracking-[0.22em] text-[#6E7AA0]">
-              reading
+              Edge
             </span>
           </div>
           {EDGE.map((e, i) => (
@@ -642,6 +603,164 @@ export default function DispersionLanding() {
 }
 
 /* ── local components ────────────────────────────────────────────── */
+/* ── How-it-works: a tall step row with an animated graphic ───────── */
+function HowRow({
+  step,
+  flip,
+}: {
+  step: (typeof STEPS)[number];
+  flip: boolean;
+}) {
+  const { n, t, d, Graphic } = step;
+  return (
+    <div
+      className={`${styles.glass} ${styles.spectralEdge} ${
+        flip ? styles.cutBL : styles.cutTR
+      } ${styles.rise} grid items-center gap-8 rounded-3xl p-8 sm:p-10 md:grid-cols-2 md:gap-14 md:p-14`}
+    >
+      <div className={`flex justify-center ${flip ? "md:order-2" : ""}`}>
+        <div className={styles.howStage}>
+          <Graphic />
+        </div>
+      </div>
+      <div className={flip ? "md:order-1" : ""}>
+        <div className="flex items-center gap-3">
+          <span className="text-[13px] tracking-[0.34em] text-[#7FA0E0]" style={mono}>
+            {n}
+          </span>
+          <span className="h-px flex-1 bg-gradient-to-r from-[rgba(127,160,224,0.45)] to-transparent" />
+        </div>
+        <h3
+          className="mt-5 text-[26px] font-semibold leading-tight text-[#EAECF6] sm:text-[30px]"
+          style={display}
+        >
+          {t}
+        </h3>
+        <p className="mt-4 max-w-[44ch] text-[16px] leading-relaxed text-[#9AA3C8]">{d}</p>
+      </div>
+    </div>
+  );
+}
+
+/* Step 1 — SOL streams in and refracts into a dOre share token */
+function StepTokenGraphic() {
+  const feeds = [
+    { fx: "-94px", fy: "-66px", delay: "0s" },
+    { fx: "96px", fy: "-54px", delay: "0.7s" },
+    { fx: "-78px", fy: "80px", delay: "1.4s" },
+    { fx: "86px", fy: "84px", delay: "2.1s" },
+  ];
+  return (
+    <>
+      <div className={styles.howOrbit} />
+      {feeds.map((f, i) => (
+        <span
+          key={i}
+          className={styles.howFeed}
+          style={
+            { "--fx": f.fx, "--fy": f.fy, animationDelay: f.delay } as React.CSSProperties
+          }
+        />
+      ))}
+      <div className={styles.howToken}>
+        <svg width="120" height="120" viewBox="0 0 100 100" aria-hidden>
+          <defs>
+            <linearGradient id="doreToken" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#22E0E6" />
+              <stop offset="0.5" stopColor="#5B6CFF" />
+              <stop offset="1" stopColor="#9A6BFF" />
+            </linearGradient>
+          </defs>
+          <path d="M50 6 L86 38 L50 94 L14 38 Z" fill="url(#doreToken)" opacity="0.92" />
+          <path d="M50 6 L86 38 L50 38 Z" fill="#FFFFFF" opacity="0.18" />
+          <path d="M14 38 L50 38 L50 94 Z" fill="#000000" opacity="0.12" />
+          <path
+            d="M14 38 L86 38 M50 6 L50 94 M32 38 L50 22 L68 38"
+            stroke="#EAF6FF"
+            strokeWidth="0.8"
+            opacity="0.4"
+            fill="none"
+          />
+        </svg>
+      </div>
+      <span
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 translate-y-[56px] text-[11px] uppercase tracking-[0.32em] text-[#9AA3C8]"
+        style={mono}
+      >
+        dOre
+      </span>
+    </>
+  );
+}
+
+/* Step 2 — the keeper mines all 25 tiles, only when EV-positive */
+function StepBoardGraphic() {
+  return (
+    <>
+      <div className={styles.howBoard}>
+        {Array.from({ length: 25 }).map((_, i) => {
+          const delay = ((Math.floor(i / 5) + (i % 5)) * 0.13).toFixed(2); // diagonal wave
+          return (
+            <span key={i} className={styles.howTile} style={{ animationDelay: `${delay}s` }} />
+          );
+        })}
+      </div>
+      <span
+        className={`${styles.howEv} rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#070912]`}
+        style={{
+          ...mono,
+          background: "linear-gradient(135deg,#22E0E6,#9A6BFF)",
+          boxShadow: "0 0 14px rgba(91,108,255,0.6)",
+        }}
+      >
+        EV+
+      </span>
+    </>
+  );
+}
+
+/* Step 3 — value compounds upward into APY */
+function StepYieldGraphic() {
+  return (
+    <svg className={styles.howChart} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+      <defs>
+        <linearGradient id="apyLine" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0" stopColor="#22E0E6" />
+          <stop offset="0.5" stopColor="#5B6CFF" />
+          <stop offset="1" stopColor="#FF5AC8" />
+        </linearGradient>
+        <linearGradient id="apyArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#5B6CFF" stopOpacity="0.4" />
+          <stop offset="1" stopColor="#5B6CFF" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <line x1="6" y1="84" x2="94" y2="84" stroke="rgba(255,255,255,0.08)" strokeWidth="0.6" />
+      <path
+        className={styles.howArea}
+        d="M6 82 C 28 80, 40 62, 56 50 S 80 22, 94 10 L94 84 L6 84 Z"
+        fill="url(#apyArea)"
+      />
+      <path
+        className={styles.howLine}
+        d="M6 82 C 28 80, 40 62, 56 50 S 80 22, 94 10"
+        stroke="url(#apyLine)"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+        style={{ filter: "drop-shadow(0 0 3px rgba(91,108,255,0.7))" }}
+      />
+      <circle
+        className={styles.howSpark}
+        cx="94"
+        cy="10"
+        r="2.6"
+        fill="#EAF6FF"
+        style={{ filter: "drop-shadow(0 0 5px rgba(255,90,200,0.9))" }}
+      />
+    </svg>
+  );
+}
+
 function SectionLabel({ k, t }: { k: string; t: string }) {
   return (
     <div>
