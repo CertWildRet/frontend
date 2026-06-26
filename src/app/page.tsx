@@ -104,16 +104,10 @@ export default function DispersionLanding() {
 
       {/* ══ HERO ═══════════════════════════════════════════════════ */}
       <section className="relative mt-10 sm:mt-16">
-        {/* dispersion light event */}
-        <div className={styles.heroBeam} aria-hidden>
-          <div className={styles.whiteBeam} />
-          <div className={styles.fan} />
-        </div>
-
         {/* floating 3D brilliant-cut diamond, top-right — the refractor */}
         <div
           aria-hidden
-          className="pointer-events-none absolute right-[0%] top-[-6%] hidden h-[224px] w-[224px] md:block lg:h-[288px] lg:w-[288px] xl:h-[320px] xl:w-[320px]"
+          className="pointer-events-none absolute right-[0%] top-[-6%] hidden h-[291px] w-[336px] md:block lg:h-[374px] lg:w-[432px] xl:h-[416px] xl:w-[480px]"
         >
           {/* spectral halo */}
           <div
@@ -124,7 +118,7 @@ export default function DispersionLanding() {
             }}
           />
           <div className={`${styles.prismShard} h-full w-full`}>
-            <svg viewBox="0 0 200 200" className="h-full w-full">
+            <svg viewBox="0 0 200 200" preserveAspectRatio="none" className="h-full w-full">
               <defs>
                 <linearGradient id="d3-table" x1="0" y1="0" x2="1" y2="1">
                   <stop offset="0" stopColor="#3BF0F2" />
