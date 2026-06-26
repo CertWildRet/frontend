@@ -120,9 +120,11 @@ export function useVaultData(pollMs = 12_000) {
       // Decoded from the MinerV1 544-byte layout (constants.rs offsets:
       //   deployed[25]@40, checkpoint_id@448, rewards_sol@488, rewards_ore@496,
       //   refined_ore@504, round_id@512). u64 LE; ORE/stORE 11-decimal, SOL 9-decimal.
-      // NOTE: ORE also has a MinerV4 (752-byte) layout that reorders every field.
-      // The CWR miner is V1 today; we gate on the EXACT V1 size so a future V4
-      // migration degrades to 0 (understate) rather than reading garbage money.
+      // ORE migrated the CWR miner V1 (544B) -> V4 (752B) on 2026-06-25 16:28 UTC.
+      // V4 keeps the same field SEMANTICS but moves every offset (and swaps the
+      // refined/rewards order). Decode whichever layout is on-chain; any other size
+      // degrades to 0 (understate) rather than reading garbage money. The on-chain
+      // contract freeze (V1-only read_miner) is a SEPARATE contract upgrade.
       const solInVaultSol = lamportsToSol(b.solInVault);
       const storeInVaultOre = Number(b.storeInVault.toString()) / ORE_GRAMS_PER_ORE;
       let unclaimedOre = 0;
@@ -131,23 +133,30 @@ export function useVaultData(pollMs = 12_000) {
       let inFlightSol = 0;
       try {
         const mi = await vault.read.oreMiner(SIMPLE);
-        if (mi && mi.data.length === 544) {
+        if (mi && (mi.data.length === 544 || mi.data.length === 752)) {
           const d = mi.data;
           const u64 = (o: number) => {
             let v = 0n;
             for (let i = 0; i < 8; i++) v |= BigInt(d[o + i]) << BigInt(8 * i);
             return v;
           };
+          // Per-version offsets. V1: constants.rs. V4: verified vs the live migrated
+          // miner + ORE master ff4e73e (deployed sum@64, checkpoint_id@48,
+          // rewards_sol@688, refined_ore@696, rewards_ore@704, round_id@664).
+          const OFF =
+            d.length === 752
+              ? { deployed: 64, checkpointId: 48, rewardsSol: 688, refinedOre: 696, rewardsOre: 704, roundId: 664 }
+              : { deployed: 40, checkpointId: 448, rewardsSol: 488, refinedOre: 504, rewardsOre: 496, roundId: 512 };
           let deployed = 0n;
-          for (let i = 0; i < 25; i++) deployed += u64(40 + i * 8);
-          rewardsSol = Number(u64(488)) / LAMPORTS_PER_SOL;
-          // Both unclaimed ORE legs: directly-mined (rewards_ore@496) AND the
-          // refining yield the Simple strategy deliberately accumulates by never
-          // claiming mid-betting (refined_ore@504). Both settle to stORE next harvest.
-          // (Only the rewards_ore leg is later docked the 10% claim fee, below.)
-          rewardsOreRaw = u64(496);
-          unclaimedOre = (Number(rewardsOreRaw) + Number(u64(504))) / ORE_GRAMS_PER_ORE;
-          inFlightSol = u64(448) !== u64(512) ? Number(deployed) / LAMPORTS_PER_SOL : 0;
+          for (let i = 0; i < 25; i++) deployed += u64(OFF.deployed + i * 8);
+          rewardsSol = Number(u64(OFF.rewardsSol)) / LAMPORTS_PER_SOL;
+          // Both unclaimed ORE legs: directly-mined (rewards_ore) AND the refining
+          // yield the Simple strategy accumulates by never claiming mid-betting
+          // (refined_ore). Both settle to stORE next harvest. (Only the rewards_ore
+          // leg is later docked the 10% claim fee, below.)
+          rewardsOreRaw = u64(OFF.rewardsOre);
+          unclaimedOre = (Number(rewardsOreRaw) + Number(u64(OFF.refinedOre))) / ORE_GRAMS_PER_ORE;
+          inFlightSol = u64(OFF.checkpointId) !== u64(OFF.roundId) ? Number(deployed) / LAMPORTS_PER_SOL : 0;
         }
       } catch {
         // miner not created yet (pre-first-crank) -> SOL/ORE rewards stay 0.
