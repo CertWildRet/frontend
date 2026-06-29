@@ -1,7 +1,7 @@
 import { ReferralClient } from "@/components/ReferralClient";
 
 export const metadata = {
-  title: "dORE · Referral program",
+  title: "DP · Referral Program",
 };
 
 export default function ReferralPage() {

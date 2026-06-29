@@ -50,6 +50,26 @@ export function ReferralClient({ inviteCode }: { inviteCode?: string }) {
     }
   }, [me, configured]);
 
+  // Like refresh, but RETRIES (the service read can lag a beat right after a
+  // register / opt-in / claim) and NEVER clears an existing dashboard on a
+  // transient miss — so the page updates in place, no manual reload needed.
+  const loadStats = useCallback(
+    async (attempts = 6) => {
+      if (!me || !configured) return;
+      for (let i = 0; i < attempts; i++) {
+        try {
+          const s = await fetchReferrer(me);
+          setStats(s);
+          setNotRegistered(false);
+          return;
+        } catch {
+          await new Promise((r) => setTimeout(r, 600 + i * 350));
+        }
+      }
+    },
+    [me, configured],
+  );
+
   useEffect(() => {
     refresh();
   }, [refresh]);
@@ -83,7 +103,23 @@ export function ReferralClient({ inviteCode }: { inviteCode?: string }) {
       const sig = await sign(registerMessage(me!));
       const r = await registerReferrer(me!, sig);
       setMsg({ kind: "ok", text: `Registered. Your code: ${r.code}` });
-      await refresh();
+      // Show the dashboard immediately (the code alone powers the share link);
+      // real numbers fill in via loadStats. Avoids the "blank until reload" gap.
+      setNotRegistered(false);
+      setStats(
+        (prev) =>
+          prev ?? {
+            referrer: me!,
+            code: r.code,
+            autoOptIn: false,
+            accruedLamports: "0",
+            finalizedAccruedLamports: "0",
+            claimedLamports: "0",
+            claimableLamports: "0",
+            referredCount: 0,
+          },
+      );
+      await loadStats();
     });
 
   const onJoin = () =>
@@ -98,7 +134,7 @@ export function ReferralClient({ inviteCode }: { inviteCode?: string }) {
     run("optin", async () => {
       const sig = await sign(optInMessage(me!, next));
       await setOptIn(me!, next, sig);
-      await refresh();
+      await loadStats();
     });
 
   const onClaim = () =>
@@ -109,7 +145,7 @@ export function ReferralClient({ inviteCode }: { inviteCode?: string }) {
       const sig = await sendTransaction(tx, connection);
       await connection.confirmTransaction(sig, "confirmed");
       setMsg({ kind: "ok", text: `Claimed. tx ${sig.slice(0, 8)}…` });
-      await refresh();
+      await loadStats();
     });
 
   const shareLink = stats ? `${origin()}/referral/join=${stats.code}` : "";
