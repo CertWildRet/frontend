@@ -399,9 +399,9 @@ export default function DispersionLanding() {
 
       {/* ══ POOLS — two crystal shards ═════════════════════════════ */}
       <section className="mt-28">
-        <SectionLabel k="pools" t="Two shards. One lit, one forming." />
+        <SectionLabel k="pools" t="Two shards. Both lit." />
         <div className="mt-9 grid gap-6 md:grid-cols-2">
-          {/* Simple — LIVE */}
+          {/* dORE — LIVE */}
           <Tilt>
             <div
               className={`${styles.glass} ${styles.spectralEdge} ${styles.cutTR} relative h-full overflow-hidden rounded-3xl p-8`}
@@ -416,7 +416,7 @@ export default function DispersionLanding() {
               />
               <div className="flex items-center justify-between">
                 <h3 className="text-[24px] font-bold text-[#EAECF6]" style={display}>
-                  Simple
+                  dORE
                 </h3>
                 <span
                   className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] tracking-[0.2em]"
@@ -432,8 +432,8 @@ export default function DispersionLanding() {
                 </span>
               </div>
               <p className="mt-4 text-[14.5px] leading-relaxed text-[#A8B0D4]">
-                Disciplined 25-tile mining, no lockup. The engine commits only on
-                rounds it likes; withdraw any open window.
+                Disciplined 25-tile ORE mining, no lockup. The engine commits only
+                on rounds it likes; withdraw any open window.
               </p>
               <ul className="mt-6 space-y-3">
                 {[
@@ -456,45 +456,70 @@ export default function DispersionLanding() {
                 href="/pools"
                 className={`${styles.ignite} mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-medium text-[#EAECF6]`}
               >
-                Enter Simple <ArrowIcon className="h-4 w-4" />
+                Enter dORE <ArrowIcon className="h-4 w-4" />
               </Link>
             </div>
           </Tilt>
 
-          {/* Refined — COMING SOON (frosted) */}
-          <div
-            className={`${styles.frosted} ${styles.cutBL} relative flex h-full flex-col rounded-3xl p-8`}
-          >
-            <div className="flex items-center justify-between">
-              <h3
-                className="text-[24px] font-bold text-[#8A92B4]"
-                style={display}
-              >
-                Refined
-              </h3>
-              <span
-                className="rounded-full px-3 py-1 text-[11px] tracking-[0.2em] text-[#7A82A4]"
+          {/* dZINC — LIVE */}
+          <Tilt>
+            <div
+              className={`${styles.glass} ${styles.spectralEdge} ${styles.cutBL} relative h-full overflow-hidden rounded-3xl p-8`}
+            >
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full"
                 style={{
-                  ...mono,
-                  background: "rgba(154,167,216,0.08)",
-                  boxShadow: "inset 0 0 0 1px rgba(154,167,216,0.18)",
+                  background:
+                    "radial-gradient(circle,rgba(154,107,255,0.18),transparent 70%)",
                 }}
-              >
-                COMING SOON
-              </span>
-            </div>
-            <p className="mt-4 max-w-[360px] text-[14.5px] leading-relaxed text-[#7E86A8]">
-              A higher-refinement strategy is taking shape. Frosted colorless
-              now — it gains its spectrum when the engine goes live.
-            </p>
-            <div className="mt-auto pt-8">
-              <div className="flex items-center gap-2 text-[12px] tracking-[0.18em] text-[#6E769A]" style={mono}>
-                <span className="h-px flex-1 bg-[rgba(154,167,216,0.18)]" />
-                no fire yet
-                <span className="h-px flex-1 bg-[rgba(154,167,216,0.18)]" />
+              />
+              <div className="flex items-center justify-between">
+                <h3 className="text-[24px] font-bold text-[#EAECF6]" style={display}>
+                  dZINC
+                </h3>
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] tracking-[0.2em]"
+                  style={{
+                    ...mono,
+                    background: "rgba(154,107,255,0.14)",
+                    boxShadow: "inset 0 0 0 1px rgba(154,107,255,0.4)",
+                    color: "#C7B3FF",
+                  }}
+                >
+                  <span className={`${styles.liveDot} h-1.5 w-1.5 rounded-full bg-[#9A6BFF]`} />
+                  LIVE
+                </span>
               </div>
+              <p className="mt-4 text-[14.5px] leading-relaxed text-[#A8B0D4]">
+                Full 30-tile ZINC coverage, production-cost gated. The keeper mines,
+                smelts the winnings, and holds them; withdraw any open window.
+              </p>
+              <ul className="mt-6 space-y-3">
+                {[
+                  "deposit SOL, mint dZINC",
+                  "1% on volume, nothing on idle",
+                  "claim SOL plus smelted ZINC, in kind",
+                ].map((b) => (
+                  <li key={b} className="flex items-center gap-3 text-[14px] text-[#C6CCEC]">
+                    <span
+                      className="h-2 w-2 rotate-45"
+                      style={{
+                        background: "linear-gradient(135deg,#9A6BFF,#FF5AC8)",
+                      }}
+                    />
+                    {b}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/zinc"
+                className={`${styles.ignite} mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-medium text-[#EAECF6]`}
+              >
+                Enter dZINC <ArrowIcon className="h-4 w-4" />
+              </Link>
             </div>
-          </div>
+          </Tilt>
         </div>
       </section>
 

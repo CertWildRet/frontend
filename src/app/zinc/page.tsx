@@ -1,40 +1,55 @@
-import type { Metadata } from "next";
-import type { ReactNode } from "react";
+"use client";
 
-export const metadata: Metadata = {
-  title: "ZINC · Diamond Pools",
-  description:
-    "Deposit SOL to mint dZINC. A keeper mines the ZINC board, smelts the winnings, and holds them - non-custodial, on-chain. Coming soon.",
-};
+import { useZincData } from "@/hooks/useZincData";
+import { useZincPosition } from "@/hooks/useZincPosition";
+import { ZincStats } from "@/components/zinc/ZincStats";
+import { ZincPhaseTimers } from "@/components/zinc/ZincPhaseTimers";
+import { SettleZincPrompt } from "@/components/zinc/SettleZincPrompt";
+import { MintZincCard } from "@/components/zinc/MintZincCard";
+import { ClaimZincCard } from "@/components/zinc/ClaimZincCard";
+import { ZincPositionCard } from "@/components/zinc/ZincPositionCard";
 
 /**
- * ZINC pool (dZINC) page - SCAFFOLD.
+ * dZINC pool (bucket 1) - LIVE deposit / withdraw + read UI, mirroring the dORE
+ * pool page (/pools). The value model is intentionally simpler than dORE: NO
+ * miner, NO stORE oracle - recoverable value = pro-rata SOL (sol_in_vault) +
+ * pro-rata in-kind smelted ZINC (zinc_in_vault), the ZINC shown as a raw amount.
  *
- * The dZINC pool (bucket 1) is not deployed yet (Stage 3 follow-up), so this is
- * a labelled placeholder, NOT live data. The stat fields reflect ZINC's real,
- * verified mechanics:
- *   - dZINC      = the pool SHARE token (minted on deposit, like dORE).
- *   - ZINC       = the mined asset (parimutuel 30-tile game).
- *   - Unsmelted ZINC = won ZINC sitting on the miner, pre-smelt (earns refining
- *                      yield ~1%/day + dodges the 10% smelt fee). Analogue of unclaimed ORE.
- *   - Smelted ZINC   = claimed (-10% smelt fee) ZINC the pool HOLDS (basket-v1
- *                      adapter token_in_vault / acc_token_per_share). Analogue of
- *                      stORE held. NOTE: basket-v1 forces ZINC stake_enabled=false
- *                      (v1 ships HOLD-only "until unstake-on-claim ships"); staking
- *                      is a planned toggle, and there is no liquid stZINC token.
- * Min deploy: the ZINC PROTOCOL floor is 0.05 SOL/round (Config.min_deploy_lamports);
- * the ZINC pool's adapter deploys full 30-tile coverage at ~1.5 SOL/round by default
- * (ZINC_PER_TILE_MIN 0.05 x 30 = ZINC_ADAPTER_MIN_ROUND_DEFAULT, admin-tunable via
- * min_round_lamports) for 0% ruin, production-cost gated (mine iff cost-to-mine < ZINC price).
+ * Verified ZINC mechanics (kept in the copy below):
+ *   - dZINC = the pool SHARE token (minted on deposit, like dORE).
+ *   - ZINC  = the mined asset (parimutuel 30-tile game).
+ *   - Smelted ZINC = claimed (-10% smelt fee) ZINC the pool HOLDS (custody ATA);
+ *                    paid pro-rata IN-KIND on withdraw. v1 is HOLD-only (no
+ *                    liquid stZINC token; staking is a planned toggle).
+ *   - Protocol min deploy = 0.05 SOL/round; the pool's adapter deploys full
+ *                    30-tile coverage (~1.5 SOL/round, admin-tunable) for 0% ruin,
+ *                    production-cost gated (mine iff cost-to-mine < ZINC price).
+ *
+ * If bucket 1 isn't deployed yet, readZincPoolStats returns null and `notLive`
+ * is set, so the page renders a "not live yet" panel instead of crashing.
  */
 export default function ZincPage() {
+  const { data, notLive, refresh } = useZincData();
+  const { pos, refresh: refreshPos } = useZincPosition(data?.totalShares ?? 0);
+
+  const onDone = () => {
+    refresh();
+    refreshPos();
+  };
+
   return (
     <div className="space-y-8">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
             <h1 className="font-display text-2xl font-bold tracking-tight text-white">ZINC</h1>
-            <span className="chip border-amber/30 text-amber">coming soon</span>
+            {notLive ? (
+              <span className="chip border-amber/30 text-amber">not live yet</span>
+            ) : (
+              <span className="chip border-pos/40 text-white">
+                <span className="live-dot text-pos" /> live
+              </span>
+            )}
           </div>
           <p className="mt-1.5 max-w-2xl text-sm text-fog-dim">
             Deposit SOL to mint dZINC. A keeper mines the ZINC board around the clock, smelts the
@@ -43,62 +58,79 @@ export default function ZincPage() {
         </div>
       </header>
 
-      {/* Planned stat surface (placeholders until the dZINC pool is live). */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <Tile label="TVL" value="···" unit="SOL" accent hint="recoverable value" />
-        <Tile label="dZINC price" value="···" unit="SOL" hint="value per share" />
-        <Tile label="dZINC supply" value="···" hint="pool share token" />
-        <Tile label="Smelted ZINC" value="···" unit="ZINC" hint="claimed (-10%), pool-held" />
-        <Tile label="Unsmelted ZINC" value="···" unit="ZINC" hint="won, on the miner" />
-        <Tile label="Fee" value="···" hint="on deploy volume" />
-      </div>
+      {notLive ? (
+        <NotLivePanel />
+      ) : (
+        <>
+          <ZincStats data={data} />
+          <ZincPhaseTimers data={data} />
 
-      <div className="card relative overflow-hidden">
-        <h3 className="font-display text-lg font-semibold text-white">How ZINC works</h3>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-fog-dim">
-          ZINC is a parimutuel 30-tile mining game, mechanically close to ORE. Your SOL joins the
-          pool, mints dZINC, and a keeper plays the board for you.
-        </p>
-        <ul className="mt-4 space-y-1.5 font-mono text-xs text-fog-muted">
-          <li>› mine → smelt (−10% fee) → hold; you hold dZINC, a pro-rata claim on it all</li>
-          <li>› unsmelted winnings earn refining yield (~1%/day) and dodge the smelt fee until claimed</li>
-          <li>› v1 holds smelted ZINC (staking is a planned toggle; no liquid stZINC token)</li>
-          <li>› protocol min is 0.05 SOL/round; the keeper deploys full 30-tile coverage (~1.5 SOL/round, tunable) for 0% ruin</li>
-          <li>› deploy is production-cost gated: mine only when cost-to-mine &lt; the live ZINC price</li>
-          <li>› withdraw burns dZINC for your SOL plus your pro-rata smelted ZINC, in kind</li>
-        </ul>
-        <button
-          disabled
-          className="mt-5 cursor-not-allowed rounded-lg border border-line px-4 py-2 text-sm text-fog-muted"
-        >
-          Not yet live
-        </button>
-      </div>
+          <SettleZincPrompt data={data} onDone={onDone} />
+
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+            <MintZincCard data={data} onDone={onDone} />
+            <ClaimZincCard data={data} pos={pos} onDone={onDone} />
+            <ZincPositionCard pos={pos} data={data} />
+          </div>
+        </>
+      )}
+
+      <HowZincWorks />
     </div>
   );
 }
 
-function Tile({
-  label,
-  value,
-  unit,
-  hint,
-  accent,
-}: {
-  label: ReactNode;
-  value: string;
-  unit?: string;
-  hint?: string;
-  accent?: boolean;
-}) {
+function NotLivePanel() {
   return (
-    <div className="card px-4 py-3.5">
-      <div className="label">{label}</div>
-      <div className="mt-1.5 flex items-baseline gap-1.5">
-        <span className={`num text-xl ${accent ? "gradient-text" : "text-white"}`}>{value}</span>
-        {unit && <span className="font-mono text-xs text-fog-muted">{unit}</span>}
+    <>
+      {/* Placeholder stat surface until the dZINC pool (bucket 1) is initialized. */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        {[
+          { label: "TVL", unit: "SOL", hint: "SOL custody", accent: true },
+          { label: "dZINC price", unit: "SOL", hint: "SOL per share" },
+          { label: "dZINC supply", hint: "pool share token" },
+          { label: "Smelted ZINC", unit: "ZINC", hint: "claimed (-10%), pool-held" },
+          { label: "In-kind ZINC", unit: "ZINC", hint: "paid pro-rata on withdraw" },
+          { label: "Fee", hint: "on deploy volume" },
+        ].map((t) => (
+          <div key={t.label} className="card px-4 py-3.5">
+            <div className="label">{t.label}</div>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className={`num text-xl ${t.accent ? "gradient-text" : "text-white"}`}>···</span>
+              {t.unit && <span className="font-mono text-xs text-fog-muted">{t.unit}</span>}
+            </div>
+            {t.hint && <div className="mt-0.5 font-mono text-[12px] text-fog-muted">{t.hint}</div>}
+          </div>
+        ))}
       </div>
-      {hint && <div className="mt-0.5 font-mono text-[12px] text-fog-muted">{hint}</div>}
+
+      <div className="card border-amber/30">
+        <h3 className="font-display text-base font-semibold text-white">dZINC isn&apos;t live yet</h3>
+        <p className="mt-2 max-w-2xl font-mono text-[12px] leading-relaxed text-fog-muted">
+          The dZINC pool (bucket 1) hasn&apos;t been initialized on-chain. Once it&apos;s deployed this page
+          turns into a live deposit / claim surface automatically - no redeploy needed. The mechanics
+          below are final.
+        </p>
+      </div>
+    </>
+  );
+}
+
+function HowZincWorks() {
+  return (
+    <div className="card relative overflow-hidden">
+      <h3 className="font-display text-lg font-semibold text-white">How ZINC works</h3>
+      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-fog-dim">
+        ZINC is a parimutuel 30-tile mining game, mechanically close to ORE. Your SOL joins the
+        pool, mints dZINC, and a keeper plays the board for you.
+      </p>
+      <ul className="mt-4 space-y-1.5 font-mono text-xs text-fog-muted">
+        <li>› mine → smelt (−10% fee) → hold; you hold dZINC, a pro-rata claim on it all</li>
+        <li>› v1 holds smelted ZINC (staking is a planned toggle; no liquid stZINC token)</li>
+        <li>› protocol min is 0.05 SOL/round; the keeper deploys full 30-tile coverage (~1.5 SOL/round, tunable) for 0% ruin</li>
+        <li>› deploy is production-cost gated: mine only when cost-to-mine &lt; the live ZINC price</li>
+        <li>› withdraw burns dZINC for your SOL plus your pro-rata smelted ZINC, in kind</li>
+      </ul>
     </div>
   );
 }

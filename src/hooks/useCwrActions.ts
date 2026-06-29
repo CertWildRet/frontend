@@ -5,7 +5,7 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import {
   buildDepositIxs,
   buildWithdrawIxs,
-  buildSettleHarvestIxs,
+  buildSettleUoreIxs,
   buildParkDepositIxs,
   buildCancelPendingIxs,
   sendIxs,
@@ -73,7 +73,7 @@ export function useCwrActions() {
     [connection, publicKey, sendTransaction],
   );
 
-  // settle_harvest - the first action of a fresh OPEN window (window_settled
+  // settle_uore - the first action of a fresh OPEN window (window_settled
   // starts false; deposit/withdraw revert WindowNotSettled until this runs).
   // Permissionless: any connected wallet can open the window for everyone.
   const settle = useCallback(async (): Promise<string> => {
@@ -88,7 +88,7 @@ export function useCwrActions() {
     if (!publicKey || !sendTransaction) throw new Error("Connect a wallet first.");
     setBusy(true);
     try {
-      const ixs = await buildSettleHarvestIxs(connection, publicKey);
+      const ixs = await buildSettleUoreIxs(connection, publicKey);
       return await sendIxs(connection, sendTransaction, ixs, publicKey);
     } finally {
       setBusy(false);

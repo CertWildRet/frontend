@@ -18,7 +18,6 @@ import {
 } from "@solana/web3.js";
 import {
   TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountIdempotentInstruction,
 } from "@solana/spl-token";
@@ -26,10 +25,13 @@ import {
   CwrVault,
   Bucket,
   STORE_MINT,
-  ORE_MINT,
   ORE_PROGRAM_ID,
-  ORE_STAKE_PROGRAM_ID,
-  ORE_LST_PROGRAM_ID,
+  ZINC_MINT,
+  ZINC_TOKEN_PROGRAM,
+  ZINC_ATA_PROGRAM,
+  ZINC_PROGRAM_ID,
+  ZINC_CONFIG,
+  ZINC_TREASURY,
   deriveBucketAddresses,
   findFeeSchedule,
   findFeeBucket,
@@ -37,11 +39,12 @@ import {
   findMiningAuthority,
   oreMinerPda,
   oreBoardPda,
-  oreTreasuryPda,
-  oreLstVaultPda,
-  oreStakeStakePda,
-  oreStakeTreasuryPda,
-  oreStakeVestingPda,
+  zincPoolPda,
+  zincPositionPda,
+  zincCustodyAta,
+  zincUserAta,
+  zincPlayerProfilePda,
+  zincRoundRewardTokenAccountPda,
 } from "@cwr/sdk";
 
 export { BN, Bucket };
@@ -52,11 +55,17 @@ export const PROGRAM_ID = new PublicKey(
 );
 /** V1 ships the Simple bucket only. */
 export const SIMPLE: Bucket = Bucket.Simple;
+/** dZINC pool lives in bucket 1 (Bucket.Zinc === 1). */
+export const ZINC: Bucket = Bucket.Zinc;
 /** Contract min_deposit for the Simple bucket (DepositBelowMinimum below this). */
 export const MIN_DEPOSIT_SOL = 0.1;
 export const SHARE_DECIMALS = 9;
 export const LAMPORTS_PER_SOL = 1_000_000_000;
 export const NAV_SCALE = 1e18;
+/** ZINC token is a classic SPL mint with 9 decimals (raw grams -> ZINC). */
+export const ZINC_DECIMALS = 9;
+export const zincGramsToNumber = (bn: BN | bigint | number): number =>
+  Number(bn.toString()) / 10 ** ZINC_DECIMALS;
 
 // ── RPC endpoint resolution ──────────────────────────────────────────────────
 // Prefer an explicit public RPC; otherwise route through the same-origin proxy
@@ -179,6 +188,236 @@ export async function buildWithdrawIxs(
   return ixs;
 }
 
+// ── dZINC pool (bucket 1) deposit / withdraw ──────────────────────────────────
+// Mirror buildDepositIxs / buildWithdrawIxs but route through the ZincPool +
+// per-user ZincPosition. There is NO ore_miner and NO stORE leg: withdraw pays
+// the pro-rata SMELTED ZINC in-kind from the mining-authority custody ATA into
+// the user's ZINC ATA (a classic SPL Token ATA). Account wiring mirrors the SDK
+// UserApi.depositZinc / withdrawZinc but returns raw instructions so the
+// connected wallet (not a Keypair) can sign, exactly like the dORE builders.
+
+export async function buildDepositZincIxs(
+  connection: Connection,
+  owner: PublicKey,
+  lamports: BN,
+): Promise<TransactionInstruction[]> {
+  const vault = makeVault(connection);
+  const program = vault.client.program;
+  const addrs = deriveBucketAddresses(PROGRAM_ID, ZINC);
+  const [zincPool] = zincPoolPda(PROGRAM_ID, ZINC);
+  const [zincPosition] = zincPositionPda(PROGRAM_ID, ZINC, owner);
+  const [feeSchedule] = findFeeSchedule(PROGRAM_ID);
+  const [feeBucket] = findFeeBucket(PROGRAM_ID);
+  const userShareAta = getAssociatedTokenAddressSync(addrs.shareMint, owner);
+
+  const ixs: TransactionInstruction[] = [];
+  const ataInfo = await connection.getAccountInfo(userShareAta);
+  if (!ataInfo) {
+    ixs.push(
+      createAssociatedTokenAccountIdempotentInstruction(owner, userShareAta, owner, addrs.shareMint),
+    );
+  }
+  const depositIx = await program.methods
+    .depositZinc(lamports)
+    .accountsPartial({
+      config: vault.client.configPda,
+      bucket: addrs.bucket,
+      zincPool,
+      treasury: addrs.treasury,
+      shareMint: addrs.shareMint,
+      userShareAta,
+      user: owner,
+      zincPosition,
+      feeBucket,
+      feeSchedule,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+    })
+    .instruction();
+  ixs.push(depositIx);
+  return ixs;
+}
+
+export async function buildWithdrawZincIxs(
+  connection: Connection,
+  owner: PublicKey,
+  shares: BN,
+): Promise<TransactionInstruction[]> {
+  const vault = makeVault(connection);
+  const program = vault.client.program;
+  const addrs = deriveBucketAddresses(PROGRAM_ID, ZINC);
+  const [zincPool] = zincPoolPda(PROGRAM_ID, ZINC);
+  const [zincPosition] = zincPositionPda(PROGRAM_ID, ZINC, owner);
+  const [feeSchedule] = findFeeSchedule(PROGRAM_ID);
+  const [feeBucket] = findFeeBucket(PROGRAM_ID);
+  const [miningAuthority] = findMiningAuthority(PROGRAM_ID, ZINC);
+  const custodyAta = zincCustodyAta(miningAuthority);
+  const userShareAta = getAssociatedTokenAddressSync(addrs.shareMint, owner);
+  const userZincAta = zincUserAta(owner);
+
+  const ixs: TransactionInstruction[] = [];
+  // The in-kind smelted-ZINC payout lands in the user's ZINC ATA (classic SPL
+  // Token program); create it idempotently so the transfer cannot fail.
+  const zincAtaInfo = await connection.getAccountInfo(userZincAta);
+  if (!zincAtaInfo) {
+    ixs.push(
+      createAssociatedTokenAccountIdempotentInstruction(
+        owner,
+        userZincAta,
+        owner,
+        ZINC_MINT,
+        ZINC_TOKEN_PROGRAM,
+        ZINC_ATA_PROGRAM,
+      ),
+    );
+  }
+  const withdrawIx = await program.methods
+    .withdrawZinc(shares)
+    .accountsPartial({
+      bucket: addrs.bucket,
+      zincPool,
+      treasury: addrs.treasury,
+      shareMint: addrs.shareMint,
+      userShareAta,
+      user: owner,
+      zincPosition,
+      feeBucket,
+      feeSchedule,
+      config: vault.client.configPda,
+      miningAuthority,
+      zincCustodyAta: custodyAta,
+      userZincAta,
+      zincMint: ZINC_MINT,
+      tokenProgram: ZINC_TOKEN_PROGRAM,
+      systemProgram: SystemProgram.programId,
+    })
+    .instruction();
+  ixs.push(withdrawIx);
+  return ixs;
+}
+
+// ── dZINC settle_harvest (window-open gate; permissionless) ───────────────────
+// Mirrors buildSettleUoreIxs for the dORE pool. A fresh OPEN window starts
+// window_settled=false and deposit/withdraw both revert until it is settled. For
+// dZINC, settle claims the round's won SOL and SMELTS the accrued ZINC (-10%)
+// into the custody ATA, advancing the smelted-ZINC-per-share accumulator and
+// flipping window_settled=true. Permissionless: any wallet can run it (only pays
+// the network fee). Raw ix (wallet-signed) mirroring CrankApi.settleHarvestZinc.
+export async function buildSettleHarvestZincIxs(
+  connection: Connection,
+  owner: PublicKey,
+): Promise<TransactionInstruction[]> {
+  const vault = makeVault(connection);
+  const program = vault.client.program;
+  const addrs = deriveBucketAddresses(PROGRAM_ID, ZINC);
+  const [zincPool] = zincPoolPda(PROGRAM_ID, ZINC);
+  const [miningAuthority] = findMiningAuthority(PROGRAM_ID, ZINC);
+  const custodyAta = zincCustodyAta(miningAuthority);
+  const [zincPlayerProfile] = zincPlayerProfilePda(miningAuthority);
+  const [zincRewardTa] = zincRoundRewardTokenAccountPda();
+
+  const settleIx = await program.methods
+    .settleHarvestZinc()
+    .accountsPartial({
+      bucket: addrs.bucket,
+      zincPool,
+      treasury: addrs.treasury,
+      miningAuthority,
+      zincCustodyAta: custodyAta,
+      zincMint: ZINC_MINT,
+      zincPlayerProfile,
+      zincConfig: ZINC_CONFIG,
+      zincTreasury: ZINC_TREASURY,
+      zincRoundZincRewardTokenAccount: zincRewardTa,
+      zincProgram: ZINC_PROGRAM_ID,
+      caller: owner,
+      tokenProgram: ZINC_TOKEN_PROGRAM,
+      associatedTokenProgram: ZINC_ATA_PROGRAM,
+      systemProgram: SystemProgram.programId,
+    })
+    .instruction();
+  // claim SOL + smelt CPI + accumulator advance + (first-settle) ATA create -
+  // raise the CU ceiling (free; no CU price set, so no extra priority fee).
+  return [ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 }), settleIx];
+}
+
+// ── dZINC value model (read) ─────────────────────────────────────────────────
+// Simpler than dORE: NO ore miner, NO stORE oracle. Recoverable value is just
+//   - SOL leg : bucket.sol_in_vault (pro-rata by share)
+//   - ZINC leg: zincPool.zinc_in_vault smelted ZINC HELD (pro-rata by share),
+//               shown as a raw ZINC amount (no ZINC price feed -> not folded
+//               into the SOL price).
+// dZINC price = sol_in_vault / total_shares (the SOL-leg NPS). Returns null when
+// the dZINC pool (bucket 1) is not deployed yet so callers can render
+// "not live yet" instead of crashing.
+export type ZincPoolStats = {
+  initialized: boolean;
+  paused: boolean;
+  ddHalt: boolean;
+  /** 0 = BETTING (mining), 1 = OPEN (deposit/claim). From the generic Bucket. */
+  phase: number;
+  phaseStartedTs: number;
+  openSecs: number;
+  bettingSecs: number;
+  windowSettled: boolean;
+  totalShares: number;
+  /** SOL custody backing the dZINC supply (= bucket.sol_in_vault). Exact. */
+  solInVaultSol: number;
+  /** Pro-rata SOL price per dZINC share (sol_in_vault / total_shares). */
+  navPerShareSol: number;
+  /** Smelted ZINC the pool HOLDS, in ZINC units (= zincPool.zinc_in_vault / 1e9). */
+  smeltedZincHeld: number;
+  /** Frozen withdraw price for the OPEN window (bucket.claims_window_nps); 0 when closed. */
+  claimsWindowNps: number;
+  pullFeeBps: number;
+  pullFeeEnabled: boolean;
+  entryFeeBps: number;
+  exitFeeBps: number;
+};
+
+export async function readZincPoolStats(connection: Connection): Promise<ZincPoolStats | null> {
+  const vault = makeVault(connection);
+  // The ZincPool sidecar existing is what makes bucket 1 a live dZINC pool.
+  // If it (or the generic bucket) is missing, the pool isn't deployed yet.
+  const [zp, b] = await Promise.all([
+    vault.read.zincPool(ZINC).catch(() => null),
+    vault.read.bucket(ZINC).catch(() => null),
+  ]);
+  if (!zp || !b) return null;
+
+  const totalShares = sharesToNumber(b.totalShares);
+  const solInVaultSol = lamportsToSol(b.solInVault);
+  const navPerShareSol = totalShares > 0 ? solInVaultSol / totalShares : 0;
+  const smeltedZincHeld = zincGramsToNumber(zp.zincInVault);
+
+  return {
+    initialized: true,
+    paused: !!zp.paused || !!b.paused,
+    ddHalt: !!zp.ddHalt,
+    phase: Number(b.phase),
+    phaseStartedTs: Number(b.phaseStartedTs.toString()),
+    openSecs: Number(b.openSecs.toString()),
+    bettingSecs: Number(b.bettingSecs.toString()),
+    windowSettled: b.windowSettled,
+    totalShares,
+    solInVaultSol,
+    navPerShareSol,
+    smeltedZincHeld,
+    claimsWindowNps: b.claimsWindowNps ? navX18ToNumber(b.claimsWindowNps) : 0,
+    pullFeeBps: b.params.pullFeeBps,
+    pullFeeEnabled: b.params.pullFeeEnabled,
+    entryFeeBps: b.params.entryFeeBps,
+    exitFeeBps: b.params.exitFeeBps,
+  };
+}
+
+/** A wallet's dZINC share balance (raw share-token units -> number). 0 if none. */
+export async function readZincUserShares(connection: Connection, owner: PublicKey): Promise<number> {
+  const vault = makeVault(connection);
+  const bn = await vault.read.userShares(ZINC, owner);
+  return sharesToNumber(bn);
+}
+
 // ── park / cancel (parked-capital buffer: deposit while cranking) ────────────
 // Park escrows SOL during the BETTING window (when normal deposit is closed)
 // with NO shares minted; it converts to shares via finalize_pending once the
@@ -271,15 +510,20 @@ export async function readPendingTicket(
   return { amountLamports, parkedAt };
 }
 
-// ── settle_harvest (lazy-settle, permissionless user action) ─────────────────
+// ── settle (lazy-settle, permissionless user action) ─────────────────────────
 // A fresh OPEN window starts window_settled=false; deposit AND withdraw both
 // require window_settled (contract reverts WindowNotSettled otherwise), and the
 // keeper NEVER settles by design. So the first user to interact in a window must
-// run settle_harvest - it claims the mined round's SOL+ORE into the treasury and
-// wraps the ORE to stORE, flipping window_settled=true and unlocking the window
-// for everyone. Permissionless: any wallet can call it (it just pays the gas).
-// Raw ix (wallet-signed) mirroring the SDK CrankApi.settleHarvest wiring.
-export async function buildSettleHarvestIxs(
+// run the settle gate, flipping window_settled=true and unlocking the window for
+// everyone. Permissionless: any wallet can call it (it just pays the gas).
+//
+// Stage 2 (dORE) replaced the old settle_harvest (claim+wrap ORE->stORE) with
+// the SLIM settle_uore: it claims only the won SOL (working capital) and advances
+// the two uORE accumulators from the growth of the unclaimed miner legs, leaving
+// the miner unclaimed so refining compounds. ORE is claimed+wrapped separately by
+// the operator-gated batch_replenish, NOT here. Raw ix (wallet-signed) mirroring
+// the SDK CrankApi.settleUore wiring.
+export async function buildSettleUoreIxs(
   connection: Connection,
   owner: PublicKey,
 ): Promise<TransactionInstruction[]> {
@@ -289,56 +533,23 @@ export async function buildSettleHarvestIxs(
   const [miningAuthority] = findMiningAuthority(PROGRAM_ID, SIMPLE);
   const [oreMiner] = oreMinerPda(miningAuthority);
   const [oreBoard] = oreBoardPda();
-  const [oreTreasury] = oreTreasuryPda();
-  const [oreLstVault] = oreLstVaultPda();
-  const [oreLstStake] = oreStakeStakePda(oreLstVault);
-  const [oreLstTreasury] = oreStakeTreasuryPda();
-  const [oreLstVesting] = oreStakeVestingPda();
-
-  const ata = (mint: PublicKey, ownerPk: PublicKey) =>
-    getAssociatedTokenAddressSync(mint, ownerPk, true);
-  const miningAuthorityOreAta = ata(ORE_MINT, miningAuthority);
-  const miningAuthorityStoreAta = ata(STORE_MINT, miningAuthority);
-  const oreTreasuryOreAta = ata(ORE_MINT, oreTreasury);
-  const oreLstVaultOreAta = ata(ORE_MINT, oreLstVault);
-  const oreLstStakeOreAta = ata(ORE_MINT, oreLstStake);
-  const oreLstTreasuryOreAta = ata(ORE_MINT, oreLstTreasury);
 
   const settleIx = await program.methods
-    .settleHarvest()
+    .settleUore()
     .accountsPartial({
       bucket: addrs.bucket,
       treasury: addrs.treasury,
       miningAuthority,
-      storeTreasury: addrs.storeTreasury,
-      miningAuthorityOreAta,
-      miningAuthorityStoreAta,
-      oreMint: ORE_MINT,
-      storeMint: STORE_MINT,
       oreMiner,
       oreBoard,
-      oreTreasury,
-      oreTreasuryOreAta,
       oreProgram: ORE_PROGRAM_ID,
-      oreLstVault,
-      oreLstVaultOreAta,
-      oreLstStake,
-      oreLstStakeOreAta,
-      oreLstTreasury,
-      oreLstTreasuryOreAta,
-      oreLstVesting,
-      oreStakeProgram: ORE_STAKE_PROGRAM_ID,
-      oreLstProgram: ORE_LST_PROGRAM_ID,
       caller: owner,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
       systemProgram: SystemProgram.programId,
     })
     .instruction();
-  // settle does up to 2 ATA creates + ClaimSOL + ClaimORE + the 17-account
-  // ore-lst Wrap - well past the 200k default CU. Raise the ceiling (free; no
-  // CU price set, so no extra priority fee).
-  return [ComputeBudgetProgram.setComputeUnitLimit({ units: 1_000_000 }), settleIx];
+  // ClaimSOL + read_miner + two accumulator advances; modest CU, but raise the
+  // ceiling defensively (free - no CU price set, so no extra priority fee).
+  return [ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 }), settleIx];
 }
 
 // ── Send + poll-confirm (no websocket) ───────────────────────────────────────

@@ -2,24 +2,21 @@
 
 import { useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { useCwrActions } from "@/hooks/useCwrActions";
-import type { VaultData } from "@/hooks/useVaultData";
-import { ConnectHint } from "./ConnectHint";
-import { TxResult } from "./TxResult";
+import { useZincActions } from "@/hooks/useZincActions";
+import type { ZincPoolStats } from "@/lib/cwr";
+import { ConnectHint } from "@/components/ConnectHint";
+import { TxResult } from "@/components/TxResult";
 
 /**
- * Shown only when the claim window is OPEN but not yet settled
- * (window_settled=false). settle_uore is a permissionless USER action - the
- * first visitor to run it claims the round's won SOL into the treasury, advances
- * the per-holder uORE refining accruals, and flips window_settled=true, which
- * unlocks deposits + claims for everyone for this window. (It does NOT claim/wrap
- * ORE - the miner is held unclaimed to keep refining; wrapping into the stORE
- * reserve happens in the operator-gated batch_replenish.) Until it runs,
- * deposit/withdraw revert WindowNotSettled, so this is the gate that clears first.
+ * Shown only when the dZINC claim window is OPEN but not yet settled
+ * (window_settled=false). settle_harvest_zinc is a permissionless USER action -
+ * the first visitor to run it claims the mined round's SOL and smelts the
+ * accrued ZINC (-10%) into custody, then flips window_settled=true, unlocking
+ * deposits + claims for everyone this window. Mirrors the dORE SettlePrompt.
  */
-export function SettlePrompt({ data, onDone }: { data: VaultData | null; onDone: () => void }) {
+export function SettleZincPrompt({ data, onDone }: { data: ZincPoolStats | null; onDone: () => void }) {
   const { connected } = useWallet();
-  const { settle, busy } = useCwrActions();
+  const { settle, busy } = useZincActions();
   const [sig, setSig] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -46,9 +43,9 @@ export function SettlePrompt({ data, onDone }: { data: VaultData | null; onDone:
         <span className="chip border-gold/30 text-gold">first action</span>
       </div>
       <p className="mb-4 font-mono text-[12px] leading-relaxed text-fog-muted">
-        The window just opened. The first action settles the round (claiming its won SOL into the
-        treasury and advancing everyone&apos;s refining accruals), which unlocks deposits and claims for
-        everyone. Anyone can run it; you only pay the network fee.
+        The window just opened. The first action settles the mined round (claiming its SOL and
+        smelting the ZINC into custody), which unlocks deposits and claims for everyone. Anyone can
+        run it; you only pay the network fee.
       </p>
       {!connected ? (
         <ConnectHint />
