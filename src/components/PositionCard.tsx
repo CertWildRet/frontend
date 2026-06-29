@@ -44,7 +44,9 @@ export function PositionCard({
   // Exact pro-rata slices (on-chain amounts, no price).
   const yourSol = data ? fraction * data.recoverableSol : 0;
   const yourStore = data ? fraction * data.storeInVaultOre : 0;
-  const yourUnclaimedOre = data ? fraction * data.unclaimedOre : 0;
+  // Net of the 10% claim fee, so this "your recoverable backing" figure matches
+  // the /position page and the priced Value above (which use net recoverableOre).
+  const yourUnclaimedOre = data ? fraction * Math.max(0, data.unclaimedOre - data.claimFeeOre) : 0;
   const yourOre = data ? fraction * data.recoverableOre : 0;
 
   // Priced headline (the only estimated figure): value = SOL + ORE x price.

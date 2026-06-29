@@ -60,7 +60,7 @@ export default function PositionPage() {
 
       {!connected ? (
         <div className="card">
-          <h3 className="font-display text-base font-semibold text-white">Connect to view your position</h3>
+          <h2 className="font-display text-base font-semibold text-white">Connect to view your position</h2>
           <p className="mb-4 mt-1 font-mono text-[12px] text-fog-muted">Your holdings + exact backing appear once connected.</p>
           <WalletButton />
         </div>
@@ -82,7 +82,7 @@ export default function PositionPage() {
           {/* exact backing - dORE */}
           <div className="card">
             <div className="mb-1 flex items-center justify-between">
-              <h3 className="font-display text-base font-semibold text-white">What backs your dORE</h3>
+              <h2 className="font-display text-base font-semibold text-white">What backs your dORE</h2>
               <span className="chip border-[#5B6CFF]/40 text-[#7FA0E0]">exact on-chain</span>
             </div>
             <p className="mb-4 font-mono text-[12px] text-fog-muted">
@@ -100,7 +100,7 @@ export default function PositionPage() {
           {!zincNotLive && zinc && (
             <div className="card">
               <div className="mb-1 flex items-center justify-between">
-                <h3 className="font-display text-base font-semibold text-white">What backs your dZINC</h3>
+                <h2 className="font-display text-base font-semibold text-white">What backs your dZINC</h2>
                 <span className="chip border-[#9A6BFF]/40 text-[#C7B3FF]">exact on-chain</span>
               </div>
               <p className="mb-4 font-mono text-[12px] text-fog-muted">
@@ -118,7 +118,7 @@ export default function PositionPage() {
           {/* what the pool is mining for you */}
           <div className="card">
             <div className="mb-1 flex items-center justify-between">
-              <h3 className="font-display text-base font-semibold text-white">What the pool is mining for you</h3>
+              <h2 className="font-display text-base font-semibold text-white">What the pool is mining for you</h2>
               <span className={`chip ${liveOn ? "border-pos/40 text-white" : "border-line text-fog-muted"}`}>
                 {liveOn ? <span className="live-dot text-pos" /> : null}
                 {liveOn ? "live" : "feed offline"}

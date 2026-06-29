@@ -1,9 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
 import type { VaultData } from "@/hooks/useVaultData";
 import type { PoolStatsData } from "@/hooks/useStats";
 import { formatNum, formatSol } from "@/lib/format";
+import { StatTile } from "@/components/primitives/Stat";
 
 export function PoolStats({ data, stats }: { data: VaultData | null; stats?: PoolStatsData | null }) {
   const feeBps = data?.pullFeeEnabled ? (data?.pullFeeBps ?? 0) : 0;
@@ -36,42 +36,17 @@ export function PoolStats({ data, stats }: { data: VaultData | null; stats?: Poo
   const unclaimed = data?.initialized ? formatNum(data.unclaimedOre, 4) : "···";
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-      <Tile label="TVL" value={tvl} unit="SOL" accent hint={tvlHint} />
-      <Tile label="dORE price" value={price} unit="SOL" hint="value per share" />
-      <Tile label="dORE supply" value={data?.initialized ? formatNum(data.totalShares, 2) : "···"} hint={supplyHint} />
-      <Tile
+      <StatTile label="TVL" value={tvl} unit="SOL" tone="gold" hint={tvlHint} />
+      <StatTile label="dORE price" value={price} unit="SOL" hint="value per share" />
+      <StatTile label="dORE supply" value={data?.initialized ? formatNum(data.totalShares, 2) : "···"} hint={supplyHint} />
+      <StatTile
         label={<><span className="normal-case">stORE</span> held</>}
         value={store}
         unit="stORE"
         hint="claimed ORE in pool"
       />
-      <Tile label="Unclaimed ORE" value={unclaimed} unit="ORE" hint="in the miner" />
-      <Tile label="Fee" value={`${(feeBps / 100).toFixed(1)}%`} hint="on deploy volume" />
-    </div>
-  );
-}
-
-function Tile({
-  label,
-  value,
-  unit,
-  hint,
-  accent,
-}: {
-  label: ReactNode;
-  value: string;
-  unit?: string;
-  hint?: string;
-  accent?: boolean;
-}) {
-  return (
-    <div className="card px-4 py-3.5">
-      <div className="label">{label}</div>
-      <div className="mt-1.5 flex items-baseline gap-1.5">
-        <span className={`num text-xl ${accent ? "gradient-text" : "text-white"}`}>{value}</span>
-        {unit && <span className="font-mono text-xs text-fog-muted">{unit}</span>}
-      </div>
-      {hint && <div className="mt-0.5 font-mono text-[12px] text-fog-muted">{hint}</div>}
+      <StatTile label="Unclaimed ORE" value={unclaimed} unit="ORE" hint="in the miner" />
+      <StatTile label="Fee" value={`${(feeBps / 100).toFixed(1)}%`} hint="on deploy volume" />
     </div>
   );
 }

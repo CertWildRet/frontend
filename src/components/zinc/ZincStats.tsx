@@ -1,8 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
 import type { ZincPoolStats } from "@/lib/cwr";
 import { formatNum, formatSol } from "@/lib/format";
+import { StatTile } from "@/components/primitives/Stat";
 
 /**
  * dZINC pool stat surface. The value model is intentionally simpler than dORE:
@@ -16,39 +16,15 @@ export function ZincStats({ data }: { data: ZincPoolStats | null }) {
   const price = data ? formatNum(data.navPerShareSol, 4) : "···";
   const supply = data ? formatNum(data.totalShares, 2) : "···";
   const smelted = data ? formatNum(data.smeltedZincHeld, 4) : "···";
+  // 5 distinct legs (ZINC has no stORE/unclaimed-ORE split that ORE shows, and
+  // its smelted ZINC is held AND paid in kind, so it is one tile, not two).
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-      <Tile label="TVL" value={tvl} unit="SOL" accent hint="SOL custody (ZINC not priced)" />
-      <Tile label="dZINC price" value={price} unit="SOL" hint="SOL per share" />
-      <Tile label="dZINC supply" value={supply} hint="pool share token" />
-      <Tile label="Smelted ZINC" value={smelted} unit="ZINC" hint="claimed (-10%), pool-held" />
-      <Tile label="In-kind ZINC" value={smelted} unit="ZINC" hint="paid pro-rata on withdraw" />
-      <Tile label="Fee" value={`${(feeBps / 100).toFixed(1)}%`} hint="on deploy volume" />
-    </div>
-  );
-}
-
-function Tile({
-  label,
-  value,
-  unit,
-  hint,
-  accent,
-}: {
-  label: ReactNode;
-  value: string;
-  unit?: string;
-  hint?: string;
-  accent?: boolean;
-}) {
-  return (
-    <div className="card px-4 py-3.5">
-      <div className="label">{label}</div>
-      <div className="mt-1.5 flex items-baseline gap-1.5">
-        <span className={`num text-xl ${accent ? "gradient-text" : "text-white"}`}>{value}</span>
-        {unit && <span className="font-mono text-xs text-fog-muted">{unit}</span>}
-      </div>
-      {hint && <div className="mt-0.5 font-mono text-[12px] text-fog-muted">{hint}</div>}
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <StatTile label="TVL" value={tvl} unit="SOL" tone="gold" hint="SOL custody (ZINC not priced)" />
+      <StatTile label="dZINC price" value={price} unit="SOL" hint="SOL per share" />
+      <StatTile label="dZINC supply" value={supply} hint="pool share token" />
+      <StatTile label="Smelted ZINC" value={smelted} unit="ZINC" hint="claimed (-10%), held + paid in kind" />
+      <StatTile label="Fee" value={`${(feeBps / 100).toFixed(1)}%`} hint="on deploy volume" />
     </div>
   );
 }

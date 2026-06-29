@@ -17,18 +17,21 @@ const config: Config = {
           DEFAULT: "rgba(255,255,255,0.08)",
           bright: "rgba(255,255,255,0.15)",
         },
-        // Primary brand accent - retheme to silver-blue (the diamond). Class names
-        // keep the "gold" key so every `text-gold` / `bg-gold` etc. retints at once.
+        // Primary metallic accent - silver-blue (the diamond), NOT literal gold.
+        // `steel` is the truthful canonical name; `gold` is kept as an alias so the
+        // many existing text-gold/bg-gold/shadow-glow-gold usages keep resolving.
+        steel: { DEFAULT: "#9DB7D8", soft: "#C9D2DE", deep: "#5A6E8C", bright: "#E8EFFA" },
         gold: { DEFAULT: "#9DB7D8", soft: "#C9D2DE", deep: "#5A6E8C", bright: "#E8EFFA" },
         amber: { DEFAULT: "#E8881A" },
         red: { DEFAULT: "#FF5C66" },
         pos: { DEFAULT: "#4ADE80", bright: "#86EFAC" },
         silver: { DEFAULT: "#C8CCD4", bright: "#EEF0F4", deep: "#9AA0AB" },
-        fog: { DEFAULT: "#EDEDF0", dim: "#9A9AA4", muted: "#84848E" },
+        // fog.muted bumped #84848E -> #9094A0 for better text contrast on dark glass.
+        fog: { DEFAULT: "#EDEDF0", dim: "#9A9AA4", muted: "#9094A0" },
         // legacy aliases (kept so older class names still resolve to gold/black)
         bg: { DEFAULT: "#050506", surface: "#0A0A0C", elevated: "#17171C", border: "#1C1C20" },
         accent: { simple: "#9DB7D8", refined: "#E8881A", ultra: "#FF5C66", info: "#9DB7D8" },
-        muted: "#84848E",
+        muted: "#9094A0",
       },
       fontFamily: {
         display: ['"Chakra Petch"', "ui-sans-serif", "system-ui", "sans-serif"],
@@ -42,6 +45,8 @@ const config: Config = {
         card: "inset 0 1px 0 0 rgba(255,255,255,.04)",
       },
       backgroundImage: {
+        // canonical steel gradient + `grad-gold` alias (kept for existing .gradient-text)
+        "grad-steel": "linear-gradient(100deg, #E8EFFA 0%, #9DB7D8 45%, #5A6E8C 100%)",
         "grad-gold": "linear-gradient(100deg, #E8EFFA 0%, #9DB7D8 45%, #5A6E8C 100%)",
         "grad-gold-soft":
           "linear-gradient(100deg, rgba(157,183,216,.16) 0%, rgba(90,110,140,.10) 100%)",

@@ -3,13 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const NAV_LINKS = [
-  { href: "/ore", label: "ORE" },
-  { href: "/zinc", label: "ZINC" },
-  { href: "/position", label: "Position" },
-  { href: "/referral", label: "Referral" },
-];
+import { NAV_ITEMS, isActiveRoute } from "@/lib/nav";
 
 /**
  * Mobile-only page navigation. The desktop nav is `hidden sm:flex`, so without
@@ -57,8 +51,8 @@ export function MobileNav() {
           />
           <div className="absolute left-0 right-0 top-full z-30 border-b border-line/80 bg-ink/95 backdrop-blur-xl">
             <nav className="mx-auto flex max-w-6xl flex-col gap-1 px-6 py-3">
-              {NAV_LINKS.map((l) => {
-                const active = pathname === l.href;
+              {NAV_ITEMS.map((l) => {
+                const active = isActiveRoute(pathname, l.href);
                 return (
                   <Link
                     key={l.href}

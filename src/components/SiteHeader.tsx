@@ -4,15 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { WalletButton } from "@/components/WalletButton";
 import { MobileNav } from "@/components/MobileNav";
+import { NAV_ITEMS, isActiveRoute } from "@/lib/nav";
 
 const display = { fontFamily: "'Chakra Petch', sans-serif" } as const;
-
-const NAV = [
-  { label: "ORE", href: "/ore" },
-  { label: "ZINC", href: "/zinc" },
-  { label: "Position", href: "/position" },
-  { label: "Referral", href: "/referral" },
-];
 
 const activeStyle = {
   ...display,
@@ -84,8 +78,8 @@ export function SiteHeader() {
             </span>
           </Link>
           <nav className="hidden items-center gap-1 sm:flex">
-            {NAV.map((l) => {
-              const active = pathname === l.href || pathname.startsWith(l.href + "/");
+            {NAV_ITEMS.map((l) => {
+              const active = isActiveRoute(pathname, l.href);
               return (
                 <Link
                   key={l.href}

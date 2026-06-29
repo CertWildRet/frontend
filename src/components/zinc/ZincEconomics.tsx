@@ -2,6 +2,7 @@
 
 import type { ZincPoolStats } from "@/lib/cwr";
 import { formatNum, formatSol } from "@/lib/format";
+import { StatTile, StatRow, StatSection } from "@/components/primitives/Stat";
 
 /**
  * dZINC pool economics - the HOLD-only twin of <PoolEconomics> (same `card`
@@ -80,6 +81,8 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
   );
 }
 
+// Thin adapters onto the shared stat primitives (one source of truth for the
+// markup in components/primitives/Stat.tsx) - same as PoolEconomics.
 function Big({
   label,
   value,
@@ -95,52 +98,19 @@ function Big({
   tone?: "gold" | "silver";
   className?: string;
 }) {
-  const valueClass =
-    tone === "gold" ? "gradient-text" : tone === "silver" ? "gradient-silver text-glow-silver" : "text-white";
   return (
-    <div className={`rounded-lg border border-line bg-ink-800 px-3 py-2.5 ${className ?? ""}`}>
-      <div className="label">{label}</div>
-      <div className="mt-1 flex items-baseline gap-1 whitespace-nowrap">
-        <span className={`num text-base sm:text-lg ${valueClass}`}>{value}</span>
-        {unit && <span className="font-mono text-[12px] text-fog-muted">{unit}</span>}
-      </div>
-      {sub && <div className="mt-0.5 font-mono text-[12px] leading-tight text-fog-muted">{sub}</div>}
-    </div>
+    <StatTile
+      variant="inset"
+      valueSize="text-base sm:text-lg"
+      label={label}
+      value={value}
+      unit={unit}
+      hint={sub}
+      tone={tone}
+      className={className}
+    />
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mt-5">
-      <div className="section-label mb-2">{title}</div>
-      <div className="space-y-1.5">{children}</div>
-    </div>
-  );
-}
-
-function Row({
-  k,
-  v,
-  unit,
-  sub,
-  strong,
-}: {
-  k: string;
-  v: string;
-  unit?: string;
-  sub?: string;
-  strong?: boolean;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-3 font-mono text-xs">
-      <span className="min-w-0 text-fog-muted">{k}</span>
-      <span className="flex shrink-0 flex-col items-end text-right leading-tight">
-        <span className="whitespace-nowrap">
-          <span className={`num ${strong ? "text-gold" : "text-gray-200"}`}>{v}</span>
-          {unit && <span className="ml-1 text-[12px] text-fog-muted">{unit}</span>}
-        </span>
-        {sub && <span className="mt-0.5 text-[11px] text-fog-muted">{sub}</span>}
-      </span>
-    </div>
-  );
-}
+const Section = StatSection;
+const Row = StatRow;
