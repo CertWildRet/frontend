@@ -237,7 +237,7 @@ export default function DispersionLanding() {
 
           <div className="mt-9 flex flex-wrap items-center gap-3.5">
             <Link
-              href="/pools"
+              href="/ore"
               className={`${styles.prismPill} group inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[15px] font-medium text-[#EAECF6]`}
             >
               Enter the pool
@@ -467,7 +467,7 @@ export default function DispersionLanding() {
               </ul>
               <div className="flex-1" aria-hidden />
               <Link
-                href="/pools"
+                href="/ore"
                 className={`${styles.ignite} mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-medium text-[#EAECF6]`}
               >
                 Enter dORE <ArrowIcon className="h-4 w-4" />
@@ -620,7 +620,7 @@ export default function DispersionLanding() {
             that opens on your terms.
           </p>
           <Link
-            href="/pools"
+            href="/ore"
             className={`${styles.prismPill} relative mt-8 inline-flex items-center gap-2 rounded-full px-8 py-4 text-[16px] font-medium text-[#EAECF6]`}
           >
             Enter the pool <ArrowIcon className="h-4 w-4" />

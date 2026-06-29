@@ -3,8 +3,9 @@ const nextConfig = {
   reactStrictMode: true,
   async redirects() {
     return [
-      // The Pools page used to live at /crank — keep old links working.
-      { source: "/crank", destination: "/pools", permanent: true },
+      // The ORE pool page used to live at /crank, then /pools — keep old links working.
+      { source: "/crank", destination: "/ore", permanent: true },
+      { source: "/pools", destination: "/ore", permanent: true },
     ];
   },
 };

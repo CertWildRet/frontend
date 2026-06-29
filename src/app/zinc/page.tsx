@@ -4,6 +4,7 @@ import { useZincData } from "@/hooks/useZincData";
 import { useZincPosition } from "@/hooks/useZincPosition";
 import { ZincStats } from "@/components/zinc/ZincStats";
 import { ZincPhaseTimers } from "@/components/zinc/ZincPhaseTimers";
+import { ZincEconomics } from "@/components/zinc/ZincEconomics";
 import { SettleZincPrompt } from "@/components/zinc/SettleZincPrompt";
 import { MintZincCard } from "@/components/zinc/MintZincCard";
 import { ClaimZincCard } from "@/components/zinc/ClaimZincCard";
@@ -12,7 +13,7 @@ import { ZincRouletteHero } from "@/components/zinc/ZincRouletteHero";
 
 /**
  * dZINC pool (bucket 1) - LIVE deposit / withdraw + read UI, mirroring the dORE
- * pool page (/pools). The value model is intentionally simpler than dORE: NO
+ * pool page (/ore). The value model is intentionally simpler than dORE: NO
  * miner, NO stORE oracle - recoverable value = pro-rata SOL (sol_in_vault) +
  * pro-rata in-kind smelted ZINC (zinc_in_vault), the ZINC shown as a raw amount.
  *
@@ -68,6 +69,8 @@ export default function ZincPage() {
           <ZincStats data={data} />
           <ZincPhaseTimers data={data} />
 
+          <ZincEconomics data={data} />
+
           <SettleZincPrompt data={data} onDone={onDone} />
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -77,8 +80,6 @@ export default function ZincPage() {
           </div>
         </>
       )}
-
-      <HowZincWorks />
     </div>
   );
 }
@@ -119,21 +120,3 @@ function NotLivePanel() {
   );
 }
 
-function HowZincWorks() {
-  return (
-    <div className="card relative overflow-hidden">
-      <h3 className="font-display text-lg font-semibold text-white">How ZINC works</h3>
-      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-fog-dim">
-        ZINC is a parimutuel 30-tile mining game, mechanically close to ORE. Your SOL joins the
-        pool, mints dZINC, and a keeper plays the board for you.
-      </p>
-      <ul className="mt-4 space-y-1.5 font-mono text-xs text-fog-muted">
-        <li>› mine → smelt (−10% fee) → hold; you hold dZINC, a pro-rata claim on it all</li>
-        <li>› v1 holds smelted ZINC (staking is a planned toggle; no liquid stZINC token)</li>
-        <li>› protocol min is 0.05 SOL/round; the keeper deploys full 30-tile coverage (~1.5 SOL/round, tunable) for 0% ruin</li>
-        <li>› deploy is production-cost gated: mine only when cost-to-mine &lt; the live ZINC price</li>
-        <li>› withdraw burns dZINC for your SOL plus your pro-rata smelted ZINC, in kind</li>
-      </ul>
-    </div>
-  );
-}

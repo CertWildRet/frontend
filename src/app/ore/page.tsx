@@ -12,8 +12,9 @@ import { ClaimCard } from "@/components/ClaimCard";
 import { SettlePrompt } from "@/components/SettlePrompt";
 import { PositionCard } from "@/components/PositionCard";
 import { LiveCrankPanel } from "@/components/LiveCrankPanel";
+import { OreBoardHero } from "@/components/OreBoardHero";
 
-export default function CrankPage() {
+export default function OrePage() {
   const { data, refresh } = useVaultData();
   const { pos, refresh: refreshPos } = useUserPosition(data?.totalShares ?? 0);
   const stats = useStats();
@@ -34,6 +35,8 @@ export default function CrankPage() {
           </p>
         </div>
       </header>
+
+      <OreBoardHero data={data} />
 
       <PoolStats data={data} stats={stats} />
       <PhaseTimers data={data} />
