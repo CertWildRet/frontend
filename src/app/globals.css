@@ -393,6 +393,35 @@
   animation: float 7s ease-in-out infinite;
 }
 
+/* ── ORE hero board: white glare sweeping tile-by-tile, row-major (each row
+   left -> right, then the next row down). Mirrors the ZINC roulette's specular
+   sweep. Each tile carries --gi (its 0-based index); the staggered delay walks
+   the flash across the board, then loops. */
+.ore-hero-tile {
+  position: relative;
+  overflow: hidden;
+}
+.ore-hero-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.92) 50%, rgba(255, 255, 255, 0) 70%);
+  opacity: 0;
+  pointer-events: none;
+  animation: oreHeroGlare 4s ease-in-out infinite;
+  animation-delay: calc(var(--gi, 0) * 0.13s);
+}
+@keyframes oreHeroGlare {
+  0% { opacity: 0; }
+  5% { opacity: 0.7; }
+  15% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ore-hero-tile::after { animation: none; }
+}
+
 /* ── wallet-adapter modal: gold/black reskin ─────────────────────────── */
 .wallet-adapter-modal-wrapper {
   background: rgba(14, 18, 34, 0.95) !important;

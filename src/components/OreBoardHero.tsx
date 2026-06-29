@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { PoolIntro } from "./PoolIntro";
 import { PoolReadout } from "./PoolReadout";
 import { usePhaseClock, fmtCountdown } from "@/hooks/usePhaseClock";
@@ -83,15 +83,19 @@ function OreHeroBoard({ size, center, lit }: { size: number; center: ReactNode; 
         {Array.from({ length: 25 }).map((_, i) => (
           <span
             key={i}
-            className="rounded-[22%]"
-            style={{
-              background: lit
-                ? "linear-gradient(150deg, rgba(34,224,230,0.9), rgba(91,108,255,0.85))"
-                : "linear-gradient(150deg, rgba(34,224,230,0.26), rgba(91,108,255,0.22))",
-              boxShadow: lit
-                ? "0 0 10px rgba(34,224,230,0.28), inset 0 0 0 1px rgba(255,255,255,0.22)"
-                : "inset 0 0 0 1px rgba(255,255,255,0.08)",
-            }}
+            // when lit, .ore-hero-tile + --gi drive the row-major white-glare sweep
+            className={`rounded-[22%]${lit ? " ore-hero-tile" : ""}`}
+            style={
+              {
+                background: lit
+                  ? "linear-gradient(150deg, rgba(34,224,230,0.9), rgba(91,108,255,0.85))"
+                  : "linear-gradient(150deg, rgba(34,224,230,0.26), rgba(91,108,255,0.22))",
+                boxShadow: lit
+                  ? "0 0 10px rgba(34,224,230,0.28), inset 0 0 0 1px rgba(255,255,255,0.22)"
+                  : "inset 0 0 0 1px rgba(255,255,255,0.08)",
+                "--gi": i,
+              } as CSSProperties
+            }
             aria-hidden
           />
         ))}
