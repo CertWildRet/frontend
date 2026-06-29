@@ -2,6 +2,7 @@
 
 import { useZincLiveStats } from "@/hooks/useZincLiveStats";
 import { useZincRoundStats } from "@/hooks/useZincRoundStats";
+import { ZincRoulette } from "./ZincRoulette";
 import { FacetMark } from "../FacetMark";
 import { formatNum, formatSol, formatRelative } from "@/lib/format";
 import type { ZincPoolStats } from "@/lib/cwr";
@@ -60,13 +61,29 @@ export function ZincLiveCrankPanel({ data }: { data: ZincPoolStats | null }) {
         <Empty>Waiting for the first frame from the ZINC keeper.</Empty>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[440px_minmax(0,1fr)] lg:items-start">
-          {/* Left: the 30-tile board. Full coverage => all 30 light uniformly. */}
-          <div className="w-full max-w-[440px]">
-            <div className="mb-2 flex items-baseline justify-between">
-              <h3 className="label text-fog-dim">Board · 30-tile coverage</h3>
-              <span className="font-mono text-[12px] text-fog-muted">{mining ? "full board" : "idle"}</span>
+          {/* Left: the 30-tile roulette (the canonical dZINC board format). Full
+              coverage => all 30 lit + spinning; idle => dim + static. */}
+          <div className="flex w-full max-w-[440px] flex-col items-center">
+            <div className="mb-3 flex w-full items-baseline justify-between">
+              <h3 className="label text-fog-dim">Board · 30 tiles</h3>
+              <span className="font-mono text-[12px] text-fog-muted">{mining ? "full coverage" : "idle"}</span>
             </div>
-            <ZincBoard30 lit={mining} perTile={perTile} />
+            <ZincRoulette
+              size={360}
+              litTiles={mining ? "all" : []}
+              animated={mining}
+              className="max-w-full"
+              center={
+                <div className="flex flex-col items-center px-2">
+                  <span className="font-display text-[22px] font-bold leading-none text-white">
+                    {mining ? "30/30" : "idle"}
+                  </span>
+                  <span className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[0.26em] text-[#C7B3FF]">
+                    {mining ? "tiles lit" : "not mining"}
+                  </span>
+                </div>
+              }
+            />
           </div>
 
           {/* Right: live stats + the keeper's last move */}
@@ -110,40 +127,6 @@ export function ZincLiveCrankPanel({ data }: { data: ZincPoolStats | null }) {
         </div>
       )}
     </section>
-  );
-}
-
-/** 30-tile silver-blue board (6 x 5). Full coverage lights every tile the same. */
-function ZincBoard30({ lit, perTile }: { lit: boolean; perTile: number }) {
-  return (
-    <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
-      {Array.from({ length: 30 }).map((_, i) => (
-        <div
-          key={i}
-          title={`Tile ${i + 1}: ${lit ? `${formatSol(perTile, 4)} SOL` : "not deployed"}`}
-          className={`tile !p-1.5 sm:!p-2 ${lit ? "border-gold/40 shadow-glow-gold" : ""}`}
-          style={{
-            background: lit
-              ? "linear-gradient(160deg, rgba(157,183,216,0.20), rgba(90,110,140,0.34))"
-              : "linear-gradient(160deg, rgba(157,183,216,0.05), rgba(90,110,140,0.08))",
-          }}
-        >
-          <span className="absolute left-1.5 top-1 font-mono text-[10px] text-fog-muted sm:left-2 sm:top-1.5 sm:text-[12px]">
-            #{i + 1}
-          </span>
-          <span className={`num text-[11px] leading-none sm:text-xs ${lit ? "text-gold" : "text-fog-muted"}`}>
-            {lit ? (
-              <>
-                <span className="sm:hidden">{formatSol(perTile, 2)}</span>
-                <span className="hidden sm:inline">{formatSol(perTile, 3)}</span>
-              </>
-            ) : (
-              "·"
-            )}
-          </span>
-        </div>
-      ))}
-    </div>
   );
 }
 
