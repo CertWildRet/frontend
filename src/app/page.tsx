@@ -7,6 +7,7 @@ import {
   Tilt,
 } from "./parts";
 import { ZincRoulette } from "@/components/zinc/ZincRoulette";
+import { PauseWhenOffscreen } from "@/components/PauseWhenOffscreen";
 
 /* ── inline data ─────────────────────────────────────────────────── */
 const STEPS = [
@@ -90,7 +91,7 @@ export default function DispersionLanding() {
         >
           {/* spectral halo */}
           <div
-            className="absolute left-1/2 top-1/2 h-[70%] w-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+            className={`${styles.prismHalo} absolute left-1/2 top-1/2 h-[70%] w-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl`}
             style={{
               background:
                 "radial-gradient(circle, rgba(184,202,255,0.55), rgba(154,107,255,0.3) 42%, rgba(7,9,18,0) 72%)",
@@ -265,11 +266,11 @@ export default function DispersionLanding() {
       {/* ══ HOW IT WORKS ═══════════════════════════════════════════ */}
       <section className="mt-28">
         <SectionLabel t="How it works" />
-        <div className="mt-12 flex flex-col gap-6 sm:gap-7">
+        <PauseWhenOffscreen className="mt-12 flex flex-col gap-6 sm:gap-7">
           {STEPS.map((step, i) => (
             <HowRow key={step.n} step={step} flip={i % 2 === 1} />
           ))}
-        </div>
+        </PauseWhenOffscreen>
       </section>
 
       {/* ══ THE EDGE — graded comparison table ═════════════════════ */}
@@ -401,7 +402,7 @@ export default function DispersionLanding() {
       {/* ══ POOLS — two crystal shards ═════════════════════════════ */}
       <section className="mt-28">
         <SectionLabel k="pools" t="Two shards. Both lit." />
-        <div className="mt-9 grid gap-6 md:grid-cols-2">
+        <PauseWhenOffscreen className="mt-9 grid gap-6 md:grid-cols-2">
           {/* dORE — LIVE */}
           <Tilt>
             <div
@@ -560,7 +561,7 @@ export default function DispersionLanding() {
               </Link>
             </div>
           </Tilt>
-        </div>
+        </PauseWhenOffscreen>
       </section>
 
       {/* ══ TEAM ═══════════════════════════════════════════════════ */}
@@ -671,47 +672,75 @@ function HowRow({
   );
 }
 
-/* Step 1 — SOL streams in and refracts into a dOre share token */
+/* Step 1 — SOL refracts into the dORE + dZINC share tokens.
+   A single shared spectral ring orbits BOTH shards as a pair; one light
+   particle rides that orbit and warms whichever shard it passes (dZINC right,
+   dORE left). A faint STATIC spectral track wires the two shards together even
+   between passes. Compositor-safe: only transform/opacity animate; every glow
+   is a static drop-shadow/box-shadow, brightening pulses overlay opacity, and
+   everything shares one 7.2s timeline so nothing can desync. */
 function StepTokenGraphic() {
   const tokens = [
     { id: "doreTok", label: "dORE", g: ["#22E0E6", "#5B6CFF", "#9A6BFF"], glow: "rgba(34,224,230,0.5)" },
     { id: "dzincTok", label: "dZINC", g: ["#9A6BFF", "#C56BFF", "#FF5AC8"], glow: "rgba(255,90,200,0.5)" },
   ];
+  const Shard = (t: (typeof tokens)[number]) => (
+    <svg
+      width="86"
+      height="86"
+      viewBox="0 0 100 100"
+      aria-hidden
+      style={{ filter: `drop-shadow(0 0 16px ${t.glow})` }}
+    >
+      <defs>
+        <linearGradient id={t.id} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={t.g[0]} />
+          <stop offset="0.5" stopColor={t.g[1]} />
+          <stop offset="1" stopColor={t.g[2]} />
+        </linearGradient>
+      </defs>
+      <path d="M50 6 L86 38 L50 94 L14 38 Z" fill={`url(#${t.id})`} opacity="0.92" />
+      <path d="M50 6 L86 38 L50 38 Z" fill="#FFFFFF" opacity="0.18" />
+      <path d="M14 38 L50 38 L50 94 Z" fill="#000000" opacity="0.12" />
+      <path
+        d="M14 38 L86 38 M50 6 L50 94 M32 38 L50 22 L68 38"
+        stroke="#EAF6FF"
+        strokeWidth="0.8"
+        opacity="0.4"
+        fill="none"
+      />
+    </svg>
+  );
   return (
-    <div className="absolute inset-0 flex items-center justify-center gap-7">
-      {tokens.map((t) => (
-        <div key={t.id} className="flex flex-col items-center gap-3.5">
-          <svg
-            width="86"
-            height="86"
-            viewBox="0 0 100 100"
-            aria-hidden
-            className={styles.howTokenPulse}
-            style={{ filter: `drop-shadow(0 0 16px ${t.glow})` }}
-          >
-            <defs>
-              <linearGradient id={t.id} x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor={t.g[0]} />
-                <stop offset="0.5" stopColor={t.g[1]} />
-                <stop offset="1" stopColor={t.g[2]} />
-              </linearGradient>
-            </defs>
-            <path d="M50 6 L86 38 L50 94 L14 38 Z" fill={`url(#${t.id})`} opacity="0.92" />
-            <path d="M50 6 L86 38 L50 38 Z" fill="#FFFFFF" opacity="0.18" />
-            <path d="M14 38 L50 38 L50 94 Z" fill="#000000" opacity="0.12" />
-            <path
-              d="M14 38 L86 38 M50 6 L50 94 M32 38 L50 22 L68 38"
-              stroke="#EAF6FF"
-              strokeWidth="0.8"
-              opacity="0.4"
-              fill="none"
-            />
-          </svg>
-          <span className="text-[11px] uppercase tracking-[0.28em] text-[#9AA3C8]" style={mono}>
-            {t.label}
-          </span>
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className={styles.howDuo}>
+        {/* shared spectral ring around the PAIR */}
+        <span className={styles.howRing} aria-hidden />
+        {/* faint static spectral track wiring the two shards together */}
+        <span className={styles.howLink} aria-hidden />
+        {/* one light particle riding the shared orbit */}
+        <span className={styles.howOrbiter} aria-hidden>
+          <span className={styles.howOrbiterDot} />
+        </span>
+        {/* the two shards, side by side, with a per-side glow the light warms */}
+        <div className="flex items-center justify-center gap-7">
+          {tokens.map((t, i) => (
+            <div key={t.id} className="relative flex flex-col items-center gap-3.5">
+              <div className={styles.howShard}>
+                <span
+                  className={i === 0 ? styles.howWarmLeft : styles.howWarmRight}
+                  style={{ background: `radial-gradient(circle, ${t.glow} 0%, transparent 68%)` }}
+                  aria-hidden
+                />
+                {Shard(t)}
+              </div>
+              <span className="text-[11px] uppercase tracking-[0.28em] text-[#9AA3C8]" style={mono}>
+                {t.label}
+              </span>
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
     </div>
   );
 }
@@ -729,17 +758,8 @@ function OreBoard({ size, animated = true }: { size: number; animated?: boolean 
         return (
           <span
             key={i}
-            className={styles.howTile}
-            style={
-              animated
-                ? { animationDelay: `${delay}s` }
-                : {
-                    animation: "none",
-                    background: "linear-gradient(135deg,#22E0E6,#9A6BFF)",
-                    boxShadow:
-                      "0 0 10px rgba(91,108,255,0.5), inset 0 0 0 1px rgba(255,255,255,0.4)",
-                  }
-            }
+            className={animated ? styles.howTile : `${styles.howTile} ${styles.howTileLit}`}
+            style={animated ? { animationDelay: `${delay}s` } : undefined}
           />
         );
       })}
@@ -778,8 +798,17 @@ function StepBoardGraphic() {
   );
 }
 
-/* Step 3 — value compounds upward into APY */
+/* Step 3 — value compounds upward into APY.
+   FRAME-LOCK: the line draw, the area fade and the rider dot are ALL driven by
+   SMIL <animate>/<animateMotion> inside this one <svg>, so they share the
+   single SVG SMIL clock with identical dur/keyTimes/keySplines — no CSS-vs-SMIL
+   drift. The dot rides the same #apyPath in user-space (keyPoints 0;1;1), so it
+   scales 1:1 with the line at every render size and sits exactly on the painted
+   tip, then parks there for the ~5s hold. */
 function StepYieldGraphic() {
+  const DUR = "8.5s";
+  const KEYTIMES = "0;0.41;1"; // draw over first 41%, then hold to end
+  const KEYSPLINES = "0.42 0 0.58 1;0 0 0 0"; // draw eased (ease-in-out), hold frozen
   return (
     <svg className={styles.howChart} viewBox="0 0 100 100" aria-hidden>
       <defs>
@@ -794,11 +823,26 @@ function StepYieldGraphic() {
         </linearGradient>
       </defs>
       <line x1="6" y1="84" x2="94" y2="84" stroke="rgba(255,255,255,0.08)" strokeWidth="0.6" />
+      {/* AREA — fades in on the same SMIL clock as the draw. */}
       <path
         className={styles.howArea}
         d="M6 82 C 28 80, 40 62, 56 50 S 80 22, 94 10 L94 84 L6 84 Z"
         fill="url(#apyArea)"
-      />
+        opacity="0"
+      >
+        <animate
+          attributeName="opacity"
+          dur={DUR}
+          repeatCount="indefinite"
+          calcMode="spline"
+          keyTimes={KEYTIMES}
+          keySplines={KEYSPLINES}
+          values="0;0.5;0.5"
+          fill="freeze"
+        />
+      </path>
+      {/* LINE — stroke-dashoffset animated by SMIL (NOT CSS) so it shares the
+          dot's clock. pathLength=1 normalizes the dash at every render size. */}
       <path
         id="apyPath"
         className={styles.howLine}
@@ -807,35 +851,60 @@ function StepYieldGraphic() {
         stroke="url(#apyLine)"
         strokeWidth="1.1"
         strokeLinecap="round"
+        fill="none"
+        strokeDasharray="1"
+        strokeDashoffset="1"
         style={{ filter: "drop-shadow(0 0 3px rgba(91,108,255,0.7))" }}
-      />
-      {/* white dot rides the curve's leading edge as it draws (0->55% of the
-          3.6s loop, ease matched to howDraw), then holds at the tip. The dot
-          follows the SAME user-space path as the stroke, so it stays on the
-          line; the 100x100 viewBox is 1:1 with the square stage, so the
-          non-scaling stretch stays uniform and the circle stays round. */}
+      >
+        <animate
+          attributeName="stroke-dashoffset"
+          dur={DUR}
+          repeatCount="indefinite"
+          calcMode="spline"
+          keyTimes={KEYTIMES}
+          keySplines={KEYSPLINES}
+          values="1;0;0"
+          fill="freeze"
+        />
+      </path>
+      {/* DOT — same SVG SMIL clock + same dur/keyTimes/keySplines as the draw,
+          so it is frame-locked to the painted tip. keyPoints 0;1;1 parks it at
+          the tip during the hold. cx/cy stay 0 + r fixed => perfectly round at
+          any size. Opacity fade is also SMIL (shared clock). */}
       <circle
         className={styles.howSpark}
         cx="0"
         cy="0"
         r="2.6"
         fill="#EAF6FF"
+        opacity="0"
         style={{ filter: "drop-shadow(0 0 5px rgba(255,90,200,0.9))" }}
       >
-        <animateMotion
-          dur="8.5s"
+        <animate
+          attributeName="opacity"
+          dur={DUR}
           repeatCount="indefinite"
           calcMode="spline"
-          keyTimes="0;0.41;1"
+          keyTimes="0;0.03;1"
+          keySplines="0.42 0 0.58 1;0 0 0 0"
+          values="0;1;1"
+          fill="freeze"
+        />
+        <animateMotion
+          dur={DUR}
+          repeatCount="indefinite"
+          calcMode="spline"
+          keyTimes={KEYTIMES}
           keyPoints="0;1;1"
-          keySplines="0.42 0 0.58 1; 0 0 0 0"
+          keySplines={KEYSPLINES}
+          rotate="0"
         >
           <mpath href="#apyPath" />
         </animateMotion>
       </circle>
-      {/* reduced-motion fallback: static dot parked at the curve tip (SMIL
-          animateMotion can't be stopped by a CSS media query, so we hide the
-          rider and reveal this one instead). */}
+      {/* reduced-motion fallback: static dot parked at the curve tip (94,10).
+          The SMIL above uses fill="freeze" and resolves to this same end state,
+          and CSS reveals this static dot while hiding the rider. */}
       <circle
         className={styles.howSparkStatic}
         cx="94"

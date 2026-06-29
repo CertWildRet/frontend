@@ -78,7 +78,8 @@
 .tilt {
   transform-style: preserve-3d;
   transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.4s ease;
-  will-change: transform;
+  /* will-change is set on-demand in JS (Tilt onMove/onLeave) so the two pool
+     cards don't permanently pin extra compositor layers. */
 }
 
 /* ── Mint button: dispersion ignite on hover ────────────────────────── */
@@ -222,17 +223,28 @@
 
 /* the diamond/prism shard itself */
 .prismShard {
-  animation: prismFloat 9s ease-in-out infinite, prismGlow 6s ease-in-out infinite;
+  animation: prismFloat 9s ease-in-out infinite;
   transform-origin: 50% 90%;
+  /* static glow (was an animated drop-shadow blur — expensive per-frame on a
+     ~480px element). The bloom "swell" is now carried by the sibling
+     .prismHalo opacity pulse, which is compositor-safe. */
+  filter: drop-shadow(0 0 34px rgba(120, 124, 255, 0.5));
+  will-change: transform;
 }
 @keyframes prismFloat {
   0%, 100% { transform: rotate(0deg); }
   25% { transform: rotate(-8deg); }
   75% { transform: rotate(8deg); }
 }
-@keyframes prismGlow {
-  0%, 100% { filter: drop-shadow(0 0 30px rgba(91, 108, 255, 0.45)); }
-  50% { filter: drop-shadow(0 0 46px rgba(154, 107, 255, 0.6)); }
+/* the hero's spectral halo gently swells via opacity to fake the old
+   prismGlow blur-radius pulse without re-blurring each frame. */
+.prismHalo {
+  animation: prismHaloPulse 6s ease-in-out infinite;
+  will-change: opacity;
+}
+@keyframes prismHaloPulse {
+  0%, 100% { opacity: 0.78; }
+  50% { opacity: 1; }
 }
 
 /* ── Chromatic aberration on a key word ─────────────────────────────── */
@@ -240,6 +252,9 @@
   position: relative;
   display: inline-block;
   color: #eaecf6;
+  /* scope the mix-blend-mode group to this word so the blended ghosts can't
+     trigger repaints of the larger text/background behind it. */
+  isolation: isolate;
 }
 .chroma::before,
 .chroma::after {
@@ -474,6 +489,121 @@
   100% { opacity: 0; transform: translate(0, 0) scale(0.35); }
 }
 
+/* ── Step 1 · shared orbit around the dORE + dZINC pair ───────────────────
+   One shared spectral ring + one traveling light encircle BOTH shards as a
+   single collective unit; the light warms whichever shard it sweeps past
+   (dZINC right at 25% of the loop, dORE left at 75%). Compositor-safe: every
+   keyframe animates ONLY transform / opacity; all glows are STATIC; the ring
+   drift, orbiter, breath and both warm pulses share the 7.2s family so
+   nothing can drift out of sync. */
+.howDuo {
+  position: relative;
+  width: 230px;
+  height: 230px;
+  display: grid;
+  place-items: center;
+}
+/* one shared spectral ring encircling BOTH shards (a single wide ellipse). */
+.howRing {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 224px;
+  height: 168px;
+  margin: -84px 0 0 -112px;
+  border-radius: 50%;
+  border: 1px dashed rgba(122, 160, 224, 0.30);
+  box-shadow: 0 0 22px rgba(91, 108, 255, 0.18), inset 0 0 18px rgba(154, 107, 255, 0.10);
+  animation: howRingDrift 22s linear infinite;
+  will-change: transform;
+}
+@keyframes howRingDrift { to { transform: rotate(360deg); } }
+/* a faint STATIC spectral wire that keeps the two shards connected between
+   light passes (no animation, zero compositor cost). */
+.howLink {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150px;
+  height: 2px;
+  transform: translate(-50%, -50%) translateY(-14px);
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(34, 224, 230, 0) 0%,
+    rgba(91, 108, 255, 0.32) 28%,
+    rgba(154, 107, 255, 0.42) 50%,
+    rgba(255, 90, 200, 0.32) 72%,
+    rgba(255, 90, 200, 0) 100%
+  );
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+/* the single traveling light: a wrapper that rotates around the pair center;
+   the dot sits on its top edge so the dot orbits the pair. transform only. */
+.howOrbiter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 196px;
+  height: 196px;
+  margin: -98px 0 0 -98px;
+  animation: howOrbit 7.2s linear infinite;
+  will-change: transform;
+}
+.howOrbiterDot {
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #eafdff 0%, #7fd8ff 45%, rgba(91, 108, 255, 0) 78%);
+  box-shadow: 0 0 10px rgba(127, 216, 255, 0.95), 0 0 18px rgba(91, 108, 255, 0.55);
+}
+@keyframes howOrbit { to { transform: rotate(360deg); } }
+/* the shard slot — above the link; gentle shared breathing of the whole pair. */
+.howShard {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  animation: howDuoBreath 3.6s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes howDuoBreath {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+/* per-side glow the single light "warms" as it sweeps past (opacity pulse
+   only; radius/blur baked into the gradient). */
+.howWarmLeft,
+.howWarmRight {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 132px;
+  height: 132px;
+  margin: -66px 0 0 -66px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.04;
+  will-change: opacity;
+}
+.howWarmLeft { animation: howWarmLeft 7.2s ease-in-out infinite; }
+@keyframes howWarmLeft {
+  0%, 50%, 100% { opacity: 0.04; }
+  75% { opacity: 0.85; }
+}
+.howWarmRight { animation: howWarmRight 7.2s ease-in-out infinite; }
+@keyframes howWarmRight {
+  0%, 50%, 100% { opacity: 0.04; }
+  25% { opacity: 0.85; }
+}
+
 /* Step 2 — keeper sweeps and mines all 25 tiles when EV-positive */
 .howBoard {
   position: absolute;
@@ -484,23 +614,37 @@
   gap: 8%;
 }
 .howTile {
+  position: relative;
   border-radius: 24%;
   background: rgba(122, 160, 224, 0.09);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  /* ONLY transform animates here (compositor-safe). The lit gradient + glow
+     live on ::after and cross-fade via opacity, so the 50 board tiles no
+     longer repaint background+box-shadow every frame. */
   animation: howMine 3.4s ease-in-out infinite;
 }
-@keyframes howMine {
-  0%, 64%, 100% {
-    background: rgba(122, 160, 224, 0.09);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-    transform: scale(1);
-  }
-  20%, 44% {
-    background: linear-gradient(135deg, #22e0e6, #9a6bff);
-    box-shadow: 0 0 14px rgba(91, 108, 255, 0.85), inset 0 0 0 1px rgba(255, 255, 255, 0.45);
-    transform: scale(1.05);
-  }
+.howTile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  background: linear-gradient(135deg, #22e0e6, #9a6bff);
+  box-shadow: 0 0 14px rgba(91, 108, 255, 0.85), inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+  animation: howMineLit 3.4s ease-in-out infinite;
+  animation-delay: inherit; /* inherit the per-tile diagonal-wave delay */
 }
+@keyframes howMine {
+  0%, 64%, 100% { transform: scale(1); }
+  20%, 44% { transform: scale(1.05); }
+}
+@keyframes howMineLit {
+  0%, 64%, 100% { opacity: 0; }
+  20%, 44% { opacity: 1; }
+}
+/* statically-lit tile (non-animated OreBoard instances): no pulse, lit fill. */
+.howTileLit { animation: none; }
+.howTileLit::after { opacity: 1; animation: none; }
 .howEv {
   position: absolute;
   right: 0;
@@ -512,58 +656,58 @@
   22%, 52% { opacity: 1; transform: scale(1); }
 }
 
-/* Step 3 — value compounds upward into APY */
+/* Step 3 — value compounds upward into APY.
+   The line draw, area fade and rider dot are ALL driven by SMIL <animate>/
+   <animateMotion> inside the one <svg> (see StepYieldGraphic), so they share
+   the single SVG SMIL clock and stay frame-locked — no CSS-vs-SMIL drift.
+   These CSS rules therefore carry NO @keyframes for them; adding a CSS
+   animation on any attribute the SMIL also animates would re-introduce a 2nd
+   clock and the dot would drift off the tip again. pathLength="1" (set in JSX)
+   normalizes the dash so the SMIL draw fraction matches the dot mpath fraction
+   1:1 at every render size (small landing card AND large /zinc hero). */
 .howChart {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
 }
-/* the path declares pathLength="1", so the dash is normalized to the curve's
-   arc length at EVERY render size — the line-draw fraction then matches the
-   dot's <animateMotion> arc fraction (keyPoints 0;1;1) exactly, so the dot
-   tracks the painted tip on the small landing card AND the large /zinc hero. */
-.howLine {
-  fill: none;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  /* draw over the first 41% (~3.5s) then HOLD fully-drawn for the rest (~5s). */
-  animation: howDraw 8.5s ease-in-out infinite;
-}
-@keyframes howDraw {
-  0% { stroke-dashoffset: 1; }
-  41%, 100% { stroke-dashoffset: 0; }
-}
-.howArea { opacity: 0; animation: howAreaFade 8.5s ease-in-out infinite; }
-@keyframes howAreaFade {
-  0% { opacity: 0; }
-  41%, 100% { opacity: 0.5; }
-}
-/* white dot leads the drawing line, fade in fast (0->5%), then stay visible
-   the whole travel + hold. Position is driven by SVG <animateMotion>. */
-.howSpark { opacity: 0; animation: howSparkUp 8.5s linear infinite; }
-@keyframes howSparkUp {
-  0% { opacity: 0; }
-  3%, 100% { opacity: 1; }
-}
+.howLine { fill: none; }
+.howArea { opacity: 0; }
+.howSpark { opacity: 0; }
 /* static reduced-motion fallback dot (hidden unless reduced motion). */
 .howSparkStatic { opacity: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .spectralEdge::before, .prismShard,
+  .spectralEdge::before, .prismShard, .prismHalo,
   .fan, .whiteBeam, .spectralBar, .chroma::before, .chroma::after,
   .flare, .flareCross, .liveDot, .chromaTrail::after, .rise, .spectralText,
   .prismPill::before, .ignite:hover::before,
-  .howOrbit, .howToken svg, .howTokenPulse, .howFeed, .howTile, .howEv,
+  .howOrbit, .howToken svg, .howTokenPulse, .howFeed, .howTile, .howTile::after, .howEv,
+  .howRing, .howOrbiter, .howShard, .howWarmLeft, .howWarmRight,
   .howLine, .howArea, .howSpark {
     animation: none !important;
   }
   /* static, legible fallbacks */
   .howFeed { display: none; }
-  .howLine { stroke-dashoffset: 0; }
-  .howArea { opacity: 1; }
-  /* hide the path-riding dot (SMIL motion can't be CSS-stopped) and reveal
-     the static one parked at the curve tip (94,10). */
+  /* both shard glows softly lit so the wired pair still reads as one system. */
+  .howWarmLeft, .howWarmRight { opacity: 0.4; }
+  /* tiles statically lit. */
+  .howTile::after { opacity: 1; }
+  /* the SMIL <animate> use fill="freeze" and resolve to the fully-drawn line +
+     filled area + dot parked at the tip (94,10) — i.e. the desired static
+     frame — so no CSS override of the draw is needed. Just swap the dots. */
+  .howArea { opacity: 0.5; }
   .howSpark { opacity: 0; }
   .howSparkStatic { opacity: 1; }
+}
+
+/* ── Off-screen pause ─────────────────────────────────────────────────────
+   Applied by <PauseWhenOffscreen> to a heavy animated subtree when it scrolls
+   out of the viewport: freezes ALL its CSS animations so the boards, rings and
+   border shimmers stop compositing/painting while off-screen (the single
+   biggest steady-state perf win). Visual is identical while visible. Does not
+   affect SMIL — the APY dot is handled via the SVG pauseAnimations() hook. */
+.offscreenPaused,
+.offscreenPaused * {
+  animation-play-state: paused !important;
 }

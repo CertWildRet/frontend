@@ -10,11 +10,14 @@
   position: relative;
 }
 
-/* The whole tile ring slowly rotates; the readout layer counter-stays still. */
+/* The whole tile ring slowly rotates; the readout layer counter-stays still.
+   will-change keeps the rotating group on its own compositor layer so the
+   64s/9s spins never repaint the surrounding card. */
 .ring {
   transform-box: fill-box;
   transform-origin: center;
   animation: zincSpin 64s linear infinite;
+  will-change: transform;
 }
 
 @keyframes zincSpin {
@@ -30,15 +33,17 @@
   animation: zincShimmer 4.6s ease-in-out infinite;
 }
 
+/* opacity-only shimmer — the animated SVG drop-shadow (a blur) was the single
+   most expensive per-frame op on the landing (up to 60 lit tiles across both
+   instances). The 0.92->1 opacity pulse carries the shimmer read; at 130-165px
+   render size the 4px shadow pulse was imperceptible anyway. */
 @keyframes zincShimmer {
   0%,
   100% {
     opacity: 0.92;
-    filter: none;
   }
   50% {
     opacity: 1;
-    filter: drop-shadow(0 0 4px rgba(255, 90, 200, 0.55));
   }
 }
 
@@ -47,6 +52,7 @@
   transform-box: fill-box;
   transform-origin: center;
   animation: zincSweepSpin 9s linear infinite;
+  will-change: transform;
 }
 
 @keyframes zincSweepSpin {

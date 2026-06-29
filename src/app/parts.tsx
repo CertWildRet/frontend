@@ -104,18 +104,41 @@ export function Tilt({
   max?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const raf = useRef<number | null>(null);
+  const next = useRef<{ px: number; py: number }>({ px: 0, py: 0 });
 
   function onMove(e: React.MouseEvent) {
     const el = ref.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width - 0.5;
-    const py = (e.clientY - r.top) / r.height - 0.5;
-    el.style.transform = `perspective(900px) rotateX(${(-py * max).toFixed(2)}deg) rotateY(${(px * max).toFixed(2)}deg) translateZ(0)`;
+    next.current = {
+      px: (e.clientX - r.left) / r.width - 0.5,
+      py: (e.clientY - r.top) / r.height - 0.5,
+    };
+    // batch the style write to one per frame (avoids layout thrash from many
+    // synchronous transform writes per second during hover).
+    if (raf.current == null) {
+      raf.current = requestAnimationFrame(() => {
+        raf.current = null;
+        const node = ref.current;
+        if (!node) return;
+        const { px, py } = next.current;
+        node.style.willChange = "transform";
+        node.style.transform = `perspective(900px) rotateX(${(-py * max).toFixed(2)}deg) rotateY(${(px * max).toFixed(2)}deg) translateZ(0)`;
+      });
+    }
   }
   function onLeave() {
+    if (raf.current != null) {
+      cancelAnimationFrame(raf.current);
+      raf.current = null;
+    }
     const el = ref.current;
-    if (el) el.style.transform = "perspective(900px) rotateX(0) rotateY(0)";
+    if (el) {
+      el.style.transform = "perspective(900px) rotateX(0) rotateY(0)";
+      // release the promoted layer when not hovering.
+      el.style.willChange = "auto";
+    }
   }
 
   return (

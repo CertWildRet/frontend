@@ -50,6 +50,11 @@ export function SiteHeader() {
         WebkitBackdropFilter: "blur(22px) saturate(120%)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
         boxShadow: "0 8px 32px -12px rgba(0,0,0,0.6)",
+        // promote the sticky bar to its own compositor layer + contain repaints
+        // so its backdrop-filter:blur isn't re-sampled against everything behind
+        // it on every scroll frame (a major scroll-jank source).
+        contain: "paint",
+        transform: "translateZ(0)",
       }}
     >
       {/* spectral gradient def for the prism mark */}
