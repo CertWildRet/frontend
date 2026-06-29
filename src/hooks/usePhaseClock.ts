@@ -62,11 +62,13 @@ export function usePhaseClock(d: ClockInput): PhaseClock {
 
 export function fmtCountdown(secs: number): string {
   if (secs <= 0) return "00:00";
-  const m = Math.floor(secs / 60);
+  // One consistent colon style everywhere (heroes + phase timers): MM:SS under
+  // an hour, H:MM:SS at/above it. Always ticks seconds; never mixes "3h 59m"
+  // letter-format with "28:36" colon-format on otherwise-identical readouts.
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
   const s = secs % 60;
-  if (m >= 60) {
-    const h = Math.floor(m / 60);
-    return `${h}h ${m % 60}m`;
-  }
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  const mm = String(m).padStart(2, "0");
+  const ss = String(s).padStart(2, "0");
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
 }
