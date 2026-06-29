@@ -8,6 +8,7 @@ import {
 } from "./parts";
 import { ZincRoulette } from "@/components/zinc/ZincRoulette";
 import { PauseWhenOffscreen } from "@/components/PauseWhenOffscreen";
+import { HeroLiveStrip } from "@/components/HeroLiveStrip";
 
 /* ── inline data ─────────────────────────────────────────────────── */
 const STEPS = [
@@ -263,8 +264,15 @@ export default function DispersionLanding() {
         </div>
       </section>
 
+      {/* live-proof strip fills the first-view negative space (and gives direct
+          dORE / dZINC entry). Outside the hero section so the centered diamond
+          doesn't drift. */}
+      <div className="mt-12 sm:mt-14">
+        <HeroLiveStrip />
+      </div>
+
       {/* ══ HOW IT WORKS ═══════════════════════════════════════════ */}
-      <section className="mt-28">
+      <section className="mt-20">
         <SectionLabel t="How it works" />
         <PauseWhenOffscreen className="mt-12 flex flex-col gap-6 sm:gap-7">
           {STEPS.map((step, i) => (
