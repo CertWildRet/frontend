@@ -147,7 +147,7 @@ function PoolSection({
           </p>
         ) : (
           <div className="overflow-hidden rounded-xl border border-steel/12">
-            <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-x-3 border-b border-steel/12 bg-ink-800/60 px-3 py-2 font-mono text-[10.5px] uppercase tracking-wider text-fog-muted">
+            <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-x-3 bg-ink-800/60 px-3 py-2 font-mono text-[10.5px] uppercase tracking-wider text-fog-muted">
               <span>Cycle</span>
               <span>Window</span>
               <span className="text-right">Your share</span>
@@ -191,7 +191,7 @@ function CycleRow({ c, pool }: { c: WalletCycle; pool: (typeof POOLS)[number] })
   };
 
   return (
-    <div className="border-b border-steel/12 last:border-0">
+    <div>
       <button
         onClick={toggle}
         className="grid w-full grid-cols-[auto_1fr_auto_auto_auto] items-center gap-x-3 px-3 py-2.5 text-left font-mono text-[12px] hover:bg-ink-800/40"
@@ -223,7 +223,7 @@ function CycleRow({ c, pool }: { c: WalletCycle; pool: (typeof POOLS)[number] })
       </button>
 
       {open && (
-        <div className="border-t border-steel/12 bg-ink-900/40 px-3 py-3">
+        <div className="bg-ink-900/40 px-3 py-3">
           {loading && <p className="font-mono text-[11px] text-fog-muted">Loading rounds…</p>}
           {err && <p className="font-mono text-[11px] text-neg">{err}</p>}
           {detail && <CycleExpanded detail={detail} c={c} pool={pool} />}
@@ -286,7 +286,7 @@ function CycleExpanded({ detail, c, pool }: { detail: CycleDetail; c: WalletCycl
           <div className="overflow-x-auto rounded-lg border border-steel/12">
             <table className="w-full font-mono text-[11px]">
               <thead>
-                <tr className="border-b border-steel/12 bg-ink-800/60 text-left text-fog-muted">
+                <tr className="bg-ink-800/60 text-left text-fog-muted">
                   <th className="px-2.5 py-1.5 font-normal">Round</th>
                   <th className="px-2.5 py-1.5 font-normal">Time</th>
                   <th className="px-2.5 py-1.5 text-right font-normal">Deployed (net)</th>
@@ -301,7 +301,7 @@ function CycleExpanded({ detail, c, pool }: { detail: CycleDetail; c: WalletCycl
                   const tms = r.block_time ? Date.parse(r.block_time) : 0;
                   const ore = isOre ? oreByRound.get(r.round_id) : undefined;
                   return (
-                    <tr key={r.sig} className="border-b border-steel/8 last:border-0">
+                    <tr key={r.sig}>
                       <td className="px-2.5 py-1.5 text-white">#{r.round_id}</td>
                       <td className="px-2.5 py-1.5 text-fog-muted">{tms ? new Date(tms).toLocaleTimeString() : "·"}</td>
                       <td className="px-2.5 py-1.5 text-right text-gray-300">{formatSol(net, 4)}</td>
