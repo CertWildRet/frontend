@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { PoolIntro } from "./PoolIntro";
+import { PoolReadout } from "./PoolReadout";
 import { usePhaseClock, fmtCountdown } from "@/hooks/usePhaseClock";
 import { formatNum } from "@/lib/format";
 import type { VaultData } from "@/hooks/useVaultData";
@@ -22,56 +23,33 @@ export function OreBoardHero({ data }: { data: VaultData | null }) {
   const halted = !!data?.paused;
 
   let phaseTitle = "pool live";
-  let phaseSub = "reading chain";
   let countdown: string | null = null;
 
   if (live) {
     if (halted) {
       phaseTitle = "paused";
-      phaseSub = "admin pause";
     } else if (clock.isOpen) {
       phaseTitle = "claim window";
-      phaseSub = "deposit / claim open";
       countdown = fmtCountdown(clock.remainingSecs);
     } else if (clock.isBetting) {
       phaseTitle = "mining";
-      phaseSub = "working 25 tiles";
       countdown = fmtCountdown(clock.remainingSecs);
     }
   } else {
     phaseTitle = "···";
-    phaseSub = "reading chain";
   }
 
-  const store = data && data.storeInVaultOre > 0 ? formatNum(data.storeInVaultOre, 2) : null;
   const price = data ? formatNum(data.navPerShare, 4) : null;
   const lit = live && !halted;
 
   const center = (
-    <div className="flex flex-col items-center px-2 text-center">
-      <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-fog-muted">{phaseSub}</span>
-      <span className="mt-1 font-display text-[22px] font-bold leading-none text-white">{phaseTitle}</span>
-      {countdown && (
-        <span className="mt-2 font-mono text-[26px] font-medium leading-none text-gold text-glow-gold">
-          {countdown}
-        </span>
-      )}
-      <span className="mt-3 font-mono text-[10px] uppercase tracking-[0.28em] text-[#8FD8FF]">25/25 tiles</span>
-      {(store || price) && (
-        <div className="mt-3 flex flex-col items-center gap-1">
-          {store && (
-            <span className="font-mono text-[11px] text-fog-dim">
-              {store} <span className="text-fog-muted">stORE held</span>
-            </span>
-          )}
-          {price && (
-            <span className="font-mono text-[11px] text-fog-dim">
-              {price} <span className="text-fog-muted">SOL / dORE</span>
-            </span>
-          )}
-        </div>
-      )}
-    </div>
+    <PoolReadout
+      title={phaseTitle}
+      countdown={countdown}
+      tilesLabel="25/25 tiles"
+      tilesTint="#8FD8FF"
+      price={price ? `${price} SOL / dORE` : null}
+    />
   );
 
   return (

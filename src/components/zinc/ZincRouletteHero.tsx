@@ -2,6 +2,7 @@
 
 import { ZincRoulette } from "./ZincRoulette";
 import { PoolIntro } from "../PoolIntro";
+import { PoolReadout } from "../PoolReadout";
 import { usePhaseClock, fmtCountdown } from "@/hooks/usePhaseClock";
 import { formatNum } from "@/lib/format";
 import type { ZincPoolStats } from "@/lib/cwr";
@@ -34,62 +35,37 @@ export function ZincRouletteHero({
 
   // Centre readout state, derived from the live phase.
   let phaseTitle = "pool live";
-  let phaseSub = "mining gated";
   let countdown: string | null = null;
 
   if (live) {
     if (halted) {
       phaseTitle = data?.paused ? "paused" : "halted";
-      phaseSub = data?.paused ? "admin pause" : "drawdown halt";
     } else if (clock.isOpen) {
       phaseTitle = "claim window";
-      phaseSub = "deposit / claim open";
       countdown = fmtCountdown(clock.remainingSecs);
     } else if (clock.isBetting) {
       phaseTitle = "mining";
-      phaseSub = "working 30 tiles";
       countdown = fmtCountdown(clock.remainingSecs);
     }
   } else if (notLive) {
     phaseTitle = "pool live";
-    phaseSub = "mining gated";
   } else {
     phaseTitle = "···";
-    phaseSub = "reading chain";
   }
 
-  const smelted =
-    data && data.smeltedZincHeld > 0 ? formatNum(data.smeltedZincHeld, 2) : null;
   const price = data ? formatNum(data.navPerShareSol, 4) : null;
   // Live + actively mining/claiming -> let the ring spin; halted/not-live ->
   // hold it static so the surface reads as "gated".
   const animated = live && !halted;
 
   const center = (
-    <div className="flex flex-col items-center px-2">
-      <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-fog-muted">{phaseSub}</span>
-      <span className="mt-1 font-display text-[22px] font-bold leading-none text-white">{phaseTitle}</span>
-      {countdown && (
-        <span className="mt-2 font-mono text-[26px] font-medium leading-none text-gold text-glow-gold">
-          {countdown}
-        </span>
-      )}
-      <span className="mt-3 font-mono text-[10px] uppercase tracking-[0.28em] text-[#C7B3FF]">30/30 tiles</span>
-      {(smelted || price) && (
-        <div className="mt-3 flex flex-col items-center gap-1">
-          {smelted && (
-            <span className="font-mono text-[11px] text-fog-dim">
-              {smelted} <span className="text-fog-muted">ZINC held</span>
-            </span>
-          )}
-          {price && (
-            <span className="font-mono text-[11px] text-fog-dim">
-              {price} <span className="text-fog-muted">SOL / dZINC</span>
-            </span>
-          )}
-        </div>
-      )}
-    </div>
+    <PoolReadout
+      title={phaseTitle}
+      countdown={countdown}
+      tilesLabel="30/30 tiles"
+      tilesTint="#C7B3FF"
+      price={price ? `${price} SOL / dZINC` : null}
+    />
   );
 
   return (

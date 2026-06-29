@@ -202,7 +202,7 @@
   .btn-primary {
     @apply btn font-semibold text-[#EAECF6];
     background: linear-gradient(110deg, rgba(91,108,255,0.22), rgba(154,107,255,0.18));
-    border: 1px solid rgba(154,107,255,0.45);
+    border: 2px solid rgba(154,107,255,0.45);
     box-shadow: 0 0 20px -6px rgba(91,108,255,0.5), inset 0 1px 0 rgba(255,255,255,0.12);
     transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.18s ease;
   }
@@ -218,7 +218,7 @@
   .btn-outline {
     @apply btn text-[#C6CCEC];
     background: rgba(14, 18, 34, 0.4);
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.08);
     backdrop-filter: blur(14px);
     transition: border-color 0.25s ease, background 0.25s ease;
   }
@@ -316,7 +316,7 @@
      pool Claim cards don't each carry an ad-hoc inline button string. */
   .btn-claim {
     @apply btn w-full font-semibold text-gold;
-    border: 1px solid rgba(157, 183, 216, 0.6);
+    border: 2px solid rgba(157, 183, 216, 0.6);
   }
   .btn-claim:hover {
     background: rgba(157, 183, 216, 0.1);

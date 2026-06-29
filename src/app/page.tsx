@@ -35,20 +35,20 @@ const EDGE = [
   {
     grade: "VVS1",
     t: "Mine as one.",
-    d: "Pooled capital behaves like a whale. Smoother outcomes, less variance, a faster path to the exposure that actually matters.",
-    metric: "variance ↓",
+    d: "Pooled capital behaves like a whale: smoother outcomes, less variance, and a faster path to the exposure that matters.",
+    metric: "less variance",
   },
   {
     grade: "VVS2",
-    t: "More +1 ORE wins",
-    d: "Your odds of landing a +1 ORE win scale with how much is deployed each round. A solo miner covers little; the pool deploys as one whale, lifting everyone's chance of hitting a win.",
-    metric: "win odds ↑",
+    t: "Hit more wins.",
+    d: "The pool covers the whole board every round, so it catches winning tiles a lone miner deploys too little to reach.",
+    metric: "better odds",
   },
   {
     grade: "VS1",
     t: "Claim on your terms.",
-    d: "Take profit any open window without unwinding your whole position. Whatever you leave behind keeps working.",
-    metric: "flexible exit",
+    d: "Take profit any open window without unwinding your whole position. What you leave keeps working.",
+    metric: "exit anytime",
   },
 ];
 
