@@ -12,20 +12,20 @@ import { ZincRoulette } from "@/components/zinc/ZincRoulette";
 const STEPS = [
   {
     n: "01",
-    t: "Get dOre tokens",
-    d: "These represent your share of the Diamond Pool.",
+    t: "Get dORE & dZINC tokens",
+    d: "Each is your pro-rata share of a Diamond Pool — dORE tracks ORE, dZINC tracks ZINC.",
     Graphic: StepTokenGraphic,
   },
   {
     n: "02",
     t: "Let our algorithms do the work",
-    d: "It mines all 25 tiles only when it is EV positive.",
+    d: "It mines the full ORE board (25 tiles) and the ZINC wheel (30 tiles) — only on rounds that are EV-positive.",
     Graphic: StepBoardGraphic,
   },
   {
     n: "03",
     t: "Claim or let it earn APY",
-    d: "Pull out to SOL whenever you want, or hold your dOre and let it keep compounding.",
+    d: "Pull out to SOL whenever you want, or hold your dORE / dZINC and let it keep compounding.",
     Graphic: StepYieldGraphic,
   },
 ];
@@ -231,7 +231,7 @@ export default function DispersionLanding() {
             </span>
           </h1>
           <p className="mt-7 max-w-[560px] text-[17px] leading-relaxed text-[#A8B0D4]">
-            Join the Diamond Pool and Mine More together.
+            Join the Diamond Pool and mine ORE and ZINC together — as one whale.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3.5">
@@ -432,7 +432,18 @@ export default function DispersionLanding() {
                   LIVE
                 </span>
               </div>
-              <p className="mt-4 text-[14.5px] leading-relaxed text-[#A8B0D4]">
+              {/* dORE signature: the 25-tile ORE board, full coverage */}
+              <div className="mt-5 flex flex-col items-center gap-2.5">
+                <OreBoard size={148} animated />
+                <span
+                  className="text-[10px] uppercase tracking-[0.24em] text-[#8FA8E0]"
+                  style={mono}
+                >
+                  25 / 25 tiles
+                </span>
+              </div>
+
+              <p className="mt-5 text-[14.5px] leading-relaxed text-[#A8B0D4]">
                 Disciplined 25-tile ORE mining, no lockup. The engine commits only
                 on rounds it likes; withdraw any open window.
               </p>
@@ -601,7 +612,7 @@ export default function DispersionLanding() {
             className="relative text-[clamp(1.8rem,4vw,3rem)] font-bold leading-[1.05] text-[#EAECF6]"
             style={display}
           >
-            Pool your SOL. Mine ORE as one.
+            Pool your SOL. Mine ORE and ZINC as one.
           </h2>
           <p className="relative mx-auto mt-4 max-w-[500px] text-[15px] text-[#A8B0D4]">
             One disciplined pool, a keeper that never sleeps, and a claim window
@@ -662,85 +673,115 @@ function HowRow({
 
 /* Step 1 — SOL streams in and refracts into a dOre share token */
 function StepTokenGraphic() {
-  const feeds = [
-    { fx: "-94px", fy: "-66px", delay: "0s" },
-    { fx: "96px", fy: "-54px", delay: "0.7s" },
-    { fx: "-78px", fy: "80px", delay: "1.4s" },
-    { fx: "86px", fy: "84px", delay: "2.1s" },
+  const tokens = [
+    { id: "doreTok", label: "dORE", g: ["#22E0E6", "#5B6CFF", "#9A6BFF"], glow: "rgba(34,224,230,0.5)" },
+    { id: "dzincTok", label: "dZINC", g: ["#9A6BFF", "#C56BFF", "#FF5AC8"], glow: "rgba(255,90,200,0.5)" },
   ];
   return (
-    <>
-      <div className={styles.howOrbit} />
-      {feeds.map((f, i) => (
-        <span
-          key={i}
-          className={styles.howFeed}
-          style={
-            { "--fx": f.fx, "--fy": f.fy, animationDelay: f.delay } as React.CSSProperties
-          }
-        />
+    <div className="absolute inset-0 flex items-center justify-center gap-7">
+      {tokens.map((t) => (
+        <div key={t.id} className="flex flex-col items-center gap-3.5">
+          <svg
+            width="86"
+            height="86"
+            viewBox="0 0 100 100"
+            aria-hidden
+            className={styles.howTokenPulse}
+            style={{ filter: `drop-shadow(0 0 16px ${t.glow})` }}
+          >
+            <defs>
+              <linearGradient id={t.id} x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor={t.g[0]} />
+                <stop offset="0.5" stopColor={t.g[1]} />
+                <stop offset="1" stopColor={t.g[2]} />
+              </linearGradient>
+            </defs>
+            <path d="M50 6 L86 38 L50 94 L14 38 Z" fill={`url(#${t.id})`} opacity="0.92" />
+            <path d="M50 6 L86 38 L50 38 Z" fill="#FFFFFF" opacity="0.18" />
+            <path d="M14 38 L50 38 L50 94 Z" fill="#000000" opacity="0.12" />
+            <path
+              d="M14 38 L86 38 M50 6 L50 94 M32 38 L50 22 L68 38"
+              stroke="#EAF6FF"
+              strokeWidth="0.8"
+              opacity="0.4"
+              fill="none"
+            />
+          </svg>
+          <span className="text-[11px] uppercase tracking-[0.28em] text-[#9AA3C8]" style={mono}>
+            {t.label}
+          </span>
+        </div>
       ))}
-      <div className={styles.howToken}>
-        <svg width="120" height="120" viewBox="0 0 100 100" aria-hidden>
-          <defs>
-            <linearGradient id="doreToken" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#22E0E6" />
-              <stop offset="0.5" stopColor="#5B6CFF" />
-              <stop offset="1" stopColor="#9A6BFF" />
-            </linearGradient>
-          </defs>
-          <path d="M50 6 L86 38 L50 94 L14 38 Z" fill="url(#doreToken)" opacity="0.92" />
-          <path d="M50 6 L86 38 L50 38 Z" fill="#FFFFFF" opacity="0.18" />
-          <path d="M14 38 L50 38 L50 94 Z" fill="#000000" opacity="0.12" />
-          <path
-            d="M14 38 L86 38 M50 6 L50 94 M32 38 L50 22 L68 38"
-            stroke="#EAF6FF"
-            strokeWidth="0.8"
-            opacity="0.4"
-            fill="none"
-          />
-        </svg>
-      </div>
-      <span
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 translate-y-[56px] text-[11px] uppercase tracking-[0.32em] text-[#9AA3C8]"
-        style={mono}
-      >
-        dOre
-      </span>
-    </>
+    </div>
   );
 }
 
-/* Step 2 — the keeper mines all 25 tiles, only when EV-positive */
+/* Reusable ORE 25-tile mining board (the dORE representation), sized. */
+function OreBoard({ size, animated = true }: { size: number; animated?: boolean }) {
+  return (
+    <div
+      className="relative grid grid-cols-5 grid-rows-5 gap-[7%]"
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      {Array.from({ length: 25 }).map((_, i) => {
+        const delay = ((Math.floor(i / 5) + (i % 5)) * 0.13).toFixed(2); // diagonal wave
+        return (
+          <span
+            key={i}
+            className={styles.howTile}
+            style={
+              animated
+                ? { animationDelay: `${delay}s` }
+                : {
+                    animation: "none",
+                    background: "linear-gradient(135deg,#22E0E6,#9A6BFF)",
+                    boxShadow:
+                      "0 0 10px rgba(91,108,255,0.5), inset 0 0 0 1px rgba(255,255,255,0.4)",
+                  }
+            }
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/* Step 2 — the keeper mines BOTH boards (ORE 25-tile + ZINC 30-tile wheel),
+   only on EV-positive rounds. */
 function StepBoardGraphic() {
   return (
-    <>
-      <div className={styles.howBoard}>
-        {Array.from({ length: 25 }).map((_, i) => {
-          const delay = ((Math.floor(i / 5) + (i % 5)) * 0.13).toFixed(2); // diagonal wave
-          return (
-            <span key={i} className={styles.howTile} style={{ animationDelay: `${delay}s` }} />
-          );
-        })}
+    <div className="absolute inset-0 flex items-center justify-center gap-6 px-2">
+      <div className="flex flex-col items-center gap-2.5">
+        <OreBoard size={116} />
+        <span className="text-[9.5px] uppercase tracking-[0.22em] text-[#8FA8E0]" style={mono}>
+          ORE · 25
+        </span>
+      </div>
+      <div className="flex flex-col items-center gap-2.5">
+        <ZincRoulette size={134} litTiles="all" animated />
+        <span className="text-[9.5px] uppercase tracking-[0.22em] text-[#C7B3FF]" style={mono}>
+          ZINC · 30
+        </span>
       </div>
       <span
         className={`${styles.howEv} rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#070912]`}
         style={{
           ...mono,
-          background: "linear-gradient(135deg,#22E0E6,#9A6BFF)",
-          boxShadow: "0 0 14px rgba(91,108,255,0.6)",
+          background: "linear-gradient(135deg,#22E0E6,#FF5AC8)",
+          boxShadow: "0 0 14px rgba(154,107,255,0.6)",
         }}
       >
         EV+
       </span>
-    </>
+    </div>
   );
 }
 
 /* Step 3 — value compounds upward into APY */
 function StepYieldGraphic() {
   return (
-    <svg className={styles.howChart} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+    <svg className={styles.howChart} viewBox="0 0 100 100" aria-hidden>
       <defs>
         <linearGradient id="apyLine" x1="0" y1="1" x2="1" y2="0">
           <stop offset="0" stopColor="#22E0E6" />
@@ -764,9 +805,8 @@ function StepYieldGraphic() {
         d="M6 82 C 28 80, 40 62, 56 50 S 80 22, 94 10"
         pathLength={1}
         stroke="url(#apyLine)"
-        strokeWidth="2.6"
+        strokeWidth="1.1"
         strokeLinecap="round"
-        vectorEffect="non-scaling-stroke"
         style={{ filter: "drop-shadow(0 0 3px rgba(91,108,255,0.7))" }}
       />
       {/* white dot rides the curve's leading edge as it draws (0->55% of the
@@ -783,10 +823,10 @@ function StepYieldGraphic() {
         style={{ filter: "drop-shadow(0 0 5px rgba(255,90,200,0.9))" }}
       >
         <animateMotion
-          dur="3.6s"
+          dur="8.5s"
           repeatCount="indefinite"
           calcMode="spline"
-          keyTimes="0;0.55;1"
+          keyTimes="0;0.41;1"
           keyPoints="0;1;1"
           keySplines="0.42 0 0.58 1; 0 0 0 0"
         >

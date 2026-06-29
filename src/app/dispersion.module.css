@@ -447,6 +447,13 @@
   0%, 100% { transform: scale(1); filter: drop-shadow(0 0 18px rgba(91, 108, 255, 0.45)); }
   50% { transform: scale(1.07); filter: drop-shadow(0 0 38px rgba(154, 107, 255, 0.72)); }
 }
+/* gentle scale pulse for the paired dORE/dZINC token marks (keeps each svg's
+   own inline drop-shadow glow color). */
+.howTokenPulse { animation: howTokenPulse 3.6s ease-in-out infinite; }
+@keyframes howTokenPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
 .howFeed {
   position: absolute;
   top: 50%;
@@ -520,23 +527,24 @@
   fill: none;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: howDraw 3.6s ease-in-out infinite;
+  /* draw over the first 41% (~3.5s) then HOLD fully-drawn for the rest (~5s). */
+  animation: howDraw 8.5s ease-in-out infinite;
 }
 @keyframes howDraw {
   0% { stroke-dashoffset: 1; }
-  55%, 100% { stroke-dashoffset: 0; }
+  41%, 100% { stroke-dashoffset: 0; }
 }
-.howArea { opacity: 0; animation: howAreaFade 3.6s ease-in-out infinite; }
+.howArea { opacity: 0; animation: howAreaFade 8.5s ease-in-out infinite; }
 @keyframes howAreaFade {
-  0%, 28% { opacity: 0; }
-  68%, 100% { opacity: 0.5; }
+  0% { opacity: 0; }
+  41%, 100% { opacity: 0.5; }
 }
 /* white dot leads the drawing line, fade in fast (0->5%), then stay visible
    the whole travel + hold. Position is driven by SVG <animateMotion>. */
-.howSpark { opacity: 0; animation: howSparkUp 3.6s linear infinite; }
+.howSpark { opacity: 0; animation: howSparkUp 8.5s linear infinite; }
 @keyframes howSparkUp {
   0% { opacity: 0; }
-  5%, 100% { opacity: 1; }
+  3%, 100% { opacity: 1; }
 }
 /* static reduced-motion fallback dot (hidden unless reduced motion). */
 .howSparkStatic { opacity: 0; }
@@ -546,7 +554,7 @@
   .fan, .whiteBeam, .spectralBar, .chroma::before, .chroma::after,
   .flare, .flareCross, .liveDot, .chromaTrail::after, .rise, .spectralText,
   .prismPill::before, .ignite:hover::before,
-  .howOrbit, .howToken svg, .howFeed, .howTile, .howEv,
+  .howOrbit, .howToken svg, .howTokenPulse, .howFeed, .howTile, .howEv,
   .howLine, .howArea, .howSpark {
     animation: none !important;
   }
