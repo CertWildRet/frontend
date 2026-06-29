@@ -2,71 +2,93 @@
 
 import Link from "next/link";
 import { useLiveStats } from "@/hooks/useLiveStats";
+import { useZincRoundStats } from "@/hooks/useZincRoundStats";
 import { formatNum, formatSol } from "@/lib/format";
 
 const mono = { fontFamily: "'JetBrains Mono Variable', monospace" } as const;
 
+type Metric = { k: string; v: string; unit?: string };
+
 /**
- * Hero live-proof strip: a slim glass band under the hero that shows the keeper
- * is actually working the board right now (ORE round / deployed / miners /
- * motherlode from the brain SSE) and gives direct dORE + dZINC entry. Fills the
- * first-view negative space with motion + proof rather than decoration. Degrades
- * gracefully to a static "two pools, live on-chain" line when the feed is off.
+ * Hero live-proof strip: a slim glass band under the hero proving both pools are
+ * working the board right now. dORE metrics come from the ORE brain SSE; dZINC
+ * metrics from the ZINC keeper's /api/zinc-round-state (round id / pot / players
+ * — per-tile is encrypted, these aggregates are not). Each pool is its own
+ * clickable block. Degrades gracefully when a feed is off.
  */
 export function HeroLiveStrip() {
-  const { stats, connected, enabled } = useLiveStats();
-  const live = enabled && connected && !!stats;
+  const { stats: ore, connected, enabled } = useLiveStats();
+  const { stats: zinc } = useZincRoundStats();
+  const live = enabled && connected;
+
+  const oreMetrics: Metric[] = [
+    { k: "round", v: ore ? `#${ore.roundId}` : "···" },
+    { k: "deployed", v: ore ? formatSol(ore.totalDeployedSol, 1) : "···", unit: "SOL" },
+    { k: "miners", v: ore ? formatNum(ore.totalMiners) : "···" },
+  ];
+  const zincMetrics: Metric[] =
+    zinc && zinc.initialized
+      ? [
+          { k: "round", v: `#${zinc.roundId}` },
+          { k: "pot", v: formatSol(zinc.totalDeployedSol, 1), unit: "SOL" },
+          { k: "players", v: formatNum(zinc.players) },
+        ]
+      : [{ k: "coverage", v: "30 / 30 tiles" }];
 
   return (
-    <div
-      className={`${"glass"} relative flex flex-col gap-4 overflow-hidden rounded-2xl px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:px-7`}
-    >
-      {/* faint spectral baseline so the strip reads as a "floor" to the hero */}
+    <div className="glass relative overflow-hidden rounded-2xl px-5 py-4 sm:px-7">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 bottom-0 h-px"
         style={{ background: "linear-gradient(90deg,transparent,#5B6CFF55,#9A6BFF55,transparent)" }}
       />
-
-      {/* left: live status + the two pools */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
         <span
-          className={`chip shrink-0 ${live ? "border-pos/40 text-white" : "border-line text-fog-muted"}`}
+          className={`chip shrink-0 self-start ${live ? "border-pos/40 text-white" : "border-line text-fog-muted"}`}
         >
           {live ? <span className="live-dot text-pos" /> : null}
           {live ? "live on-chain" : enabled ? "connecting" : "two pools"}
         </span>
-        <Link
-          href="/ore"
-          className="chip border-[#5B6CFF]/40 text-[#BFE6FF] transition-colors hover:text-white"
-        >
-          <span className="h-1.5 w-1.5 rotate-45 bg-[#22E0E6]" /> dORE
-        </Link>
-        <Link
-          href="/zinc"
-          className="chip border-[#9A6BFF]/40 text-[#D8C5FF] transition-colors hover:text-white"
-        >
-          <span className="h-1.5 w-1.5 rotate-45 bg-[#9A6BFF]" /> dZINC
-        </Link>
-      </div>
 
-      {/* right: live keeper metrics (ORE board feed) */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sm:justify-end">
-        <Metric label="ORE round" value={stats ? `#${stats.roundId}` : "···"} />
-        <Metric label="Deployed" value={stats ? formatSol(stats.totalDeployedSol, 1) : "···"} unit="SOL" />
-        <Metric label="Miners" value={stats ? formatNum(stats.totalMiners) : "···"} />
-        <Metric label="Motherlode" value={stats ? formatNum(stats.motherlodePoolOre, 1) : "···"} unit="ORE" accent />
+        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+          <PoolRow href="/ore" label="dORE" dot="#22E0E6" border="#5B6CFF" metrics={oreMetrics} />
+          <span aria-hidden className="hidden h-7 w-px bg-line sm:block" />
+          <PoolRow href="/zinc" label="dZINC" dot="#9A6BFF" border="#9A6BFF" metrics={zincMetrics} />
+        </div>
       </div>
     </div>
   );
 }
 
-function Metric({ label, value, unit, accent }: { label: string; value: string; unit?: string; accent?: boolean }) {
+function PoolRow({
+  href,
+  label,
+  dot,
+  border,
+  metrics,
+}: {
+  href: string;
+  label: string;
+  dot: string;
+  border: string;
+  metrics: Metric[];
+}) {
   return (
-    <div className="flex items-baseline gap-1.5" style={mono}>
-      <span className="text-[10px] uppercase tracking-[0.18em] text-fog-muted">{label}</span>
-      <span className={`text-[15px] tabular-nums ${accent ? "gradient-text" : "text-white"}`}>{value}</span>
-      {unit && <span className="text-[11px] text-fog-muted">{unit}</span>}
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+      <Link
+        href={href}
+        className="chip text-[#EAECF6] transition-colors hover:text-white"
+        style={{ borderColor: `${border}66` }}
+      >
+        <span className="h-1.5 w-1.5 rotate-45" style={{ background: dot }} /> {label}
+      </Link>
+      {metrics.map((m) => (
+        <div key={m.k} className="flex items-baseline gap-1.5" style={mono}>
+          <span className="text-[10px] uppercase tracking-[0.16em] text-fog-muted">{m.k}</span>
+          <span className="text-[14px] tabular-nums text-white">{m.v}</span>
+          {m.unit && <span className="text-[11px] text-fog-muted">{m.unit}</span>}
+        </div>
+      ))}
     </div>
   );
 }

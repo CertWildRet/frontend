@@ -1,6 +1,7 @@
 "use client";
 
 import { useZincLiveStats } from "@/hooks/useZincLiveStats";
+import { useZincRoundStats } from "@/hooks/useZincRoundStats";
 import { FacetMark } from "../FacetMark";
 import { formatNum, formatSol, formatRelative } from "@/lib/format";
 import type { ZincPoolStats } from "@/lib/cwr";
@@ -19,10 +20,10 @@ const CRANK_WALLET = "58QKD3siCxvLzgHFezbu8aTacjZFxy7LaYvgMmwQFiCe";
  */
 export function ZincLiveCrankPanel({ data }: { data: ZincPoolStats | null }) {
   const { stats, connected, enabled } = useZincLiveStats();
+  const { stats: round } = useZincRoundStats();
   const last = stats?.lastCrank ?? null;
   const mining = last?.action === "crank_mine_zinc";
   const perTile = last?.perTileSol ?? 0;
-  const perRound = last?.perRoundSol ?? 0;
   const held = data ? formatNum(data.smeltedZincHeld, 2) : "···";
 
   return (
@@ -71,10 +72,18 @@ export function ZincLiveCrankPanel({ data }: { data: ZincPoolStats | null }) {
           {/* Right: live stats + the keeper's last move */}
           <aside className="flex flex-col gap-5">
             <div className="grid grid-cols-2 gap-4">
-              <Metric label="ZINC round" value={last?.roundId ? `#${last.roundId}` : "···"} />
-              <Metric label="ZINC held" value={held} unit="ZINC" accent />
-              <Metric label="Board deployed" value={formatSol(perRound, 2)} unit="SOL" />
-              <Metric label="Coverage" value={mining ? "30/30" : "0/30"} unit="tiles" />
+              <Metric
+                label="ZINC round"
+                value={round?.initialized ? `#${round.roundId}` : last?.roundId ? `#${last.roundId}` : "···"}
+              />
+              <Metric
+                label="Round pot"
+                value={round?.initialized ? formatSol(round.totalDeployedSol, 1) : "···"}
+                unit="SOL"
+                accent
+              />
+              <Metric label="Players" value={round?.initialized ? formatNum(round.players) : "···"} />
+              <Metric label="ZINC held" value={held} unit="ZINC" />
             </div>
 
             <div className="rounded-xl border border-line bg-ink-800/50 p-4">
