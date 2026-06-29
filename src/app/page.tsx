@@ -6,6 +6,7 @@ import {
   ArrowIcon,
   Tilt,
 } from "./parts";
+import { ZincRoulette } from "@/components/zinc/ZincRoulette";
 
 /* ── inline data ─────────────────────────────────────────────────── */
 const STEPS = [
@@ -404,7 +405,7 @@ export default function DispersionLanding() {
           {/* dORE — LIVE */}
           <Tilt>
             <div
-              className={`${styles.glass} ${styles.spectralEdge} ${styles.cutTR} relative h-full overflow-hidden rounded-3xl p-8`}
+              className={`${styles.glass} ${styles.spectralEdge} ${styles.cutTR} relative flex h-full flex-col overflow-hidden rounded-3xl p-8`}
             >
               <div
                 aria-hidden
@@ -452,6 +453,7 @@ export default function DispersionLanding() {
                   </li>
                 ))}
               </ul>
+              <div className="flex-1" aria-hidden />
               <Link
                 href="/pools"
                 className={`${styles.ignite} mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-medium text-[#EAECF6]`}
@@ -464,7 +466,7 @@ export default function DispersionLanding() {
           {/* dZINC — LIVE */}
           <Tilt>
             <div
-              className={`${styles.glass} ${styles.spectralEdge} ${styles.cutBL} relative h-full overflow-hidden rounded-3xl p-8`}
+              className={`${styles.glass} ${styles.spectralEdge} ${styles.cutBL} relative flex h-full flex-col overflow-hidden rounded-3xl p-8`}
             >
               <div
                 aria-hidden
@@ -491,7 +493,33 @@ export default function DispersionLanding() {
                   LIVE
                 </span>
               </div>
-              <p className="mt-4 text-[14.5px] leading-relaxed text-[#A8B0D4]">
+
+              {/* dZINC signature: the 30-tile roulette ring, full coverage */}
+              <div className="mt-5 flex justify-center">
+                <ZincRoulette
+                  size={164}
+                  litTiles="all"
+                  animated
+                  center={
+                    <>
+                      <span
+                        className="text-[20px] font-bold leading-none text-[#EAECF6]"
+                        style={display}
+                      >
+                        30<span className="text-[#C7B3FF]">/</span>30
+                      </span>
+                      <span
+                        className="mt-1 text-[8.5px] uppercase tracking-[0.28em] text-[#9AA3C8]"
+                        style={mono}
+                      >
+                        tiles lit
+                      </span>
+                    </>
+                  }
+                />
+              </div>
+
+              <p className="mt-5 text-[14.5px] leading-relaxed text-[#A8B0D4]">
                 Full 30-tile ZINC coverage, production-cost gated. The keeper mines,
                 smelts the winnings, and holds them; withdraw any open window.
               </p>
@@ -512,6 +540,7 @@ export default function DispersionLanding() {
                   </li>
                 ))}
               </ul>
+              <div className="flex-1" aria-hidden />
               <Link
                 href="/zinc"
                 className={`${styles.ignite} mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-medium text-[#EAECF6]`}
@@ -730,16 +759,45 @@ function StepYieldGraphic() {
         fill="url(#apyArea)"
       />
       <path
+        id="apyPath"
         className={styles.howLine}
         d="M6 82 C 28 80, 40 62, 56 50 S 80 22, 94 10"
+        pathLength={1}
         stroke="url(#apyLine)"
         strokeWidth="2.6"
         strokeLinecap="round"
         vectorEffect="non-scaling-stroke"
         style={{ filter: "drop-shadow(0 0 3px rgba(91,108,255,0.7))" }}
       />
+      {/* white dot rides the curve's leading edge as it draws (0->55% of the
+          3.6s loop, ease matched to howDraw), then holds at the tip. The dot
+          follows the SAME user-space path as the stroke, so it stays on the
+          line; the 100x100 viewBox is 1:1 with the square stage, so the
+          non-scaling stretch stays uniform and the circle stays round. */}
       <circle
         className={styles.howSpark}
+        cx="0"
+        cy="0"
+        r="2.6"
+        fill="#EAF6FF"
+        style={{ filter: "drop-shadow(0 0 5px rgba(255,90,200,0.9))" }}
+      >
+        <animateMotion
+          dur="3.6s"
+          repeatCount="indefinite"
+          calcMode="spline"
+          keyTimes="0;0.55;1"
+          keyPoints="0;1;1"
+          keySplines="0.42 0 0.58 1; 0 0 0 0"
+        >
+          <mpath href="#apyPath" />
+        </animateMotion>
+      </circle>
+      {/* reduced-motion fallback: static dot parked at the curve tip (SMIL
+          animateMotion can't be stopped by a CSS media query, so we hide the
+          rider and reveal this one instead). */}
+      <circle
+        className={styles.howSparkStatic}
         cx="94"
         cy="10"
         r="2.6"

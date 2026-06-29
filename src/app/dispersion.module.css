@@ -512,14 +512,18 @@
   width: 100%;
   height: 100%;
 }
+/* the path declares pathLength="1", so the dash is normalized to the curve's
+   arc length at EVERY render size — the line-draw fraction then matches the
+   dot's <animateMotion> arc fraction (keyPoints 0;1;1) exactly, so the dot
+   tracks the painted tip on the small landing card AND the large /zinc hero. */
 .howLine {
   fill: none;
-  stroke-dasharray: 300;
-  stroke-dashoffset: 300;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
   animation: howDraw 3.6s ease-in-out infinite;
 }
 @keyframes howDraw {
-  0% { stroke-dashoffset: 300; }
+  0% { stroke-dashoffset: 1; }
   55%, 100% { stroke-dashoffset: 0; }
 }
 .howArea { opacity: 0; animation: howAreaFade 3.6s ease-in-out infinite; }
@@ -527,12 +531,15 @@
   0%, 28% { opacity: 0; }
   68%, 100% { opacity: 0.5; }
 }
-.howSpark { opacity: 0; animation: howSparkUp 3.6s ease-in-out infinite; }
+/* white dot leads the drawing line, fade in fast (0->5%), then stay visible
+   the whole travel + hold. Position is driven by SVG <animateMotion>. */
+.howSpark { opacity: 0; animation: howSparkUp 3.6s linear infinite; }
 @keyframes howSparkUp {
-  0%, 48% { opacity: 0; }
-  62% { opacity: 1; }
-  100% { opacity: 1; }
+  0% { opacity: 0; }
+  5%, 100% { opacity: 1; }
 }
+/* static reduced-motion fallback dot (hidden unless reduced motion). */
+.howSparkStatic { opacity: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   .spectralEdge::before, .prismShard,
@@ -546,5 +553,9 @@
   /* static, legible fallbacks */
   .howFeed { display: none; }
   .howLine { stroke-dashoffset: 0; }
-  .howArea, .howSpark { opacity: 1; }
+  .howArea { opacity: 1; }
+  /* hide the path-riding dot (SMIL motion can't be CSS-stopped) and reveal
+     the static one parked at the curve tip (94,10). */
+  .howSpark { opacity: 0; }
+  .howSparkStatic { opacity: 1; }
 }

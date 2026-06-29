@@ -1,0 +1,64 @@
+/* ════════════════════════════════════════════════════════════════
+   ZINC ROULETTE - 30-tile spectral ring (dZINC signature)
+   dZINC accent: purple -> pink (#9A6BFF -> #FF5AC8) on dark glass.
+   Self-contained: works in both the dispersion landing and the /zinc
+   Tailwind surface. Honours prefers-reduced-motion (no spin).
+   ════════════════════════════════════════════════════════════════ */
+
+.root {
+  display: block;
+  position: relative;
+}
+
+/* The whole tile ring slowly rotates; the readout layer counter-stays still. */
+.ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: zincSpin 64s linear infinite;
+}
+
+@keyframes zincSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* per-tile shimmer - staggered via inline animation-delay */
+.tile {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: zincShimmer 4.6s ease-in-out infinite;
+}
+
+@keyframes zincShimmer {
+  0%,
+  100% {
+    opacity: 0.92;
+    filter: none;
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px rgba(255, 90, 200, 0.55));
+  }
+}
+
+/* a faint highlight sweep that travels around the ring */
+.sweep {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: zincSweepSpin 9s linear infinite;
+}
+
+@keyframes zincSweepSpin {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring,
+  .tile,
+  .sweep {
+    animation: none !important;
+  }
+}

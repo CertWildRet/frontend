@@ -8,6 +8,7 @@ import { SettleZincPrompt } from "@/components/zinc/SettleZincPrompt";
 import { MintZincCard } from "@/components/zinc/MintZincCard";
 import { ClaimZincCard } from "@/components/zinc/ClaimZincCard";
 import { ZincPositionCard } from "@/components/zinc/ZincPositionCard";
+import { ZincRouletteHero } from "@/components/zinc/ZincRouletteHero";
 
 /**
  * dZINC pool (bucket 1) - LIVE deposit / withdraw + read UI, mirroring the dORE
@@ -57,6 +58,8 @@ export default function ZincPage() {
           </p>
         </div>
       </header>
+
+      <ZincRouletteHero data={data} notLive={notLive} />
 
       {notLive ? (
         <NotLivePanel />

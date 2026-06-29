@@ -68,7 +68,7 @@ export function SiteHeader() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-3">
-            <span className="glass cut-tr grid h-10 w-10 place-items-center rounded-xl">
+            <span className="glass grid h-10 w-10 place-items-center rounded-xl">
               <PrismMark className="h-5 w-5" />
             </span>
             <span
