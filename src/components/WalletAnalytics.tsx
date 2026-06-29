@@ -1,0 +1,324 @@
+"use client";
+
+/**
+ * Your full mining history, reconstructed from chain by the analytics service.
+ * Per pool (dORE / dZINC): exact cash legs + attributed SOL/ORE/ZINC won, then a
+ * per-cycle table you can expand into the actual crank ROUNDS your capital was
+ * deployed into and exactly what each window won. Native units only.
+ */
+import { useState } from "react";
+import { useWalletAnalytics } from "@/hooks/useWalletAnalytics";
+import {
+  fetchCycleDetail,
+  lamportsToSol,
+  oreGramsToOre,
+  zincGramsToZinc,
+  type WalletCycle,
+  type PnlBucket,
+  type CycleDetail,
+} from "@/lib/analytics";
+import { formatNum, formatSol, formatPct } from "@/lib/format";
+
+const POOLS = [
+  { bucket: 0, label: "dORE", asset: "ORE", color: "#5B6CFF", textc: "#7FA0E0" },
+  { bucket: 1, label: "dZINC", asset: "ZINC", color: "#9A6BFF", textc: "#C7B3FF" },
+] as const;
+
+const tsToMs = (ts?: string | null) => (ts ? Number(ts) * 1000 : 0);
+const when = (ms: number) => (ms ? new Date(ms).toLocaleString() : "·");
+const big = (v?: string | number | null) => (v == null ? 0n : BigInt(v));
+
+export function WalletAnalytics({ pubkey }: { pubkey: string }) {
+  const { pnl, cycles, provenance, loading, error, reload } = useWalletAnalytics(pubkey);
+
+  if (loading && !pnl) {
+    return <div className="card font-mono text-[12px] text-fog-muted">Loading your mining history…</div>;
+  }
+  if (error) {
+    return (
+      <div className="card">
+        <p className="font-mono text-[12px] text-neg">{error}</p>
+        <button onClick={reload} className="mt-3 chip border-line text-fog-muted hover:text-white">retry</button>
+      </div>
+    );
+  }
+  if (!pnl) return null;
+
+  const anyActivity = pnl.buckets.some(
+    (b) =>
+      big(b.exact.sol_in_net_lamports) > 0n ||
+      cycles.some((c) => c.bucket_id === b.bucket_id),
+  );
+  if (!anyActivity) {
+    return (
+      <div className="card font-mono text-[12px] text-fog-muted">
+        No deposits or mining activity found for this wallet yet. Once you deposit and the pool cranks a
+        round, every round your capital joins shows up here.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {POOLS.map((p) => {
+        const bucket = pnl.buckets.find((b) => b.bucket_id === p.bucket);
+        const myCycles = cycles.filter((c) => c.bucket_id === p.bucket);
+        const active = bucket && (big(bucket.exact.sol_in_net_lamports) > 0n || myCycles.length > 0);
+        if (!active || !bucket) return null;
+        return <PoolSection key={p.bucket} pool={p} bucket={bucket} cycles={myCycles} />;
+      })}
+
+      {provenance && (
+        <p className="font-mono text-[10.5px] leading-relaxed text-fog-muted">
+          {provenance.backfill_complete
+            ? "Reconstructed from finalized on-chain history."
+            : "Historical backfill still running — figures are provisional and may grow."}{" "}
+          Native units only; per-wallet SOL/ORE/ZINC won is pro-rata by your frozen share of each round (there is no per-wallet bet on chain).
+        </p>
+      )}
+    </div>
+  );
+}
+
+function PoolSection({
+  pool,
+  bucket,
+  cycles,
+}: {
+  pool: (typeof POOLS)[number];
+  bucket: PnlBucket;
+  cycles: WalletCycle[];
+}) {
+  const isOre = pool.bucket === 0;
+  const won = lamportsToSol(bucket.attributed.sol_won_attr_lamports);
+  const oreWon = oreGramsToOre(bucket.attributed.uore_rewards_accrued_grams) + oreGramsToOre(bucket.attributed.uore_refined_accrued_grams);
+  const zincWon = zincGramsToZinc(bucket.attributed.zinc_accrued_grams);
+  const depIn = lamportsToSol(bucket.exact.sol_in_net_lamports);
+  const out = lamportsToSol(bucket.exact.sol_out_lamports);
+  const owedSol = lamportsToSol((bucket.current?.recoverable_sol_lamports as string) ?? null);
+  const owedOre = oreGramsToOre((bucket.current?.owed_uore_rewards_grams as string) ?? null) + oreGramsToOre((bucket.current?.owed_uore_refined_grams as string) ?? null);
+  const owedStore = oreGramsToOre((bucket.current?.owed_store_grams as string) ?? null);
+  const owedZinc = zincGramsToZinc((bucket.current?.owed_zinc_grams as string) ?? null);
+
+  return (
+    <div className="card">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="font-display text-base font-semibold text-white">
+          {pool.label} mining history
+        </h3>
+        <span className="chip" style={{ borderColor: `${pool.color}66`, color: pool.textc }}>
+          {pool.asset} pool · bucket {pool.bucket}
+        </span>
+      </div>
+
+      {/* lifetime totals */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <Stat label="Deposited" value={formatSol(depIn, 4)} unit="SOL" />
+        <Stat label="Withdrawn" value={formatSol(out, 4)} unit="SOL" />
+        <Stat label="SOL won (rounds)" value={formatSol(won, 6)} unit="SOL" tone={pool.textc} strong />
+        {isOre ? (
+          <Stat label="ORE won (rounds)" value={formatNum(oreWon, 6)} unit="ORE" tone={pool.textc} strong />
+        ) : (
+          <Stat label="ZINC won (rounds)" value={formatNum(zincWon, 6)} unit="ZINC" tone={pool.textc} strong />
+        )}
+        <Stat
+          label="Owed now (live)"
+          value={formatSol(owedSol, 4)}
+          unit="SOL"
+          sub={
+            isOre
+              ? `+ ${formatNum(owedOre, 4)} uORE · ${formatNum(owedStore, 4)} stORE`
+              : `+ ${formatNum(owedZinc, 4)} ZINC`
+          }
+        />
+      </div>
+
+      {/* per-cycle rounds */}
+      <div className="mt-5">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="label">Rounds your capital joined</span>
+          <span className="font-mono text-[11px] text-fog-muted">{cycles.length} cycle{cycles.length === 1 ? "" : "s"}</span>
+        </div>
+        {cycles.length === 0 ? (
+          <p className="font-mono text-[12px] text-fog-muted">
+            You hold {pool.label} but no settled betting window has attributed to you yet.
+          </p>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-line">
+            <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-x-3 border-b border-line bg-ink-800/60 px-3 py-2 font-mono text-[10.5px] uppercase tracking-wider text-fog-muted">
+              <span>Cycle</span>
+              <span>Window</span>
+              <span className="text-right">Your share</span>
+              <span className="text-right">SOL worked</span>
+              <span className="text-right">{isOre ? "ORE" : "ZINC"} / SOL won</span>
+            </div>
+            {cycles.map((c) => (
+              <CycleRow key={`${c.bucket_id}-${c.cycle_id}`} c={c} pool={pool} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CycleRow({ c, pool }: { c: WalletCycle; pool: (typeof POOLS)[number] }) {
+  const isOre = pool.bucket === 0;
+  const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState<CycleDetail | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const frac = Number(c.share_fraction);
+  const worked = lamportsToSol(c.sol_attributed_net);
+  const wonSol = lamportsToSol(c.sol_recovered_attr);
+  const wonOre = oreGramsToOre(c.uore_rewards_accrued_grams) + oreGramsToOre(c.uore_refined_accrued_grams);
+  const wonZinc = zincGramsToZinc(c.zinc_accrued_grams);
+  const wonAsset = isOre ? wonOre : wonZinc;
+
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
+    if (next && !detail && !loading) {
+      setLoading(true);
+      fetchCycleDetail(c.bucket_id, c.cycle_id)
+        .then((d) => setDetail(d.data))
+        .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
+        .finally(() => setLoading(false));
+    }
+  };
+
+  return (
+    <div className="border-b border-line last:border-0">
+      <button
+        onClick={toggle}
+        className="grid w-full grid-cols-[auto_1fr_auto_auto_auto] items-center gap-x-3 px-3 py-2.5 text-left font-mono text-[12px] hover:bg-ink-800/40"
+      >
+        <span className="flex items-center gap-1.5 num text-white">
+          <span className={`inline-block transition-transform ${open ? "rotate-90" : ""}`} style={{ color: pool.textc }}>›</span>
+          #{c.cycle_id}
+        </span>
+        <span className="truncate text-fog-muted">
+          {when(tsToMs(c.open_ts))}
+          {c.settled ? (
+            <span className="ml-2 text-pos">settled</span>
+          ) : (
+            <span className="ml-2 text-fog-dim">{c.ore_join_status === "round_alive" ? "live" : "open"}</span>
+          )}
+        </span>
+        <span className="text-right text-gray-300">{formatPct(isFinite(frac) ? frac : 0, 2)}</span>
+        <span className="text-right num text-gray-300">{formatSol(worked, 4)}</span>
+        <span className="text-right num" style={{ color: pool.textc }}>
+          {formatNum(wonAsset, 4)} {isOre ? "ORE" : "ZINC"}
+          <span className="ml-1 text-fog-muted">/ {c.sol_recovered_attr == null ? "—" : `${formatSol(wonSol, 4)} SOL`}</span>
+        </span>
+      </button>
+
+      {open && (
+        <div className="border-t border-line bg-ink-900/40 px-3 py-3">
+          {loading && <p className="font-mono text-[11px] text-fog-muted">Loading rounds…</p>}
+          {err && <p className="font-mono text-[11px] text-neg">{err}</p>}
+          {detail && <CycleExpanded detail={detail} c={c} pool={pool} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CycleExpanded({ detail, c, pool }: { detail: CycleDetail; c: WalletCycle; pool: (typeof POOLS)[number] }) {
+  const isOre = pool.bucket === 0;
+  const cy = detail.cycle;
+  const frac = Number(c.share_fraction);
+  const num = (k: string) => String(cy[k] ?? "");
+
+  const deployedNet = lamportsToSol(num("sol_deployed_net"));
+  const recovered = cy.sol_recovered == null ? null : lamportsToSol(num("sol_recovered"));
+  const fee = lamportsToSol(num("volume_fee_lamports"));
+  const oreGrowth = oreGramsToOre(num("uore_rewards_growth")) + oreGramsToOre(num("uore_refined_growth"));
+  const zincCredited = zincGramsToZinc(num("zinc_credited"));
+  const ckptRew = oreGramsToOre(num("last_ckpt_rewards_ore"));
+  const ckptRef = oreGramsToOre(num("last_ckpt_refined_ore"));
+  const motherlode = oreGramsToOre(num("motherlode_grams"));
+
+  return (
+    <div className="space-y-3">
+      {/* what the WINDOW won + your slice */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
+        <Mini k="Deployed (net)" v={`${formatSol(deployedNet, 4)} SOL`} sub={`your ${formatSol(deployedNet * frac, 5)}`} />
+        <Mini k="SOL won (window)" v={recovered == null ? "unsettled" : `${formatSol(recovered, 4)} SOL`} sub={recovered == null ? undefined : `your ${formatSol(recovered * frac, 5)}`} />
+        {isOre ? (
+          <Mini k="ORE mined (window)" v={`${formatNum(oreGrowth, 4)} ORE`} sub={`your ${formatNum(oreGrowth * frac, 6)}`} />
+        ) : (
+          <Mini k="ZINC smelted (window)" v={`${formatNum(zincCredited, 4)} ZINC`} sub={`your ${formatNum(zincCredited * frac, 6)}`} />
+        )}
+        <Mini k="Rounds" v={String(cy.num_rounds ?? detail.cranks.length)} sub={`fee ${formatSol(fee, 5)} SOL`} />
+      </div>
+
+      {isOre && (ckptRew > 0 || ckptRef > 0 || motherlode > 0) && (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3 border-t border-line pt-2">
+          <Mini k="In-miner rewards (gross)" v={`${formatNum(ckptRew, 4)} ORE`} />
+          <Mini k="In-miner refined" v={`${formatNum(ckptRef, 4)} ORE`} />
+          {motherlode > 0 && <Mini k="Motherlode" v={`${formatNum(motherlode, 2)} ORE`} />}
+        </div>
+      )}
+
+      {/* the actual rounds */}
+      {detail.cranks.length > 0 && (
+        <div>
+          <div className="mb-1 label">Rounds in this window</div>
+          <div className="overflow-x-auto rounded-lg border border-line">
+            <table className="w-full font-mono text-[11px]">
+              <thead>
+                <tr className="border-b border-line bg-ink-800/60 text-left text-fog-muted">
+                  <th className="px-2.5 py-1.5 font-normal">Round</th>
+                  <th className="px-2.5 py-1.5 font-normal">Time</th>
+                  <th className="px-2.5 py-1.5 text-right font-normal">Deployed (net)</th>
+                  <th className="px-2.5 py-1.5 text-right font-normal">Your slice</th>
+                  {isOre && <th className="px-2.5 py-1.5 text-right font-normal">Tiles</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {detail.cranks.map((r) => {
+                  const net = lamportsToSol(r.net_amount_lamports);
+                  const tms = r.block_time ? Date.parse(r.block_time) : 0;
+                  return (
+                    <tr key={r.sig} className="border-b border-line/60 last:border-0">
+                      <td className="px-2.5 py-1.5 text-white">#{r.round_id}</td>
+                      <td className="px-2.5 py-1.5 text-fog-muted">{tms ? new Date(tms).toLocaleTimeString() : "·"}</td>
+                      <td className="px-2.5 py-1.5 text-right text-gray-300">{formatSol(net, 4)}</td>
+                      <td className="px-2.5 py-1.5 text-right" style={{ color: pool.textc }}>{formatSol(net * frac, 5)}</td>
+                      {isOre && <td className="px-2.5 py-1.5 text-right text-fog-muted">{r.squares_selected}</td>}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value, unit, sub, tone, strong }: { label: string; value: string; unit?: string; sub?: string; tone?: string; strong?: boolean }) {
+  return (
+    <div className="rounded-lg border border-line bg-ink-800/50 px-3 py-2.5">
+      <div className="label">{label}</div>
+      <div className="mt-1 flex items-baseline gap-1">
+        <span className="num text-base" style={strong && tone ? { color: tone } : undefined}>{value}</span>
+        {unit && <span className="font-mono text-[10px] text-fog-muted">{unit}</span>}
+      </div>
+      {sub && <div className="mt-0.5 font-mono text-[10px] text-fog-muted">{sub}</div>}
+    </div>
+  );
+}
+
+function Mini({ k, v, sub }: { k: string; v: string; sub?: string }) {
+  return (
+    <div className="font-mono text-[11px]">
+      <div className="text-fog-muted">{k}</div>
+      <div className="num text-gray-200">{v}</div>
+      {sub && <div className="text-[10px] text-fog-dim">{sub}</div>}
+    </div>
+  );
+}

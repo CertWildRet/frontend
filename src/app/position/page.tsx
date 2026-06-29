@@ -8,6 +8,7 @@ import { useLiveStats } from "@/hooks/useLiveStats";
 import { useZincData } from "@/hooks/useZincData";
 import { useZincPosition } from "@/hooks/useZincPosition";
 import { WalletButton } from "@/components/WalletButton";
+import { WalletAnalytics } from "@/components/WalletAnalytics";
 import { formatNum, formatSol, formatRelative } from "@/lib/format";
 
 /**
@@ -17,7 +18,7 @@ import { formatNum, formatSol, formatRelative } from "@/lib/format";
  * priced.
  */
 export default function PositionPage() {
-  const { connected } = useWallet();
+  const { connected, publicKey } = useWallet();
   const { data } = useVaultData();
   const { pos } = useUserPosition(data?.totalShares ?? 0);
   const stats = useStats();
@@ -152,10 +153,23 @@ export default function PositionPage() {
               )}
             </div>
             <p className="mt-3 font-mono text-[11px] text-fog-muted">
-              Per-round history (rounds played, tile-match and motherlode hits) is coming - the indexer
-              that tracks every crank will feed it.
+              Full per-round history is below — every window your capital joined and what it won.
             </p>
           </div>
+
+          {/* full reconstructed mining history (off-chain analytics indexer) */}
+          <section className="space-y-3 pt-2">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-lg font-semibold text-white">Your mining history</h2>
+              <span className="chip border-line text-fog-muted">reconstructed on-chain</span>
+            </div>
+            <p className="max-w-2xl text-sm text-fog-dim">
+              Every betting round your deployed capital was part of, and exactly what each window won —
+              SOL, ORE and ZINC — attributed to your frozen share. dORE and dZINC alike. Expand any cycle
+              to see the individual crank rounds.
+            </p>
+            {publicKey && <WalletAnalytics pubkey={publicKey.toBase58()} />}
+          </section>
         </>
       )}
     </div>
