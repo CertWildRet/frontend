@@ -191,13 +191,13 @@ function CycleRow({ c, pool }: { c: WalletCycle; pool: (typeof POOLS)[number] })
   };
 
   return (
-    <div>
+    <div className={`rounded-lg transition-colors duration-200 ${open ? "bg-white/[0.022]" : ""}`}>
       <button
         onClick={toggle}
-        className="grid w-full grid-cols-[auto_1fr_auto_auto_auto] items-center gap-x-3 px-3 py-2.5 text-left font-mono text-[12px] hover:bg-ink-800/40"
+        className="grid w-full grid-cols-[auto_1fr_auto_auto_auto] items-center gap-x-3 rounded-lg px-3 py-2.5 text-left font-mono text-[12px] transition-colors hover:bg-white/[0.03]"
       >
         <span className="flex items-center gap-1.5 num text-white">
-          <span className={`inline-block transition-transform ${open ? "rotate-90" : ""}`} style={{ color: pool.textc }}>›</span>
+          <span className={`inline-block transition-transform duration-300 ease-in-out ${open ? "rotate-90" : ""}`} style={{ color: pool.textc }}>›</span>
           #{c.cycle_id}
         </span>
         <span className="truncate text-fog-muted">
@@ -222,13 +222,21 @@ function CycleRow({ c, pool }: { c: WalletCycle; pool: (typeof POOLS)[number] })
         </span>
       </button>
 
-      {open && (
-        <div className="bg-ink-900/40 px-3 py-3">
-          {loading && <p className="font-mono text-[11px] text-fog-muted">Loading rounds…</p>}
-          {err && <p className="font-mono text-[11px] text-neg">{err}</p>}
-          {detail && <CycleExpanded detail={detail} c={c} pool={pool} />}
+      {/* smooth ease-in-out drawer: grid-template-rows 0fr->1fr animates auto height.
+          The panel inherits the row's open highlight (no separate bg) so expanding
+          doesn't flash a different colour. */}
+      <div
+        className="grid transition-[grid-template-rows] duration-300 ease-in-out"
+        style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
+      >
+        <div className="overflow-hidden">
+          <div className="px-3 pb-3 pt-1">
+            {loading && <p className="font-mono text-[11px] text-fog-muted">Loading rounds…</p>}
+            {err && <p className="font-mono text-[11px] text-neg">{err}</p>}
+            {detail && <CycleExpanded detail={detail} c={c} pool={pool} />}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
