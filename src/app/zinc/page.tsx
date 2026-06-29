@@ -10,6 +10,7 @@ import { MintZincCard } from "@/components/zinc/MintZincCard";
 import { ClaimZincCard } from "@/components/zinc/ClaimZincCard";
 import { ZincPositionCard } from "@/components/zinc/ZincPositionCard";
 import { ZincRouletteHero } from "@/components/zinc/ZincRouletteHero";
+import { ZincLiveCrankPanel } from "@/components/zinc/ZincLiveCrankPanel";
 
 /**
  * dZINC pool (bucket 1) - LIVE deposit / withdraw + read UI, mirroring the dORE
@@ -80,6 +81,8 @@ export default function ZincPage() {
           </div>
         </>
       )}
+
+      <ZincLiveCrankPanel data={data} />
     </div>
   );
 }
