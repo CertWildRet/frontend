@@ -83,29 +83,21 @@
 }
 
 /* ── Mint button: dispersion ignite on hover ────────────────────────── */
+/* Spectral-bordered CTA. The border is a 3px gradient rendered with the
+   border-box double-background technique (fill on padding-box + spectral on
+   border-box, behind a transparent border). This is crisp + even at every zoom
+   and corner radius - the old mask-composite ring broke up into a distorted
+   hairline at 100% / fractional device pixels. */
 .ignite {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(110deg, rgba(91, 108, 255, 0.22), rgba(154, 107, 255, 0.18));
+  border: 3px solid transparent;
+  background:
+    linear-gradient(110deg, rgba(91, 108, 255, 0.22), rgba(154, 107, 255, 0.18)) padding-box,
+    linear-gradient(110deg, #22e0e6, #5b6cff, #9a6bff, #ff5ac8, #ffc061) border-box;
+  background-size: 100% 100%, 300% 100%;
+  background-position: 0 0, 0 0;
   transition: transform 0.18s ease, box-shadow 0.3s ease;
-}
-.ignite::before {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  padding: 2px;
-  background: linear-gradient(110deg, #22e0e6, #5b6cff, #9a6bff, #ff5ac8, #ffc061);
-  background-size: 300% 100%;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0.6;
-  transition: opacity 0.3s ease;
-}
-.ignite:hover::before {
-  opacity: 1;
-  animation: hueShift 2.4s linear infinite;
 }
 .ignite::after {
   content: "";
@@ -124,12 +116,17 @@
 .ignite:hover {
   transform: translateY(-1px);
   box-shadow: 0 0 0 1px rgba(154, 107, 255, 0.5), 0 14px 40px -10px rgba(91, 108, 255, 0.7);
+  animation: igniteHue 2.4s linear infinite;
 }
 .ignite:active {
   transform: translateY(0) scale(0.985);
 }
 @keyframes sweep {
   to { left: 120%; opacity: 1; }
+}
+/* travel only the spectral border layer (2nd background); the fill stays put. */
+@keyframes igniteHue {
+  to { background-position: 0 0, 300% 0; }
 }
 
 /* glass ghost secondary */
@@ -681,7 +678,7 @@
   .spectralEdge::before, .prismShard, .prismHalo,
   .fan, .whiteBeam, .spectralBar, .chroma::before, .chroma::after,
   .flare, .flareCross, .liveDot, .chromaTrail::after, .rise, .spectralText,
-  .prismPill::before, .ignite:hover::before,
+  .prismPill::before, .ignite:hover,
   .howOrbit, .howToken svg, .howTokenPulse, .howFeed, .howTile, .howTile::after, .howEv,
   .howRing, .howOrbiter, .howShard, .howWarmLeft, .howWarmRight,
   .howLine, .howArea, .howSpark {
