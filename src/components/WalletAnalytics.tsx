@@ -20,7 +20,8 @@ import {
 import { formatNum, formatSol, formatPct } from "@/lib/format";
 
 const POOLS = [
-  { bucket: 0, label: "dORE", asset: "ORE", color: "#5B6CFF", textc: "#7FA0E0" },
+  // dORE = the canonical steel accent (#9DB7D8); dZINC keeps its purple identity.
+  { bucket: 0, label: "dORE", asset: "ORE", color: "#9DB7D8", textc: "#9DB7D8" },
   { bucket: 1, label: "dZINC", asset: "ZINC", color: "#9A6BFF", textc: "#C7B3FF" },
 ] as const;
 
@@ -38,7 +39,7 @@ export function WalletAnalytics({ pubkey }: { pubkey: string }) {
     return (
       <div className="card">
         <p className="font-mono text-[12px] text-neg">{error}</p>
-        <button onClick={reload} className="mt-3 chip border-line text-fog-muted hover:text-white">retry</button>
+        <button onClick={reload} className="mt-3 chip border-steel/12 text-fog-muted hover:text-white">retry</button>
       </div>
     );
   }
@@ -73,7 +74,8 @@ export function WalletAnalytics({ pubkey }: { pubkey: string }) {
           {provenance.backfill_complete
             ? "Reconstructed from finalized on-chain history."
             : "Historical backfill still running — figures are provisional and may grow."}{" "}
-          Native units only; per-wallet SOL/ORE/ZINC won is pro-rata by your frozen share of each round (there is no per-wallet bet on chain).
+          Native units only; per-wallet SOL/ORE/ZINC won is pro-rata by your frozen share of each round (there is no per-wallet bet on chain).{" "}
+          ORE mined while a window is open is held in the shared miner (shown per-cycle as &quot;in miner&quot;) and is credited to your won / owed balance at the next settle.
         </p>
       )}
     </div>
@@ -115,11 +117,11 @@ function PoolSection({
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Stat label="Deposited" value={formatSol(depIn, 4)} unit="SOL" />
         <Stat label="Withdrawn" value={formatSol(out, 4)} unit="SOL" />
-        <Stat label="SOL won (rounds)" value={formatSol(won, 6)} unit="SOL" tone={pool.textc} strong />
+        <Stat label="SOL won (settled)" value={formatSol(won, 6)} unit="SOL" tone={pool.textc} strong />
         {isOre ? (
-          <Stat label="ORE won (rounds)" value={formatNum(oreWon, 6)} unit="ORE" tone={pool.textc} strong />
+          <Stat label="ORE won (settled)" value={formatNum(oreWon, 6)} unit="ORE" tone={pool.textc} strong />
         ) : (
-          <Stat label="ZINC won (rounds)" value={formatNum(zincWon, 6)} unit="ZINC" tone={pool.textc} strong />
+          <Stat label="ZINC won (settled)" value={formatNum(zincWon, 6)} unit="ZINC" tone={pool.textc} strong />
         )}
         <Stat
           label="Owed now (live)"
@@ -144,8 +146,8 @@ function PoolSection({
             You hold {pool.label} but no settled betting window has attributed to you yet.
           </p>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-line">
-            <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-x-3 border-b border-line bg-ink-800/60 px-3 py-2 font-mono text-[10.5px] uppercase tracking-wider text-fog-muted">
+          <div className="overflow-hidden rounded-xl border border-steel/12">
+            <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-x-3 border-b border-steel/12 bg-ink-800/60 px-3 py-2 font-mono text-[10.5px] uppercase tracking-wider text-fog-muted">
               <span>Cycle</span>
               <span>Window</span>
               <span className="text-right">Your share</span>
@@ -189,7 +191,7 @@ function CycleRow({ c, pool }: { c: WalletCycle; pool: (typeof POOLS)[number] })
   };
 
   return (
-    <div className="border-b border-line last:border-0">
+    <div className="border-b border-steel/12 last:border-0">
       <button
         onClick={toggle}
         className="grid w-full grid-cols-[auto_1fr_auto_auto_auto] items-center gap-x-3 px-3 py-2.5 text-left font-mono text-[12px] hover:bg-ink-800/40"
@@ -209,13 +211,19 @@ function CycleRow({ c, pool }: { c: WalletCycle; pool: (typeof POOLS)[number] })
         <span className="text-right text-gray-300">{formatPct(isFinite(frac) ? frac : 0, 2)}</span>
         <span className="text-right num text-gray-300">{formatSol(worked, 4)}</span>
         <span className="text-right num" style={{ color: pool.textc }}>
-          {formatNum(wonAsset, 4)} {isOre ? "ORE" : "ZINC"}
-          <span className="ml-1 text-fog-muted">/ {c.sol_recovered_attr == null ? "—" : `${formatSol(wonSol, 4)} SOL`}</span>
+          {c.settled ? (
+            <>
+              {formatNum(wonAsset, 4)} {isOre ? "ORE" : "ZINC"}
+              <span className="ml-1 text-fog-muted">/ {formatSol(wonSol, 4)} SOL</span>
+            </>
+          ) : (
+            <span className="text-fog-muted">expand →</span>
+          )}
         </span>
       </button>
 
       {open && (
-        <div className="border-t border-line bg-ink-900/40 px-3 py-3">
+        <div className="border-t border-steel/12 bg-ink-900/40 px-3 py-3">
           {loading && <p className="font-mono text-[11px] text-fog-muted">Loading rounds…</p>}
           {err && <p className="font-mono text-[11px] text-neg">{err}</p>}
           {detail && <CycleExpanded detail={detail} c={c} pool={pool} />}
@@ -229,51 +237,61 @@ function CycleExpanded({ detail, c, pool }: { detail: CycleDetail; c: WalletCycl
   const isOre = pool.bucket === 0;
   const cy = detail.cycle;
   const frac = Number(c.share_fraction);
-  const num = (k: string) => String(cy[k] ?? "");
+  const s = (k: string) => String(cy[k] ?? "");
+  const settled = !!cy.settled;
+  const deployedNet = lamportsToSol(s("sol_deployed_net"));
+  const recovered = cy.sol_recovered == null ? null : lamportsToSol(s("sol_recovered"));
+  const fee = lamportsToSol(s("volume_fee_lamports"));
+  const zincCredited = zincGramsToZinc(s("zinc_credited"));
+  const motherlode = oreGramsToOre(s("motherlode_grams"));
 
-  const deployedNet = lamportsToSol(num("sol_deployed_net"));
-  const recovered = cy.sol_recovered == null ? null : lamportsToSol(num("sol_recovered"));
-  const fee = lamportsToSol(num("volume_fee_lamports"));
-  const oreGrowth = oreGramsToOre(num("uore_rewards_growth")) + oreGramsToOre(num("uore_refined_growth"));
-  const zincCredited = zincGramsToZinc(num("zinc_credited"));
-  const ckptRew = oreGramsToOre(num("last_ckpt_rewards_ore"));
-  const ckptRef = oreGramsToOre(num("last_ckpt_refined_ore"));
-  const motherlode = oreGramsToOre(num("motherlode_grams"));
+  // Per-round ORE = the in-miner watermark GROWTH at each round (checkpoint deltas,
+  // in slot order). This is the real "how much ORE this round won" the chain records.
+  const oreByRound = new Map<string, number>();
+  let cum = 0;
+  for (const ck of [...detail.checkpoints].sort((a, b) => Number(a.slot) - Number(b.slot))) {
+    const v = oreGramsToOre(ck.rewards_ore) + oreGramsToOre(ck.refined_ore);
+    oreByRound.set(ck.round_id, Math.max(0, v - cum));
+    cum = v;
+  }
+  // What the window mined: the settle-credited growth once settled, else the in-miner
+  // running total (the cumulative checkpoint = the ORE the miner actually holds,
+  // pending the next settle that credits it). Never a misleading 0 while ORE is in the miner.
+  const oreCredited = oreGramsToOre(s("uore_rewards_growth")) + oreGramsToOre(s("uore_refined_growth"));
+  const oreMined = oreCredited > 0 ? oreCredited : cum;
 
   return (
     <div className="space-y-3">
       {/* what the WINDOW won + your slice */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
         <Mini k="Deployed (net)" v={`${formatSol(deployedNet, 4)} SOL`} sub={`your ${formatSol(deployedNet * frac, 5)}`} />
-        <Mini k="SOL won (window)" v={recovered == null ? "unsettled" : `${formatSol(recovered, 4)} SOL`} sub={recovered == null ? undefined : `your ${formatSol(recovered * frac, 5)}`} />
+        <Mini k="SOL won (window)" v={recovered == null ? "pending settle" : `${formatSol(recovered, 4)} SOL`} sub={recovered == null ? undefined : `your ${formatSol(recovered * frac, 5)}`} />
         {isOre ? (
-          <Mini k="ORE mined (window)" v={`${formatNum(oreGrowth, 4)} ORE`} sub={`your ${formatNum(oreGrowth * frac, 6)}`} />
+          <Mini
+            k={settled ? "ORE mined (window)" : "ORE in miner (gross)"}
+            v={`${formatNum(oreMined, 6)} ORE`}
+            sub={`your ${formatNum(oreMined * frac, 6)}${settled ? "" : " · credits at settle"}`}
+            tone={pool.textc}
+          />
         ) : (
-          <Mini k="ZINC smelted (window)" v={`${formatNum(zincCredited, 4)} ZINC`} sub={`your ${formatNum(zincCredited * frac, 6)}`} />
+          <Mini k="ZINC smelted (window)" v={`${formatNum(zincCredited, 6)} ZINC`} sub={`your ${formatNum(zincCredited * frac, 6)}`} tone={pool.textc} />
         )}
-        <Mini k="Rounds" v={String(cy.num_rounds ?? detail.cranks.length)} sub={`fee ${formatSol(fee, 5)} SOL`} />
+        <Mini k="Rounds" v={String(cy.num_rounds ?? detail.cranks.length)} sub={`fee ${formatSol(fee, 5)} SOL${motherlode > 0 ? ` · motherlode ${formatNum(motherlode, 2)} ORE` : ""}`} />
       </div>
-
-      {isOre && (ckptRew > 0 || ckptRef > 0 || motherlode > 0) && (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3 border-t border-line pt-2">
-          <Mini k="In-miner rewards (gross)" v={`${formatNum(ckptRew, 4)} ORE`} />
-          <Mini k="In-miner refined" v={`${formatNum(ckptRef, 4)} ORE`} />
-          {motherlode > 0 && <Mini k="Motherlode" v={`${formatNum(motherlode, 2)} ORE`} />}
-        </div>
-      )}
 
       {/* the actual rounds */}
       {detail.cranks.length > 0 && (
         <div>
           <div className="mb-1 label">Rounds in this window</div>
-          <div className="overflow-x-auto rounded-lg border border-line">
+          <div className="overflow-x-auto rounded-lg border border-steel/12">
             <table className="w-full font-mono text-[11px]">
               <thead>
-                <tr className="border-b border-line bg-ink-800/60 text-left text-fog-muted">
+                <tr className="border-b border-steel/12 bg-ink-800/60 text-left text-fog-muted">
                   <th className="px-2.5 py-1.5 font-normal">Round</th>
                   <th className="px-2.5 py-1.5 font-normal">Time</th>
                   <th className="px-2.5 py-1.5 text-right font-normal">Deployed (net)</th>
                   <th className="px-2.5 py-1.5 text-right font-normal">Your slice</th>
+                  {isOre && <th className="px-2.5 py-1.5 text-right font-normal">ORE won</th>}
                   {isOre && <th className="px-2.5 py-1.5 text-right font-normal">Tiles</th>}
                 </tr>
               </thead>
@@ -281,12 +299,18 @@ function CycleExpanded({ detail, c, pool }: { detail: CycleDetail; c: WalletCycl
                 {detail.cranks.map((r) => {
                   const net = lamportsToSol(r.net_amount_lamports);
                   const tms = r.block_time ? Date.parse(r.block_time) : 0;
+                  const ore = isOre ? oreByRound.get(r.round_id) : undefined;
                   return (
-                    <tr key={r.sig} className="border-b border-line/60 last:border-0">
+                    <tr key={r.sig} className="border-b border-steel/8 last:border-0">
                       <td className="px-2.5 py-1.5 text-white">#{r.round_id}</td>
                       <td className="px-2.5 py-1.5 text-fog-muted">{tms ? new Date(tms).toLocaleTimeString() : "·"}</td>
                       <td className="px-2.5 py-1.5 text-right text-gray-300">{formatSol(net, 4)}</td>
-                      <td className="px-2.5 py-1.5 text-right" style={{ color: pool.textc }}>{formatSol(net * frac, 5)}</td>
+                      <td className="px-2.5 py-1.5 text-right text-gray-400">{formatSol(net * frac, 5)}</td>
+                      {isOre && (
+                        <td className="px-2.5 py-1.5 text-right" style={{ color: ore ? pool.textc : undefined }}>
+                          {ore == null ? "·" : ore === 0 ? <span className="text-fog-dim">0</span> : formatNum(ore, 6)}
+                        </td>
+                      )}
                       {isOre && <td className="px-2.5 py-1.5 text-right text-fog-muted">{r.squares_selected}</td>}
                     </tr>
                   );
@@ -302,7 +326,7 @@ function CycleExpanded({ detail, c, pool }: { detail: CycleDetail; c: WalletCycl
 
 function Stat({ label, value, unit, sub, tone, strong }: { label: string; value: string; unit?: string; sub?: string; tone?: string; strong?: boolean }) {
   return (
-    <div className="rounded-lg border border-line bg-ink-800/50 px-3 py-2.5">
+    <div className="rounded-lg border border-steel/12 bg-ink-800/50 px-3 py-2.5">
       <div className="label">{label}</div>
       <div className="mt-1 flex items-baseline gap-1">
         <span className="num text-base" style={strong && tone ? { color: tone } : undefined}>{value}</span>
@@ -313,11 +337,11 @@ function Stat({ label, value, unit, sub, tone, strong }: { label: string; value:
   );
 }
 
-function Mini({ k, v, sub }: { k: string; v: string; sub?: string }) {
+function Mini({ k, v, sub, tone }: { k: string; v: string; sub?: string; tone?: string }) {
   return (
     <div className="font-mono text-[11px]">
       <div className="text-fog-muted">{k}</div>
-      <div className="num text-gray-200">{v}</div>
+      <div className="num text-gray-200" style={tone ? { color: tone } : undefined}>{v}</div>
       {sub && <div className="text-[10px] text-fog-dim">{sub}</div>}
     </div>
   );

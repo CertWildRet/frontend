@@ -65,8 +65,10 @@ export function WalletButton() {
   };
 
   return (
-    <button onClick={onConnect} disabled={connecting} className="btn-primary px-5">
-      {connecting ? "Connecting…" : "Connect Wallet"}
+    <button onClick={onConnect} disabled={connecting} className="btn-primary px-4 sm:px-5">
+      {connecting ? "Connecting…" : (
+        <>Connect<span className="hidden sm:inline"> Wallet</span></>
+      )}
     </button>
   );
 }
