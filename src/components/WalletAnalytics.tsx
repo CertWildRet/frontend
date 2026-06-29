@@ -39,7 +39,7 @@ export function WalletAnalytics({ pubkey }: { pubkey: string }) {
     return (
       <div className="card">
         <p className="font-mono text-[12px] text-neg">{error}</p>
-        <button onClick={reload} className="mt-3 chip border-steel/12 text-fog-muted hover:text-white">retry</button>
+        <button onClick={reload} className="mt-3 chip text-fog-muted hover:text-white">retry</button>
       </div>
     );
   }
@@ -146,7 +146,7 @@ function PoolSection({
             You hold {pool.label} but no settled betting window has attributed to you yet.
           </p>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-steel/12">
+          <div className="overflow-hidden rounded-xl bg-white/[0.02]">
             <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-x-3 bg-ink-800/60 px-3 py-2 font-mono text-[10.5px] uppercase tracking-wider text-fog-muted">
               <span>Cycle</span>
               <span>Window</span>
@@ -283,7 +283,7 @@ function CycleExpanded({ detail, c, pool }: { detail: CycleDetail; c: WalletCycl
       {detail.cranks.length > 0 && (
         <div>
           <div className="mb-1 label">Rounds in this window</div>
-          <div className="overflow-x-auto rounded-lg border border-steel/12">
+          <div className="overflow-x-auto rounded-lg bg-white/[0.02]">
             <table className="w-full font-mono text-[11px]">
               <thead>
                 <tr className="bg-ink-800/60 text-left text-fog-muted">
@@ -326,7 +326,7 @@ function CycleExpanded({ detail, c, pool }: { detail: CycleDetail; c: WalletCycl
 
 function Stat({ label, value, unit, sub, tone, strong }: { label: string; value: string; unit?: string; sub?: string; tone?: string; strong?: boolean }) {
   return (
-    <div className="rounded-lg border border-steel/12 bg-ink-800/50 px-3 py-2.5">
+    <div className="rounded-lg bg-white/[0.04] px-3 py-2.5">
       <div className="label">{label}</div>
       <div className="mt-1 flex items-baseline gap-1">
         <span className="num text-base" style={strong && tone ? { color: tone } : undefined}>{value}</span>
