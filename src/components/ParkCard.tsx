@@ -114,7 +114,7 @@ export function ParkCard({ data, onDone }: { data: VaultData | null; onDone: () 
       </div>
 
       {belowMin && (
-        <p className="mt-2 font-mono text-[12px] text-amber">Minimum is {MIN_DEPOSIT_SOL} SOL.</p>
+        <p className="mt-2 font-mono text-[12px] text-amber">Deposit at least {MIN_DEPOSIT_SOL} SOL.</p>
       )}
 
       <div className="mt-auto pt-4">

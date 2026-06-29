@@ -74,7 +74,7 @@ export function ZincPositionCard({
 
       {shares === 0 && (
         <p className="mt-4 font-mono text-[12px] text-fog-muted">
-          No dZINC yet. Mint some during the deposit window to start earning.
+          No dZINC yet. Mint some during the deposit window to join the pool.
         </p>
       )}
     </div>

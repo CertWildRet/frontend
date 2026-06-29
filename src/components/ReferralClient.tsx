@@ -141,8 +141,8 @@ export function ReferralClient({ inviteCode }: { inviteCode?: string }) {
         <Card>
           <h3 className="font-display text-base font-semibold text-white">You were invited</h3>
           <p className="mb-4 mt-1 font-mono text-[12px] text-fog-muted">
-            Join via code <span className="text-[#9DB7D8]">{inviteCode}</span>. Your future deposits will credit your
-            referrer 0.1% of the volume they work, and it costs you nothing.
+            Join via code <span className="text-[#9DB7D8]">{inviteCode}</span>. Your referrer earns 0.1% of the deploy
+            volume the pool mines on your behalf, and it costs you nothing.
           </p>
           {joined ? (
             <a href="/ore" className="btn-primary inline-block px-5 py-2">Go deposit →</a>

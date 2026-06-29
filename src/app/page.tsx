@@ -25,8 +25,8 @@ const STEPS = [
   },
   {
     n: "03",
-    t: "Claim or let it earn APY",
-    d: "Pull out to SOL whenever you want, or hold your dORE / dZINC and let it keep compounding.",
+    t: "Claim or let it keep working",
+    d: "Pull out to SOL during any open claim window, or hold on. dORE compounds into stORE; dZINC holds your smelted ZINC in kind.",
     Graphic: StepYieldGraphic,
   },
 ];
@@ -41,7 +41,7 @@ const EDGE = [
   {
     grade: "VVS2",
     t: "Hit more wins.",
-    d: "The pool covers the whole board every round, so it catches winning tiles a lone miner deploys too little to reach.",
+    d: "On every round it mines, the pool covers the whole board, so it catches winning tiles a lone miner deploys too little to reach.",
     metric: "better odds",
   },
   {
@@ -70,7 +70,7 @@ const TEAM = [
 const HERO_SPECS = [
   "Non-custodial",
   "Transparent",
-  "No Claim fee",
+  "No CWR claim fee",
   "Built by miners for miners",
 ];
 
@@ -232,7 +232,7 @@ export default function DispersionLanding() {
             </span>
           </h1>
           <p className="mt-7 max-w-[560px] text-[17px] leading-relaxed text-[#A8B0D4]">
-            Join the Diamond Pool and mine ORE and ZINC together, as one whale.
+            Join the Diamond Pools and mine ORE and ZINC, each pool as one whale.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3.5">
@@ -360,9 +360,9 @@ export default function DispersionLanding() {
             </p>
             <p className="text-[15px] leading-relaxed text-[#A8B0D4]">
               We build on advantages that don&apos;t depend on someone else
-              playing badly. Pooling lowers your variance. Holding compounds
-              your yield. Flexible claims let you take profit without giving up
-              your position.
+              playing badly. Pooling lowers your variance. Holding dORE
+              compounds yield via stORE; dZINC holds your smelted ZINC in kind.
+              Flexible claims let you take profit without giving up your position.
             </p>
           </div>
           <div className="mt-8 inline-flex items-center gap-3">
@@ -391,7 +391,7 @@ export default function DispersionLanding() {
               explorer at any time. The vault holds the SOL, the program mines it,
               and funds only ever move{" "}
               <span className="text-[#EAECF6]" style={mono}>
-                vault → ORE → back
+                vault → ORE / ZINC → back
               </span>
               .
             </p>
@@ -613,7 +613,7 @@ export default function DispersionLanding() {
             className="relative text-[clamp(1.8rem,4vw,3rem)] font-bold leading-[1.05] text-[#EAECF6]"
             style={display}
           >
-            Pool your SOL. Mine ORE and ZINC as one.
+            Pool your SOL. Mine ORE and ZINC like a whale.
           </h2>
           <p className="relative mx-auto mt-4 max-w-[500px] text-[15px] text-[#A8B0D4]">
             One disciplined pool, a keeper that never sleeps, and a claim window

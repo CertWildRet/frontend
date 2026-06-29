@@ -60,7 +60,7 @@ export function OreBoardHero({ data }: { data: VaultData | null }) {
       bloom="radial-gradient(circle, rgba(34,224,230,0.18), rgba(91,108,255,0.08) 45%, transparent 72%)"
       dotGlow="rgba(34,224,230,0.6)"
       tilesLabel="25 tiles"
-      blurb="Every round, the keeper mines the whole 25-tile board, claim when the window opens, or hold your dORE and let it keep compounding into stORE. Disciplined: it only commits on rounds it likes."
+      blurb="On rounds it mines, the keeper covers the whole 25-tile board; claim when the window opens, or hold your dORE and let it keep compounding into stORE. Disciplined: it only commits on rounds it likes."
       bullets={[
         "25/25 tiles every eligible round, full board coverage",
         "mine, claim, wrap to stORE; your dORE is a pro-rata claim on it all",

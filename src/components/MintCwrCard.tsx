@@ -78,7 +78,7 @@ export function MintCwrCard({ data, onDone }: { data: VaultData | null; onDone: 
       </div>
       {belowMin && (
         <p className="mt-1.5 font-mono text-[12px] text-amber">
-          Minimum deposit is {MIN_DEPOSIT_SOL} SOL.
+          Deposit at least {MIN_DEPOSIT_SOL} SOL.
         </p>
       )}
 
