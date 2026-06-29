@@ -44,16 +44,10 @@ export default function ZincPage() {
     <div className="space-y-8">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="font-display text-2xl font-bold tracking-tight text-white">ZINC</h1>
-            {notLive ? (
-              <span className="chip border-amber/30 text-amber">not live yet</span>
-            ) : (
-              <span className="chip border-pos/40 text-white">
-                <span className="live-dot text-pos" /> live
-              </span>
-            )}
-          </div>
+          {/* live status now lives in the top ZincStatTicker (crank online), so
+              the header is just the title — matching the /ore header. The
+              not-live case is still handled by the NotLivePanel body. */}
+          <h1 className="font-display text-2xl font-bold tracking-tight text-white">ZINC</h1>
           <p className="mt-1.5 max-w-2xl text-sm text-fog-dim">
             Deposit SOL to mint dZINC. A keeper mines the ZINC board around the clock, smelts the
             winnings, and holds them for you - the same non-custodial, on-chain model as the ORE pool.
