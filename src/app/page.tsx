@@ -14,13 +14,13 @@ const STEPS = [
   {
     n: "01",
     t: "Get dORE & dZINC tokens",
-    d: "Each is your pro-rata share of a Diamond Pool — dORE tracks ORE, dZINC tracks ZINC.",
+    d: "Each is your pro-rata share of a Diamond Pool. dORE tracks ORE, dZINC tracks ZINC.",
     Graphic: StepTokenGraphic,
   },
   {
     n: "02",
     t: "Let our algorithms do the work",
-    d: "It mines the full ORE board (25 tiles) and the ZINC wheel (30 tiles) — only on rounds that are EV-positive.",
+    d: "It mines the full ORE board (25 tiles) and the ZINC wheel (30 tiles), only on rounds that are EV-positive.",
     Graphic: StepBoardGraphic,
   },
   {
@@ -84,7 +84,7 @@ export default function DispersionLanding() {
 
       {/* ══ HERO ═══════════════════════════════════════════════════ */}
       <section className="relative mt-4 sm:mt-6">
-        {/* floating 3D brilliant-cut diamond, top-right — the refractor */}
+        {/* floating 3D brilliant-cut diamond, top-right - the refractor */}
         <div
           aria-hidden
           className="pointer-events-none absolute right-[0%] top-1/2 hidden h-[291px] w-[336px] -translate-y-1/2 md:block lg:h-[374px] lg:w-[432px] xl:h-[416px] xl:w-[480px]"
@@ -146,19 +146,19 @@ export default function DispersionLanding() {
                 </radialGradient>
               </defs>
 
-              {/* pavilion (lower point) — luminous, reflective facets */}
+              {/* pavilion (lower point) - luminous, reflective facets */}
               <polygon points="30,72 100,72 100,180" fill="url(#d3-pavilion)" opacity="0.97" />
               <polygon points="170,72 100,72 100,180" fill="url(#d3-pavR)" opacity="0.95" />
               <polygon points="30,72 60,72 100,180" fill="url(#d3-pavOuterL)" opacity="0.95" />
               <polygon points="170,72 140,72 100,180" fill="url(#d3-pavOuterR)" opacity="0.93" />
 
-              {/* specular shine — bright belt + glints converging to the culet */}
+              {/* specular shine - bright belt + glints converging to the culet */}
               <polygon points="30,72 170,72 138,99 62,99" fill="#FFFFFF" opacity="0.14" />
               <polygon points="60,73 67,73 100,180" fill="#CFFAFF" opacity="0.24" />
               <polygon points="86,73 97,73 100,180" fill="#FFFFFF" opacity="0.32" />
               <polygon points="104,73 116,73 100,180" fill="#FFE7F6" opacity="0.24" />
 
-              {/* girdle band — bright reflective belt */}
+              {/* girdle band - bright reflective belt */}
               <polygon points="30,68 170,68 170,74 30,74" fill="#D7CBFF" opacity="0.45" />
               <line x1="30" y1="69" x2="170" y2="69" stroke="#FFFFFF" strokeOpacity="0.5" strokeWidth="0.7" />
 
@@ -172,7 +172,7 @@ export default function DispersionLanding() {
               <polygon points="55,30 72,30 50,52 30,68" fill="url(#d3-crownL)" opacity="0.9" />
               <polygon points="145,30 128,30 150,52 170,68" fill="url(#d3-crownR)" opacity="0.9" />
               <polygon points="50,52 150,52 170,68 30,68" fill="#6E7BFF" opacity="0.4" />
-              {/* bright kite facets — cyan + fire */}
+              {/* bright kite facets - cyan + fire */}
               <polygon points="72,30 100,42 100,30" fill="#3BF0F2" opacity="0.7" />
               <polygon points="128,30 100,42 100,30" fill="url(#d3-fire)" opacity="0.6" />
 
@@ -232,7 +232,7 @@ export default function DispersionLanding() {
             </span>
           </h1>
           <p className="mt-7 max-w-[560px] text-[17px] leading-relaxed text-[#A8B0D4]">
-            Join the Diamond Pool and mine ORE and ZINC together — as one whale.
+            Join the Diamond Pool and mine ORE and ZINC together, as one whale.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3.5">
@@ -273,7 +273,7 @@ export default function DispersionLanding() {
         </PauseWhenOffscreen>
       </section>
 
-      {/* ══ THE EDGE — graded comparison table ═════════════════════ */}
+      {/* ══ THE EDGE - graded comparison table ═════════════════════ */}
       <section className="mt-28">
         <SectionLabel k="the edge" t="Whale-like performance." />
         <div
@@ -378,7 +378,7 @@ export default function DispersionLanding() {
             </span>
           </div>
 
-          {/* transparency — blended in from the onchain section */}
+          {/* transparency - blended in from the onchain section */}
           <div className="mt-10 border-t border-[rgba(255,255,255,0.08)] pt-8">
             <h2
               className="max-w-[720px] text-[clamp(1.5rem,3vw,2.1rem)] font-bold leading-[1.08] text-[#EAECF6]"
@@ -399,11 +399,11 @@ export default function DispersionLanding() {
         </div>
       </section>
 
-      {/* ══ POOLS — two crystal shards ═════════════════════════════ */}
+      {/* ══ POOLS - two crystal shards ═════════════════════════════ */}
       <section className="mt-28">
         <SectionLabel k="pools" t="Two shards. Both lit." />
         <PauseWhenOffscreen className="mt-9 grid gap-6 md:grid-cols-2">
-          {/* dORE — LIVE */}
+          {/* dORE - LIVE */}
           <Tilt>
             <div
               className={`${styles.glass} ${styles.spectralEdge} ${styles.cutTR} relative flex h-full flex-col overflow-hidden rounded-3xl p-8`}
@@ -475,7 +475,7 @@ export default function DispersionLanding() {
             </div>
           </Tilt>
 
-          {/* dZINC — LIVE */}
+          {/* dZINC - LIVE */}
           <Tilt>
             <div
               className={`${styles.glass} ${styles.spectralEdge} ${styles.cutBL} relative flex h-full flex-col overflow-hidden rounded-3xl p-8`}
@@ -672,7 +672,7 @@ function HowRow({
   );
 }
 
-/* Step 1 — SOL refracts into the dORE + dZINC share tokens.
+/* Step 1 - SOL refracts into the dORE + dZINC share tokens.
    A single shared spectral ring orbits BOTH shards as a pair; one light
    particle rides that orbit and warms whichever shard it passes (dZINC right,
    dORE left). A faint STATIC spectral track wires the two shards together even
@@ -767,7 +767,7 @@ function OreBoard({ size, animated = true }: { size: number; animated?: boolean 
   );
 }
 
-/* Step 2 — the keeper mines BOTH boards (ORE 25-tile + ZINC 30-tile wheel),
+/* Step 2 - the keeper mines BOTH boards (ORE 25-tile + ZINC 30-tile wheel),
    only on EV-positive rounds. */
 function StepBoardGraphic() {
   return (
@@ -798,10 +798,10 @@ function StepBoardGraphic() {
   );
 }
 
-/* Step 3 — value compounds upward into APY.
+/* Step 3 - value compounds upward into APY.
    FRAME-LOCK: the line draw, the area fade and the rider dot are ALL driven by
    SMIL <animate>/<animateMotion> inside this one <svg>, so they share the
-   single SVG SMIL clock with identical dur/keyTimes/keySplines — no CSS-vs-SMIL
+   single SVG SMIL clock with identical dur/keyTimes/keySplines - no CSS-vs-SMIL
    drift. The dot rides the same #apyPath in user-space (keyPoints 0;1;1), so it
    scales 1:1 with the line at every render size and sits exactly on the painted
    tip, then parks there for the ~5s hold. */
@@ -823,7 +823,7 @@ function StepYieldGraphic() {
         </linearGradient>
       </defs>
       <line x1="6" y1="84" x2="94" y2="84" stroke="rgba(255,255,255,0.08)" strokeWidth="0.6" />
-      {/* AREA — fades in on the same SMIL clock as the draw. */}
+      {/* AREA - fades in on the same SMIL clock as the draw. */}
       <path
         className={styles.howArea}
         d="M6 82 C 28 80, 40 62, 56 50 S 80 22, 94 10 L94 84 L6 84 Z"
@@ -841,7 +841,7 @@ function StepYieldGraphic() {
           fill="freeze"
         />
       </path>
-      {/* LINE — stroke-dashoffset animated by SMIL (NOT CSS) so it shares the
+      {/* LINE - stroke-dashoffset animated by SMIL (NOT CSS) so it shares the
           dot's clock. pathLength=1 normalizes the dash at every render size. */}
       <path
         id="apyPath"
@@ -867,7 +867,7 @@ function StepYieldGraphic() {
           fill="freeze"
         />
       </path>
-      {/* DOT — same SVG SMIL clock + same dur/keyTimes/keySplines as the draw,
+      {/* DOT - same SVG SMIL clock + same dur/keyTimes/keySplines as the draw,
           so it is frame-locked to the painted tip. keyPoints 0;1;1 parks it at
           the tip during the hold. cx/cy stay 0 + r fixed => perfectly round at
           any size. Opacity fade is also SMIL (shared clock). */}

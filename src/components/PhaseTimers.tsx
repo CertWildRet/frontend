@@ -10,7 +10,7 @@ export function PhaseTimers({ data }: { data: VaultData | null }) {
     return (
       <div className="card">
         <p className="font-mono text-sm text-fog-muted">
-          Pool isn&apos;t live on-chain yet. Timers start once the Simple bucket is initialized.
+          Pool isn&apos;t live on-chain yet. Timers start once the dORE pool is initialized.
         </p>
       </div>
     );

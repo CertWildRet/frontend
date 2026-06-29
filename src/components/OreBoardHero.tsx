@@ -8,11 +8,11 @@ import type { VaultData } from "@/hooks/useVaultData";
 
 /**
  * The /ore hero: the 25-tile ORE board as the page centrepiece, wired to LIVE
- * dORE data — the cyan twin of the /zinc roulette hero. Full 25-tile coverage
+ * dORE data - the cyan twin of the /zinc roulette hero. Full 25-tile coverage
  * (the strategy). The centre readout mirrors the live phase (BETTING => "mining"
  * + countdown; OPEN => "claim window" + countdown), plus the pool's held stORE
  * and the dORE SOL price. Renders via the shared <PoolIntro>, so it shares the
- * exact layout/feel of the ZINC hero — the only deltas are the board (a 5x5
+ * exact layout/feel of the ZINC hero - the only deltas are the board (a 5x5
  * grid vs a 30-tile ring), the cyan accent, and the ORE wording.
  */
 export function OreBoardHero({ data }: { data: VaultData | null }) {
@@ -95,7 +95,7 @@ export function OreBoardHero({ data }: { data: VaultData | null }) {
 
 /**
  * The 25-tile ORE board centrepiece: a full-coverage 5x5 grid (cyan -> blue)
- * with the live phase readout floating over a circular scrim in the middle —
+ * with the live phase readout floating over a circular scrim in the middle -
  * the grid analog of the ZINC roulette's ring-with-centre-readout.
  */
 function OreHeroBoard({ size, center, lit }: { size: number; center: ReactNode; lit: boolean }) {

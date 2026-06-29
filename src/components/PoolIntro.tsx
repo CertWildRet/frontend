@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
  * Shared pool-intro hero: a `panel` with the board visualization on the left
  * and the "full coverage" headline + mechanics bullets on the right. Both the
  * ORE pool (/ore) and the ZINC pool (/zinc) render this with their own board,
- * accent and copy — the ONLY deltas between the two heroes are the individual
+ * accent and copy - the ONLY deltas between the two heroes are the individual
  * properties (board, colors, tile count, wording). The layout is identical so
  * the two pages share one feel.
  */

@@ -95,7 +95,7 @@ export function ClaimZincCard({
           <button
             disabled={!actionable}
             onClick={onClaim}
-            className="btn w-full border border-gold/60 py-2.5 font-semibold text-gold transition hover:bg-gold/10 disabled:border-line disabled:text-fog-muted"
+            className="btn-claim py-2.5"
           >
             {busy ? "Confirming…" : "Claim"}
           </button>

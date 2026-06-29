@@ -4,7 +4,7 @@ import type { ZincPoolStats } from "@/lib/cwr";
 import { formatNum, formatSol } from "@/lib/format";
 
 /**
- * dZINC pool economics — the HOLD-only twin of <PoolEconomics> (same `card`
+ * dZINC pool economics - the HOLD-only twin of <PoolEconomics> (same `card`
  * wrapper + Big/Section/Row sub-components, verbatim, so the two pools read
  * identically). The ZINC value model is intentionally leaner: there is NO
  * miner, NO stORE oracle and NO price feed, so every miner/stORE/lifetime/PnL/
@@ -112,7 +112,7 @@ function Big({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mt-5">
-      <div className="label mb-2 text-white">{title}</div>
+      <div className="section-label mb-2">{title}</div>
       <div className="space-y-1.5">{children}</div>
     </div>
   );

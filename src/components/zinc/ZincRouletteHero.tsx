@@ -13,7 +13,7 @@ import type { ZincPoolStats } from "@/lib/cwr";
  * countdown), plus the pool's held smelted-ZINC and the dZINC SOL price.
  *
  * Renders via the shared <PoolIntro> so it shares the exact layout/feel of the
- * ORE hero — the only deltas are the board (a 30-tile ring vs a 5x5 grid), the
+ * ORE hero - the only deltas are the board (a 30-tile ring vs a 5x5 grid), the
  * purple->pink accent, and the ZINC wording. Carries the full ZINC mechanics
  * bullet list (the old standalone "How ZINC works" card folded in here).
  *

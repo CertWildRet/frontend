@@ -100,16 +100,15 @@ export function ZincRoulette({
   });
 
   return (
-    <div
-      className={`${styles.root} ${className}`}
-      style={{ width: size, height: size }}
-      aria-hidden
-    >
+    <div className={`${styles.root} ${className}`} style={{ width: size, height: size }}>
+      {/* the ring + tile numbers are decorative; the live centre readout below
+          is the meaningful content, so only the SVG is hidden from SR. */}
       <svg
         viewBox={`0 0 ${VB} ${VB}`}
         width={size}
         height={size}
         className="block h-full w-full"
+        aria-hidden
       >
         <defs>
           {/* lit tile: dZINC purple -> pink */}

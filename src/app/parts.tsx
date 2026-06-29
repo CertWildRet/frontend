@@ -93,7 +93,7 @@ export function ArrowIcon({ className }: IconProps) {
   );
 }
 
-/** Holographic tilt wrapper — card parallaxes toward pointer. */
+/** Holographic tilt wrapper - card parallaxes toward pointer. */
 export function Tilt({
   children,
   className = "",

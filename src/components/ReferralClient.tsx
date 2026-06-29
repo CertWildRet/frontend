@@ -133,7 +133,7 @@ export function ReferralClient({ inviteCode }: { inviteCode?: string }) {
         <Card>
           <h3 className="font-display text-base font-semibold text-white">Connect to start</h3>
           <p className="mb-4 mt-1 font-mono text-[12px] text-fog-muted">
-            Connect your wallet to {inviteCode ? "accept your invite" : "register and earn 0.1% of every deposit you bring"}.
+            Connect your wallet to {inviteCode ? "accept your invite" : "register and earn 0.1% of the deploy volume you bring"}.
           </p>
           <WalletButton />
         </Card>

@@ -21,7 +21,7 @@ const activeStyle = {
     "0 0 24px -6px rgba(91,108,255,0.65), inset 0 1px 0 rgba(255,255,255,0.15)",
 } as const;
 
-/** The dispersion prism mark — spectral-stroke triangle (matches the /3 logo). */
+/** The dispersion prism mark - spectral-stroke triangle (matches the /3 logo). */
 function PrismMark({ className = "" }: { className?: string }) {
   const sp = "url(#site-spectral)";
   return (
@@ -34,7 +34,7 @@ function PrismMark({ className = "" }: { className?: string }) {
 }
 
 /**
- * The single, app-wide top bar — dispersion/glass theme. Renders the prism
+ * The single, app-wide top bar - dispersion/glass theme. Renders the prism
  * logo, the nav with an active-route glass pill, and the wallet button. Used
  * by the root layout so every page (including /3) shares one header.
  */

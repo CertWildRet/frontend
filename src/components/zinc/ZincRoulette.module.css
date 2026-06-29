@@ -33,7 +33,7 @@
   animation: zincShimmer 4.6s ease-in-out infinite;
 }
 
-/* opacity-only shimmer — the animated SVG drop-shadow (a blur) was the single
+/* opacity-only shimmer - the animated SVG drop-shadow (a blur) was the single
    most expensive per-frame op on the landing (up to 60 lit tiles across both
    instances). The 0.92->1 opacity pulse carries the shimmer read; at 130-165px
    render size the 4px shadow pulse was imperceptible anyway. */

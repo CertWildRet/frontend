@@ -77,7 +77,7 @@ export function MintZincCard({ data, onDone }: { data: ZincPoolStats | null; onD
         <span className="num text-gray-200">{formatNum(estShares, 4)} dZINC</span>
       </div>
       {belowMin && (
-        <p className="mt-1.5 font-mono text-[12px] text-amber-400/80">
+        <p className="mt-1.5 font-mono text-[12px] text-amber">
           Minimum deposit is {MIN_DEPOSIT_SOL} SOL.
         </p>
       )}

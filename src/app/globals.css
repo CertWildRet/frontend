@@ -28,6 +28,17 @@
   ::-webkit-scrollbar-thumb:hover {
     background: #2a303c;
   }
+  /* visible keyboard focus on every interactive control (custom buttons, nav
+     pills, links). Spectral gold ring sits outside the element so the
+     gradient-bordered buttons don't swallow it. */
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  [tabindex="0"]:focus-visible {
+    outline: 2px solid #ffc061;
+    outline-offset: 2px;
+    border-radius: inherit;
+  }
 }
 
 /* ── Dispersion atmosphere: spectral aurora + foil + crystalline grid ── */
@@ -74,7 +85,7 @@
   100% { transform: translate3d(-1%, 2%, 0) scale(1.03) rotate(0.5deg); }
 }
 
-/* iridescent foil grain — gives the dark wash its living shimmer */
+/* iridescent foil grain - gives the dark wash its living shimmer */
 .atmosphere-foil {
   position: absolute;
   inset: 0;
@@ -292,6 +303,26 @@
 
   .tile {
     @apply relative flex aspect-square flex-col justify-end overflow-hidden rounded-lg border border-line bg-ink-800/60 p-2 transition-all duration-300;
+  }
+
+  /* in-card section divider / sub-header. Plain .label stays muted (field
+     captions); .section-label is the white in-card heading variant so callers
+     stop hand-appending `text-white` to .label. */
+  .section-label {
+    @apply label text-white;
+  }
+
+  /* the secondary / withdraw action (Claim). One source of truth so the two
+     pool Claim cards don't each carry an ad-hoc inline button string. */
+  .btn-claim {
+    @apply btn w-full font-semibold text-gold;
+    border: 1px solid rgba(157, 183, 216, 0.6);
+  }
+  .btn-claim:hover {
+    background: rgba(157, 183, 216, 0.1);
+  }
+  .btn-claim:disabled {
+    @apply cursor-not-allowed border-line text-fog-muted;
   }
 }
 

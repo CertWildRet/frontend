@@ -17,7 +17,7 @@ const config: Config = {
           DEFAULT: "rgba(255,255,255,0.08)",
           bright: "rgba(255,255,255,0.15)",
         },
-        // Primary brand accent — retheme to silver-blue (the diamond). Class names
+        // Primary brand accent - retheme to silver-blue (the diamond). Class names
         // keep the "gold" key so every `text-gold` / `bg-gold` etc. retints at once.
         gold: { DEFAULT: "#9DB7D8", soft: "#C9D2DE", deep: "#5A6E8C", bright: "#E8EFFA" },
         amber: { DEFAULT: "#E8881A" },

@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   DISPERSION — Concept 3
+   DISPERSION - Concept 3
    Optical fire: white light splitting into a controlled spectrum.
    Indigo-black base, glass crystal surfaces, refractive spectral edges.
    ════════════════════════════════════════════════════════════════ */
@@ -66,7 +66,7 @@
   );
 }
 
-/* ONE sharp cut corner per card — crystal character */
+/* ONE sharp cut corner per card - crystal character */
 .cutTR {
   clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
 }
@@ -141,7 +141,7 @@
   background: rgba(234, 236, 246, 0.07);
 }
 
-/* iridescent refractive CTA pill — hue shifts continuously */
+/* iridescent refractive CTA pill - hue shifts continuously */
 .prismPill {
   position: relative;
   overflow: hidden;
@@ -225,7 +225,7 @@
 .prismShard {
   animation: prismFloat 9s ease-in-out infinite;
   transform-origin: 50% 90%;
-  /* static glow (was an animated drop-shadow blur — expensive per-frame on a
+  /* static glow (was an animated drop-shadow blur - expensive per-frame on a
      ~480px element). The bloom "swell" is now carried by the sibling
      .prismHalo opacity pulse, which is compositor-safe. */
   filter: drop-shadow(0 0 34px rgba(120, 124, 255, 0.5));
@@ -420,7 +420,7 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
-   HOW IT WORKS — per-step animated graphics (pure CSS, looped)
+   HOW IT WORKS - per-step animated graphics (pure CSS, looped)
    ════════════════════════════════════════════════════════════════ */
 .howStage {
   position: relative;
@@ -430,7 +430,7 @@
   margin: 0 auto;
 }
 
-/* Step 1 — SOL streams in and refracts into a dOre share token */
+/* Step 1 - SOL streams in and refracts into a dOre share token */
 .howOrbit {
   position: absolute;
   inset: 10%;
@@ -564,7 +564,7 @@
   box-shadow: 0 0 10px rgba(127, 216, 255, 0.95), 0 0 18px rgba(91, 108, 255, 0.55);
 }
 @keyframes howOrbit { to { transform: rotate(360deg); } }
-/* the shard slot — above the link; gentle shared breathing of the whole pair. */
+/* the shard slot - above the link; gentle shared breathing of the whole pair. */
 .howShard {
   position: relative;
   z-index: 1;
@@ -604,7 +604,7 @@
   25% { opacity: 0.85; }
 }
 
-/* Step 2 — keeper sweeps and mines all 25 tiles when EV-positive */
+/* Step 2 - keeper sweeps and mines all 25 tiles when EV-positive */
 .howBoard {
   position: absolute;
   inset: 9%;
@@ -656,10 +656,10 @@
   22%, 52% { opacity: 1; transform: scale(1); }
 }
 
-/* Step 3 — value compounds upward into APY.
+/* Step 3 - value compounds upward into APY.
    The line draw, area fade and rider dot are ALL driven by SMIL <animate>/
    <animateMotion> inside the one <svg> (see StepYieldGraphic), so they share
-   the single SVG SMIL clock and stay frame-locked — no CSS-vs-SMIL drift.
+   the single SVG SMIL clock and stay frame-locked - no CSS-vs-SMIL drift.
    These CSS rules therefore carry NO @keyframes for them; adding a CSS
    animation on any attribute the SMIL also animates would re-introduce a 2nd
    clock and the dot would drift off the tip again. pathLength="1" (set in JSX)
@@ -694,8 +694,8 @@
   /* tiles statically lit. */
   .howTile::after { opacity: 1; }
   /* the SMIL <animate> use fill="freeze" and resolve to the fully-drawn line +
-     filled area + dot parked at the tip (94,10) — i.e. the desired static
-     frame — so no CSS override of the draw is needed. Just swap the dots. */
+     filled area + dot parked at the tip (94,10) - i.e. the desired static
+     frame - so no CSS override of the draw is needed. Just swap the dots. */
   .howArea { opacity: 0.5; }
   .howSpark { opacity: 0; }
   .howSparkStatic { opacity: 1; }
@@ -706,7 +706,7 @@
    out of the viewport: freezes ALL its CSS animations so the boards, rings and
    border shimmers stop compositing/painting while off-screen (the single
    biggest steady-state perf win). Visual is identical while visible. Does not
-   affect SMIL — the APY dot is handled via the SVG pauseAnimations() hook. */
+   affect SMIL - the APY dot is handled via the SVG pauseAnimations() hook. */
 .offscreenPaused,
 .offscreenPaused * {
   animation-play-state: paused !important;
