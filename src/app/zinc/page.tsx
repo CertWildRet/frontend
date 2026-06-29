@@ -23,7 +23,7 @@ export const metadata: Metadata = {
  *                      (v1 ships HOLD-only "until unstake-on-claim ships"); staking
  *                      is a planned toggle, and there is no liquid stZINC token.
  * Min deploy: the ZINC PROTOCOL floor is 0.05 SOL/round (Config.min_deploy_lamports);
- * the dZINC vault adapter deploys full 30-tile coverage at ~1.5 SOL/round by default
+ * the ZINC pool's adapter deploys full 30-tile coverage at ~1.5 SOL/round by default
  * (ZINC_PER_TILE_MIN 0.05 x 30 = ZINC_ADAPTER_MIN_ROUND_DEFAULT, admin-tunable via
  * min_round_lamports) for 0% ruin, production-cost gated (mine iff cost-to-mine < ZINC price).
  */
