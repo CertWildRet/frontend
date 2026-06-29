@@ -1,4 +1,4 @@
-// Chain layer for the CWR frontend.
+// Chain layer for the dORE frontend.
 //
 // Reads use the SDK's read-only client (a dummy wallet - no signer needed).
 // Deposit/withdraw are built as raw instructions (the user pubkey is explicit),
@@ -48,7 +48,7 @@ export { BN, Bucket };
 
 // ── Constants ──────────────────────────────────────────────────────────────
 export const PROGRAM_ID = new PublicKey(
-  process.env.NEXT_PUBLIC_PROGRAM_ID ?? "CLDmHatW3uszqHqCYgMkAk9jFW1Zse5yPV6RWdTArx2E",
+  process.env.NEXT_PUBLIC_PROGRAM_ID ?? "BLi7NKqekZGh5zWNwmUK2bzs2tAR3sPC7A1VrgQdEaYL",
 );
 /** V1 ships the Simple bucket only. */
 export const SIMPLE: Bucket = Bucket.Simple;

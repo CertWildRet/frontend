@@ -9,7 +9,7 @@ export function RefinedComingSoon() {
       </p>
       <ul className="mt-4 space-y-1.5 font-mono text-xs text-fog-muted">
         <li>› a smarter engine tuned for higher APY</li>
-        <li>› built for longer-horizon CWR positions</li>
+        <li>› built for longer-horizon dORE positions</li>
         <li>› and many more APY pro tactics under the hood</li>
         <li>› the same non-custodial, on-chain mining</li>
       </ul>

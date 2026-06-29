@@ -27,7 +27,7 @@ export function PoolStats({ data, stats }: { data: VaultData | null; stats?: Poo
   const tvl = tvlSol != null ? formatSol(tvlSol, 2) : "···";
   const price = cwrSol != null ? formatNum(cwrSol, 4) : "···";
   const tvlHint = priced ? "true recoverable value" : "SOL only (ORE not priced)";
-  // Sub-line: the dollar value of the whole CWR supply (supply x value/share x SOL/USD).
+  // Sub-line: the dollar value of the whole dORE supply (supply x value/share x SOL/USD).
   const supplyHint =
     totalShares != null && cwrSol != null && solUsd
       ? `≈ $${formatNum(totalShares * cwrSol * solUsd, 2)}`
@@ -37,8 +37,8 @@ export function PoolStats({ data, stats }: { data: VaultData | null; stats?: Poo
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
       <Tile label="TVL" value={tvl} unit="SOL" accent hint={tvlHint} />
-      <Tile label="CWR price" value={price} unit="SOL" hint="value per share" />
-      <Tile label="CWR supply" value={data?.initialized ? formatNum(data.totalShares, 2) : "···"} hint={supplyHint} />
+      <Tile label="dORE price" value={price} unit="SOL" hint="value per share" />
+      <Tile label="dORE supply" value={data?.initialized ? formatNum(data.totalShares, 2) : "···"} hint={supplyHint} />
       <Tile
         label={<><span className="normal-case">stORE</span> held</>}
         value={store}

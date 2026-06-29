@@ -120,7 +120,7 @@ export function useVaultData(pollMs = 12_000) {
       // Decoded from the MinerV1 544-byte layout (constants.rs offsets:
       //   deployed[25]@40, checkpoint_id@448, rewards_sol@488, rewards_ore@496,
       //   refined_ore@504, round_id@512). u64 LE; ORE/stORE 11-decimal, SOL 9-decimal.
-      // ORE migrated the CWR miner V1 (544B) -> V4 (752B) on 2026-06-25 16:28 UTC.
+      // ORE migrated the dORE miner V1 (544B) -> V4 (752B) on 2026-06-25 16:28 UTC.
       // V4 keeps the same field SEMANTICS but moves every offset (and swaps the
       // refined/rewards order). Decode whichever layout is on-chain; any other size
       // degrades to 0 (understate) rather than reading garbage money. The on-chain

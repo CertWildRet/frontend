@@ -45,11 +45,11 @@ export function MintCwrCard({ data, onDone }: { data: VaultData | null; onDone: 
   return (
     <div className="card card-hover flex flex-col">
       <div className="mb-1 flex items-center justify-between">
-        <h3 className="font-display text-base font-semibold text-white">Mint CWR</h3>
+        <h3 className="font-display text-base font-semibold text-white">Mint dORE</h3>
         <span className="chip border-gold/30 text-gold">deposit SOL</span>
       </div>
       <p className="mb-4 font-mono text-[12px] leading-relaxed text-fog-muted">
-        Deposit SOL to mint CWR, your share of the pool. Withdraw any time the claim window is open.
+        Deposit SOL to mint dORE, your share of the pool. Withdraw any time the claim window is open.
       </p>
 
       <span className="label mb-1.5 block">Amount (SOL)</span>
@@ -74,7 +74,7 @@ export function MintCwrCard({ data, onDone }: { data: VaultData | null; onDone: 
 
       <div className="mt-3 flex items-center justify-between font-mono text-xs">
         <span className="text-fog-muted">you receive ≈</span>
-        <span className="num text-gray-200">{formatNum(estShares, 4)} CWR</span>
+        <span className="num text-gray-200">{formatNum(estShares, 4)} dORE</span>
       </div>
       {belowMin && (
         <p className="mt-1.5 font-mono text-[12px] text-amber-400/80">
@@ -87,7 +87,7 @@ export function MintCwrCard({ data, onDone }: { data: VaultData | null; onDone: 
           <ConnectHint />
         ) : (
           <button disabled={!actionable} onClick={onMint} className="btn-primary w-full py-2.5">
-            {busy ? "Confirming…" : "Mint CWR"}
+            {busy ? "Confirming…" : "Mint dORE"}
           </button>
         )}
       </div>
@@ -104,7 +104,7 @@ export function MintCwrCard({ data, onDone }: { data: VaultData | null; onDone: 
         </p>
       )}
 
-      <TxResult sig={sig} err={err} successLabel="Minted CWR" />
+      <TxResult sig={sig} err={err} successLabel="Minted dORE" />
     </div>
   );
 }

@@ -45,7 +45,7 @@ export default function PositionPage() {
         <h1 className="font-display text-2xl font-bold tracking-tight text-[#EAECF6]">Your position</h1>
         <p className="mt-1.5 max-w-2xl text-sm text-[#9AA3C8]">
           A high-level view of what you hold and exactly what backs it, read straight from the vault and
-          the ORE miner. The pool mines as one; your CWR is a pro-rata claim on everything below.
+          the ORE miner. The pool mines as one; your dORE is a pro-rata claim on everything below.
         </p>
       </header>
 
@@ -59,7 +59,7 @@ export default function PositionPage() {
         <>
           {/* headline */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Big label="CWR held" value={formatNum(shares, 4)} />
+            <Big label="dORE held" value={formatNum(shares, 4)} />
             <Big
               label="Value"
               value={priced ? formatSol(valueSol, 4) : formatSol(yourSol, 4)}
@@ -73,7 +73,7 @@ export default function PositionPage() {
           {/* exact backing */}
           <div className="card">
             <div className="mb-1 flex items-center justify-between">
-              <h3 className="font-display text-base font-semibold text-[#EAECF6]">What backs your CWR</h3>
+              <h3 className="font-display text-base font-semibold text-[#EAECF6]">What backs your dORE</h3>
               <span className="chip text-[#7FA0E0]" style={{ background: 'rgba(14,18,34,0.4)', border: '1px solid rgba(91,108,255,0.3)' }}>exact on-chain</span>
             </div>
             <p className="mb-4 font-mono text-[12px] text-fog-muted">

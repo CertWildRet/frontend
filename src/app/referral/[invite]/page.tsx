@@ -1,7 +1,7 @@
 import { ReferralClient } from "@/components/ReferralClient";
 
 export const metadata = {
-  title: "CWR · Referral invite",
+  title: "dORE · Referral invite",
 };
 
 // Matches the share-link format /referral/join=<code>. The segment arrives as

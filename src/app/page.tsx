@@ -437,7 +437,7 @@ export default function DispersionLanding() {
               </p>
               <ul className="mt-6 space-y-3">
                 {[
-                  "deposit SOL, mint CWR",
+                  "deposit SOL, mint dORE",
                   "1% on volume, nothing on idle",
                   "claim SOL plus stORE any open window",
                 ].map((b) => (

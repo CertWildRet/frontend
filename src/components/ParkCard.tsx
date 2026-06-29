@@ -14,7 +14,7 @@ const QUICK = [0.1, 0.5, 1, 5, 10];
 
 /**
  * Park card. Shown while the pool is cranking (BETTING), when normal deposits
- * are closed. Lets a user commit SOL now; it converts to CWR automatically when
+ * are closed. Lets a user commit SOL now; it converts to dORE automatically when
  * the next claim window opens. A parked ticket can be pulled back any time.
  */
 export function ParkCard({ data, onDone }: { data: VaultData | null; onDone: () => void }) {
@@ -70,7 +70,7 @@ export function ParkCard({ data, onDone }: { data: VaultData | null; onDone: () 
         </span>
       </div>
       <p className="mb-4 font-mono text-[12px] leading-relaxed text-fog-muted">
-        Deposits are closed while the pool is mining. Park SOL now and it converts to CWR
+        Deposits are closed while the pool is mining. Park SOL now and it converts to dORE
         automatically the moment the deposit/claim window opens. Pull it back any time before then.
       </p>
 
@@ -81,7 +81,7 @@ export function ParkCard({ data, onDone }: { data: VaultData | null; onDone: () 
             <span className="num text-pos">{formatNum(ticket.amountSol, 4)} SOL</span>
           </div>
           <p className="mt-1.5 font-mono text-[12px] text-fog-muted">
-            Converts to CWR at the next deposit/claim window. Or pull it back now.
+            Converts to dORE at the next deposit/claim window. Or pull it back now.
           </p>
           <button
             disabled={busy}
@@ -133,7 +133,7 @@ export function ParkCard({ data, onDone }: { data: VaultData | null; onDone: () 
             ? "Pool paused."
             : !data?.initialized
               ? "Pool not live yet."
-              : "The deposit/claim window is open. Use Mint CWR to deposit directly."}
+              : "The deposit/claim window is open. Use Mint dORE to deposit directly."}
         </p>
       )}
 

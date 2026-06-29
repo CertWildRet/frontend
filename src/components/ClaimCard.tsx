@@ -54,14 +54,14 @@ export function ClaimCard({
     <div className="card card-hover flex flex-col">
       <div className="mb-1 flex items-center justify-between">
         <h3 className="font-display text-base font-semibold text-white">Claim rewards</h3>
-        <span className="chip border-gold/30 text-gold">burn CWR</span>
+        <span className="chip border-gold/30 text-gold">burn dORE</span>
       </div>
       <p className="mb-4 font-mono text-[12px] leading-relaxed text-fog-muted">
-        Burn CWR to take your SOL at the frozen window price, plus your pro rata stORE.
+        Burn dORE to take your SOL at the frozen window price, plus your pro rata stORE.
       </p>
 
       <div className="flex items-center justify-between gap-3 font-mono text-xs">
-        <span className="min-w-0 text-fog-muted">your CWR</span>
+        <span className="min-w-0 text-fog-muted">your dORE</span>
         <span className="num shrink-0 text-gray-200">{formatNum(shares, 4)}</span>
       </div>
 
@@ -106,7 +106,7 @@ export function ClaimCard({
         </p>
       )}
       {connected && shares === 0 && (
-        <p className="mt-2 text-center font-mono text-[12px] text-fog-muted">No CWR to claim yet.</p>
+        <p className="mt-2 text-center font-mono text-[12px] text-fog-muted">No dORE to claim yet.</p>
       )}
 
       <TxResult sig={sig} err={err} successLabel="Claimed" />

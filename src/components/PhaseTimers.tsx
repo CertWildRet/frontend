@@ -29,7 +29,7 @@ export function PhaseTimers({ data }: { data: VaultData | null }) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <TimerTile
           title="Deposit & Claim"
-          subtitle="mint CWR or claim rewards"
+          subtitle="mint dORE or claim rewards"
           active={clock.isOpen}
           remaining={clock.isOpen ? clock.remainingSecs : null}
           progress={clock.isOpen ? clock.progress : 0}

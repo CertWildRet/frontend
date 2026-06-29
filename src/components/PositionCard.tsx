@@ -29,7 +29,7 @@ export function PositionCard({
       <div className="card flex flex-col">
         <div>
           <h3 className="font-display text-base font-semibold text-white">Your position</h3>
-          <p className="mt-1 font-mono text-[12px] text-fog-muted">Connect a wallet to see your CWR.</p>
+          <p className="mt-1 font-mono text-[12px] text-fog-muted">Connect a wallet to see your dORE.</p>
         </div>
         <div className="mt-auto pt-4">
           <ConnectHint />
@@ -67,7 +67,7 @@ export function PositionCard({
       </div>
 
       <div className="flex flex-1 flex-col gap-3">
-        <Metric label="CWR held" value={formatNum(shares, 4)} />
+        <Metric label="dORE held" value={formatNum(shares, 4)} />
         <Metric
           label="Value"
           value={priced ? formatSol(valueSol, 4) : formatSol(yourSol, 4)}
@@ -88,7 +88,7 @@ export function PositionCard({
 
       {shares === 0 && (
         <p className="mt-4 font-mono text-[12px] text-fog-muted">
-          No CWR yet. Mint some during the deposit window to start earning.
+          No dORE yet. Mint some during the deposit window to start earning.
         </p>
       )}
     </div>

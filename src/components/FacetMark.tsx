@@ -1,5 +1,5 @@
 /**
- * FacetMark: the CWR brand mark, matching the nav header logo exactly — the
+ * FacetMark: the dORE brand mark, matching the nav header logo exactly — the
  * spectral dispersion prism. References the app-wide #site-spectral gradient
  * (defined once in SiteHeader, present on every page via the root layout), so a
  * single source of truth drives every compact mark (footer, panels). The big

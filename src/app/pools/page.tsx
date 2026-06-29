@@ -27,9 +27,9 @@ export default function CrankPage() {
     <div className="space-y-8">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-white">Simple Pool</h1>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-white">ORE</h1>
           <p className="mt-1.5 max-w-2xl text-sm text-fog-dim">
-            Deposit SOL to mint CWR. A keeper mines the ORE board with it around the clock. Claim your
+            Deposit SOL to mint dORE. A keeper mines the ORE board with it around the clock. Claim your
             SOL plus stORE whenever the window is open.
           </p>
         </div>

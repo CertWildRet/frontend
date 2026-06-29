@@ -20,7 +20,7 @@ const mockSend = async (): Promise<string> => {
   return MOCK_TX_SIG;
 };
 
-/** Wallet-signed deposit (mint CWR) + withdraw (claim) actions. */
+/** Wallet-signed deposit (mint dORE) + withdraw (claim) actions. */
 export function useCwrActions() {
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
@@ -96,7 +96,7 @@ export function useCwrActions() {
   }, [connection, publicKey, sendTransaction]);
 
   // park_deposit - commit SOL during the BETTING window (deposit closed). No
-  // shares yet; the keeper converts it to CWR automatically at the next settled
+  // shares yet; the keeper converts it to dORE automatically at the next settled
   // OPEN window. Reversible via cancelPark.
   const park = useCallback(
     async (sol: number): Promise<string> => {
