@@ -251,30 +251,18 @@
   .cut-tr {
     clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
   }
+  /* Active nav pill: spectral border via the border-box double-background
+     technique (fill on padding-box + spectral on border-box behind a 1.5px
+     transparent border). Crisp + even at every zoom; replaces the old 1px
+     mask-composite ring, which broke into dots on the pill edge during the
+     adjacent item's hover. The fill lives here, so the nav no longer sets an
+     inline background on the active link. */
   .spectral-edge {
     position: relative;
-  }
-  .spectral-edge::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(
-      135deg,
-      rgba(34, 224, 230, 0.55),
-      rgba(91, 108, 255, 0.4),
-      rgba(154, 107, 255, 0.45),
-      rgba(255, 90, 200, 0.4),
-      rgba(255, 192, 97, 0.5)
-    );
-    background-size: 300% 300%;
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
-    opacity: 0.55;
-    animation: hueShift 12s linear infinite;
+    border: 1.5px solid transparent;
+    background:
+      linear-gradient(110deg, rgba(91, 108, 255, 0.30), rgba(154, 107, 255, 0.24)) padding-box,
+      linear-gradient(135deg, #22e0e6, #5b6cff, #9a6bff, #ff5ac8, #ffc061) border-box;
   }
 
   .label {

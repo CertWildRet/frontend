@@ -8,9 +8,10 @@ import { NAV_ITEMS, isActiveRoute } from "@/lib/nav";
 
 const display = { fontFamily: "'Chakra Petch', sans-serif" } as const;
 
+// The active pill's fill + spectral border live in the .spectral-edge class
+// (border-box technique); here we only add the outer glow + font.
 const activeStyle = {
   ...display,
-  background: "linear-gradient(110deg, rgba(91,108,255,0.30), rgba(154,107,255,0.24))",
   boxShadow:
     "0 0 24px -6px rgba(91,108,255,0.65), inset 0 1px 0 rgba(255,255,255,0.15)",
 } as const;

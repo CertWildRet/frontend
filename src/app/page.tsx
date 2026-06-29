@@ -566,7 +566,7 @@ export default function DispersionLanding() {
 
       {/* ══ TEAM ═══════════════════════════════════════════════════ */}
       <section className="mt-28">
-        <SectionLabel k="the team" t="Built by ORE natives." />
+        <SectionLabel k="the team" t="Built by Solana natives." />
         <div className="mt-9 grid gap-5 sm:grid-cols-2">
           {TEAM.map((m) => (
             <div
