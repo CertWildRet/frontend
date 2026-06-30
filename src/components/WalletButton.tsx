@@ -69,13 +69,7 @@ export function WalletButton() {
       disabled={connecting}
       className="btn-primary px-4 sm:px-5"
     >
-      {connecting ? (
-        "Connecting…"
-      ) : (
-        <>
-          Connect <span className="hidden sm:inline"> Wallet</span>
-        </>
-      )}
+      {connecting ? "Connecting…" : <>Connect</>}
     </button>
   );
 }
