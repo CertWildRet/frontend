@@ -25,6 +25,8 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
   const navPerShare = data?.navPerShareSol ?? 0;
   const feeBps = data?.pullFeeEnabled ? (data?.pullFeeBps ?? 0) : 0;
   const wonClaimable = data?.wonClaimableSol ?? 0;
+  const zincPrice = data?.zincPriceSol ?? 0;
+  const zincSub = (n: number) => (zincPrice > 0 ? `≈ ${sol(n * zincPrice)} SOL @ ${formatNum(zincPrice, 4)}/ZINC` : "in kind");
   // Lifetime mining PnL is event-sourced by the analytics indexer (deployed from
   // CrankMineZincEvent, recovered from SettleHarvestZincEvent.claimed_sol) - the
   // honest cumulative numbers no single on-chain account exposes. Fails soft.
@@ -39,7 +41,7 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
       </div>
       <p className="mb-5 font-mono text-[12px] leading-relaxed text-fog-muted">
         SOL and smelted ZINC are read <span className="text-gray-200">straight from the bucket + ZINC custody</span>,
-        not estimated. ZINC has no price feed, so it is shown as a raw amount and never folded into the SOL TVL.
+        not estimated. ZINC is valued live at the Meteora ZINC/SOL price (shown alongside the SOL custody, not folded into True TVL).
       </p>
 
       {/* headline: SOL custody + its share price + held ZINC. True TVL goes
@@ -54,7 +56,7 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
           sub="SOL custody (ZINC not priced)"
         />
         <Big label="SOL / share" value={znc(navPerShare)} unit="SOL" tone="silver" />
-        <Big label="ZINC held" value={znc(smelted)} unit="ZINC" tone="silver" sub="smelted, in kind" />
+        <Big label="ZINC held" value={znc(smelted)} unit="ZINC" tone="silver" sub={zincSub(smelted)} />
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3">
         <Big label="Value / share" value={znc(navPerShare)} unit="SOL" />
@@ -78,7 +80,7 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
         <Row k="Total SOL deployed" v={pnlReady ? sol(pnl!.deployedGrossSol) : "···"} unit="SOL" sub="gross, into 30-tile rounds" />
         <Row k="Won SOL recovered" v={pnlReady ? sol(pnl!.recoveredSol) : "···"} unit="SOL" sub="claimed from winning rounds" />
         <PnlRow label="All-time PnL" pnl={pnl} ready={pnlReady} />
-        <Row k="Smelted ZINC kept" v={znc(smelted)} unit="ZINC" sub="in-kind winnings held" />
+        <Row k="Smelted ZINC kept" v={znc(smelted)} unit="ZINC" sub={zincPrice > 0 ? zincSub(smelted) : "in-kind winnings held"} />
         <p className="mt-1 font-mono text-[11px] leading-relaxed text-fog-muted">
           Deployed and recovered are summed from on-chain events (CrankMineZincEvent deploys vs
           SettleHarvestZincEvent claimed SOL) by the analytics indexer - no estimates, no hardcoding.
