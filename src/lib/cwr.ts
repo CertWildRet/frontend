@@ -377,6 +377,15 @@ export type ZincPoolStats = {
    */
   wonClaimableSol: number;
   /**
+   * Won ZINC currently claimable (PlayerProfile.claimable_round_zinc_rewards), in
+   * ZINC units, NOT yet smelted into custody. Like wonClaimableSol, the keeper
+   * sweeps + smelts it each settled window. Surfacing this is what stops won ZINC
+   * reading 0 mid-cycle.
+   */
+  wonClaimableZinc: number;
+  /** wonClaimableZinc valued in SOL at the live Meteora price. */
+  wonClaimableZincValueSol: number;
+  /**
    * Live ZINC/SOL spot price from the Meteora ZINC-WSOL pool vault reserves (both
    * 9-dec, so wsol_reserve / zinc_reserve is directly SOL per ZINC). 0 if unread.
    */
@@ -413,7 +422,7 @@ function splTokenAmount(data?: Uint8Array | null): bigint {
  */
 function decodeZincProfileEcon(
   data: Uint8Array,
-): { grossDeployed: bigint; claimableRoundSol: bigint } | null {
+): { grossDeployed: bigint; claimableRoundSol: bigint; claimableRoundZinc: bigint } | null {
   if (data.length < 80) return null;
   const dv = new DataView(data.buffer, data.byteOffset, data.byteLength);
   let off = 8 + 32 + 1 + 8; // disc, player, initialized, rounds_count
@@ -434,8 +443,14 @@ function decodeZincProfileEcon(
   off += 8; // pending_affiliate_pay_lamports
   off += 8; // total_affiliate_pay_lamports
   if (off + 8 > data.length) return null;
-  const claimableRoundSol = dv.getBigUint64(off, true);
-  return { grossDeployed, claimableRoundSol };
+  const claimableRoundSol = dv.getBigUint64(off, true); // claimable_round_sol_lamports
+  // claimable_round_zinc_rewards is a fixed +56 past claimable_round_sol
+  // (+8 self, +8 lifetime_round_sol, +40 for 5 brick u64s) — mirrors the
+  // contract's read_zinc_profile_accruals (zinc_cpi.rs). This is the WON ZINC
+  // not yet smelted into custody; without it the UI shows won ZINC as 0.
+  const claimableRoundZinc =
+    off + 56 + 8 <= data.length ? dv.getBigUint64(off + 56, true) : 0n;
+  return { grossDeployed, claimableRoundSol, claimableRoundZinc };
 }
 
 export async function readZincPoolStats(connection: Connection): Promise<ZincPoolStats | null> {
@@ -458,6 +473,7 @@ export async function readZincPoolStats(connection: Connection): Promise<ZincPoo
 
   const prof = profInfo ? decodeZincProfileEcon(profInfo.data) : null;
   const wonClaimableSol = prof ? lamportsToSol(prof.claimableRoundSol) : 0;
+  const wonClaimableZinc = prof ? zincGramsToNumber(prof.claimableRoundZinc) : 0;
 
   // Live ZINC/SOL from the Meteora pool vault reserves (both 9-dec -> raw ratio = SOL/ZINC).
   const wsolRaw = splTokenAmount(poolVaults?.[0]?.data);
@@ -470,6 +486,7 @@ export async function readZincPoolStats(connection: Connection): Promise<ZincPoo
   const navPerShareSol = totalShares > 0 ? solInVaultSol / totalShares : 0;
   const smeltedZincHeld = zincGramsToNumber(zp.zincInVault);
   const zincHeldValueSol = smeltedZincHeld * zincPriceSol;
+  const wonClaimableZincValueSol = wonClaimableZinc * zincPriceSol;
 
   return {
     initialized: true,
@@ -485,6 +502,8 @@ export async function readZincPoolStats(connection: Connection): Promise<ZincPoo
     navPerShareSol,
     smeltedZincHeld,
     wonClaimableSol,
+    wonClaimableZinc,
+    wonClaimableZincValueSol,
     zincPriceSol,
     zincHeldValueSol,
     claimsWindowNps: b.claimsWindowNps ? navX18ToNumber(b.claimsWindowNps) : 0,
