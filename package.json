@@ -12,8 +12,8 @@
   "comment-security": "Versions PINNED (no ^) to verified-good releases so a future install cannot silently pull a newer/compromised version. wallet-adapter-wallets is intentionally OMITTED — wallet-adapter-react auto-detects Wallet-Standard wallets (Phantom/Solflare/Backpack) with an empty wallets list, avoiding the huge multi-chain (Trezor/Stellar/USB/Torus) subtree. Re-verify on any bump; commit package-lock.json.",
   "dependencies": {
     "@coral-xyz/anchor": "0.31.1",
-    "@cwr/abi": "github:CertWildRet/abi#0e17e82",
-    "@cwr/sdk": "github:CertWildRet/sdk#8828647",
+    "@cwr/abi": "github:CertWildRet/abi#de74651",
+    "@cwr/sdk": "github:CertWildRet/sdk#7e9328d",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@fontsource-variable/sora": "^5.2.8",
     "@fontsource/chakra-petch": "^5.2.7",
