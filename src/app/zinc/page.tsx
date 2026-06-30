@@ -7,6 +7,7 @@ import { ZincPhaseTimers } from "@/components/zinc/ZincPhaseTimers";
 import { ZincEconomics } from "@/components/zinc/ZincEconomics";
 import { SettleZincPrompt } from "@/components/zinc/SettleZincPrompt";
 import { MintZincCard } from "@/components/zinc/MintZincCard";
+import { ParkZincCard } from "@/components/zinc/ParkZincCard";
 import { ClaimZincCard } from "@/components/zinc/ClaimZincCard";
 import { ZincPositionCard } from "@/components/zinc/ZincPositionCard";
 import { ZincRouletteHero } from "@/components/zinc/ZincRouletteHero";
@@ -69,7 +70,11 @@ export default function ZincPage() {
           <SettleZincPrompt data={data} onDone={onDone} />
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-            <MintZincCard data={data} onDone={onDone} />
+            {data?.phase === 0 ? (
+              <ParkZincCard data={data} onDone={onDone} />
+            ) : (
+              <MintZincCard data={data} onDone={onDone} />
+            )}
             <ClaimZincCard data={data} pos={pos} onDone={onDone} />
             <ZincPositionCard pos={pos} data={data} />
           </div>

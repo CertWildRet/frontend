@@ -36,6 +36,9 @@ import {
   findFeeSchedule,
   findFeeBucket,
   findPosition,
+  findPendingState,
+  findPendingTreasury,
+  findPendingDeposit,
   findMiningAuthority,
   oreMinerPda,
   oreBoardPda,
@@ -502,6 +505,79 @@ export async function readPendingTicket(
   owner: PublicKey,
 ): Promise<{ amountLamports: BN; parkedAt: number } | null> {
   const pendingDeposit = findPda([PENDING_SEED_BUF, SIMPLE_BUCKET_BYTE, owner.toBuffer()]);
+  const info = await connection.getAccountInfo(pendingDeposit).catch(() => null);
+  if (!info || info.data.length < 58) return null;
+  const amountLamports = new BN(info.data.subarray(42, 50), "le");
+  if (amountLamports.isZero()) return null;
+  const parkedAt = new BN(info.data.subarray(50, 58), "le").toNumber();
+  return { amountLamports, parkedAt };
+}
+
+// ── dZINC park (bucket 1) — mirrors the ORE park, SOL-only NAV ───────────────
+// Park SOL into the dZINC pending buffer during the cranking window (when the
+// normal depositZinc path is closed). No shares minted; convertible later by the
+// keeper via finalize_pending_zinc, or reversible any time via cancel_pending.
+export async function buildParkDepositZincIxs(
+  connection: Connection,
+  owner: PublicKey,
+  lamports: BN,
+): Promise<TransactionInstruction[]> {
+  const vault = makeVault(connection);
+  const program = vault.client.program;
+  const addrs = deriveBucketAddresses(PROGRAM_ID, ZINC);
+  const [zincPool] = zincPoolPda(PROGRAM_ID, ZINC);
+  const [pendingState] = findPendingState(PROGRAM_ID, ZINC);
+  const [pendingTreasury] = findPendingTreasury(PROGRAM_ID, ZINC);
+  const [pendingDeposit] = findPendingDeposit(PROGRAM_ID, ZINC, owner);
+  const ix = await program.methods
+    .parkDepositZinc(lamports)
+    .accountsPartial({
+      config: vault.client.configPda,
+      bucket: addrs.bucket,
+      zincPool,
+      pendingState,
+      pendingTreasury,
+      user: owner,
+      pendingDeposit,
+      systemProgram: SystemProgram.programId,
+    })
+    .instruction();
+  return [ix];
+}
+
+// Cancel an open dZINC parked ticket (full refund, ticket closed). cancel_pending
+// is bucket-generic; this wires it for the ZINC bucket's pending PDAs.
+export async function buildCancelPendingZincIxs(
+  connection: Connection,
+  owner: PublicKey,
+): Promise<TransactionInstruction[]> {
+  const vault = makeVault(connection);
+  const program = vault.client.program;
+  const addrs = deriveBucketAddresses(PROGRAM_ID, ZINC);
+  const [pendingState] = findPendingState(PROGRAM_ID, ZINC);
+  const [pendingTreasury] = findPendingTreasury(PROGRAM_ID, ZINC);
+  const [pendingDeposit] = findPendingDeposit(PROGRAM_ID, ZINC, owner);
+  const ix = await program.methods
+    .cancelPending()
+    .accountsPartial({
+      bucket: addrs.bucket,
+      pendingState,
+      pendingTreasury,
+      owner,
+      pendingDeposit,
+      systemProgram: SystemProgram.programId,
+    })
+    .instruction();
+  return [ix];
+}
+
+/** Read a wallet's open dZINC parked ticket (null if none). Same PendingDeposit
+ *  layout as ORE: amount(u64@42), parked_at(i64@50). */
+export async function readPendingTicketZinc(
+  connection: Connection,
+  owner: PublicKey,
+): Promise<{ amountLamports: BN; parkedAt: number } | null> {
+  const [pendingDeposit] = findPendingDeposit(PROGRAM_ID, ZINC, owner);
   const info = await connection.getAccountInfo(pendingDeposit).catch(() => null);
   if (!info || info.data.length < 58) return null;
   const amountLamports = new BN(info.data.subarray(42, 50), "le");

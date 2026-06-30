@@ -6,6 +6,8 @@ import {
   buildDepositZincIxs,
   buildWithdrawZincIxs,
   buildSettleHarvestZincIxs,
+  buildParkDepositZincIxs,
+  buildCancelPendingZincIxs,
   sendIxs,
   solToLamports,
   sharesToRaw,
@@ -50,6 +52,37 @@ export function useZincActions() {
     [connection, publicKey, sendTransaction],
   );
 
+  // Park SOL during the cranking window (when depositZinc is closed). Escrows
+  // into the dZINC pending buffer; no shares minted. Converted later by the keeper
+  // (finalize_pending_zinc) or reversible via cancelPark.
+  const park = useCallback(
+    async (sol: number): Promise<string> => {
+      if (!(sol > 0)) throw new Error("Enter an amount greater than 0.");
+      if (sol < MIN_DEPOSIT_SOL) throw new Error(`Minimum park is ${MIN_DEPOSIT_SOL} SOL.`);
+      if (!publicKey || !sendTransaction) throw new Error("Connect a wallet first.");
+      setBusy(true);
+      try {
+        const ixs = await buildParkDepositZincIxs(connection, publicKey, solToLamports(sol));
+        return await sendIxs(connection, sendTransaction, ixs, publicKey);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [connection, publicKey, sendTransaction],
+  );
+
+  // Pull a parked dZINC ticket back out (full refund, any phase).
+  const cancelPark = useCallback(async (): Promise<string> => {
+    if (!publicKey || !sendTransaction) throw new Error("Connect a wallet first.");
+    setBusy(true);
+    try {
+      const ixs = await buildCancelPendingZincIxs(connection, publicKey);
+      return await sendIxs(connection, sendTransaction, ixs, publicKey);
+    } finally {
+      setBusy(false);
+    }
+  }, [connection, publicKey, sendTransaction]);
+
   // settle_harvest_zinc - the first action of a fresh OPEN window (window_settled
   // starts false; deposit/withdraw revert until this runs). Permissionless: any
   // connected wallet can open the window for everyone.
@@ -64,5 +97,5 @@ export function useZincActions() {
     }
   }, [connection, publicKey, sendTransaction]);
 
-  return { deposit, withdraw, settle, busy, connected: !!publicKey };
+  return { deposit, withdraw, settle, park, cancelPark, busy, connected: !!publicKey };
 }
