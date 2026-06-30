@@ -130,5 +130,25 @@ export const fetchWalletCycles = (pubkey: string) =>
   get<{ wallet: string; cycles: WalletCycle[] }>(`/wallet/${pubkey}/cycles`);
 export const fetchCycleDetail = (bucket: number, cycleId: string | number) =>
   get<CycleDetail>(`/cycle/${cycleId}?bucket=${bucket}`);
+/**
+ * Per-bucket pool aggregate. All SOL fields are atomic lamports (string or number)
+ * summed from on-chain events: deployed from CrankMineZincEvent (dZINC) /
+ * CrankMineEvent (dORE); recovered from SettleHarvestZincEvent.claimed_sol /
+ * SettleUoreEvent.claimed_sol (the measured lamport delta on the actual claim CPI).
+ * net_pnl = recovered - deployed_gross. Nothing here is hardcoded.
+ */
+export type PoolSummary = {
+  bucket_id?: number;
+  sol_deployed_gross: string | number | null;
+  sol_deployed_net: string | number | null;
+  sol_recovered: string | number | null;
+  sol_net_pnl: string | number | null;
+  volume_fees: string | number | null;
+  total_zinc_realized: string | number | null;
+  zinc_credited: string | number | null;
+  cycles: number;
+  settled_cycles: number;
+  current_total_shares: string | number | null;
+};
 export const fetchPoolSummary = (bucket: number) =>
-  get<Record<string, string | number | null | object>>(`/pool/summary?bucket=${bucket}`);
+  get<PoolSummary>(`/pool/summary?bucket=${bucket}`);

@@ -371,12 +371,6 @@ export type ZincPoolStats = {
   /** Smelted ZINC the pool HOLDS, in ZINC units (= zincPool.zinc_in_vault / 1e9). */
   smeltedZincHeld: number;
   /**
-   * Lifetime gross SOL the pool has deployed into ZINC rounds (the "spent" leg).
-   * Exact: the dZINC mining_authority's ZINC PlayerProfile.gross_deployed_lamports.
-   * 0 if the profile is not yet created (no deploy has ever fired).
-   */
-  lifetimeDeployedSol: number;
-  /**
    * Won SOL currently claimable back into the vault (recoverable now): the
    * mining_authority's ZINC PlayerProfile.claimable_round_sol_lamports. The keeper
    * sweeps this each settled window, so it is usually small. Exact.
@@ -440,7 +434,6 @@ export async function readZincPoolStats(connection: Connection): Promise<ZincPoo
   if (!zp || !b) return null;
 
   const prof = profInfo ? decodeZincProfileEcon(profInfo.data) : null;
-  const lifetimeDeployedSol = prof ? lamportsToSol(prof.grossDeployed) : 0;
   const wonClaimableSol = prof ? lamportsToSol(prof.claimableRoundSol) : 0;
 
   const totalShares = sharesToNumber(b.totalShares);
@@ -461,7 +454,6 @@ export async function readZincPoolStats(connection: Connection): Promise<ZincPoo
     solInVaultSol,
     navPerShareSol,
     smeltedZincHeld,
-    lifetimeDeployedSol,
     wonClaimableSol,
     claimsWindowNps: b.claimsWindowNps ? navX18ToNumber(b.claimsWindowNps) : 0,
     pullFeeBps: b.params.pullFeeBps,

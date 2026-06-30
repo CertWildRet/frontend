@@ -3,6 +3,7 @@
 import type { ZincPoolStats } from "@/lib/cwr";
 import { formatNum, formatSol } from "@/lib/format";
 import { StatTile, StatRow, StatSection } from "@/components/primitives/Stat";
+import { useZincPoolSummary, type ZincPoolPnl } from "@/hooks/useZincPoolSummary";
 
 /**
  * dZINC pool economics - the HOLD-only twin of <PoolEconomics> (same `card`
@@ -23,8 +24,12 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
   const smelted = data?.smeltedZincHeld ?? 0;
   const navPerShare = data?.navPerShareSol ?? 0;
   const feeBps = data?.pullFeeEnabled ? (data?.pullFeeBps ?? 0) : 0;
-  const deployed = data?.lifetimeDeployedSol ?? 0;
   const wonClaimable = data?.wonClaimableSol ?? 0;
+  // Lifetime mining PnL is event-sourced by the analytics indexer (deployed from
+  // CrankMineZincEvent, recovered from SettleHarvestZincEvent.claimed_sol) - the
+  // honest cumulative numbers no single on-chain account exposes. Fails soft.
+  const { pnl } = useZincPoolSummary();
+  const pnlReady = ready && !!pnl;
 
   return (
     <div className="card">
@@ -70,14 +75,15 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
           smelted ZINC held - so the realized SOL "recovered" is not a single
           on-chain counter and is reconstructed from the round history off-chain. */}
       <Section title="Mining (lifetime)">
-        <Row k="Total SOL deployed" v={sol(deployed)} unit="SOL" sub="gross, into 30-tile rounds" strong />
-        <Row k="Won SOL recovered (claimable)" v={sol(wonClaimable)} unit="SOL" />
+        <Row k="Total SOL deployed" v={pnlReady ? sol(pnl!.deployedGrossSol) : "···"} unit="SOL" sub="gross, into 30-tile rounds" />
+        <Row k="Won SOL recovered" v={pnlReady ? sol(pnl!.recoveredSol) : "···"} unit="SOL" sub="claimed from winning rounds" />
+        <PnlRow label="All-time PnL" pnl={pnl} ready={pnlReady} />
         <Row k="Smelted ZINC kept" v={znc(smelted)} unit="ZINC" sub="in-kind winnings held" />
         <p className="mt-1 font-mono text-[11px] leading-relaxed text-fog-muted">
-          SOL spent deploying full 30-tile boards. Won SOL is swept back into vault custody each settled
-          window (shown above as idle SOL); the winnings the pool keeps are the smelted ZINC held. A
-          realized deployed-vs-recovered PnL is reconstructed from the round history off-chain (no single
-          on-chain counter), and ZINC has no price feed so it is never folded into a SOL PnL.
+          Deployed and recovered are summed from on-chain events (CrankMineZincEvent deploys vs
+          SettleHarvestZincEvent claimed SOL) by the analytics indexer - no estimates, no hardcoding.
+          Won SOL is swept back into vault custody (above, idle SOL); kept winnings are the smelted ZINC,
+          paid in kind. ZINC has no price feed, so it is never folded into the SOL PnL.
         </p>
       </Section>
 
@@ -119,6 +125,23 @@ function Big({
       tone={tone}
       className={className}
     />
+  );
+}
+
+/** Colored deployed-vs-recovered PnL line (green +, red -), like the dORE panel. */
+function PnlRow({ label, pnl, ready }: { label: string; pnl: ZincPoolPnl | null; ready: boolean }) {
+  const neg = (pnl?.netPnlSol ?? 0) < 0;
+  const text =
+    ready && pnl
+      ? `${neg ? "-" : "+"}${formatSol(Math.abs(pnl.netPnlSol), 4)} SOL (${pnl.pnlPct >= 0 ? "+" : ""}${formatNum(pnl.pnlPct, 1)}%)`
+      : "···";
+  return (
+    <div className="flex items-center justify-between py-1.5">
+      <span className="font-mono text-[13px] font-semibold text-white">{label}</span>
+      <span className={`num text-sm ${ready ? (neg ? "text-[#ec9b9b]" : "text-pos") : "text-fog-muted"}`}>
+        {text}
+      </span>
+    </div>
   );
 }
 
