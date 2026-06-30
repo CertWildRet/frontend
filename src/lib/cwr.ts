@@ -370,6 +370,18 @@ export type ZincPoolStats = {
   navPerShareSol: number;
   /** Smelted ZINC the pool HOLDS, in ZINC units (= zincPool.zinc_in_vault / 1e9). */
   smeltedZincHeld: number;
+  /**
+   * Lifetime gross SOL the pool has deployed into ZINC rounds (the "spent" leg).
+   * Exact: the dZINC mining_authority's ZINC PlayerProfile.gross_deployed_lamports.
+   * 0 if the profile is not yet created (no deploy has ever fired).
+   */
+  lifetimeDeployedSol: number;
+  /**
+   * Won SOL currently claimable back into the vault (recoverable now): the
+   * mining_authority's ZINC PlayerProfile.claimable_round_sol_lamports. The keeper
+   * sweeps this each settled window, so it is usually small. Exact.
+   */
+  wonClaimableSol: number;
   /** Frozen withdraw price for the OPEN window (bucket.claims_window_nps); 0 when closed. */
   claimsWindowNps: number;
   pullFeeBps: number;
@@ -378,15 +390,58 @@ export type ZincPoolStats = {
   exitFeeBps: number;
 };
 
+/**
+ * Decode the dZINC mining_authority's ZINC PlayerProfile far enough to read the
+ * two mining-economics fields (gross_deployed_lamports + claimable_round_sol_
+ * lamports). The leading streak markers are Option<u64> (variable length), so we
+ * walk sequentially. Layout from the verified zinc.ts decode. Returns null if the
+ * account is missing/too short (no deploy has ever fired).
+ */
+function decodeZincProfileEcon(
+  data: Uint8Array,
+): { grossDeployed: bigint; claimableRoundSol: bigint } | null {
+  if (data.length < 80) return null;
+  const dv = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  let off = 8 + 32 + 1 + 8; // disc, player, initialized, rounds_count
+  const skipOpt = () => {
+    const tag = data[off];
+    off += 1;
+    if (tag !== 0) off += 8;
+  };
+  skipOpt(); // last_streak_round
+  skipOpt(); // current_streak_round
+  off += 8; // current_streak_count
+  const grossDeployed = dv.getBigUint64(off, true);
+  off += 8; // gross_deployed_lamports
+  off += 8; // net_deployed_lamports
+  const affTag = data[off];
+  off += 1;
+  if (affTag !== 0) off += 32; // affiliate: Option<Address>
+  off += 8; // pending_affiliate_pay_lamports
+  off += 8; // total_affiliate_pay_lamports
+  if (off + 8 > data.length) return null;
+  const claimableRoundSol = dv.getBigUint64(off, true);
+  return { grossDeployed, claimableRoundSol };
+}
+
 export async function readZincPoolStats(connection: Connection): Promise<ZincPoolStats | null> {
   const vault = makeVault(connection);
+  // The dZINC mining_authority's ZINC PlayerProfile carries the lifetime mining
+  // economics (gross deployed + claimable won SOL). Read it alongside the pool.
+  const [miningAuthority] = findMiningAuthority(PROGRAM_ID, ZINC);
+  const [zincProfilePda] = zincPlayerProfilePda(miningAuthority);
   // The ZincPool sidecar existing is what makes bucket 1 a live dZINC pool.
   // If it (or the generic bucket) is missing, the pool isn't deployed yet.
-  const [zp, b] = await Promise.all([
+  const [zp, b, profInfo] = await Promise.all([
     vault.read.zincPool(ZINC).catch(() => null),
     vault.read.bucket(ZINC).catch(() => null),
+    connection.getAccountInfo(zincProfilePda).catch(() => null),
   ]);
   if (!zp || !b) return null;
+
+  const prof = profInfo ? decodeZincProfileEcon(profInfo.data) : null;
+  const lifetimeDeployedSol = prof ? lamportsToSol(prof.grossDeployed) : 0;
+  const wonClaimableSol = prof ? lamportsToSol(prof.claimableRoundSol) : 0;
 
   const totalShares = sharesToNumber(b.totalShares);
   const solInVaultSol = lamportsToSol(b.solInVault);
@@ -406,6 +461,8 @@ export async function readZincPoolStats(connection: Connection): Promise<ZincPoo
     solInVaultSol,
     navPerShareSol,
     smeltedZincHeld,
+    lifetimeDeployedSol,
+    wonClaimableSol,
     claimsWindowNps: b.claimsWindowNps ? navX18ToNumber(b.claimsWindowNps) : 0,
     pullFeeBps: b.params.pullFeeBps,
     pullFeeEnabled: b.params.pullFeeEnabled,

@@ -23,6 +23,8 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
   const smelted = data?.smeltedZincHeld ?? 0;
   const navPerShare = data?.navPerShareSol ?? 0;
   const feeBps = data?.pullFeeEnabled ? (data?.pullFeeBps ?? 0) : 0;
+  const deployed = data?.lifetimeDeployedSol ?? 0;
+  const wonClaimable = data?.wonClaimableSol ?? 0;
 
   return (
     <div className="card">
@@ -57,17 +59,25 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
       {/* recoverable-now breakdown */}
       <Section title="Recoverable now (claimable at the next open window)">
         <Row k="In vault (idle SOL)" v={sol(solIn)} unit="SOL" />
+        <Row k="Won SOL (claimable)" v={sol(wonClaimable)} unit="SOL" sub="swept into the vault each settled window" />
         <Row k="Smelted ZINC held" v={znc(smelted)} unit="ZINC" sub="paid in kind on withdraw" />
-        <Row k="Total recoverable" v={sol(solIn)} unit="SOL" sub="+ ZINC in kind" strong />
+        <Row k="Total recoverable" v={sol(solIn + wonClaimable)} unit="SOL" sub="+ ZINC in kind" strong />
       </Section>
 
-      {/* ZINC held (all-time) */}
-      <Section title="ZINC held (all-time)">
-        <Row k="Smelted ZINC in pool" v={znc(smelted)} unit="ZINC" strong />
+      {/* mining (lifetime): the SOL spent vs what the pool keeps. Deployed is exact
+          (the mining_authority's ZINC PlayerProfile gross_deployed); won SOL is
+          swept back into the vault (idle SOL above), and kept winnings are the
+          smelted ZINC held - so the realized SOL "recovered" is not a single
+          on-chain counter and is reconstructed from the round history off-chain. */}
+      <Section title="Mining (lifetime)">
+        <Row k="Total SOL deployed" v={sol(deployed)} unit="SOL" sub="gross, into 30-tile rounds" strong />
+        <Row k="Won SOL recovered (claimable)" v={sol(wonClaimable)} unit="SOL" />
+        <Row k="Smelted ZINC kept" v={znc(smelted)} unit="ZINC" sub="in-kind winnings held" />
         <p className="mt-1 font-mono text-[11px] leading-relaxed text-fog-muted">
-          Smelted ZINC is claimed winnings (net of the 10% smelt fee) the pool holds in custody. v1 is
-          HOLD-only: it is paid out pro-rata in kind when you withdraw, never auto-sold. There is no miner
-          and no stORE leg; the value model is simply SOL plus held ZINC.
+          SOL spent deploying full 30-tile boards. Won SOL is swept back into vault custody each settled
+          window (shown above as idle SOL); the winnings the pool keeps are the smelted ZINC held. A
+          realized deployed-vs-recovered PnL is reconstructed from the round history off-chain (no single
+          on-chain counter), and ZINC has no price feed so it is never folded into a SOL PnL.
         </p>
       </Section>
 
