@@ -5,7 +5,6 @@ import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { useToast } from "./Toast";
 
-
 export function WalletButton() {
   const { wallets, connected, connecting, publicKey, disconnect } = useWallet();
   const { setVisible } = useWalletModal();
@@ -65,9 +64,17 @@ export function WalletButton() {
   };
 
   return (
-    <button onClick={onConnect} disabled={connecting} className="btn-primary px-4 sm:px-5">
-      {connecting ? "Connecting…" : (
-        <>Connect<span className="hidden sm:inline"> Wallet</span></>
+    <button
+      onClick={onConnect}
+      disabled={connecting}
+      className="btn-primary px-4 sm:px-5"
+    >
+      {connecting ? (
+        "Connecting…"
+      ) : (
+        <>
+          Connect <span className="hidden sm:inline"> Wallet</span>
+        </>
       )}
     </button>
   );
