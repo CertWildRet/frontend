@@ -4,6 +4,7 @@ import type { ZincPoolStats } from "@/lib/cwr";
 import { formatNum, formatSol } from "@/lib/format";
 import { StatTile, StatRow, StatSection } from "@/components/primitives/Stat";
 import { useZincPoolSummary } from "@/hooks/useZincPoolSummary";
+import { useStats } from "@/hooks/useStats";
 
 /**
  * dZINC pool economics - structurally mirrors <PoolEconomics> (ORE) so the two
@@ -62,6 +63,15 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
   const madeSol = recoveredSol + totalZincVal;
   const pnlSol = madeSol - deployed;
   const pnlPct = deployed > 0 ? (pnlSol / deployed) * 100 : 0;
+
+  // Denominate the headline PnL in USD, exactly like the ORE panel. Everything
+  // above is already valued in SOL (ZINC via the live ZINC/SOL price), so a
+  // single SOL/USD scale converts it; the % is invariant to the scale. solUsd
+  // is the same global price the ORE panel uses (app-wide brain feed); if it is
+  // unavailable we fall back to the SOL figure rather than blanking the PnL.
+  const solUsd = useStats()?.prices.solUsd ?? 0;
+  const pnlUsd = pnlSol * solUsd;
+  const zincUsd = zincPrice * solUsd;
 
   return (
     <div className="card">
@@ -144,7 +154,9 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
           <span className="text-white">All-time PnL</span>
           <span className={`num text-sm font-semibold ${pnlSol >= 0 ? "text-pos" : "text-[#ec9b9b]"}`}>
             {pnlReady
-              ? `${pnlSol < 0 ? "-" : "+"}${formatSol(Math.abs(pnlSol), 4)} SOL (${pnlPct >= 0 ? "+" : ""}${formatNum(pnlPct, 1)}%)`
+              ? solUsd > 0
+                ? `${pnlUsd < 0 ? "-" : ""}$${formatNum(Math.abs(pnlUsd), 2)} (${pnlPct >= 0 ? "+" : ""}${formatNum(pnlPct, 1)}%)`
+                : `${pnlSol < 0 ? "-" : "+"}${formatSol(Math.abs(pnlSol), 4)} SOL (${pnlPct >= 0 ? "+" : ""}${formatNum(pnlPct, 1)}%)`
               : "···"}
           </span>
         </div>
@@ -154,7 +166,9 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
         <span>
           fee {(feeBps / 100).toFixed(1)}% on deploy volume · keeper full 30-tile coverage
         </span>
-        <span>deposit / claim only while the window is open</span>
+        <span>
+          SOL ${solUsd ? formatNum(solUsd, 2) : "··"} · ZINC ${zincUsd ? formatNum(zincUsd, 4) : "··"}
+        </span>
       </div>
     </div>
   );

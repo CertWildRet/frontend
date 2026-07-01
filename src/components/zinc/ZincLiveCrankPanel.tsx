@@ -72,13 +72,14 @@ export function ZincLiveCrankPanel({ data }: { data: ZincPoolStats | null }) {
               size={360}
               litTiles={mining ? "all" : []}
               animated={mining}
+              palette="steel"
               className="max-w-full"
               center={
                 <div className="flex flex-col items-center px-2">
                   <span className="font-display text-[22px] font-bold leading-none text-white">
                     {mining ? "30/30" : "idle"}
                   </span>
-                  <span className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[0.26em] text-[#C7B3FF]">
+                  <span className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[0.26em] text-[#9DB7D8]">
                     {mining ? "tiles lit" : "not mining"}
                   </span>
                 </div>

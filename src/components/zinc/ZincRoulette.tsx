@@ -17,9 +17,14 @@ import styles from "./ZincRoulette.module.css";
    ════════════════════════════════════════════════════════════════ */
 
 const TILE_COUNT = 30;
-/* dZINC accent endpoints */
+/* dZINC accent endpoints (default 'zinc' brand palette) */
 const PURPLE = "#9A6BFF";
 const PINK = "#FF5AC8";
+/* 'steel' palette — the silver/steel tones shared with the dORE surface
+   (echoes TileHeatmap's rgba(157,183,216) / rgba(90,110,140)). Used by the
+   Live crank panel so dZINC's keeper board matches dORE's at a glance. */
+const STEEL_LIGHT = "#9DB7D8";
+const STEEL_DARK = "#5A6E8C";
 
 type Props = {
   size?: number;
@@ -30,6 +35,9 @@ type Props = {
   /** slow ring rotate + per-tile shimmer (disabled under reduced-motion). */
   animated?: boolean;
   className?: string;
+  /** accent palette. 'zinc' = purple→pink (brand default, landing hero);
+      'steel' = the dORE silver/steel tones (Live crank panel, for parity). */
+  palette?: "zinc" | "steel";
 };
 
 /* polar -> cartesian on a unit viewBox centred at (cx,cy). angle in deg, 0 = up. */
@@ -66,12 +74,22 @@ export function ZincRoulette({
   center,
   animated = true,
   className = "",
+  palette = "zinc",
 }: Props) {
   const uid = useId().replace(/[:]/g, "");
   const litFill = `zinc-lit-${uid}`;
   const dimFill = `zinc-dim-${uid}`;
   const glow = `zinc-glow-${uid}`;
   const sweepGrad = `zinc-sweep-${uid}`;
+
+  // Accent endpoints + glass tints per palette. 'steel' mirrors the dORE
+  // surface so the Live crank board reads as the same family as dORE's.
+  const steel = palette === "steel";
+  const accentLight = steel ? STEEL_LIGHT : PURPLE;
+  const accentDark = steel ? STEEL_DARK : PINK;
+  const dimStopA = steel ? "rgba(157,183,216,0.10)" : "rgba(154,107,255,0.10)";
+  const dimStopB = steel ? "rgba(90,110,140,0.06)" : "rgba(255,90,200,0.06)";
+  const hubStroke = steel ? "rgba(157,183,216,0.24)" : "rgba(154,107,255,0.28)";
 
   const VB = 200;
   const cx = VB / 2;
@@ -111,15 +129,15 @@ export function ZincRoulette({
         aria-hidden
       >
         <defs>
-          {/* lit tile: dZINC purple -> pink */}
+          {/* lit tile: accent gradient (zinc purple→pink, or dORE steel) */}
           <linearGradient id={litFill} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor={PURPLE} />
-            <stop offset="1" stopColor={PINK} />
+            <stop offset="0" stopColor={accentLight} />
+            <stop offset="1" stopColor={accentDark} />
           </linearGradient>
           {/* dim (un-covered) tile */}
           <linearGradient id={dimFill} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="rgba(154,107,255,0.10)" />
-            <stop offset="1" stopColor="rgba(255,90,200,0.06)" />
+            <stop offset="0" stopColor={dimStopA} />
+            <stop offset="1" stopColor={dimStopB} />
           </linearGradient>
           {/* rotating highlight sweep over the ring */}
           <linearGradient id={sweepGrad} x1="0" y1="0" x2="1" y2="1">
@@ -215,7 +233,7 @@ export function ZincRoulette({
           cy={cy}
           r={rInner - 4}
           fill="rgba(10,12,22,0.72)"
-          stroke="rgba(154,107,255,0.28)"
+          stroke={hubStroke}
           strokeWidth="0.8"
         />
       </svg>
