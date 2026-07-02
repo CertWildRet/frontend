@@ -1,6 +1,6 @@
 {
   "name": "cwr-frontend",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,8 +12,8 @@
   "comment-security": "Versions PINNED (no ^) to verified-good releases so a future install cannot silently pull a newer/compromised version. wallet-adapter-wallets is intentionally OMITTED — wallet-adapter-react auto-detects Wallet-Standard wallets (Phantom/Solflare/Backpack) with an empty wallets list, avoiding the huge multi-chain (Trezor/Stellar/USB/Torus) subtree. Re-verify on any bump; commit package-lock.json.",
   "dependencies": {
     "@coral-xyz/anchor": "0.31.1",
-    "@cwr/abi": "github:CertWildRet/abi#d590d93",
-    "@cwr/sdk": "github:CertWildRet/sdk#24cd6d1",
+    "@cwr/abi": "github:CertWildRet/abi#c8cc3ab",
+    "@cwr/sdk": "github:CertWildRet/sdk#5b23958",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@fontsource-variable/sora": "^5.2.8",
     "@fontsource/chakra-petch": "^5.2.7",

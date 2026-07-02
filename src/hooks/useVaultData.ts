@@ -10,9 +10,9 @@ import { MOCK, mockVaultData } from "@/lib/mock";
 const ORE_GRAMS_PER_ORE = 1e11;
 // ore-lst / ore-stake (for the stORE -> ORE redemption rate). Stable on-chain ids.
 const ORE_MINT = new PublicKey("oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp");
-const STORE_MINT = new PublicKey("sTorERYB6xAZ1SSbwpK3zoK2EEwbBrc7TZAzg1uCGiH");
-const ORE_LST_PROGRAM = new PublicKey("LStwN2E5Uw6MCtuxHRLhy8RY9hxqW2XRpLzettb696y");
-const ORE_STAKE_PROGRAM = new PublicKey("STkEAu2cEyQp5ktgUauRVq8es6mEP2w6ixw4NEd5tDJ");
+const STORE_MINT = new PublicKey("storenSbvkfzircixnaosc5CbzNZVrHJ6S3EKrS1yqR");
+const ORE_LST_PROGRAM = new PublicKey("storeD7bEkywTTMrje19WRoyrkEhbhrvyjVnLxWih6a");
+const ORE_STAKE_PROGRAM = new PublicKey("stakecNP3FpiExZPCgZfqRgumVzi6dNqnfrjwXyTgeH");
 
 // stORE -> ORE redemption rate = staked ORE backing / stORE supply (>= 1; the
 // premium is accrued refining yield). Global, slow-moving; read straight from
