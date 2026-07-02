@@ -2,6 +2,8 @@
 
 import type { PoolStatsData } from "@/hooks/useStats";
 import type { VaultData } from "@/hooks/useVaultData";
+import { usePoolSummary } from "@/hooks/useZincPoolSummary";
+import { BUCKET } from "@/lib/analytics";
 import { formatNum, formatSol } from "@/lib/format";
 import { StatTile, StatRow, StatSection } from "@/components/primitives/Stat";
 
@@ -54,13 +56,21 @@ export function PoolEconomics({
   const lifetimeRecovered = stats?.miner.lifetimeRewardsSol ?? 0;
   const hasLifetime = !!stats;
 
-  const deployedUsd = lifetimeDeployed * solUsd;
+  // Capital base (cost basis) from the analytics indexer — the SOL actually
+  // deposited, NOT gross recycled deploys. Same true-ROI denominator as dZINC.
+  const { pnl: dorePnl } = usePoolSummary(BUCKET.dORE);
+  const depositedCapital = dorePnl?.depositedCapitalSol ?? 0;
+
+  const deployedUsd = lifetimeDeployed * solUsd; // gross, recycled (shown as context)
+  const depositedUsd = depositedCapital * solUsd; // capital base (ROI denominator)
   const madeUsd = lifetimeRecovered * solUsd + lifetimeMined * oreUsd;
   const pnlUsd = madeUsd - deployedUsd;
-  const pnlPct = deployedUsd > 0 ? (pnlUsd / deployedUsd) * 100 : 0;
-  // Require BOTH prices: with only solUsd, lifetimeMined*oreUsd would silently
-  // zero the (principal) ORE leg and could flip a real profit into a fake loss.
-  const pnlReady = hasLifetime && solUsd > 0 && oreUsd > 0 && deployedUsd > 0;
+  // TRUE ROI: net PnL over the SOL actually deposited (cost basis), not gross
+  // deployed. Gross recycles the same capital every round and understates the loss.
+  const pnlPct = depositedUsd > 0 ? (pnlUsd / depositedUsd) * 100 : 0;
+  // Require BOTH prices + a known capital base. With only solUsd, lifetimeMined*oreUsd
+  // would silently zero the (principal) ORE leg and could flip a real profit into a fake loss.
+  const pnlReady = hasLifetime && solUsd > 0 && oreUsd > 0 && depositedUsd > 0;
   const pnlText = pnlReady
     ? `${pnlUsd < 0 ? "-" : ""}$${formatNum(Math.abs(pnlUsd), 2)} (${pnlPct >= 0 ? "+" : ""}${formatNum(pnlPct, 1)}%)`
     : "···";
@@ -141,10 +151,11 @@ export function PoolEconomics({
 
       {/* lifetime SOL + PnL */}
       <Section title="Lifetime mining (all-time)">
-        <Row k="Total SOL deployed" v={sol(lifetimeDeployed)} unit="SOL" />
+        <Row k="Net capital deposited" v={pnlReady ? sol(depositedCapital) : "···"} unit="SOL" sub="the SOL actually put in (cost basis) — the PnL % below is measured against this" strong />
+        <Row k="Total SOL deployed" v={sol(lifetimeDeployed)} unit="SOL" sub="gross - the pool recycles the same capital every round, so this grows past what was deposited" />
         <Row k="Total SOL recovered" v={sol(lifetimeRecovered)} unit="SOL" />
         <div className="mt-2 flex items-baseline justify-between border-t border-line pt-2 font-mono text-xs">
-          <span className="text-white">All-time PnL</span>
+          <span className="text-white">All-time PnL <span className="font-normal text-fog-muted">on deposited</span></span>
           <span className={`num text-sm font-semibold ${pnlUsd >= 0 ? "text-pos" : "text-[#ec9b9b]"}`}>
             {pnlText}
           </span>
