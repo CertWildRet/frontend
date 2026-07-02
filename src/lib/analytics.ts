@@ -143,6 +143,11 @@ export type PoolSummary = {
   sol_deployed_net: string | number | null;
   sol_recovered: string | number | null;
   sol_net_pnl: string | number | null;
+  /** SOL actually deposited by LPs (net of deposit fee) — the capital base / cost
+      basis. Unlike sol_deployed_gross, this is NOT inflated by round-to-round
+      recycling, so it is the correct denominator for a true ROI. */
+  total_deposited_net: string | number | null;
+  total_withdrawn_sol: string | number | null;
   volume_fees: string | number | null;
   total_zinc_realized: string | number | null;
   zinc_credited: string | number | null;

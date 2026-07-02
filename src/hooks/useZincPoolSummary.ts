@@ -18,9 +18,15 @@ import {
 export type ZincPoolPnl = {
   deployedGrossSol: number;
   deployedNetSol: number;
+  /** SOL actually deposited by LPs (the capital base / cost basis). This is the
+      correct denominator for a true ROI — sol_deployed_gross is inflated by
+      round-to-round recycling and understates the loss when divided into. */
+  depositedCapitalSol: number;
   recoveredSol: number;
   netPnlSol: number;
-  /** netPnl / deployedGross, as a percent (0 when nothing deployed yet). */
+  /** SOL-only netPnl / depositedCapital, as a percent (true ROI on capital,
+      0 when nothing deposited yet). The full PnL incl. the ZINC leg is computed
+      in ZincEconomics against this same depositedCapital base. */
   pnlPct: number;
   cycles: number;
 };
@@ -43,12 +49,16 @@ export function useZincPoolSummary(pollMs = 60_000): {
       const d = res.data;
       const deployedGrossSol = lamportsToSol(d.sol_deployed_gross);
       const deployedNetSol = lamportsToSol(d.sol_deployed_net);
+      const depositedCapitalSol = lamportsToSol(d.total_deposited_net);
       const recoveredSol = lamportsToSol(d.sol_recovered);
       const netPnlSol = lamportsToSol(d.sol_net_pnl);
-      const pnlPct = deployedGrossSol > 0 ? (netPnlSol / deployedGrossSol) * 100 : 0;
+      // True ROI base: SOL actually deposited, NOT gross deployed (which recycles
+      // the same capital many times and would understate the loss).
+      const pnlPct = depositedCapitalSol > 0 ? (netPnlSol / depositedCapitalSol) * 100 : 0;
       setPnl({
         deployedGrossSol,
         deployedNetSol,
+        depositedCapitalSol,
         recoveredSol,
         netPnlSol,
         pnlPct,

@@ -58,11 +58,15 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
   // deployed, as a % of deployed - the same as the ORE lifetime-mining section.
   const { pnl } = useZincPoolSummary();
   const pnlReady = ready && !!pnl;
-  const deployed = pnl?.deployedGrossSol ?? 0;
+  const deployed = pnl?.deployedGrossSol ?? 0; // gross - recycled every round
+  const depositedCapital = pnl?.depositedCapitalSol ?? 0; // capital base / cost basis
   const recoveredSol = (pnl?.recoveredSol ?? 0) + wonClaimable;
   const madeSol = recoveredSol + totalZincVal;
   const pnlSol = madeSol - deployed;
-  const pnlPct = deployed > 0 ? (pnlSol / deployed) * 100 : 0;
+  // TRUE ROI: net PnL over the SOL actually DEPOSITED (cost basis), not gross
+  // deployed. Gross deployed recycles the same capital many times (here ~6x), so
+  // dividing by it makes a real capital loss look tiny. deposited is the honest base.
+  const pnlPct = depositedCapital > 0 ? (pnlSol / depositedCapital) * 100 : 0;
 
   // Denominate the headline PnL in USD, exactly like the ORE panel. Everything
   // above is already valued in SOL (ZINC via the live ZINC/SOL price), so a
@@ -119,12 +123,12 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
       <Section title="Recoverable now (claimable at the next open window)">
         <Row k="In vault (idle SOL)" v={sol(solIn)} unit="SOL" />
         <Row k="Won SOL (claimable)" v={sol(wonClaimable)} unit="SOL" />
-        <Row k="Smelted ZINC held" v={znc(smelted)} unit="ZINC" />
+        <Row k="Smelted ZINC held" v={znc(smelted)} unit="ZINC" sub="pool auto-smelts every settle (uZINC -> ZINC, -10%); nothing sits unsmelted" />
         <Row
           k="Won ZINC (claimable)"
           v={znc(wonClaimableZinc)}
           unit="ZINC"
-          sub={zincPrice > 0 ? "net of 10% smelt fee" : undefined}
+          sub={zincPrice > 0 ? "unsmelted, still in-game; net of 10% smelt fee once pulled" : undefined}
         />
         <Row
           k="Total recoverable"
@@ -148,10 +152,11 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
 
       {/* lifetime SOL + PnL - mirrors the ORE lifetime-mining section */}
       <Section title="Lifetime mining (all-time)">
-        <Row k="Total SOL deployed" v={pnlReady ? sol(deployed) : "···"} unit="SOL" sub="gross - capital recycles, so this exceeds TVL" />
+        <Row k="Net capital deposited" v={pnlReady ? sol(depositedCapital) : "···"} unit="SOL" sub="the SOL actually put in (cost basis) — the PnL % below is measured against this" strong />
+        <Row k="Total SOL deployed" v={pnlReady ? sol(deployed) : "···"} unit="SOL" sub="gross - the pool recycles the same capital every round, so this far exceeds what was deposited" />
         <Row k="Total SOL recovered" v={pnlReady ? sol(recoveredSol) : "···"} unit="SOL" sub="settled + claimable, + ZINC mined valued in PnL" />
         <div className="mt-2 flex items-baseline justify-between border-t border-line pt-2 font-mono text-xs">
-          <span className="text-white">All-time PnL</span>
+          <span className="text-white">All-time PnL <span className="font-normal text-fog-muted">on deposited</span></span>
           <span className={`num text-sm font-semibold ${pnlSol >= 0 ? "text-pos" : "text-[#ec9b9b]"}`}>
             {pnlReady
               ? solUsd > 0
