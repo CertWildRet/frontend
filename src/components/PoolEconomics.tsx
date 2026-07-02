@@ -56,7 +56,7 @@ export function PoolEconomics({
   const lifetimeRecovered = stats?.miner.lifetimeRewardsSol ?? 0;
   const hasLifetime = !!stats;
 
-  // Capital base (cost basis) from the analytics indexer — the SOL actually
+  // Capital base (cost basis) from the analytics indexer: the SOL actually
   // deposited, NOT gross recycled deploys. Same true-ROI denominator as dZINC.
   const { pnl: dorePnl } = usePoolSummary(BUCKET.dORE);
   const depositedCapital = dorePnl?.depositedCapitalSol ?? 0;
@@ -82,8 +82,10 @@ export function PoolEconomics({
         <span className="chip border-gold/30 text-gold">exact on-chain</span>
       </div>
       <p className="mb-5 font-mono text-[12px] leading-relaxed text-fog-muted">
-        SOL, ORE and stORE are read <span className="text-gray-200">straight from the bucket + ORE miner</span>,
-        not estimated. The contract&apos;s NAV reads ~0 mid-round; these are the true recoverable amounts.
+        Read <span className="text-gray-200">straight from chain</span>, not estimated (the contract NAV reads ~0
+        mid-round, so these are your true recoverable amounts).{" "}
+        <span className="text-gray-200">uORE</span> = unclaimed ORE ·{" "}
+        <span className="text-gray-200">stORE</span> = claimed + staked in the vault.
       </p>
 
       {/* headline: combined TVL split into its SOL + ORE shares. True TVL goes
@@ -118,15 +120,15 @@ export function PoolEconomics({
 
       {/* recoverable-now breakdown */}
       <Section title="Recoverable now (claimable at the next open window)">
-        <Row k="In vault (idle SOL)" v={sol(data?.solInVaultSol ?? 0)} unit="SOL" />
-        <Row k="Miner rewards (won SOL)" v={sol(data?.rewardsSol ?? 0)} unit="SOL" />
-        <Row k="In-flight this round" v={sol(data?.inFlightSol ?? 0)} unit="SOL" />
-        <Row k="stORE held (claimed ORE)" v={ore(storeOre)} unit="stORE" />
+        <Row k="Idle SOL" v={sol(data?.solInVaultSol ?? 0)} unit="SOL" />
+        <Row k="Won SOL" v={sol(data?.rewardsSol ?? 0)} unit="SOL" sub="mining rewards, not yet swept in" />
+        <Row k="SOL in-flight this round" v={sol(data?.inFlightSol ?? 0)} unit="SOL" />
+        <Row k="stORE (claimed + staked)" v={ore(storeOre)} unit="stORE" />
         <Row
-          k="Unclaimed ORE"
+          k="uORE (unclaimed)"
           v={ore(unclaimedOre - claimFeeOre)}
           unit="ORE"
-          sub={claimFeeOre > 0 ? "net of 10% claim fee" : undefined}
+          sub={claimFeeOre > 0 ? "net of the 10% claim fee" : undefined}
         />
         <Row
           k="Total recoverable"
@@ -139,20 +141,19 @@ export function PoolEconomics({
 
       {/* ORE lifecycle (all-time) */}
       <Section title="ORE lifecycle (all-time)">
-        <Row k="Net ORE mined (lifetime)" v={ore(lifetimeMined)} unit="ORE" strong />
-        <Row k="↳ stORE in pool (claimed, held)" v={ore(storeOre)} unit="stORE" />
-        <Row k="↳ still unclaimed (in miner)" v={ore(unclaimedOre)} unit="ORE" />
+        <Row k="ORE mined (all-time)" v={ore(lifetimeMined)} unit="ORE" strong />
+        <Row k="↳ stORE (claimed + staked)" v={ore(storeOre)} unit="stORE" />
+        <Row k="↳ uORE (unclaimed)" v={ore(unclaimedOre)} unit="ORE" />
         <p className="mt-1 font-mono text-[11px] leading-relaxed text-fog-muted">
-          Net of the 10% claim fee. The remainder (mined minus held minus unclaimed)
-          is ORE already withdrawn by users as stORE; it is not cleanly separable
-          on-chain, so it is not shown as an exact figure.
+          Net of the 10% claim fee. The rest was already withdrawn by holders as stORE, so
+          it is not separable on-chain and not shown.
         </p>
       </Section>
 
       {/* lifetime SOL + PnL */}
       <Section title="Lifetime mining (all-time)">
-        <Row k="Net capital deposited" v={pnlReady ? sol(depositedCapital) : "···"} unit="SOL" sub="the SOL actually put in (cost basis) — the PnL % below is measured against this" strong />
-        <Row k="Total SOL deployed" v={sol(lifetimeDeployed)} unit="SOL" sub="gross - the pool recycles the same capital every round, so this grows past what was deposited" />
+        <Row k="Net capital deposited" v={pnlReady ? sol(depositedCapital) : "···"} unit="SOL" sub="the SOL actually put in (cost basis); the PnL % below is measured against this" strong />
+        <Row k="Total SOL deployed" v={sol(lifetimeDeployed)} unit="SOL" sub="gross: the pool recycles the same capital every round, so this grows past what was deposited" />
         <Row k="Total SOL recovered" v={sol(lifetimeRecovered)} unit="SOL" />
         <div className="mt-2 flex items-baseline justify-between border-t border-line pt-2 font-mono text-xs">
           <span className="text-white">All-time PnL <span className="font-normal text-fog-muted">on deposited</span></span>

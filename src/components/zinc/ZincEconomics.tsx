@@ -84,9 +84,10 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
         <span className={`chip ${status.cls}`}>{status.text}</span>
       </div>
       <p className="mb-5 font-mono text-[12px] leading-relaxed text-fog-muted">
-        SOL, won SOL and smelted ZINC are read <span className="text-gray-200">straight from the bucket + ZINC custody
-        + the mining profile</span>, not estimated. The contract&apos;s NAV reads ~0 mid-round; these are the true
-        recoverable amounts. ZINC is valued live at the Meteora ZINC/SOL price.
+        Read <span className="text-gray-200">straight from chain</span>, not estimated (the contract NAV reads ~0
+        mid-round, so these are your true recoverable amounts).{" "}
+        <span className="text-gray-200">uZINC</span> = unsmelted ZINC ·{" "}
+        <span className="text-gray-200">stZINC</span> = smelted + staked in the vault. ZINC valued live at the Meteora ZINC/SOL price.
       </p>
 
       {/* headline: combined TVL split into its SOL + ZINC shares (mirrors the ORE
@@ -121,14 +122,14 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
 
       {/* recoverable-now breakdown */}
       <Section title="Recoverable now (claimable at the next open window)">
-        <Row k="In vault (idle SOL)" v={sol(solIn)} unit="SOL" />
-        <Row k="Won SOL (claimable)" v={sol(wonClaimable)} unit="SOL" />
-        <Row k="Smelted ZINC held" v={znc(smelted)} unit="ZINC" sub="pool auto-smelts every settle (uZINC -> ZINC, -10%); nothing sits unsmelted" />
+        <Row k="Idle SOL" v={sol(solIn)} unit="SOL" />
+        <Row k="Won SOL" v={sol(wonClaimable)} unit="SOL" sub="round winnings, not yet swept in" />
+        <Row k="stZINC (smelted + staked)" v={znc(smelted)} unit="stZINC" sub="auto-smelted then staked each settle (uZINC -> ZINC -> stZINC, -10%)" />
         <Row
-          k="Won ZINC (claimable)"
+          k="uZINC (unsmelted)"
           v={znc(wonClaimableZinc)}
           unit="ZINC"
-          sub={zincPrice > 0 ? "unsmelted, still in-game; net of 10% smelt fee once pulled" : undefined}
+          sub={zincPrice > 0 ? "won but not yet smelted; -10% when pulled" : undefined}
         />
         <Row
           k="Total recoverable"
@@ -141,20 +142,20 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
 
       {/* ZINC lifecycle (all-time) - mirrors the ORE lifecycle section */}
       <Section title="ZINC lifecycle (all-time)">
-        <Row k="ZINC mined (in pool)" v={znc(totalZinc)} unit="ZINC" strong />
-        <Row k="↳ smelted in pool (held)" v={znc(smelted)} unit="ZINC" />
-        <Row k="↳ still claimable (in game)" v={znc(wonClaimableZinc)} unit="ZINC" />
+        <Row k="ZINC mined (all-time)" v={znc(totalZinc)} unit="ZINC" strong />
+        <Row k="↳ stZINC (smelted + staked)" v={znc(smelted)} unit="stZINC" />
+        <Row k="↳ uZINC (unsmelted)" v={znc(wonClaimableZinc)} unit="ZINC" />
         <p className="mt-1 font-mono text-[11px] leading-relaxed text-fog-muted">
           Net of the 10% smelt fee. ZINC already withdrawn by holders in kind is not
-          cleanly separable on-chain, so it is not shown as an exact figure.
+          separable on-chain, so it is not shown.
         </p>
       </Section>
 
       {/* lifetime SOL + PnL - mirrors the ORE lifetime-mining section */}
       <Section title="Lifetime mining (all-time)">
-        <Row k="Net capital deposited" v={pnlReady ? sol(depositedCapital) : "···"} unit="SOL" sub="the SOL actually put in (cost basis) — the PnL % below is measured against this" strong />
-        <Row k="Total SOL deployed" v={pnlReady ? sol(deployed) : "···"} unit="SOL" sub="gross - the pool recycles the same capital every round, so this far exceeds what was deposited" />
-        <Row k="Total SOL recovered" v={pnlReady ? sol(recoveredSol) : "···"} unit="SOL" sub="settled + claimable, + ZINC mined valued in PnL" />
+        <Row k="Net capital deposited" v={pnlReady ? sol(depositedCapital) : "···"} unit="SOL" sub="the SOL actually put in (cost basis); the PnL % below is measured against this" strong />
+        <Row k="Total SOL deployed" v={pnlReady ? sol(deployed) : "···"} unit="SOL" sub="gross: the pool recycles the same capital every round, so this far exceeds what was deposited" />
+        <Row k="Total SOL recovered" v={pnlReady ? sol(recoveredSol) : "···"} unit="SOL" sub="settled + claimable, plus ZINC mined valued in PnL" />
         <div className="mt-2 flex items-baseline justify-between border-t border-line pt-2 font-mono text-xs">
           <span className="text-white">All-time PnL <span className="font-normal text-fog-muted">on deposited</span></span>
           <span className={`num text-sm font-semibold ${pnlSol >= 0 ? "text-pos" : "text-[#ec9b9b]"}`}>
