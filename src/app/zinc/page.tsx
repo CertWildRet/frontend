@@ -22,9 +22,9 @@ import { ZincLiveCrankPanel } from "@/components/zinc/ZincLiveCrankPanel";
  * Verified ZINC mechanics (kept in the copy below):
  *   - dZINC = the pool SHARE token (minted on deposit, like dORE).
  *   - ZINC  = the mined asset (parimutuel 30-tile game).
- *   - Smelted ZINC = claimed (-10% smelt fee) ZINC the pool HOLDS (custody ATA);
- *                    paid pro-rata IN-KIND on withdraw. v1 is HOLD-only (no
- *                    liquid stZINC token; staking is a planned toggle).
+ *   - Smelted ZINC = claimed (-10% smelt fee) ZINC the pool STAKES as stZINC and
+ *                    pays pro-rata IN-KIND on withdraw (unstaked at exit). There is
+ *                    no liquid stZINC token; the vault stakes it custodially.
  *   - Protocol min deploy = 0.05 SOL/round; the pool's adapter deploys full
  *                    30-tile coverage (~1.5 SOL/round, admin-tunable) for 0% ruin,
  *                    production-cost gated (mine iff cost-to-mine < ZINC price).
@@ -46,7 +46,7 @@ export default function ZincPage() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           {/* live status now lives in the top ZincStatTicker (crank online), so
-              the header is just the title — matching the /ore header. The
+              the header is just the title, matching the /ore header. The
               not-live case is still handled by the NotLivePanel body. */}
           <h1 className="font-display text-2xl font-bold tracking-tight text-white">ZINC</h1>
           <p className="mt-1.5 max-w-2xl text-sm text-fog-dim">

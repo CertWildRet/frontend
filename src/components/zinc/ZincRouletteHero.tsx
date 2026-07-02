@@ -84,12 +84,11 @@ export function ZincRouletteHero({
       bloom="radial-gradient(circle, rgba(154,107,255,0.16), rgba(255,90,200,0.08) 45%, transparent 72%)"
       dotGlow="rgba(255,90,200,0.6)"
       tilesLabel="30 tiles"
-      blurb="On rounds it mines, the keeper deploys across the whole board; claim when the window opens, or hold your dZINC (held as smelted ZINC in kind, no yield in v1). Production-cost gated: it only mines when cost-to-mine is below the live ZINC price."
+      blurb="On rounds it mines, the keeper deploys across the whole board; claim when the window opens, or hold your dZINC while its smelted ZINC stays staked as stZINC. Disciplined: it only mines on rounds it likes."
       bullets={[
         "30/30 tiles every eligible round, full-board coverage",
-        "mine, smelt (-10% fee), hold; your dZINC is a pro-rata claim on it all",
+        "mine, smelt (-10% fee), stake as stZINC; your dZINC is a pro-rata claim on it all",
         "production-cost gated: mines only when cost-to-mine is below the live ZINC price",
-        "v1 holds smelted ZINC in kind (staking is a planned toggle; no liquid stZINC)",
         "withdraw burns dZINC for your SOL plus your pro-rata smelted ZINC, in kind",
       ]}
     />
