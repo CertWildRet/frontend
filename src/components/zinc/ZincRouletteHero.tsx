@@ -53,7 +53,17 @@ export function ZincRouletteHero({
     phaseTitle = "···";
   }
 
-  const price = data ? formatNum(data.navPerShareSol, 4) : null;
+  // Headline price = FULL backing per share: SOL leg (idle + unswept won SOL)
+  // PLUS the ZINC legs (staked reserve + unsmelted uZINC) valued at the live
+  // Meteora price — the same recipe as ZincEconomics' "Value / share". Falls
+  // back to the SOL leg when the price feed is unavailable. (navPerShareSol
+  // alone counted only idle SOL and under-read the share badly.)
+  const zincLegsVal = (data?.zincHeldValueSol ?? 0) + (data?.wonClaimableZincValueSol ?? 0);
+  const solLeg = (data?.solInVaultSol ?? 0) + (data?.wonClaimableSol ?? 0);
+  const price =
+    data && data.totalShares > 0
+      ? formatNum((solLeg + (data.zincPriceSol > 0 ? zincLegsVal : 0)) / data.totalShares, 4)
+      : null;
   // Live + actively mining/claiming -> let the ring spin; halted/not-live ->
   // hold it static so the surface reads as "gated".
   const animated = live && !halted;

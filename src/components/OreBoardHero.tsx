@@ -6,6 +6,7 @@ import { PoolReadout } from "./PoolReadout";
 import { usePhaseClock, fmtCountdown } from "@/hooks/usePhaseClock";
 import { formatNum } from "@/lib/format";
 import type { VaultData } from "@/hooks/useVaultData";
+import type { PoolStatsData } from "@/hooks/useStats";
 
 /**
  * The /ore hero: the 25-tile ORE board as the page centrepiece, wired to LIVE
@@ -16,7 +17,13 @@ import type { VaultData } from "@/hooks/useVaultData";
  * exact layout/feel of the ZINC hero - the only deltas are the board (a 5x5
  * grid vs a 30-tile ring), the cyan accent, and the ORE wording.
  */
-export function OreBoardHero({ data }: { data: VaultData | null }) {
+export function OreBoardHero({
+  data,
+  stats,
+}: {
+  data: VaultData | null;
+  stats?: PoolStatsData | null;
+}) {
   const clock = usePhaseClock(data);
 
   const live = !!data?.initialized;
@@ -39,7 +46,19 @@ export function OreBoardHero({ data }: { data: VaultData | null }) {
     phaseTitle = "···";
   }
 
-  const price = data ? formatNum(data.navPerShare, 4) : null;
+  // Headline price = FULL backing per share: SOL leg (incl. the miner's
+  // unswept won SOL + in-flight) PLUS the ORE leg (fee-netted uORE + stORE at
+  // its redemption rate) valued at the live ORE price — the same recipe as
+  // PoolEconomics' "Value / share". Falls back to the SOL-leg-only figure
+  // when no price feed. (The old naive sdk navPerShare read ~0 mid-cycle.)
+  const solUsd = stats?.prices.solUsd ?? 0;
+  const oreUsd = stats?.prices.oreUsd ?? 0;
+  const oreToSol = solUsd > 0 && oreUsd > 0 ? oreUsd / solUsd : 0;
+  const shareValueSol =
+    data && data.totalShares > 0
+      ? (data.recoverableSol + data.recoverableOre * oreToSol) / data.totalShares
+      : null;
+  const price = shareValueSol != null ? formatNum(shareValueSol, 4) : null;
   const lit = live && !halted;
 
   const center = (

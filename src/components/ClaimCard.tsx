@@ -32,7 +32,13 @@ export function ClaimCard({
   // the window opened (not the live NAV/share). Use it when set (>0, i.e. an open
   // window); fall back to the live value only before the window snapshot exists.
   const frozenNps = data?.claimsWindowNps && data.claimsWindowNps > 0 ? data.claimsWindowNps : 0;
-  const liveNps = data?.navPerShare && data.navPerShare > 0 ? data.navPerShare : 1;
+  // Live fallback = TRUE derived NAV (recoverableSol includes the miner's
+  // unswept won SOL + in-flight), matching what open_window will snapshot —
+  // the sdk's naive navPerShare reads ~0 mid-cycle (same bug as the mint quote).
+  const liveNps =
+    data && data.totalShares > 0 && data.recoverableSol > 0
+      ? data.recoverableSol / data.totalShares
+      : 1;
   const estSol = claimShares * (frozenNps > 0 ? frozenNps : liveNps);
 
   const windowOpen = !!data?.initialized && data.phase === 1 && data.windowSettled && !data.paused;

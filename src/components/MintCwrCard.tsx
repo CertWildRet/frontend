@@ -23,7 +23,17 @@ export function MintCwrCard({ data, onDone }: { data: VaultData | null; onDone: 
   const sol = Number(amount);
   const valid = sol > 0 && Number.isFinite(sol);
   const belowMin = valid && sol < MIN_DEPOSIT_SOL;
-  const navPerShare = data?.navPerShare && data.navPerShare > 0 ? data.navPerShare : 1;
+  // Quote at the TRUE derived NAV (recoverableSol = sol_in_vault + miner won
+  // SOL + in-flight), NOT the sdk's naive totalNav (sol_in_vault only). The
+  // naive figure reads ~0 mid-cycle while the pool's SOL sits unswept on the
+  // ORE miner, which quoted absurd millions of dORE for dust deposits. The
+  // CONTRACT never prices there (deposit is gated to the settled OPEN window,
+  // where settle_uore has swept the SOL in — and its derived_nav includes the
+  // miner legs regardless): this quote now matches what deposit actually mints.
+  const navPerShare =
+    data && data.totalShares > 0 && data.recoverableSol > 0
+      ? data.recoverableSol / data.totalShares
+      : 1; // empty pool: the contract mints 1:1
   const estShares = valid ? sol / navPerShare : 0;
 
   const windowOpen = !!data?.initialized && data.phase === 1 && data.windowSettled && !data.paused;

@@ -74,12 +74,21 @@ export function StatRow({
   return (
     <div className="flex items-start justify-between gap-3 font-mono text-xs">
       <span className="min-w-0 text-fog-muted">{k}</span>
-      <span className="flex shrink-0 flex-col items-end text-right leading-tight">
+      {/* min-w-0 (NOT shrink-0): the column must be allowed to shrink below its
+          content width, or a long `sub` annotation renders as one unwrappable
+          line and drags the whole page out sideways on mobile. The VALUE line
+          alone stays nowrap (numbers never break); the sub wraps, capped at a
+          readable measure. */}
+      <span className="flex min-w-0 flex-col items-end text-right leading-tight">
         <span className="whitespace-nowrap">
           <span className={`num ${strong ? "text-gold" : "text-gray-200"}`}>{v}</span>
           {unit && <span className="ml-1 text-[12px] text-fog-muted">{unit}</span>}
         </span>
-        {sub && <span className="mt-0.5 text-[11px] text-fog-muted">{sub}</span>}
+        {sub && (
+          <span className="mt-0.5 max-w-[38ch] break-words text-[11px] leading-snug text-fog-muted">
+            {sub}
+          </span>
+        )}
       </span>
     </div>
   );

@@ -124,12 +124,15 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
       <Section title="Recoverable now (claimable at the next open window)">
         <Row k="Idle SOL" v={sol(solIn)} unit="SOL" />
         <Row k="Won SOL" v={sol(wonClaimable)} unit="SOL" sub="round winnings, not yet swept in" />
-        <Row k="stZINC (smelted + staked)" v={znc(smelted)} unit="stZINC" sub="auto-smelted then staked each settle (uZINC -> ZINC -> stZINC, -10%)" />
+        {/* v1.4.0 lazy smelt: settles no longer smelt — new winnings ride
+            unsmelted (compounding refining yield); the staked reserve only
+            grows when an exit forces a batch smelt. */}
+        <Row k="stZINC (smelted + staked)" v={znc(smelted)} unit="stZINC" sub="staked exit reserve; refilled by batch smelts only when exits need it" />
         <Row
           k="uZINC (unsmelted)"
           v={znc(wonClaimableZinc)}
           unit="ZINC"
-          sub={zincPrice > 0 ? "won but not yet smelted; -10% when pulled" : undefined}
+          sub={zincPrice > 0 ? "held unsmelted on purpose — earns the refining rebase; -10% when smelted" : undefined}
         />
         <Row
           k="Total recoverable"

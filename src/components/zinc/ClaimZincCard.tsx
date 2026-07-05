@@ -31,7 +31,13 @@ export function ClaimZincCard({
   // The contract pays the SOL leg at the FROZEN claims_window_nps snapshotted when
   // the window opened; fall back to the live SOL/share before the snapshot exists.
   const frozenNps = data?.claimsWindowNps && data.claimsWindowNps > 0 ? data.claimsWindowNps : 0;
-  const liveNps = data?.navPerShareSol && data.navPerShareSol > 0 ? data.navPerShareSol : 1;
+  // Live fallback = the SOL leg the next open_window will snapshot
+  // (sol_in_vault + unswept won SOL) — sol_in_vault alone under-reads mid-cycle.
+  const liveTrueSolLeg = (data?.solInVaultSol ?? 0) + (data?.wonClaimableSol ?? 0);
+  const liveNps =
+    data && data.totalShares > 0 && liveTrueSolLeg > 0
+      ? liveTrueSolLeg / data.totalShares
+      : 1;
   const estSol = claimShares * (frozenNps > 0 ? frozenNps : liveNps);
   // Pro-rata in-kind smelted ZINC paid alongside the SOL.
   const fraction = data && data.totalShares > 0 ? claimShares / data.totalShares : 0;

@@ -23,7 +23,16 @@ export function MintZincCard({ data, onDone }: { data: ZincPoolStats | null; onD
   const sol = Number(amount);
   const valid = sol > 0 && Number.isFinite(sol);
   const belowMin = valid && sol < MIN_DEPOSIT_SOL;
-  const navPerShare = data?.navPerShareSol && data.navPerShareSol > 0 ? data.navPerShareSol : 1;
+  // Quote at the SOL leg the contract will actually price against: mid-cycle
+  // the pool's won SOL sits unswept on the ZINC profile (wonClaimableSol) and
+  // sol_in_vault alone under-reads — deposit_zinc executes only in the settled
+  // OPEN window, AFTER settle_harvest_zinc swept that SOL in. Same fix as the
+  // dORE mint quote (which read ~0 and quoted millions of shares for dust).
+  const trueSolLeg = (data?.solInVaultSol ?? 0) + (data?.wonClaimableSol ?? 0);
+  const navPerShare =
+    data && data.totalShares > 0 && trueSolLeg > 0
+      ? trueSolLeg / data.totalShares
+      : 1; // empty pool: the contract mints 1:1
   const estShares = valid ? sol / navPerShare : 0;
 
   const windowOpen = !!data?.initialized && data.phase === 1 && data.windowSettled && !data.paused;

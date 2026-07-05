@@ -36,7 +36,7 @@ export default function OrePage() {
         </div>
       </header>
 
-      <OreBoardHero data={data} />
+      <OreBoardHero data={data} stats={stats} />
 
       <PoolStats data={data} stats={stats} />
       <PhaseTimers data={data} />
