@@ -5,6 +5,7 @@ import type { VaultData } from "@/hooks/useVaultData";
 import { usePoolSummary } from "@/hooks/useZincPoolSummary";
 import { BUCKET } from "@/lib/analytics";
 import { formatNum, formatSol } from "@/lib/format";
+import { ORE_ATH_USD } from "@/lib/ath";
 import { StatTile, StatRow, StatSection } from "@/components/primitives/Stat";
 
 /**
@@ -73,6 +74,17 @@ export function PoolEconomics({
   const pnlReady = hasLifetime && solUsd > 0 && oreUsd > 0 && depositedUsd > 0;
   const pnlText = pnlReady
     ? `${pnlUsd < 0 ? "-" : ""}$${formatNum(Math.abs(pnlUsd), 2)} (${pnlPct >= 0 ? "+" : ""}${formatNum(pnlPct, 1)}%)`
+    : "···";
+
+  // Projected ("hopium") PnL: the SAME calculation, but the all-time mined ORE
+  // leg is revalued at ORE's past all-time high instead of the live price.
+  // Recovered SOL, gross deployed and the deposited cost basis are unchanged.
+  // NOT realized PnL — what it *could* be if ORE round-trips to its ATH.
+  const madeUsdAth = lifetimeRecovered * solUsd + lifetimeMined * ORE_ATH_USD;
+  const pnlUsdAth = madeUsdAth - deployedUsd;
+  const pnlPctAth = depositedUsd > 0 ? (pnlUsdAth / depositedUsd) * 100 : 0;
+  const pnlAthText = pnlReady
+    ? `${pnlUsdAth < 0 ? "-" : ""}$${formatNum(Math.abs(pnlUsdAth), 2)} (${pnlPctAth >= 0 ? "+" : ""}${formatNum(pnlPctAth, 1)}%)`
     : "···";
 
   return (
@@ -161,6 +173,16 @@ export function PoolEconomics({
             {pnlText}
           </span>
         </div>
+        <div className="mt-1.5 flex items-baseline justify-between font-mono text-xs">
+          <span className="text-fog-muted">
+            Projected <span className="text-gold/80">if ORE @ ${formatNum(ORE_ATH_USD, 0)} ATH</span>
+          </span>
+          <span className="num text-sm font-semibold text-gold">{pnlAthText}</span>
+        </div>
+        <p className="mt-1 font-mono text-[11px] leading-relaxed text-fog-muted">
+          Hopium, not the real number: values all mined ORE at its past all-time high (${formatNum(ORE_ATH_USD, 0)}),
+          not the live price. What the PnL <span className="italic">could</span> be if ORE round-trips to its ATH — not what it is.
+        </p>
       </Section>
 
       <div className="mt-4 flex flex-col gap-1.5 border-t border-line pt-3 font-mono text-[12px] text-fog-muted sm:flex-row sm:items-center sm:justify-between sm:gap-3">
