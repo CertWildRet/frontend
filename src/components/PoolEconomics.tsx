@@ -6,6 +6,7 @@ import { usePoolSummary } from "@/hooks/useZincPoolSummary";
 import { BUCKET } from "@/lib/analytics";
 import { formatNum, formatSol } from "@/lib/format";
 import { ORE_ATH_USD } from "@/lib/ath";
+import { useAth } from "@/hooks/useAth";
 import { StatTile, StatRow, StatSection } from "@/components/primitives/Stat";
 
 /**
@@ -77,10 +78,14 @@ export function PoolEconomics({
     : "···";
 
   // Projected ("hopium") PnL: the SAME calculation, but the all-time mined ORE
-  // leg is revalued at ORE's past all-time high instead of the live price.
+  // leg is revalued at ORE's trailing-1-year high instead of the live price.
   // Recovered SOL, gross deployed and the deposited cost basis are unchanged.
-  // NOT realized PnL — what it *could* be if ORE round-trips to its ATH.
-  const madeUsdAth = lifetimeRecovered * solUsd + lifetimeMined * ORE_ATH_USD;
+  // NOT realized PnL — what it *could* be if ORE round-trips to its past-year high.
+  // The high is live from the ORE keeper's /api/ath (refreshed ≤ once a day);
+  // the ath.ts constant is only a boot fallback.
+  const athLive = useAth(process.env.NEXT_PUBLIC_BRAIN_URL);
+  const oreAthUsd = athLive?.athUsd && athLive.athUsd > 0 ? athLive.athUsd : ORE_ATH_USD;
+  const madeUsdAth = lifetimeRecovered * solUsd + lifetimeMined * oreAthUsd;
   const pnlUsdAth = madeUsdAth - deployedUsd;
   const pnlPctAth = depositedUsd > 0 ? (pnlUsdAth / depositedUsd) * 100 : 0;
   const pnlAthText = pnlReady
@@ -175,13 +180,14 @@ export function PoolEconomics({
         </div>
         <div className="mt-1.5 flex items-baseline justify-between font-mono text-xs">
           <span className="text-fog-muted">
-            Projected <span className="text-gold/80">if ORE @ ${formatNum(ORE_ATH_USD, 0)} ATH</span>
+            Projected <span className="text-gold/80">if ORE @ ${formatNum(oreAthUsd, 0)} · ATH past year</span>
           </span>
           <span className="num text-sm font-semibold text-gold">{pnlAthText}</span>
         </div>
         <p className="mt-1 font-mono text-[11px] leading-relaxed text-fog-muted">
-          Hopium, not the real number: values all mined ORE at its past all-time high (${formatNum(ORE_ATH_USD, 0)}),
-          not the live price. What the PnL <span className="italic">could</span> be if ORE round-trips to its ATH — not what it is.
+          Hopium, not the real number: values all mined ORE at its highest price in the past year
+          (${formatNum(oreAthUsd, 0)}), not the live price. What the PnL <span className="italic">could</span> be if
+          ORE round-trips to its past-year high — not what it is.
         </p>
       </Section>
 

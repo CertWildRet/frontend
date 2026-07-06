@@ -3,6 +3,7 @@
 import type { ZincPoolStats } from "@/lib/cwr";
 import { formatNum, formatSol } from "@/lib/format";
 import { ZINC_ATH_USD } from "@/lib/ath";
+import { useAth } from "@/hooks/useAth";
 import { StatTile, StatRow, StatSection } from "@/components/primitives/Stat";
 import { useZincPoolSummary } from "@/hooks/useZincPoolSummary";
 import { useStats } from "@/hooks/useStats";
@@ -79,11 +80,14 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
   const zincUsd = zincPrice * solUsd;
 
   // Projected ("hopium") PnL: the SAME calculation, but the mined ZINC leg is
-  // revalued at ZINC's past all-time high ($ATH → SOL via the live SOL price)
-  // instead of the live ZINC/SOL price. Recovered SOL, gross deployed and the
-  // deposited cost basis are unchanged. NOT realized PnL — what it *could* be
-  // if ZINC round-trips to its ATH. Needs solUsd to convert the ATH into SOL.
-  const zincAthSol = solUsd > 0 ? ZINC_ATH_USD / solUsd : 0;
+  // revalued at ZINC's trailing-1-year high ($ high → SOL via the live SOL
+  // price) instead of the live ZINC/SOL price. Recovered SOL, gross deployed and
+  // the deposited cost basis are unchanged. NOT realized PnL — what it *could*
+  // be if ZINC round-trips to its past-year high. The high is live from the ZINC
+  // keeper's /api/ath (≤ once-a-day refresh); the ath.ts constant is a fallback.
+  const athLive = useAth(process.env.NEXT_PUBLIC_ZINC_BRAIN_URL);
+  const zincAthUsd = athLive?.athUsd && athLive.athUsd > 0 ? athLive.athUsd : ZINC_ATH_USD;
+  const zincAthSol = solUsd > 0 ? zincAthUsd / solUsd : 0;
   const totalZincValAth = totalZinc * zincAthSol;
   const madeSolAth = recoveredSol + totalZincValAth;
   const pnlSolAth = madeSolAth - deployed;
@@ -188,13 +192,14 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
         </div>
         <div className="mt-1.5 flex items-baseline justify-between font-mono text-xs">
           <span className="text-fog-muted">
-            Projected <span className="text-gold/80">if ZINC @ ${formatNum(ZINC_ATH_USD, 0)} ATH</span>
+            Projected <span className="text-gold/80">if ZINC @ ${formatNum(zincAthUsd, 0)} · ATH past year</span>
           </span>
           <span className="num text-sm font-semibold text-gold">{pnlAthText}</span>
         </div>
         <p className="mt-1 font-mono text-[11px] leading-relaxed text-fog-muted">
-          Hopium, not the real number: values all mined ZINC at its past all-time high (${formatNum(ZINC_ATH_USD, 0)}),
-          not the live price. What the PnL <span className="italic">could</span> be if ZINC round-trips to its ATH — not what it is.
+          Hopium, not the real number: values all mined ZINC at its highest price in the past year
+          (${formatNum(zincAthUsd, 0)}), not the live price. What the PnL <span className="italic">could</span> be if
+          ZINC round-trips to its past-year high — not what it is.
         </p>
       </Section>
 

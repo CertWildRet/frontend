@@ -1,12 +1,12 @@
 /**
- * Past all-time-high USD prices for the mined tokens, used ONLY for the
- * "Projected PnL" hopium figure on the pool-economics panels.
+ * BOOT FALLBACK ATH (USD) for the mined tokens' "projected PnL at ATH (past
+ * year)" hopium figure.
  *
- * This is NOT a live feed and NOT realized PnL. It revalues the mined-token leg
- * (and only that leg) at the token's past peak to show what the all-time PnL
- * *would* be if the token round-tripped to its ATH. Everything else in the
- * calculation — recovered SOL, gross deployed, deposited cost basis — is
- * unchanged. Bump these if an ATH is beaten.
+ * The live figure comes from each keeper's GET /api/ath (a trailing-1-year high
+ * off CoinGecko, cached in-memory and refreshed ≤ once a day) via useAth().
+ * These constants are only used for the brief window before that first fetch
+ * lands, or if the keeper's /api/ath is unreachable — so keep them roughly in
+ * line with the real past-year highs. Not authoritative; the endpoint is.
  */
-export const ORE_ATH_USD = 90;
-export const ZINC_ATH_USD = 20;
+export const ORE_ATH_USD = 90; // ORE ≈ current-cycle high; live value overrides
+export const ZINC_ATH_USD = 25; // ZINC past-year high ≈ $25 (Jun 2026); live value overrides
