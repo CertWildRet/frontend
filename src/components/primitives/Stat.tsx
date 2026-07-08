@@ -64,15 +64,17 @@ export function StatRow({
   unit,
   sub,
   strong,
+  className,
 }: {
   k: ReactNode;
   v: string;
   unit?: string;
   sub?: ReactNode;
   strong?: boolean;
+  className?: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 font-mono text-xs">
+    <div className={`flex items-start justify-between gap-3 font-mono text-xs ${className ?? ""}`}>
       <span className="min-w-0 text-fog-muted">{k}</span>
       {/* min-w-0 (NOT shrink-0): the column must be allowed to shrink below its
           content width, or a long `sub` annotation renders as one unwrappable

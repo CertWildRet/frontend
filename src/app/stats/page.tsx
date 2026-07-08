@@ -172,17 +172,20 @@ function HeroBand({ live }: { live: ReturnType<typeof useOreLive> }) {
         subtitle="Exact per-tile deploys for the current round (live Round PDA). Intensity = SOL; number = miners."
         right={<span className="font-mono text-[13px] text-fog-muted">{r ? `round #${formatNum(Number(r.round_id))}` : ""}</span>}
       >
-        <div className="grid gap-x-10 gap-y-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="w-full max-w-[420px] lg:max-w-none">
+        {/* laptop: heatmap left at a sane size, "This round" enlarged + pinned to
+            the right edge (justify-between), so the slack sits in the MIDDLE rather
+            than dangling to the right of the stats. Mobile stays stacked. */}
+        <div className="grid gap-x-10 gap-y-6 lg:flex lg:items-center lg:justify-between">
+          <div className="w-full max-w-[420px] lg:max-w-[480px] lg:shrink-0">
             <TileHeatmap perTileSol={board.dep} perTileCount={board.cnt} />
           </div>
-          <div className="flex flex-col justify-center gap-2.5">
-            <div className="section-label mb-1">This round</div>
-            <StatRow k="Hottest tile" v={hottest >= 0 ? `#${hottest + 1}` : "·"} unit={hottest >= 0 ? `${formatSol(hottestSol, 3)} SOL` : ""} />
-            <StatRow k="Spread (top ↔ least)" v={formatSol(spread, 3)} unit="SOL" />
-            <StatRow k="Pot (winnings)" v={formatSol(pot, 2)} unit="SOL" />
-            <StatRow k="Vaulted this round" v={formatSol(vault, 4)} unit="SOL" sub="the round's protocol take (buyback + admin)" />
-            <StatRow k="Solo winner (so far)" v={short(topMiner)} />
+          <div className="flex flex-col justify-center gap-4 lg:w-[420px] lg:shrink-0">
+            <div className="section-label mb-1 lg:text-[13px]">This round</div>
+            <StatRow className="lg:text-sm" k="Hottest tile" v={hottest >= 0 ? `#${hottest + 1}` : "·"} unit={hottest >= 0 ? `${formatSol(hottestSol, 3)} SOL` : ""} />
+            <StatRow className="lg:text-sm" k="Spread (top ↔ least)" v={formatSol(spread, 3)} unit="SOL" />
+            <StatRow className="lg:text-sm" k="Pot (winnings)" v={formatSol(pot, 2)} unit="SOL" />
+            <StatRow className="lg:text-sm" k="Vaulted this round" v={formatSol(vault, 4)} unit="SOL" sub="the round's protocol take (buyback + admin)" />
+            <StatRow className="lg:text-sm" k="Solo winner (so far)" v={short(topMiner)} />
           </div>
         </div>
       </ChartCard>
