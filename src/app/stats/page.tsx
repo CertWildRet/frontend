@@ -172,11 +172,11 @@ function HeroBand({ live }: { live: ReturnType<typeof useOreLive> }) {
         subtitle="Exact per-tile deploys for the current round (live Round PDA). Intensity = SOL; number = miners."
         right={<span className="font-mono text-[13px] text-fog-muted">{r ? `round #${formatNum(Number(r.round_id))}` : ""}</span>}
       >
-        <div className="grid gap-x-8 gap-y-5 lg:grid-cols-[420px_minmax(0,1fr)]">
-          <div className="w-full max-w-[420px]">
+        <div className="grid gap-x-10 gap-y-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="w-full max-w-[420px] lg:max-w-none">
             <TileHeatmap perTileSol={board.dep} perTileCount={board.cnt} />
           </div>
-          <div className="flex flex-col justify-center gap-2.5 lg:max-w-[480px]">
+          <div className="flex flex-col justify-center gap-2.5">
             <div className="section-label mb-1">This round</div>
             <StatRow k="Hottest tile" v={hottest >= 0 ? `#${hottest + 1}` : "·"} unit={hottest >= 0 ? `${formatSol(hottestSol, 3)} SOL` : ""} />
             <StatRow k="Spread (top ↔ least)" v={formatSol(spread, 3)} unit="SOL" />
@@ -399,7 +399,7 @@ function LeaderboardTab() {
           ))}
         </div>
         <div className={tableWrap}>
-          <table className="w-full font-mono text-[13px] sm:min-w-[600px] lg:max-w-[880px]">
+          <table className="w-full font-mono text-[13px] sm:min-w-[600px]">
             <thead>
               <tr className={theadRow}>
                 <th className={th}>#</th>
@@ -471,7 +471,7 @@ function MinersTab() {
         subtitle={d?.snapshot_ts ? `Census snapshot ${new Date(d.snapshot_ts).toLocaleDateString()} · ${formatNum(total)} miners` : "loading…"}
         right={
           <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="search address…"
-            className="w-full rounded-md border border-line bg-ink-800 px-2.5 py-1.5 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none sm:w-40" />
+            className="w-full rounded-md border border-line bg-ink-800 px-2.5 py-1.5 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none sm:w-64" />
         }>
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
           <span className="mr-1 shrink-0 font-mono text-[13px] text-fog-muted">sort:</span>
@@ -481,7 +481,7 @@ function MinersTab() {
           ))}
         </div>
         <div className={tableWrap}>
-          <table className="w-full font-mono text-[13px] sm:min-w-[640px] lg:max-w-[880px]">
+          <table className="w-full font-mono text-[13px] sm:min-w-[640px]">
             <thead>
               <tr className={theadRow}>
                 <th className={th}>#</th>
@@ -534,7 +534,7 @@ function RoundsTab() {
     <div className="space-y-5">
       <ChartCard title="Recent rounds" subtitle="The round spine — newest first. Split = jackpot shared across winners. ★ = motherlode hit.">
         <div className={tableWrap}>
-          <table className="w-full font-mono text-[13px] sm:min-w-[560px] lg:max-w-[880px]">
+          <table className="w-full font-mono text-[13px] sm:min-w-[560px]">
             <thead>
               <tr className={theadRow}>
                 <th className={th}>Round</th>

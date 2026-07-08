@@ -73,7 +73,7 @@ export function OreBoardHero({
 
   return (
     <PoolIntro
-      board={<OreHeroBoard size={340} center={center} lit={lit} />}
+      board={<OreHeroBoard center={center} lit={lit} />}
       accentFrom="#22E0E6"
       accentTo="#5B6CFF"
       bloom="radial-gradient(circle, rgba(34,224,230,0.18), rgba(91,108,255,0.08) 45%, transparent 72%)"
@@ -95,10 +95,14 @@ export function OreBoardHero({
  * with the live phase readout floating over a circular scrim in the middle -
  * the grid analog of the ZINC roulette's ring-with-centre-readout.
  */
-function OreHeroBoard({ size, center, lit }: { size: number; center: ReactNode; lit: boolean }) {
+function OreHeroBoard({ center, lit }: { center: ReactNode; lit: boolean }) {
   return (
-    <div className="relative w-full" style={{ maxWidth: size }}>
-      <div className="grid aspect-square w-full grid-cols-5 grid-rows-5 gap-[4.5%]">
+    // Mobile: fluid + square, filling the grid-cols-1 track up to 340px. Desktop:
+    // a DEFINITE 340px width (md:w-[340px]) so PoolIntro's `auto` board column has
+    // an intrinsic size and can't collapse to 0 (the CSS-grid board has no natural
+    // width like the ZINC SVG does). aspect-square keeps it square in both.
+    <div className="relative aspect-square w-full max-w-[340px] md:w-[340px]">
+      <div className="grid h-full w-full grid-cols-5 grid-rows-5 gap-[4.5%]">
         {Array.from({ length: 25 }).map((_, i) => (
           <span
             key={i}
