@@ -12,18 +12,18 @@
 import { useMemo, useState } from "react";
 import { StatTile, StatRow } from "@/components/primitives/Stat";
 import { TileHeatmap } from "@/components/TileHeatmap";
-import { AreaLine, Bars, HBars, ChartCard, type Pt } from "@/components/stats/Charts";
+import { AreaLine, HBars, ChartCard, type Pt } from "@/components/stats/Charts";
 import { useOreLive } from "@/hooks/useOreLive";
 import { usePolled } from "@/hooks/useOreStats";
 import {
-  fetchOreSummary, fetchStatsOverview, fetchOreRounds, fetchOreRng, fetchOreMotherlode, fetchOreLeaderboard,
+  fetchOreSummary, fetchStatsOverview, fetchOreRounds, fetchOreMotherlode, fetchOreLeaderboard,
   lamportsToSol, oreGramsToOre, bpsToPct,
   type OreRound,
 } from "@/lib/oreStats";
 import { formatSol, formatNum, formatPct } from "@/lib/format";
 
 type Token = "ORE" | "ZINC";
-type Tab = "overview" | "rounds" | "fairness" | "economics" | "motherlode" | "leaderboard";
+type Tab = "overview" | "rounds" | "economics" | "motherlode" | "leaderboard";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
@@ -31,7 +31,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "motherlode", label: "Motherlode" },
   { id: "leaderboard", label: "Leaderboard" },
   { id: "rounds", label: "Rounds" },
-  { id: "fairness", label: "RNG Fairness" },
 ];
 
 const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "—");
@@ -100,7 +99,6 @@ export default function StatsPage() {
           {tab === "motherlode" && <MotherlodeTab />}
           {tab === "leaderboard" && <LeaderboardTab />}
           {tab === "rounds" && <RoundsTab />}
-          {tab === "fairness" && <FairnessTab />}
         </>
       )}
     </div>
@@ -396,41 +394,6 @@ function RoundsTab() {
         </div>
       </ChartCard>
       <Caveats provenance={rounds.provenance} error={rounds.error} />
-    </div>
-  );
-}
-
-// ── Fairness: winning-tile distribution + chi-square ─────────────────────────
-function FairnessTab() {
-  const rng = usePolled(fetchOreRng, 0);
-  const d = rng.data;
-  const bars: Pt[] = (d?.per_tile_wins ?? []).map((w, i) => ({ label: `Tile ${i + 1}`, value: w }));
-  const crit = 36.42; // chi-square 5% critical, dof=24
-  const verdict = d ? (d.chi_square < crit ? "within uniform expectation" : "above the 5% threshold — present descriptively") : "";
-  return (
-    <div className="space-y-5">
-      <ChartCard
-        title="Winning-tile distribution"
-        subtitle={d ? `${formatNum(d.total_rounds_with_tile)} decided rounds · dashed line = uniform expectation (${formatNum(d.expected_per_tile, 0)}/tile)` : "loading…"}
-        right={d && (
-          <div className="text-right">
-            <div className="num text-sm text-white">χ² {d.chi_square.toFixed(2)}</div>
-            <div className="font-mono text-[10px] text-fog-muted">dof {d.dof} · crit {crit}</div>
-          </div>
-        )}
-      >
-        <div className="max-w-4xl">
-          <Bars bars={bars} expected={d?.expected_per_tile} height={165} fmt={(v) => formatNum(v, 0)} />
-        </div>
-        {d && (
-          <p className="mt-3 max-w-3xl font-mono text-[11px] leading-snug text-fog-muted">
-            χ² = {d.chi_square.toFixed(2)} vs 5% critical {crit} (dof {d.dof}) → <span className="text-gray-300">{verdict}</span>.
-            The board RNG is a slot-hash XOR-fold; the motherlode is 1-in-625 by design. Treat borderline
-            values as &quot;not proven biased, not proven fair&quot; — not evidence of either.
-          </p>
-        )}
-      </ChartCard>
-      <Caveats provenance={rng.provenance} error={rng.error} />
     </div>
   );
 }
