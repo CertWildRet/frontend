@@ -134,6 +134,14 @@ function HeroBand({ live }: { live: ReturnType<typeof useOreLive> }) {
   const vault = r ? lamportsToSol(r.total_vaulted) : 0;
   const topMiner = r?.top_miner ?? null;
 
+  // total_vaulted reads 0 from chain mid-round (it only settles at round end), so
+  // "Vaulted this round" would sit dead at 0 the whole round. Project it live from
+  // what we CAN see — total deployed × the (very stable ~10.5%) effective rake — so
+  // it grows with the round. Falls back to the exact on-chain value once settled.
+  const vaultProjected = avgRake > 0 ? deployed * (avgRake / 100) : 0;
+  const vaultProjecting = vault <= 0 && vaultProjected > 0;
+  const vaultShown = vault > 0 ? vault : vaultProjected;
+
   return (
     <section className="space-y-4">
       <div className="flex items-center gap-2">
@@ -184,7 +192,7 @@ function HeroBand({ live }: { live: ReturnType<typeof useOreLive> }) {
             <StatRow className="lg:text-sm" k="Hottest tile" v={hottest >= 0 ? `#${hottest + 1}` : "·"} unit={hottest >= 0 ? `${formatSol(hottestSol, 3)} SOL` : ""} />
             <StatRow className="lg:text-sm" k="Spread (top ↔ least)" v={formatSol(spread, 3)} unit="SOL" />
             <StatRow className="lg:text-sm" k="Pot (winnings)" v={formatSol(pot, 2)} unit="SOL" />
-            <StatRow className="lg:text-sm" k="Vaulted this round" v={formatSol(vault, 4)} unit="SOL" sub="the round's protocol take (buyback + admin)" />
+            <StatRow className="lg:text-sm" k="Vaulted this round" v={`${vaultProjecting ? "≈ " : ""}${formatSol(vaultShown, 4)}`} unit="SOL" sub={vaultProjecting ? `projected: deployed × ${avgRake.toFixed(1)}% rake · settles at round end` : "the round's protocol take (buyback + admin)"} />
             <StatRow className="lg:text-sm" k="Solo winner (so far)" v={short(topMiner)} />
           </div>
         </div>
