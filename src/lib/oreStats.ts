@@ -99,6 +99,9 @@ export type OreLeaderboard = {
   top: OreLeaderRow[];
   our_pool: OurPool;
   our_miner: string;
+  total: number;
+  limit: number;
+  offset: number;
 };
 
 export type OreMiner = {
@@ -144,8 +147,11 @@ export type OreRng = {
 };
 
 export type OreMotherlode = {
-  recent_hits: { round_id: number; ts: number | null; motherlode_paid: string }[];
+  recent_hits: { round_id: number; ts: number | null; motherlode_paid: string; gap: number | null }[];
   current: MotherlodePool | null;
+  total: number;
+  limit: number;
+  offset: number;
 };
 
 export type OreParticipant = {
@@ -194,9 +200,9 @@ async function get<T>(path: string): Promise<OreEnvelope<T>> {
 
 export const fetchOreSummary = () => get<OreSummary>("/ore/summary");
 export const fetchOreRounds = (limit = 200, offset = 0) =>
-  get<{ rounds: OreRound[]; limit: number; offset: number }>(`/ore/rounds?limit=${limit}&offset=${offset}`);
-export const fetchOreLeaderboard = (sort = "net_sol", minDeployed = 0) =>
-  get<OreLeaderboard>(`/ore/leaderboard?sort=${sort}&min_deployed=${minDeployed}`);
+  get<{ rounds: OreRound[]; limit: number; offset: number; total: number }>(`/ore/rounds?limit=${limit}&offset=${offset}`);
+export const fetchOreLeaderboard = (sort = "net_sol", minDeployed = 0, offset = 0, limit = 50) =>
+  get<OreLeaderboard>(`/ore/leaderboard?sort=${sort}&min_deployed=${minDeployed}&offset=${offset}&limit=${limit}`);
 export const fetchOreMiners = (opts: { sort?: string; offset?: number; limit?: number; q?: string } = {}) => {
   const p = new URLSearchParams();
   if (opts.sort) p.set("sort", opts.sort);
@@ -207,7 +213,8 @@ export const fetchOreMiners = (opts: { sort?: string; offset?: number; limit?: n
 };
 export const fetchOreSeries = (range = "30d") => get<OreSeries>(`/ore/series?range=${range}`);
 export const fetchOreRng = () => get<OreRng>("/ore/rng");
-export const fetchOreMotherlode = () => get<OreMotherlode>("/ore/motherlode");
+export const fetchOreMotherlode = (limit = 50, offset = 0) =>
+  get<OreMotherlode>(`/ore/motherlode?limit=${limit}&offset=${offset}`);
 export const fetchOreParticipants = (roundId: number) => get<OreParticipants>(`/ore/participants/${roundId}`);
 export const fetchStatsOverview = () => get<StatsOverview>("/stats/overview");
 

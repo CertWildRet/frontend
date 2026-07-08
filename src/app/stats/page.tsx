@@ -48,6 +48,27 @@ const oursRow = "bg-[rgba(157,183,216,0.12)] transition-colors";
 const solOf = (grams?: string | null) => oreGramsToOre(grams); // ORE grams -> ORE
 const netTone = (v: number) => (v > 0 ? "text-pos" : v < 0 ? "text-red" : "text-gray-300");
 
+const PAGE = 50; // shared page size for every paginated table
+
+// One pagination control for every table (rows N–M of TOTAL + Prev/Next).
+function Pager({ offset, total, onPage, unit = "rows" }: { offset: number; total: number; onPage: (o: number) => void; unit?: string }) {
+  const pages = Math.max(1, Math.ceil(total / PAGE));
+  const page = Math.floor(offset / PAGE) + 1;
+  const from = total === 0 ? 0 : offset + 1;
+  const to = Math.min(offset + PAGE, total);
+  return (
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 font-mono text-[13px] text-fog-muted">
+      <span>{formatNum(from)}–{formatNum(to)} of {formatNum(total)} {unit} · page {formatNum(page)} / {formatNum(pages)}</span>
+      <div className="flex gap-2">
+        <button disabled={offset === 0} onClick={() => onPage(Math.max(0, offset - PAGE))}
+          className="rounded border border-line px-3 py-1.5 disabled:opacity-40 enabled:hover:border-steel enabled:hover:text-white">Prev</button>
+        <button disabled={page >= pages} onClick={() => onPage(offset + PAGE)}
+          className="rounded border border-line px-3 py-1.5 disabled:opacity-40 enabled:hover:border-steel enabled:hover:text-white">Next</button>
+      </div>
+    </div>
+  );
+}
+
 export default function StatsPage() {
   const [token, setToken] = useState<Token>("ORE");
   const [tab, setTab] = useState<Tab>("overview");
@@ -302,8 +323,10 @@ function TrendsTab() {
 
 // ── Motherlode ────────────────────────────────────────────────────────────────
 function MotherlodeTab() {
-  const ml = usePolled(fetchOreMotherlode, 20_000);
+  const [offset, setOffset] = useState(0);
+  const ml = usePolled(() => fetchOreMotherlode(PAGE, offset), 20_000, [offset]);
   const d = ml.data;
+  const total = d?.total ?? 0;
   const pool = oreGramsToOre(d?.current?.pool_grams);
   const sinceHit = d?.current ? d.current.current_round - (d.current.last_hit_round ?? d.current.current_round) : 0;
   return (
@@ -312,7 +335,7 @@ function MotherlodeTab() {
         <StatTile label="Current pool" value={pool ? formatNum(pool, 1) : "···"} unit="ORE" tone="gold" hint={`+0.2 ORE/round · ${formatNum(sinceHit)} since last hit`} />
         <StatTile label="Odds per round" value="1 : 625" hint="by protocol design" />
         <StatTile label="Last hit" value={d?.current?.last_hit_round ? `#${formatNum(d.current.last_hit_round)}` : "···"} hint="most recent drop" />
-        <StatTile label="Recent hits" value={formatNum(d?.recent_hits?.length ?? 0)} hint="last 100 tracked" />
+        <StatTile label="Total hits" value={formatNum(total)} hint="all-time (≥ 0.2 ORE)" />
       </div>
       <ChartCard title="Recent motherlode drops" subtitle="Each hit pays the whole pool out and resets it to 0; it rebuilds at +0.2 ORE/round.">
         <div className={tableWrap}>
@@ -325,20 +348,17 @@ function MotherlodeTab() {
               </tr>
             </thead>
             <tbody>
-              {(d?.recent_hits ?? []).slice(0, 25).map((h, i, arr) => {
-                const prev = arr[i + 1];
-                const gap = prev ? h.round_id - prev.round_id : null;
-                return (
-                  <tr key={h.round_id} className={bodyRow}>
-                    <td className={`${td} text-white`}>#{formatNum(Number(h.round_id))}</td>
-                    <td className={`${td} num text-right text-gold`}>{formatNum(solOf(h.motherlode_paid), 1)}</td>
-                    <td className={`${td} text-right text-gray-400`}>{gap != null ? formatNum(gap) : "·"}</td>
-                  </tr>
-                );
-              })}
+              {(d?.recent_hits ?? []).map((h) => (
+                <tr key={h.round_id} className={bodyRow}>
+                  <td className={`${td} text-white`}>#{formatNum(Number(h.round_id))}</td>
+                  <td className={`${td} num text-right text-gold`}>{formatNum(solOf(h.motherlode_paid), 1)}</td>
+                  <td className={`${td} text-right text-gray-400`}>{h.gap != null ? formatNum(h.gap) : "·"}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
+        <Pager offset={offset} total={total} onPage={setOffset} unit="hits" />
       </ChartCard>
       <Caveats provenance={ml.provenance} error={ml.error} />
     </div>
@@ -354,8 +374,10 @@ const MIN_DEP = [0, 1, 10, 100];
 function LeaderboardTab() {
   const [sort, setSort] = useState("net_sol");
   const [minDep, setMinDep] = useState(0);
-  const lb = usePolled(() => fetchOreLeaderboard(sort, minDep), 0, [sort, minDep]);
+  const [offset, setOffset] = useState(0);
+  const lb = usePolled(() => fetchOreLeaderboard(sort, minDep, offset), 0, [sort, minDep, offset]);
   const d = lb.data;
+  const total = d?.total ?? 0;
   const b = d?.bands;
   const op = d?.our_pool;
   const bandRows = b
@@ -397,7 +419,7 @@ function LeaderboardTab() {
         right={
           <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
             {LB_SORTS.map((o) => (
-              <button key={o.id} onClick={() => setSort(o.id)}
+              <button key={o.id} onClick={() => { setSort(o.id); setOffset(0); }}
                 className={`rounded-md border px-2.5 py-1.5 font-mono text-[12px] transition ${sort === o.id ? "border-ink-600 bg-ink-600 text-white" : "border-line text-fog-muted hover:border-steel hover:text-white"}`}>{o.label}</button>
             ))}
           </div>
@@ -405,7 +427,7 @@ function LeaderboardTab() {
         <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] text-fog-muted">
           <span className="shrink-0">min deployed:</span>
           {MIN_DEP.map((v) => (
-            <button key={v} onClick={() => setMinDep(v)}
+            <button key={v} onClick={() => { setMinDep(v); setOffset(0); }}
               className={`rounded border px-2.5 py-1 transition ${minDep === v ? "border-ink-600 bg-ink-600 text-white" : "border-line hover:border-steel hover:text-white"}`}>{v === 0 ? "any" : `${v} SOL`}</button>
           ))}
         </div>
@@ -427,7 +449,7 @@ function LeaderboardTab() {
                 const net = lamportsToSol(m.net_sol);
                 return (
                   <tr key={m.authority} className={m.is_ours ? oursRow : bodyRow}>
-                    <td className={`${td} text-fog-muted`}>{i + 1}</td>
+                    <td className={`${td} text-fog-muted`}>{offset + i + 1}</td>
                     <td className={`${td} ${m.is_ours ? "text-steel" : "text-white"}`} title={m.authority}>{short(m.authority)}{m.is_ours ? " ◆ ours" : ""}</td>
                     <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(m.lifetime_deployed), 1)}</td>
                     <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(m.lifetime_rewards_sol), 1)}</td>
@@ -440,6 +462,7 @@ function LeaderboardTab() {
             </tbody>
           </table>
         </div>
+        <Pager offset={offset} total={total} onPage={setOffset} unit="miners" />
         <p className="mt-3 max-w-3xl font-mono text-[13px] leading-snug text-fog-muted">
           <span className="text-gray-300">Net SOL</span> = lifetime returned SOL − deployed (real profit, can be negative).
           ROI is the gross returned/deployed ratio. Both from the on-chain returned-SOL watermark (may include stake-back).
@@ -469,11 +492,9 @@ function MinersTab() {
     const t = setTimeout(() => { setQ(qInput.trim()); setOffset(0); }, 350);
     return () => clearTimeout(t);
   }, [qInput]);
-  const m = usePolled(() => fetchOreMiners({ sort, offset, q, limit: 50 }), 0, [sort, offset, q]);
+  const m = usePolled(() => fetchOreMiners({ sort, offset, q, limit: PAGE }), 0, [sort, offset, q]);
   const d = m.data;
   const total = d?.total ?? 0;
-  const page = Math.floor(offset / 50) + 1;
-  const pages = Math.max(1, Math.ceil(total / 50));
 
   return (
     <div className="space-y-5">
@@ -522,15 +543,7 @@ function MinersTab() {
             </tbody>
           </table>
         </div>
-        <div className="mt-3 flex items-center justify-between font-mono text-[13px] text-fog-muted">
-          <span>page {formatNum(page)} / {formatNum(pages)}</span>
-          <div className="flex gap-2">
-            <button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 50))}
-              className="rounded border border-line px-2.5 py-1 disabled:opacity-40 enabled:hover:text-white">Prev</button>
-            <button disabled={page >= pages} onClick={() => setOffset(offset + 50)}
-              className="rounded border border-line px-2.5 py-1 disabled:opacity-40 enabled:hover:text-white">Next</button>
-          </div>
-        </div>
+        <Pager offset={offset} total={total} onPage={setOffset} unit="miners" />
       </ChartCard>
       <Caveats provenance={m.provenance} error={m.error} />
     </div>
@@ -539,8 +552,10 @@ function MinersTab() {
 
 // ── Rounds: recent spine table ───────────────────────────────────────────────
 function RoundsTab() {
-  const rounds = usePolled(() => fetchOreRounds(100, 0), 20_000);
+  const [offset, setOffset] = useState(0);
+  const rounds = usePolled(() => fetchOreRounds(PAGE, offset), 20_000, [offset]);
   const rs = rounds.data?.rounds ?? [];
+  const total = rounds.data?.total ?? 0;
   return (
     <div className="space-y-5">
       <ChartCard title="Recent rounds" subtitle="The round spine — newest first. Split = jackpot shared across winners. ★ = motherlode hit.">
@@ -572,6 +587,7 @@ function RoundsTab() {
             </tbody>
           </table>
         </div>
+        <Pager offset={offset} total={total} onPage={setOffset} unit="rounds" />
       </ChartCard>
       <Caveats provenance={rounds.provenance} error={rounds.error} />
     </div>
