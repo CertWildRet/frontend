@@ -8,7 +8,7 @@
  * there's no px/DOM coordinate mapping. Palette matches the design tokens:
  * steel #9DB7D8 (primary), amber #E8881A (secondary), green #4ADE80.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const STEEL = "#9DB7D8";
 const GRID = "rgba(255,255,255,0.06)";
@@ -85,15 +85,31 @@ export function AreaLine({
   zeroBaseline?: boolean;
 }) {
   const [hover, setHover] = useState<number | null>(null);
-  const W = 720;
+  // Render at the container's ACTUAL pixel width (viewBox == px) so fonts/marks are
+  // a constant size regardless of chart width — a shared viewBox otherwise scales
+  // fonts up ~2x on a full-width chart and down on a half-width one.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [W, setW] = useState(680);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((es) => {
+      const cw = es[0]?.contentRect.width;
+      if (cw && cw > 60) setW(Math.round(cw));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const H = height;
-  const padL = 58;
-  const padR = 16;
-  const padT = 16;
-  const padB = 30;
+  const padL = 50;
+  const padR = 14;
+  const padT = 14;
+  const padB = 26;
+  const FS = 11; // px — real, because viewBox is 1:1 with rendered px
   const n = points.length;
-  if (n === 0) return <Empty h={H} />;
   const yl = yFmt ?? fmt;
+
+  if (n === 0) return <div ref={wrapRef} className="w-full"><Empty h={H} /></div>;
 
   const ys = points.map((p) => p.value);
   // zeroBaseline anchors the fill at 0 (magnitude charts); false zooms to the data
@@ -132,49 +148,49 @@ export function AreaLine({
   const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
 
   return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      width="100%"
-      role="img"
-      aria-label={yLabel ?? "line chart"}
-      style={{ display: "block", overflow: "visible" }}
-      onMouseMove={onMove}
-      onMouseLeave={() => setHover(null)}
-    >
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.24" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-        </linearGradient>
-      </defs>
-      {/* y-axis: labelled gridlines */}
-      {gy.map((g, gi) => {
-        const yy = padT + g * (plotB - padT);
-        const val = yMax - g * span;
-        return (
-          <g key={gi}>
-            <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
-            <text x={padL - 8} y={yy + 4} fontSize={12} fill={AXIS} textAnchor="end" fontFamily="monospace">{yl(val)}</text>
+    <div ref={wrapRef} className="w-full">
+      <svg
+        width={W}
+        height={H}
+        viewBox={`0 0 ${W} ${H}`}
+        role="img"
+        aria-label={yLabel ?? "line chart"}
+        style={{ display: "block", maxWidth: "100%", overflow: "visible" }}
+        onMouseMove={onMove}
+        onMouseLeave={() => setHover(null)}
+      >
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.24" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        {gy.map((g, gi) => {
+          const yy = padT + g * (plotB - padT);
+          const val = yMax - g * span;
+          return (
+            <g key={gi}>
+              <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
+              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fill={AXIS} textAnchor="end" fontFamily="monospace">{yl(val)}</text>
+            </g>
+          );
+        })}
+        <path d={area} fill={`url(#${gid})`} />
+        <path d={line} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        <circle cx={x(n - 1)} cy={y(points[n - 1].value)} r={3.5} fill={color} stroke={SURFACE} strokeWidth={1.5} />
+        {xt.map((idx, ti) => (
+          <text key={ti} x={x(idx)} y={H - 8} fontSize={FS} fill={AXIS} fontFamily="monospace"
+            textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{points[idx].label}</text>
+        ))}
+        {hover != null && (
+          <g>
+            <line x1={x(hover)} y1={padT} x2={x(hover)} y2={plotB} stroke={AXIS} strokeWidth={1} strokeDasharray="3 3" />
+            <circle cx={x(hover)} cy={y(points[hover].value)} r={4} fill={color} stroke={SURFACE} strokeWidth={1.5} />
+            <Tooltip x={x(hover)} y={y(points[hover].value)} W={W} lines={[points[hover].label, fmt(points[hover].value)]} />
           </g>
-        );
-      })}
-      <path d={area} fill={`url(#${gid})`} />
-      <path d={line} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={x(n - 1)} cy={y(points[n - 1].value)} r={4} fill={color} stroke={SURFACE} strokeWidth={1.5} />
-      {/* x-axis ticks */}
-      {xt.map((idx, ti) => (
-        <text key={ti} x={x(idx)} y={H - 9} fontSize={12} fill={AXIS} fontFamily="monospace"
-          textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{points[idx].label}</text>
-      ))}
-
-      {hover != null && (
-        <g>
-          <line x1={x(hover)} y1={padT} x2={x(hover)} y2={plotB} stroke={AXIS} strokeWidth={1} strokeDasharray="3 3" />
-          <circle cx={x(hover)} cy={y(points[hover].value)} r={4.5} fill={color} stroke={SURFACE} strokeWidth={1.5} />
-          <Tooltip x={x(hover)} y={y(points[hover].value)} W={W} lines={[points[hover].label, fmt(points[hover].value)]} />
-        </g>
-      )}
-    </svg>
+        )}
+      </svg>
+    </div>
   );
 }
 
