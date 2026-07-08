@@ -228,7 +228,7 @@ function OverviewTab() {
           </div>
         </div>
       <ChartCard title="Total ORE minted" subtitle="Cumulative emission — increases 1.2 ORE / round (1 ORE + 0.2 to the motherlode). Zoomed to the window so the slope reads.">
-        <AreaLine points={toSeries(rs.filter((r) => r.cumulative_minted != null), (r) => oreGramsToOre(r.cumulative_minted))} zeroBaseline={false} height={200} fmt={(v) => formatNum(v, 0) + " ORE"} yFmt={compactNum} />
+        <AreaLine points={toSeries(rs.filter((r) => r.cumulative_minted != null), (r) => oreGramsToOre(r.cumulative_minted))} zeroBaseline={false} height={200} fmt={(v) => formatNum(v, 0) + " ORE"} yFmt={(v) => Math.round(v).toLocaleString()} />
       </ChartCard>
       <Caveats provenance={ov.provenance} error={ov.error} />
     </div>

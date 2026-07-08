@@ -53,6 +53,7 @@ const niceMax = (v: number): number => {
 
 /** Compact axis formatter (340K, 1.2M, 1.41) — for wide magnitude axes. */
 export const compactNum = (v: number): string => {
+  if (v === 0) return "0";
   const a = Math.abs(v);
   if (a >= 1e9) return (v / 1e9).toFixed(a >= 1e10 ? 0 : 1) + "B";
   if (a >= 1e6) return (v / 1e6).toFixed(a >= 1e7 ? 0 : 1) + "M";
@@ -125,6 +126,7 @@ export function AreaLine({
     const pad = (hi - lo) * 0.15 || Math.abs(hi) * 0.02 || 1;
     yMin = lo - pad;
     yMax = hi + pad;
+    if (lo >= 0) yMin = Math.max(0, yMin); // no negative floor for non-negative data
   }
   const span = yMax - yMin || 1;
   const plotR = W - padR;
