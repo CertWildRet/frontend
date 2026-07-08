@@ -10,7 +10,7 @@
  * are greenfield). Native units everywhere; USD is a labelled off-chain overlay.
  */
 import { useMemo, useState } from "react";
-import { StatTile } from "@/components/primitives/Stat";
+import { StatTile, StatRow } from "@/components/primitives/Stat";
 import { TileHeatmap } from "@/components/TileHeatmap";
 import { AreaLine, Bars, HBars, ChartCard, type Pt } from "@/components/stats/Charts";
 import { useOreLive } from "@/hooks/useOreLive";
@@ -28,13 +28,20 @@ type Tab = "overview" | "rounds" | "fairness" | "economics" | "motherlode" | "le
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "economics", label: "Rake & Emission" },
-  { id: "fairness", label: "RNG Fairness" },
   { id: "motherlode", label: "Motherlode" },
   { id: "leaderboard", label: "Leaderboard" },
   { id: "rounds", label: "Rounds" },
+  { id: "fairness", label: "RNG Fairness" },
 ];
 
 const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "—");
+
+// Table styling mirrors the Position page's WalletAnalytics tables 1:1.
+const tableWrap = "overflow-x-auto rounded-lg bg-white/[0.02]";
+const theadRow = "bg-ink-800/60 text-left text-fog-muted";
+const th = "px-2.5 py-1.5 font-normal";
+const td = "px-2.5 py-1.5";
+const bodyRow = "transition-colors hover:bg-white/[0.03]";
 
 export default function StatsPage() {
   const [token, setToken] = useState<Token>("ORE");
@@ -90,10 +97,10 @@ export default function StatsPage() {
 
           {tab === "overview" && <OverviewTab />}
           {tab === "economics" && <EconomicsTab />}
-          {tab === "fairness" && <FairnessTab />}
           {tab === "motherlode" && <MotherlodeTab />}
           {tab === "leaderboard" && <LeaderboardTab />}
           {tab === "rounds" && <RoundsTab />}
+          {tab === "fairness" && <FairnessTab />}
         </>
       )}
     </div>
@@ -116,11 +123,19 @@ function HeroBand({ live }: { live: ReturnType<typeof useOreLive> }) {
   const miners = r ? Number(r.total_miners ?? 0) : Number(s?.latest_round?.total_miners ?? 0);
   const deployed = r ? lamportsToSol(r.total_deployed) : lamportsToSol(s?.latest_round?.total_deployed);
   const solPerMiner = miners > 0 ? deployed / miners : 0;
-  const mlPool = oreGramsToOre(s?.cumulative?.motherlode_pool_at_start);
+  const mlPool = oreGramsToOre(s?.motherlode?.pool_grams);
   const cumMinted = oreGramsToOre(s?.cumulative?.cumulative_minted);
   const avgRake = bpsToPct(s?.averages?.avg_rake_bps);
   const rounds = Number(s?.averages?.rounds ?? 0);
   const price = s?.prices;
+
+  // live board detail (fills the space beside the 340px board)
+  const spread = board.dep.length ? Math.max(...board.dep) - Math.min(...board.dep) : 0;
+  const hottest = board.dep.length ? board.dep.indexOf(Math.max(...board.dep)) : -1;
+  const hottestSol = hottest >= 0 ? board.dep[hottest] : 0;
+  const pot = r ? lamportsToSol(r.total_winnings) : 0;
+  const vault = r ? lamportsToSol(r.total_vaulted) : 0;
+  const topMiner = r?.top_miner ?? null;
 
   return (
     <section className="space-y-4">
@@ -147,15 +162,24 @@ function HeroBand({ live }: { live: ReturnType<typeof useOreLive> }) {
         <StatTile label="Rounds tracked" value={rounds ? formatNum(rounds) : "···"} hint="full spine" />
       </div>
 
-      {/* live board */}
+      {/* live board + live-round detail (the detail fills what was empty space) */}
       <ChartCard
         title="Live board — SOL per tile"
-        subtitle="Exact per-tile deploys for the current round (from the live Round PDA). Intensity = SOL; number = miners."
+        subtitle="Exact per-tile deploys for the current round (live Round PDA). Intensity = SOL; number = miners."
         right={<span className="font-mono text-[11px] text-fog-muted">{r ? `round #${formatNum(Number(r.round_id))}` : ""}</span>}
       >
-        {/* Constrain to the /ore hero board footprint (340px) — full-width was oversized. */}
-        <div className="max-w-[340px]">
-          <TileHeatmap perTileSol={board.dep} perTileCount={board.cnt} />
+        <div className="grid gap-x-8 gap-y-5 lg:grid-cols-[340px_minmax(0,1fr)]">
+          <div className="w-full max-w-[340px]">
+            <TileHeatmap perTileSol={board.dep} perTileCount={board.cnt} />
+          </div>
+          <div className="flex flex-col justify-center gap-1.5">
+            <div className="section-label mb-1">This round</div>
+            <StatRow k="Hottest tile" v={hottest >= 0 ? `#${hottest + 1}` : "·"} unit={hottest >= 0 ? `${formatSol(hottestSol, 3)} SOL` : ""} />
+            <StatRow k="Spread (top ↔ least)" v={formatSol(spread, 3)} unit="SOL" />
+            <StatRow k="Pot (winnings)" v={formatSol(pot, 2)} unit="SOL" />
+            <StatRow k="Vaulted this round" v={formatSol(vault, 4)} unit="SOL" sub="the round's protocol take (buyback + admin)" />
+            <StatRow k="Solo winner (so far)" v={short(topMiner)} />
+          </div>
         </div>
       </ChartCard>
     </section>
@@ -165,6 +189,12 @@ function HeroBand({ live }: { live: ReturnType<typeof useOreLive> }) {
 // ── helpers to turn the spine into chart series (API returns newest-first) ───
 function toSeries(rounds: OreRound[], pick: (r: OreRound) => number): Pt[] {
   return [...rounds].reverse().map((r) => ({ label: `#${r.round_id}`, value: pick(r) }));
+}
+/** Completed, non-degenerate rounds only — drops the in-progress round (no winning
+ *  tile yet, deployed≈0, which crashed the trend to 0 at the newest tick) and the
+ *  odd sub-1-SOL round that inflated the rake axis. */
+function completeRounds(rounds: OreRound[]): OreRound[] {
+  return rounds.filter((r) => r.winning_tile != null && Number(r.total_deployed ?? 0) > 1_000_000_000);
 }
 
 // ── Overview: our-pool weave + headline emission ─────────────────────────────
@@ -193,12 +223,12 @@ function OverviewTab() {
             <StatTile variant="inset" label="SOL recovered" value={formatSol(ourRecovered, 2)} unit="SOL" />
             <StatTile variant="inset" label="Net mining PnL" value={formatSol(ourPnl, 3)} unit="SOL" tone={ourPnl >= 0 ? "silver" : undefined} />
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatTile variant="inset" label="Active LPs" value={formatNum(our?.active_wallets ?? 0)} hint="wallets with shares" />
+          <div className="mt-3">
+            <StatTile variant="inset" label="Active LPs" value={formatNum(our?.active_wallets ?? 0)} hint="wallets with shares" className="max-w-[180px]" />
           </div>
         </div>
-        <ChartCard title="Total ORE minted" subtitle="Cumulative emission across the tracked spine (~1.2 ORE / round).">
-          <AreaLine points={toSeries(rs, (r) => oreGramsToOre(r.cumulative_minted))} fmt={(v) => formatNum(v, 0) + " ORE"} />
+        <ChartCard title="Total ORE minted" subtitle="Cumulative emission (~1.2 ORE / round). Zoomed to the window so the slope shows.">
+          <AreaLine points={toSeries(rs, (r) => oreGramsToOre(r.cumulative_minted))} zeroBaseline={false} fmt={(v) => formatNum(v, 0) + " ORE"} />
         </ChartCard>
       </div>
       <Caveats provenance={ov.provenance} error={ov.error} />
@@ -209,49 +239,18 @@ function OverviewTab() {
 // ── Economics: rake + emission over recent rounds ────────────────────────────
 function EconomicsTab() {
   const rounds = usePolled(() => fetchOreRounds(300, 0), 30_000);
-  const rs = rounds.data?.rounds ?? [];
+  const rs = completeRounds(rounds.data?.rounds ?? []);
   return (
     <div className="space-y-5">
-      <ChartCard title="Effective rake (bps → %)" subtitle="Per-round protocol take = 1% admin + ~9.9% buyback vault. Last 300 rounds, oldest → newest.">
-        <AreaLine points={toSeries(rs, (r) => bpsToPct(r.effective_rake_bps))} color="#E8881A" fmt={(v) => v.toFixed(2) + "%"} />
-      </ChartCard>
-      <ChartCard title="SOL deployed per round" subtitle="Total SOL staked across all 25 tiles each round.">
-        <AreaLine points={toSeries(rs, (r) => lamportsToSol(r.total_deployed))} fmt={(v) => formatSol(v, 1) + " SOL"} />
-      </ChartCard>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <ChartCard title="Effective rake" subtitle="Per-round protocol take = 1% admin + ~9.9% buyback. Completed rounds, oldest → newest.">
+          <AreaLine points={toSeries(rs, (r) => bpsToPct(r.effective_rake_bps))} color="#E8881A" height={175} fmt={(v) => v.toFixed(2) + "%"} />
+        </ChartCard>
+        <ChartCard title="SOL deployed per round" subtitle="Total SOL staked across all 25 tiles each round.">
+          <AreaLine points={toSeries(rs, (r) => lamportsToSol(r.total_deployed))} height={175} fmt={(v) => formatSol(v, 1) + " SOL"} />
+        </ChartCard>
+      </div>
       <Caveats provenance={rounds.provenance} error={rounds.error} />
-    </div>
-  );
-}
-
-// ── Fairness: winning-tile distribution + chi-square ─────────────────────────
-function FairnessTab() {
-  const rng = usePolled(fetchOreRng, 0);
-  const d = rng.data;
-  const bars: Pt[] = (d?.per_tile_wins ?? []).map((w, i) => ({ label: `Tile ${i + 1}`, value: w }));
-  const crit = 36.42; // chi-square 5% critical, dof=24
-  const verdict = d ? (d.chi_square < crit ? "within uniform expectation" : "above the 5% threshold — present descriptively") : "";
-  return (
-    <div className="space-y-5">
-      <ChartCard
-        title="Winning-tile distribution"
-        subtitle={d ? `${formatNum(d.total_rounds_with_tile)} decided rounds · dashed line = uniform expectation (${formatNum(d.expected_per_tile, 0)}/tile)` : "loading…"}
-        right={d && (
-          <div className="text-right">
-            <div className="num text-sm text-white">χ² {d.chi_square.toFixed(2)}</div>
-            <div className="font-mono text-[10px] text-fog-muted">dof {d.dof} · crit {crit}</div>
-          </div>
-        )}
-      >
-        <Bars bars={bars} expected={d?.expected_per_tile} fmt={(v) => formatNum(v, 0)} />
-        {d && (
-          <p className="mt-3 font-mono text-[11px] leading-snug text-fog-muted">
-            χ² = {d.chi_square.toFixed(2)} vs 5% critical {crit} (dof {d.dof}) → <span className="text-gray-300">{verdict}</span>.
-            The board RNG is a slot-hash XOR-fold; the motherlode is 1-in-625 by design. Treat borderline
-            values as &quot;not proven biased, not proven fair&quot; — not evidence of either.
-          </p>
-        )}
-      </ChartCard>
-      <Caveats provenance={rng.provenance} error={rng.error} />
     </div>
   );
 }
@@ -260,32 +259,38 @@ function FairnessTab() {
 function MotherlodeTab() {
   const ml = usePolled(fetchOreMotherlode, 20_000);
   const d = ml.data;
-  const pool = oreGramsToOre(d?.latest_pool?.motherlode_pool_at_start);
+  const pool = oreGramsToOre(d?.current?.pool_grams);
+  const sinceHit = d?.current ? d.current.current_round - (d.current.last_hit_round ?? d.current.current_round) : 0;
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatTile label="Current pool" value={pool ? formatNum(pool, 1) : "···"} unit="ORE" tone="gold" hint="grows +0.2 ORE/round" />
+        <StatTile label="Current pool" value={pool ? formatNum(pool, 1) : "···"} unit="ORE" tone="gold" hint={`+0.2 ORE/round · ${formatNum(sinceHit)} since last hit`} />
         <StatTile label="Odds per round" value="1 : 625" hint="by protocol design" />
+        <StatTile label="Last hit" value={d?.current?.last_hit_round ? `#${formatNum(d.current.last_hit_round)}` : "···"} hint="most recent drop" />
         <StatTile label="Recent hits" value={formatNum(d?.recent_hits?.length ?? 0)} hint="last 100 tracked" />
       </div>
-      <ChartCard title="Recent motherlode drops" subtitle="Each hit zeroes the pool; it then rebuilds at +0.2 ORE/round.">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[420px] font-mono text-xs">
+      <ChartCard title="Recent motherlode drops" subtitle="Each hit pays the whole pool out and resets it to 0; it then rebuilds at +0.2 ORE/round.">
+        <div className={tableWrap}>
+          <table className="w-full min-w-[360px] font-mono text-[11px]">
             <thead>
-              <tr className="text-left text-fog-muted">
-                <th className="py-1.5 pr-4 font-normal">Round</th>
-                <th className="py-1.5 pr-4 font-normal text-right">ORE paid</th>
-                <th className="py-1.5 font-normal text-right">Pool at drop</th>
+              <tr className={theadRow}>
+                <th className={th}>Round</th>
+                <th className={`${th} text-right`}>ORE paid</th>
+                <th className={`${th} text-right`}>Rounds since prev</th>
               </tr>
             </thead>
             <tbody>
-              {(d?.recent_hits ?? []).slice(0, 25).map((h) => (
-                <tr key={h.round_id} className="border-t border-line/60">
-                  <td className="py-1.5 pr-4 text-gray-200">#{formatNum(Number(h.round_id))}</td>
-                  <td className="py-1.5 pr-4 text-right num text-gold">{formatNum(oreGramsToOre(h.motherlode_paid), 1)}</td>
-                  <td className="py-1.5 text-right num text-gray-300">{formatNum(oreGramsToOre(h.motherlode_pool_at_start), 1)}</td>
-                </tr>
-              ))}
+              {(d?.recent_hits ?? []).slice(0, 25).map((h, i, arr) => {
+                const prev = arr[i + 1];
+                const gap = prev ? h.round_id - prev.round_id : null;
+                return (
+                  <tr key={h.round_id} className={bodyRow}>
+                    <td className={`${td} text-white`}>#{formatNum(Number(h.round_id))}</td>
+                    <td className={`${td} num text-right text-gold`}>{formatNum(oreGramsToOre(h.motherlode_paid), 1)}</td>
+                    <td className={`${td} text-right text-gray-400`}>{gap != null ? formatNum(gap) : "·"}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -317,32 +322,32 @@ function LeaderboardTab() {
         title="Gross ROI by percentile band"
         subtitle={d?.snapshot_ts ? `Census ${new Date(d.snapshot_ts).toLocaleDateString()} · ${b ? formatNum(b.n) : "—"} miners · ROI = lifetime returned SOL ÷ deployed (gross)` : "loading census…"}
       >
-        {b ? <HBars rows={bandRows} /> : <p className="font-mono text-xs text-fog-muted">No census loaded yet.</p>}
-        <p className="mt-3 font-mono text-[11px] leading-snug text-fog-muted">
+        {b ? <div className="max-w-3xl"><HBars rows={bandRows} /></div> : <p className="font-mono text-xs text-fog-muted">No census loaded yet.</p>}
+        <p className="mt-3 max-w-3xl font-mono text-[11px] leading-snug text-fog-muted">
           ROI here is a <span className="text-gray-300">gross-return</span> ratio (the on-chain &quot;returned SOL&quot;
           watermark can include stake-back), not net profit. &gt;1× means SOL returned exceeds SOL deployed.
         </p>
       </ChartCard>
       <ChartCard title="Top miners by gross ROI" subtitle="Minimum 1 lamport deployed.">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[520px] font-mono text-xs">
+        <div className={tableWrap}>
+          <table className="w-full min-w-[520px] font-mono text-[11px]">
             <thead>
-              <tr className="text-left text-fog-muted">
-                <th className="py-1.5 pr-4 font-normal">Miner</th>
-                <th className="py-1.5 pr-4 font-normal text-right">Deployed</th>
-                <th className="py-1.5 pr-4 font-normal text-right">Returned SOL</th>
-                <th className="py-1.5 pr-4 font-normal text-right">ORE mined</th>
-                <th className="py-1.5 font-normal text-right">ROI</th>
+              <tr className={theadRow}>
+                <th className={th}>Miner</th>
+                <th className={`${th} text-right`}>Deployed</th>
+                <th className={`${th} text-right`}>Returned SOL</th>
+                <th className={`${th} text-right`}>ORE mined</th>
+                <th className={`${th} text-right`}>ROI</th>
               </tr>
             </thead>
             <tbody>
               {(d?.top ?? []).slice(0, 30).map((m) => (
-                <tr key={m.authority} className="border-t border-line/60">
-                  <td className="py-1.5 pr-4 text-gray-200" title={m.authority}>{short(m.authority)}</td>
-                  <td className="py-1.5 pr-4 text-right text-gray-300">{formatSol(lamportsToSol(m.lifetime_deployed), 1)}</td>
-                  <td className="py-1.5 pr-4 text-right text-gray-300">{formatSol(lamportsToSol(m.lifetime_rewards_sol), 1)}</td>
-                  <td className="py-1.5 pr-4 text-right text-gray-300">{formatNum(oreGramsToOre(m.lifetime_rewards_ore), 0)}</td>
-                  <td className="py-1.5 text-right num text-gold">{m.roi.toFixed(2)}×</td>
+                <tr key={m.authority} className={bodyRow}>
+                  <td className={`${td} text-white`} title={m.authority}>{short(m.authority)}</td>
+                  <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(m.lifetime_deployed), 1)}</td>
+                  <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(m.lifetime_rewards_sol), 1)}</td>
+                  <td className={`${td} text-right text-gray-300`}>{formatNum(oreGramsToOre(m.lifetime_rewards_ore), 0)}</td>
+                  <td className={`${td} num text-right text-gold`}>{m.roi.toFixed(2)}×</td>
                 </tr>
               ))}
             </tbody>
@@ -360,30 +365,30 @@ function RoundsTab() {
   const rs = rounds.data?.rounds ?? [];
   return (
     <div className="space-y-5">
-      <ChartCard title="Recent rounds" subtitle="The round spine — newest first. Split = jackpot shared across winners.">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] font-mono text-xs">
+      <ChartCard title="Recent rounds" subtitle="The round spine — newest first. Split = jackpot shared across winners. ★ = motherlode hit.">
+        <div className={tableWrap}>
+          <table className="w-full min-w-[620px] font-mono text-[11px]">
             <thead>
-              <tr className="text-left text-fog-muted">
-                <th className="py-1.5 pr-4 font-normal">Round</th>
-                <th className="py-1.5 pr-4 font-normal text-right">Deployed</th>
-                <th className="py-1.5 pr-4 font-normal text-right">Miners</th>
-                <th className="py-1.5 pr-4 font-normal text-right">Tile</th>
-                <th className="py-1.5 pr-4 font-normal text-right">Winner</th>
-                <th className="py-1.5 pr-4 font-normal text-right">Rake</th>
-                <th className="py-1.5 font-normal text-right">ML</th>
+              <tr className={theadRow}>
+                <th className={th}>Round</th>
+                <th className={`${th} text-right`}>Deployed</th>
+                <th className={`${th} text-right`}>Miners</th>
+                <th className={`${th} text-right`}>Tile</th>
+                <th className={`${th} text-right`}>Winner</th>
+                <th className={`${th} text-right`}>Rake</th>
+                <th className={`${th} text-right`}>ML</th>
               </tr>
             </thead>
             <tbody>
               {rs.map((r) => (
-                <tr key={r.round_id} className="border-t border-line/60">
-                  <td className="py-1.5 pr-4 text-gray-200">#{formatNum(Number(r.round_id))}</td>
-                  <td className="py-1.5 pr-4 text-right text-gray-300">{formatSol(lamportsToSol(r.total_deployed), 2)}</td>
-                  <td className="py-1.5 pr-4 text-right text-gray-300">{r.total_miners ? formatNum(Number(r.total_miners)) : "·"}</td>
-                  <td className="py-1.5 pr-4 text-right text-gray-300">{r.winning_tile != null ? `#${r.winning_tile + 1}` : "·"}</td>
-                  <td className="py-1.5 pr-4 text-right text-gray-300">{r.is_split ? "split" : short(r.top_miner)}</td>
-                  <td className="py-1.5 pr-4 text-right text-gray-400">{r.effective_rake_bps ? formatPct(bpsToPct(r.effective_rake_bps) / 100, 1) : "·"}</td>
-                  <td className="py-1.5 text-right">{r.motherlode_hit ? <span className="text-gold">★</span> : <span className="text-fog-muted">·</span>}</td>
+                <tr key={r.round_id} className={bodyRow}>
+                  <td className={`${td} text-white`}>#{formatNum(Number(r.round_id))}</td>
+                  <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(r.total_deployed), 2)}</td>
+                  <td className={`${td} text-right text-gray-300`}>{r.total_miners ? formatNum(Number(r.total_miners)) : "·"}</td>
+                  <td className={`${td} text-right text-gray-300`}>{r.winning_tile != null ? `#${r.winning_tile + 1}` : "·"}</td>
+                  <td className={`${td} text-right text-gray-300`}>{r.is_split ? "split" : short(r.top_miner)}</td>
+                  <td className={`${td} text-right text-gray-400`}>{r.winning_tile != null && r.effective_rake_bps ? formatPct(bpsToPct(r.effective_rake_bps) / 100, 1) : "·"}</td>
+                  <td className={`${td} text-right`}>{r.motherlode_hit ? <span className="text-gold">★</span> : <span className="text-fog-muted">·</span>}</td>
                 </tr>
               ))}
             </tbody>
@@ -391,6 +396,41 @@ function RoundsTab() {
         </div>
       </ChartCard>
       <Caveats provenance={rounds.provenance} error={rounds.error} />
+    </div>
+  );
+}
+
+// ── Fairness: winning-tile distribution + chi-square ─────────────────────────
+function FairnessTab() {
+  const rng = usePolled(fetchOreRng, 0);
+  const d = rng.data;
+  const bars: Pt[] = (d?.per_tile_wins ?? []).map((w, i) => ({ label: `Tile ${i + 1}`, value: w }));
+  const crit = 36.42; // chi-square 5% critical, dof=24
+  const verdict = d ? (d.chi_square < crit ? "within uniform expectation" : "above the 5% threshold — present descriptively") : "";
+  return (
+    <div className="space-y-5">
+      <ChartCard
+        title="Winning-tile distribution"
+        subtitle={d ? `${formatNum(d.total_rounds_with_tile)} decided rounds · dashed line = uniform expectation (${formatNum(d.expected_per_tile, 0)}/tile)` : "loading…"}
+        right={d && (
+          <div className="text-right">
+            <div className="num text-sm text-white">χ² {d.chi_square.toFixed(2)}</div>
+            <div className="font-mono text-[10px] text-fog-muted">dof {d.dof} · crit {crit}</div>
+          </div>
+        )}
+      >
+        <div className="max-w-4xl">
+          <Bars bars={bars} expected={d?.expected_per_tile} height={165} fmt={(v) => formatNum(v, 0)} />
+        </div>
+        {d && (
+          <p className="mt-3 max-w-3xl font-mono text-[11px] leading-snug text-fog-muted">
+            χ² = {d.chi_square.toFixed(2)} vs 5% critical {crit} (dof {d.dof}) → <span className="text-gray-300">{verdict}</span>.
+            The board RNG is a slot-hash XOR-fold; the motherlode is 1-in-625 by design. Treat borderline
+            values as &quot;not proven biased, not proven fair&quot; — not evidence of either.
+          </p>
+        )}
+      </ChartCard>
+      <Caveats provenance={rng.provenance} error={rng.error} />
     </div>
   );
 }

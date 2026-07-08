@@ -52,6 +52,8 @@ export type OreRound = {
   winning_tile: number | null;
 };
 
+export type MotherlodePool = { current_round: number; last_hit_round: number | null; pool_grams: string };
+
 export type OreSummary = {
   latest_round: OreRound | null;
   cumulative: {
@@ -61,6 +63,7 @@ export type OreSummary = {
     motherlode_pool_at_start: string;
   } | null;
   averages: { rounds: string; avg_deployed: string; avg_miners: string; avg_rake_bps: string } | null;
+  motherlode: MotherlodePool | null;
   prices: { ts: string; sol_usd: number; ore_usd: number } | null;
 };
 
@@ -88,8 +91,8 @@ export type OreRng = {
 };
 
 export type OreMotherlode = {
-  recent_hits: { round_id: number; ts: number | null; motherlode_paid: string; motherlode_pool_at_start: string }[];
-  latest_pool: { round_id: number; motherlode_pool_at_start: string } | null;
+  recent_hits: { round_id: number; ts: number | null; motherlode_paid: string }[];
+  current: MotherlodePool | null;
 };
 
 export type OreParticipant = {

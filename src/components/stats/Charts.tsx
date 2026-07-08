@@ -55,15 +55,17 @@ const niceMax = (v: number): number => {
 export function AreaLine({
   points,
   color = STEEL,
-  height = 190,
+  height = 170,
   fmt = (v) => v.toLocaleString(),
   yLabel,
+  zeroBaseline = true,
 }: {
   points: Pt[];
   color?: string;
   height?: number;
   fmt?: (v: number) => string;
   yLabel?: string;
+  zeroBaseline?: boolean;
 }) {
   const [hover, setHover] = useState<number | null>(null);
   const W = 680;
@@ -76,8 +78,20 @@ export function AreaLine({
   if (n === 0) return <Empty h={H} />;
 
   const ys = points.map((p) => p.value);
-  const yMax = niceMax(Math.max(...ys, 0));
-  const yMin = Math.min(...ys, 0);
+  // zeroBaseline anchors the fill at 0 (magnitude charts); false zooms to the data
+  // range so a nearly-flat series (e.g. cumulative emission) shows its real slope.
+  let yMax: number;
+  let yMin: number;
+  if (zeroBaseline) {
+    yMax = niceMax(Math.max(...ys, 0));
+    yMin = Math.min(...ys, 0);
+  } else {
+    const lo = Math.min(...ys);
+    const hi = Math.max(...ys);
+    const pad = (hi - lo) * 0.12 || 1;
+    yMin = lo - pad;
+    yMax = hi + pad;
+  }
   const span = yMax - yMin || 1;
   const x = (i: number) => padL + (i / Math.max(1, n - 1)) * (W - padL - padR);
   const y = (v: number) => padT + (1 - (v - yMin) / span) * (H - padT - padB);
