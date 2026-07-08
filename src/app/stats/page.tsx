@@ -172,8 +172,8 @@ function HeroBand({ live }: { live: ReturnType<typeof useOreLive> }) {
         subtitle="Exact per-tile deploys for the current round (live Round PDA). Intensity = SOL; number = miners."
         right={<span className="font-mono text-[11px] text-fog-muted">{r ? `round #${formatNum(Number(r.round_id))}` : ""}</span>}
       >
-        <div className="grid gap-x-8 gap-y-5 lg:grid-cols-[340px_minmax(0,1fr)]">
-          <div className="w-full max-w-[340px]">
+        <div className="grid gap-x-8 gap-y-5 lg:grid-cols-[420px_minmax(0,1fr)]">
+          <div className="w-full max-w-[420px]">
             <TileHeatmap perTileSol={board.dep} perTileCount={board.cnt} />
           </div>
           <div className="flex flex-col justify-center gap-1.5">
