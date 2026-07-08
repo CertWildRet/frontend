@@ -51,12 +51,28 @@ const niceMax = (v: number): number => {
   return step * pow;
 };
 
-/** Single-series line + area with a hover crosshair + in-SVG tooltip. */
+/** Compact axis formatter (340K, 1.2M, 1.41) — for wide magnitude axes. */
+export const compactNum = (v: number): string => {
+  const a = Math.abs(v);
+  if (a >= 1e9) return (v / 1e9).toFixed(a >= 1e10 ? 0 : 1) + "B";
+  if (a >= 1e6) return (v / 1e6).toFixed(a >= 1e7 ? 0 : 1) + "M";
+  if (a >= 1e3) return (v / 1e3).toFixed(a >= 1e4 ? 0 : 1) + "K";
+  if (a >= 10) return v.toFixed(a % 1 === 0 ? 0 : 1);
+  if (a >= 1) return v.toFixed(2);
+  return v.toFixed(3);
+};
+
+/**
+ * Single-series line + area with a real y-axis (labelled gridlines), x-axis
+ * ticks, hover crosshair + in-SVG tooltip. `yFmt` formats the axis labels
+ * (defaults to `fmt`); pass `compactNum` for wide magnitude axes.
+ */
 export function AreaLine({
   points,
   color = STEEL,
-  height = 170,
+  height = 210,
   fmt = (v) => v.toLocaleString(),
+  yFmt,
   yLabel,
   zeroBaseline = true,
 }: {
@@ -64,18 +80,20 @@ export function AreaLine({
   color?: string;
   height?: number;
   fmt?: (v: number) => string;
+  yFmt?: (v: number) => string;
   yLabel?: string;
   zeroBaseline?: boolean;
 }) {
   const [hover, setHover] = useState<number | null>(null);
-  const W = 680;
+  const W = 720;
   const H = height;
-  const padL = 8;
-  const padR = 8;
-  const padT = 12;
-  const padB = 22;
+  const padL = 58;
+  const padR = 16;
+  const padT = 16;
+  const padB = 30;
   const n = points.length;
   if (n === 0) return <Empty h={H} />;
+  const yl = yFmt ?? fmt;
 
   const ys = points.map((p) => p.value);
   // zeroBaseline anchors the fill at 0 (magnitude charts); false zooms to the data
@@ -88,26 +106,30 @@ export function AreaLine({
   } else {
     const lo = Math.min(...ys);
     const hi = Math.max(...ys);
-    const pad = (hi - lo) * 0.12 || 1;
+    const pad = (hi - lo) * 0.15 || Math.abs(hi) * 0.02 || 1;
     yMin = lo - pad;
     yMax = hi + pad;
   }
   const span = yMax - yMin || 1;
-  const x = (i: number) => padL + (i / Math.max(1, n - 1)) * (W - padL - padR);
-  const y = (v: number) => padT + (1 - (v - yMin) / span) * (H - padT - padB);
+  const plotR = W - padR;
+  const plotB = H - padB;
+  const x = (i: number) => padL + (i / Math.max(1, n - 1)) * (plotR - padL);
+  const y = (v: number) => padT + (1 - (v - yMin) / span) * (plotB - padT);
 
   const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(" ");
-  const area = `${line} L${x(n - 1).toFixed(1)},${(H - padB).toFixed(1)} L${x(0).toFixed(1)},${(H - padB).toFixed(1)} Z`;
+  const area = `${line} L${x(n - 1).toFixed(1)},${plotB.toFixed(1)} L${x(0).toFixed(1)},${plotB.toFixed(1)} Z`;
   const gid = `g-${color.replace(/[^a-z0-9]/gi, "")}`;
 
   const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     const px = ((e.clientX - r.left) / r.width) * W;
-    const i = Math.round(((px - padL) / Math.max(1, W - padL - padR)) * (n - 1));
+    const i = Math.round(((px - padL) / Math.max(1, plotR - padL)) * (n - 1));
     setHover(Math.max(0, Math.min(n - 1, i)));
   };
 
-  const gridLines = [0, 0.25, 0.5, 0.75, 1];
+  const gy = [0, 0.25, 0.5, 0.75, 1];
+  const nTicks = Math.min(5, n);
+  const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
 
   return (
     <svg
@@ -121,34 +143,35 @@ export function AreaLine({
     >
       <defs>
         <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.24" />
           <stop offset="100%" stopColor={color} stopOpacity="0.02" />
         </linearGradient>
       </defs>
-      {gridLines.map((g) => {
-        const gy = padT + g * (H - padT - padB);
-        return <line key={g} x1={padL} y1={gy} x2={W - padR} y2={gy} stroke={GRID} strokeWidth={1} />;
+      {/* y-axis: labelled gridlines */}
+      {gy.map((g, gi) => {
+        const yy = padT + g * (plotB - padT);
+        const val = yMax - g * span;
+        return (
+          <g key={gi}>
+            <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
+            <text x={padL - 8} y={yy + 4} fontSize={12} fill={AXIS} textAnchor="end" fontFamily="monospace">{yl(val)}</text>
+          </g>
+        );
       })}
       <path d={area} fill={`url(#${gid})`} />
       <path d={line} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-      {/* emphasized endpoint */}
-      <circle cx={x(n - 1)} cy={y(points[n - 1].value)} r={3.5} fill={color} />
-      {/* y range labels */}
-      <text x={padL} y={padT - 2} fontSize={13} fill={AXIS} fontFamily="monospace">{fmt(yMax)}</text>
-      {/* x endpoints */}
-      <text x={padL} y={H - 6} fontSize={13} fill={AXIS} fontFamily="monospace">{points[0].label}</text>
-      <text x={W - padR} y={H - 6} fontSize={13} fill={AXIS} textAnchor="end" fontFamily="monospace">{points[n - 1].label}</text>
+      <circle cx={x(n - 1)} cy={y(points[n - 1].value)} r={4} fill={color} stroke={SURFACE} strokeWidth={1.5} />
+      {/* x-axis ticks */}
+      {xt.map((idx, ti) => (
+        <text key={ti} x={x(idx)} y={H - 9} fontSize={12} fill={AXIS} fontFamily="monospace"
+          textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{points[idx].label}</text>
+      ))}
 
       {hover != null && (
         <g>
-          <line x1={x(hover)} y1={padT} x2={x(hover)} y2={H - padB} stroke={AXIS} strokeWidth={1} strokeDasharray="3 3" />
-          <circle cx={x(hover)} cy={y(points[hover].value)} r={4} fill={color} stroke={SURFACE} strokeWidth={1.5} />
-          <Tooltip
-            x={x(hover)}
-            y={y(points[hover].value)}
-            W={W}
-            lines={[points[hover].label, fmt(points[hover].value)]}
-          />
+          <line x1={x(hover)} y1={padT} x2={x(hover)} y2={plotB} stroke={AXIS} strokeWidth={1} strokeDasharray="3 3" />
+          <circle cx={x(hover)} cy={y(points[hover].value)} r={4.5} fill={color} stroke={SURFACE} strokeWidth={1.5} />
+          <Tooltip x={x(hover)} y={y(points[hover].value)} W={W} lines={[points[hover].label, fmt(points[hover].value)]} />
         </g>
       )}
     </svg>

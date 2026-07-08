@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { StatTile, StatRow } from "@/components/primitives/Stat";
 import { TileHeatmap } from "@/components/TileHeatmap";
-import { AreaLine, HBars, ChartCard, type Pt } from "@/components/stats/Charts";
+import { AreaLine, HBars, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
 import { useOreLive } from "@/hooks/useOreLive";
 import { usePolled } from "@/hooks/useOreStats";
 import {
@@ -211,8 +211,7 @@ function OverviewTab() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <div className="card px-4 py-4 lg:col-span-2">
+      <div className="card px-4 py-4">
           <div className="section-label mb-1">Our dORE pool — our slice of the ORE field</div>
           <p className="mb-3 font-mono text-[13px] leading-snug text-fog-muted">
             Reconstructed from the cwr_vault program (bucket 0). This is the vault&apos;s own participation
@@ -228,10 +227,9 @@ function OverviewTab() {
             <StatTile variant="inset" label="Active LPs" value={formatNum(our?.active_wallets ?? 0)} hint="wallets with shares" className="max-w-[180px]" />
           </div>
         </div>
-        <ChartCard title="Total ORE minted" subtitle="Cumulative emission (~1.2 ORE / round). Zoomed to the window so the slope shows.">
-          <AreaLine points={toSeries(rs, (r) => oreGramsToOre(r.cumulative_minted))} zeroBaseline={false} fmt={(v) => formatNum(v, 0) + " ORE"} />
-        </ChartCard>
-      </div>
+      <ChartCard title="Total ORE minted" subtitle="Cumulative emission (~1.2 ORE / round), zoomed to the window so the slope reads.">
+        <AreaLine points={toSeries(rs, (r) => oreGramsToOre(r.cumulative_minted))} zeroBaseline={false} height={200} fmt={(v) => formatNum(v, 0) + " ORE"} yFmt={(v) => compactNum(v) + " ORE"} />
+      </ChartCard>
       <Caveats provenance={ov.provenance} error={ov.error} />
     </div>
   );
@@ -268,22 +266,22 @@ function TrendsTab() {
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
         <ChartCard title="SOL deployed" subtitle="Total SOL staked per bucket.">
-          <AreaLine points={mk((p) => lamportsToSol(p.deployed))} height={170} fmt={(v) => formatSol(v, 0) + " SOL"} />
+          <AreaLine points={mk((p) => lamportsToSol(p.deployed))} height={195} fmt={(v) => formatSol(v, 0) + " SOL"} yFmt={compactNum} />
         </ChartCard>
         <ChartCard title="Cost per ORE" subtitle="SOL vaulted ÷ ORE minted — the production cost.">
-          <AreaLine points={mk(costOf)} color="#E8881A" height={170} zeroBaseline={false} fmt={(v) => formatSol(v, 5) + " SOL"} />
+          <AreaLine points={mk(costOf)} color="#E8881A" height={195} zeroBaseline={false} fmt={(v) => formatSol(v, 5) + " SOL"} yFmt={(v) => v.toFixed(3)} />
         </ChartCard>
         <ChartCard title="Effective rake" subtitle="Protocol take % per bucket (1% admin + ~9.9% buyback). Zoomed — variation is sub-0.01%.">
-          <AreaLine points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} color="#E8881A" height={170} zeroBaseline={false} fmt={(v) => v.toFixed(4) + "%"} />
+          <AreaLine points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} color="#E8881A" height={195} zeroBaseline={false} fmt={(v) => v.toFixed(4) + "%"} />
         </ChartCard>
         <ChartCard title="Unique miners" subtitle="Average miners per round in the bucket.">
-          <AreaLine points={mk((p) => Number(p.avg_miners ?? 0))} height={170} zeroBaseline={false} fmt={(v) => formatNum(v, 0)} />
+          <AreaLine points={mk((p) => Number(p.avg_miners ?? 0))} height={195} zeroBaseline={false} fmt={(v) => formatNum(v, 0)} />
         </ChartCard>
         <ChartCard title="SOL vaulted (protocol take)" subtitle="Total SOL vaulted (buyback + admin) per bucket.">
-          <AreaLine points={mk((p) => lamportsToSol(p.vaulted))} height={170} fmt={(v) => formatSol(v, 1) + " SOL"} />
+          <AreaLine points={mk((p) => lamportsToSol(p.vaulted))} height={195} fmt={(v) => formatSol(v, 1) + " SOL"} yFmt={compactNum} />
         </ChartCard>
         <ChartCard title="Motherlode hits" subtitle="Jackpot drops per bucket (1-in-625/round).">
-          <AreaLine points={mk((p) => p.motherlode_hits)} color="#4ADE80" height={170} fmt={(v) => formatNum(v, 0)} />
+          <AreaLine points={mk((p) => p.motherlode_hits)} color="#4ADE80" height={195} fmt={(v) => formatNum(v, 0)} />
         </ChartCard>
       </div>
       <Caveats provenance={series.provenance} error={series.error} />
