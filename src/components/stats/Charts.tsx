@@ -34,7 +34,7 @@ export function ChartCard({
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="section-label">{title}</div>
-          {subtitle && <div className="mt-0.5 font-mono text-[11px] leading-snug text-fog-muted">{subtitle}</div>}
+          {subtitle && <div className="mt-0.5 font-mono text-[12.5px] leading-snug text-fog-muted">{subtitle}</div>}
         </div>
         {right}
       </div>
@@ -134,10 +134,10 @@ export function AreaLine({
       {/* emphasized endpoint */}
       <circle cx={x(n - 1)} cy={y(points[n - 1].value)} r={3.5} fill={color} />
       {/* y range labels */}
-      <text x={padL} y={padT - 2} fontSize={10} fill={AXIS} fontFamily="monospace">{fmt(yMax)}</text>
+      <text x={padL} y={padT - 2} fontSize={13} fill={AXIS} fontFamily="monospace">{fmt(yMax)}</text>
       {/* x endpoints */}
-      <text x={padL} y={H - 6} fontSize={10} fill={AXIS} fontFamily="monospace">{points[0].label}</text>
-      <text x={W - padR} y={H - 6} fontSize={10} fill={AXIS} textAnchor="end" fontFamily="monospace">{points[n - 1].label}</text>
+      <text x={padL} y={H - 6} fontSize={13} fill={AXIS} fontFamily="monospace">{points[0].label}</text>
+      <text x={W - padR} y={H - 6} fontSize={13} fill={AXIS} textAnchor="end" fontFamily="monospace">{points[n - 1].label}</text>
 
       {hover != null && (
         <g>
@@ -203,7 +203,7 @@ export function Bars({
           </g>
         );
       })}
-      <text x={2} y={padT - 2} fontSize={10} fill={AXIS} fontFamily="monospace">{fmt(vMax)}</text>
+      <text x={2} y={padT - 2} fontSize={13} fill={AXIS} fontFamily="monospace">{fmt(vMax)}</text>
       {hover != null && (
         <Tooltip x={hover * bw + bw / 2} y={y(bars[hover].value)} W={W} lines={[bars[hover].label, fmt(bars[hover].value)]} />
       )}
@@ -226,7 +226,7 @@ export function HBars({
     <div className="space-y-2">
       {rows.map((r) => (
         <div key={r.label} className="flex items-center gap-3">
-          <span className="w-16 shrink-0 font-mono text-[11px] text-fog-muted">{r.label}</span>
+          <span className="w-16 shrink-0 font-mono text-[12.5px] text-fog-muted">{r.label}</span>
           <div className="relative h-4 flex-1 overflow-hidden rounded bg-ink-700">
             <div className="h-full rounded" style={{ width: `${Math.min(100, (r.value / max) * 100)}%`, background: color, opacity: 0.7 }} />
           </div>
@@ -238,15 +238,15 @@ export function HBars({
 }
 
 function Tooltip({ x, y, W, lines }: { x: number; y: number; W: number; lines: string[] }) {
-  const w = Math.max(...lines.map((l) => l.length)) * 6.6 + 14;
-  const h = lines.length * 14 + 8;
+  const w = Math.max(...lines.map((l) => l.length)) * 7.6 + 16;
+  const h = lines.length * 17 + 10;
   const left = x + w + 10 > W ? x - w - 8 : x + 8;
   const top = Math.max(2, y - h - 8);
   return (
     <g pointerEvents="none">
       <rect x={left} y={top} width={w} height={h} rx={5} fill={SURFACE} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
       {lines.map((l, i) => (
-        <text key={i} x={left + 7} y={top + 15 + i * 14} fontSize={11} fontFamily="monospace"
+        <text key={i} x={left + 8} y={top + 17 + i * 17} fontSize={13} fontFamily="monospace"
           fill={i === 0 ? AXIS : "#EDEDF0"} fontWeight={i === 0 ? 400 : 600}>{l}</text>
       ))}
     </g>

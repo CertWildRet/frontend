@@ -40,8 +40,8 @@ const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : 
 // Table styling mirrors the Position page's WalletAnalytics tables 1:1.
 const tableWrap = "overflow-x-auto rounded-lg bg-white/[0.02]";
 const theadRow = "bg-ink-800/60 text-left text-fog-muted";
-const th = "px-2.5 py-1.5 font-normal";
-const td = "px-2.5 py-1.5";
+const th = "px-3 py-2 font-normal";
+const td = "px-3 py-2";
 const bodyRow = "transition-colors hover:bg-white/[0.03]";
 const oursRow = "bg-[rgba(157,183,216,0.12)] transition-colors";
 
@@ -138,7 +138,7 @@ function HeroBand({ live }: { live: ReturnType<typeof useOreLive> }) {
     <section className="space-y-4">
       <div className="flex items-center gap-2">
         <span className={`inline-block h-2 w-2 rounded-full ${live.connected ? "animate-pulse-dot bg-pos" : "bg-fog-muted"}`} />
-        <span className="font-mono text-[11px] text-fog-muted">
+        <span className="font-mono text-[13px] text-fog-muted">
           {live.connected ? "LIVE — streaming from analytics" : "connecting to live stream…"}
           {price && (
             <span className="ml-2 text-fog-dim">
@@ -170,7 +170,7 @@ function HeroBand({ live }: { live: ReturnType<typeof useOreLive> }) {
       <ChartCard
         title="Live board — SOL per tile"
         subtitle="Exact per-tile deploys for the current round (live Round PDA). Intensity = SOL; number = miners."
-        right={<span className="font-mono text-[11px] text-fog-muted">{r ? `round #${formatNum(Number(r.round_id))}` : ""}</span>}
+        right={<span className="font-mono text-[13px] text-fog-muted">{r ? `round #${formatNum(Number(r.round_id))}` : ""}</span>}
       >
         <div className="grid gap-x-8 gap-y-5 lg:grid-cols-[420px_minmax(0,1fr)]">
           <div className="w-full max-w-[420px]">
@@ -214,7 +214,7 @@ function OverviewTab() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="card px-4 py-4 lg:col-span-2">
           <div className="section-label mb-1">Our dORE pool — our slice of the ORE field</div>
-          <p className="mb-3 font-mono text-[11px] leading-snug text-fog-muted">
+          <p className="mb-3 font-mono text-[13px] leading-snug text-fog-muted">
             Reconstructed from the cwr_vault program (bucket 0). This is the vault&apos;s own participation
             in the ORE game above — cycles mined, SOL worked, SOL recovered — not the protocol-wide numbers.
           </p>
@@ -259,7 +259,7 @@ function TrendsTab() {
         <div className="flex rounded-lg border border-line bg-ink-800 p-0.5">
           {RANGES.map((r) => (
             <button key={r.id} onClick={() => setRange(r.id)}
-              className={`rounded-md px-2.5 py-1 font-mono text-[11px] transition ${
+              className={`rounded-md px-2.5 py-1 font-mono text-[13px] transition ${
                 range === r.id ? "bg-ink-600 text-white" : "text-fog-muted hover:text-white"}`}>
               {r.label}
             </button>
@@ -271,10 +271,10 @@ function TrendsTab() {
           <AreaLine points={mk((p) => lamportsToSol(p.deployed))} height={170} fmt={(v) => formatSol(v, 0) + " SOL"} />
         </ChartCard>
         <ChartCard title="Cost per ORE" subtitle="SOL vaulted ÷ ORE minted — the production cost.">
-          <AreaLine points={mk(costOf)} color="#E8881A" height={170} zeroBaseline={false} fmt={(v) => formatSol(v, 3) + " SOL"} />
+          <AreaLine points={mk(costOf)} color="#E8881A" height={170} zeroBaseline={false} fmt={(v) => formatSol(v, 5) + " SOL"} />
         </ChartCard>
-        <ChartCard title="Effective rake" subtitle="Protocol take % per bucket (1% admin + ~9.9% buyback).">
-          <AreaLine points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} color="#E8881A" height={170} zeroBaseline={false} fmt={(v) => v.toFixed(2) + "%"} />
+        <ChartCard title="Effective rake" subtitle="Protocol take % per bucket (1% admin + ~9.9% buyback). Zoomed — variation is sub-0.01%.">
+          <AreaLine points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} color="#E8881A" height={170} zeroBaseline={false} fmt={(v) => v.toFixed(4) + "%"} />
         </ChartCard>
         <ChartCard title="Unique miners" subtitle="Average miners per round in the bucket.">
           <AreaLine points={mk((p) => Number(p.avg_miners ?? 0))} height={170} zeroBaseline={false} fmt={(v) => formatNum(v, 0)} />
@@ -307,7 +307,7 @@ function MotherlodeTab() {
       </div>
       <ChartCard title="Recent motherlode drops" subtitle="Each hit pays the whole pool out and resets it to 0; it rebuilds at +0.2 ORE/round.">
         <div className={tableWrap}>
-          <table className="w-full min-w-[360px] font-mono text-[11px]">
+          <table className="w-full min-w-[360px] font-mono text-[13px]">
             <thead>
               <tr className={theadRow}>
                 <th className={th}>Round</th>
@@ -365,7 +365,7 @@ function LeaderboardTab() {
         <div className="card border-steel/30 px-4 py-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <div className="section-label">Our dORE pool in the field</div>
-            <span className="font-mono text-[11px] text-fog-muted">ranked by Net SOL across {formatNum(op.total)} miners</span>
+            <span className="font-mono text-[13px] text-fog-muted">ranked by Net SOL across {formatNum(op.total)} miners</span>
           </div>
           <div className="mt-2 flex flex-wrap items-baseline gap-x-6 gap-y-1">
             <span className="num text-xl gradient-text">#{formatNum(op.rank)}<span className="text-sm text-fog-muted"> / {formatNum(op.total)}</span></span>
@@ -382,11 +382,11 @@ function LeaderboardTab() {
           <div className="flex flex-wrap items-center justify-end gap-1">
             {LB_SORTS.map((o) => (
               <button key={o.id} onClick={() => setSort(o.id)}
-                className={`rounded-md px-2 py-1 font-mono text-[10.5px] transition ${sort === o.id ? "bg-ink-600 text-white" : "text-fog-muted hover:text-white"}`}>{o.label}</button>
+                className={`rounded-md px-2 py-1 font-mono text-[12px] transition ${sort === o.id ? "bg-ink-600 text-white" : "text-fog-muted hover:text-white"}`}>{o.label}</button>
             ))}
           </div>
         }>
-        <div className="mb-3 flex items-center gap-2 font-mono text-[11px] text-fog-muted">
+        <div className="mb-3 flex items-center gap-2 font-mono text-[13px] text-fog-muted">
           <span>min deployed:</span>
           {MIN_DEP.map((v) => (
             <button key={v} onClick={() => setMinDep(v)}
@@ -394,7 +394,7 @@ function LeaderboardTab() {
           ))}
         </div>
         <div className={tableWrap}>
-          <table className="w-full min-w-[600px] font-mono text-[11px]">
+          <table className="w-full min-w-[600px] font-mono text-[13px]">
             <thead>
               <tr className={theadRow}>
                 <th className={th}>#</th>
@@ -424,7 +424,7 @@ function LeaderboardTab() {
             </tbody>
           </table>
         </div>
-        <p className="mt-3 max-w-3xl font-mono text-[11px] leading-snug text-fog-muted">
+        <p className="mt-3 max-w-3xl font-mono text-[13px] leading-snug text-fog-muted">
           <span className="text-gray-300">Net SOL</span> = lifetime returned SOL − deployed (real profit, can be negative).
           ROI is the gross returned/deployed ratio. Both from the on-chain returned-SOL watermark (may include stake-back).
         </p>
@@ -466,17 +466,17 @@ function MinersTab() {
         subtitle={d?.snapshot_ts ? `Census snapshot ${new Date(d.snapshot_ts).toLocaleDateString()} · ${formatNum(total)} miners` : "loading…"}
         right={
           <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="search address…"
-            className="w-40 rounded-md border border-line bg-ink-800 px-2.5 py-1 font-mono text-[11px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none" />
+            className="w-40 rounded-md border border-line bg-ink-800 px-2.5 py-1 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none" />
         }>
         <div className="mb-3 flex flex-wrap items-center gap-1">
-          <span className="mr-1 font-mono text-[11px] text-fog-muted">sort:</span>
+          <span className="mr-1 font-mono text-[13px] text-fog-muted">sort:</span>
           {MINER_SORTS.map((o) => (
             <button key={o.id} onClick={() => { setSort(o.id); setOffset(0); }}
-              className={`rounded-md px-2 py-1 font-mono text-[10.5px] transition ${sort === o.id ? "bg-ink-600 text-white" : "text-fog-muted hover:text-white"}`}>{o.label}</button>
+              className={`rounded-md px-2 py-1 font-mono text-[12px] transition ${sort === o.id ? "bg-ink-600 text-white" : "text-fog-muted hover:text-white"}`}>{o.label}</button>
           ))}
         </div>
         <div className={tableWrap}>
-          <table className="w-full min-w-[640px] font-mono text-[11px]">
+          <table className="w-full min-w-[640px] font-mono text-[13px]">
             <thead>
               <tr className={theadRow}>
                 <th className={th}>#</th>
@@ -506,7 +506,7 @@ function MinersTab() {
             </tbody>
           </table>
         </div>
-        <div className="mt-3 flex items-center justify-between font-mono text-[11px] text-fog-muted">
+        <div className="mt-3 flex items-center justify-between font-mono text-[13px] text-fog-muted">
           <span>page {formatNum(page)} / {formatNum(pages)}</span>
           <div className="flex gap-2">
             <button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 50))}
@@ -529,7 +529,7 @@ function RoundsTab() {
     <div className="space-y-5">
       <ChartCard title="Recent rounds" subtitle="The round spine — newest first. Split = jackpot shared across winners. ★ = motherlode hit.">
         <div className={tableWrap}>
-          <table className="w-full min-w-[620px] font-mono text-[11px]">
+          <table className="w-full min-w-[620px] font-mono text-[13px]">
             <thead>
               <tr className={theadRow}>
                 <th className={th}>Round</th>
@@ -566,7 +566,7 @@ function RoundsTab() {
 function Caveats({ provenance, error }: { provenance: any; error: string | null }) {
   if (error) {
     return (
-      <div className="card border-amber/30 px-4 py-3 font-mono text-[11px] text-amber">
+      <div className="card border-amber/30 px-4 py-3 font-mono text-[13px] text-amber">
         {error}
         {" "}The ORE ingest may be disabled or the free-tier host may be waking up.
       </div>
@@ -575,14 +575,14 @@ function Caveats({ provenance, error }: { provenance: any; error: string | null 
   if (!provenance) return null;
   return (
     <details className="card px-4 py-3">
-      <summary className="cursor-pointer select-none font-mono text-[11px] text-fog-muted">
+      <summary className="cursor-pointer select-none font-mono text-[13px] text-fog-muted">
         data &amp; caveats · spine → #{formatNum(Number(provenance.ore_max_round || 0))}
         {provenance.census_snapshot_ts ? ` · census ${new Date(provenance.census_snapshot_ts).toLocaleDateString()}` : ""}
         {provenance.ingest_enabled ? "" : " · ingest OFF"}
       </summary>
       <ul className="mt-2 space-y-1.5">
         {(provenance.caveats ?? []).map((c: string, i: number) => (
-          <li key={i} className="font-mono text-[11px] leading-snug text-fog-muted">• {c}</li>
+          <li key={i} className="font-mono text-[13px] leading-snug text-fog-muted">• {c}</li>
         ))}
       </ul>
     </details>
