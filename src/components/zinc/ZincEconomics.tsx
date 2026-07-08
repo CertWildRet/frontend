@@ -180,9 +180,9 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
         <Row k="Net capital deposited" v={pnlReady ? sol(depositedCapital) : "···"} unit="SOL" sub="the SOL actually put in (cost basis); the PnL % below is measured against this" strong />
         <Row k="Total SOL deployed" v={pnlReady ? sol(deployed) : "···"} unit="SOL" sub="gross: the pool recycles the same capital every round, so this far exceeds what was deposited" />
         <Row k="Total SOL recovered" v={pnlReady ? sol(recoveredSol) : "···"} unit="SOL" sub="settled + claimable, plus ZINC mined valued in PnL" />
-        <div className="mt-2 flex items-baseline justify-between border-t border-line pt-2 font-mono text-xs">
-          <span className="text-white">All-time PnL <span className="font-normal text-fog-muted">on deposited</span></span>
-          <span className={`num text-sm font-semibold ${pnlSol >= 0 ? "text-pos" : "text-[#ec9b9b]"}`}>
+        <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-line pt-2 font-mono text-xs">
+          <span className="min-w-0 text-white">All-time PnL <span className="font-normal text-fog-muted">on deposited</span></span>
+          <span className={`num shrink-0 whitespace-nowrap text-right text-sm font-semibold ${pnlSol >= 0 ? "text-pos" : "text-[#ec9b9b]"}`}>
             {pnlReady
               ? solUsd > 0
                 ? `${pnlUsd < 0 ? "-" : ""}$${formatNum(Math.abs(pnlUsd), 2)} (${pnlPct >= 0 ? "+" : ""}${formatNum(pnlPct, 1)}%)`
@@ -190,11 +190,11 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
               : "···"}
           </span>
         </div>
-        <div className="mt-1.5 flex items-baseline justify-between font-mono text-xs">
-          <span className="text-fog-muted">
+        <div className="mt-1.5 flex items-baseline justify-between gap-3 font-mono text-xs">
+          <span className="min-w-0 text-fog-muted">
             Projected <span className="text-gold/80">if ZINC @ ${formatNum(zincAthUsd, 0)} · ATH past year</span>
           </span>
-          <span className="num text-sm font-semibold text-gold">{pnlAthText}</span>
+          <span className="num shrink-0 whitespace-nowrap text-right text-sm font-semibold text-gold">{pnlAthText}</span>
         </div>
         <p className="mt-1 font-mono text-[11px] leading-relaxed text-fog-muted">
           Hopium, not the real number: values all mined ZINC at its highest price in the past year

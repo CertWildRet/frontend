@@ -80,7 +80,7 @@ const mono = { fontFamily: "'JetBrains Mono Variable', monospace" } as const;
 
 export default function DispersionLanding() {
   return (
-    <div className="relative mx-auto w-full max-w-[1180px] px-5 pb-28 pt-4 sm:px-8">
+    <div className="relative mx-auto w-full max-w-[1180px] pb-28 pt-4 sm:px-8">
       <SpectralDefs />
 
       {/* ══ HERO ═══════════════════════════════════════════════════ */}

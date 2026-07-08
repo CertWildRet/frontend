@@ -97,8 +97,8 @@ export function OreBoardHero({
  */
 function OreHeroBoard({ size, center, lit }: { size: number; center: ReactNode; lit: boolean }) {
   return (
-    <div className="relative max-w-full" style={{ width: size, height: size }}>
-      <div className="grid h-full w-full grid-cols-5 grid-rows-5 gap-[4.5%]">
+    <div className="relative w-full" style={{ maxWidth: size }}>
+      <div className="grid aspect-square w-full grid-cols-5 grid-rows-5 gap-[4.5%]">
         {Array.from({ length: 25 }).map((_, i) => (
           <span
             key={i}

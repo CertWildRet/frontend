@@ -31,7 +31,7 @@ export function ChartCard({
 }) {
   return (
     <div className="card px-4 py-4">
-      <div className="mb-3 flex items-start justify-between gap-3">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
         <div className="min-w-0">
           <div className="section-label">{title}</div>
           {subtitle && <div className="mt-0.5 font-mono text-[12.5px] leading-snug text-fog-muted">{subtitle}</div>}

@@ -42,8 +42,8 @@ export function PoolIntro({
         style={{ background: bloom }}
       />
 
-      <div className="relative grid items-center gap-8 md:grid-cols-[auto_1fr] md:gap-12">
-        <div className="flex justify-center">{board}</div>
+      <div className="relative grid grid-cols-1 items-center gap-8 md:grid-cols-[auto_1fr] md:gap-12">
+        <div className="flex min-w-0 justify-center">{board}</div>
 
         <div className="text-center md:text-left">
           <div className="flex items-center justify-center gap-2 md:justify-start">

@@ -85,7 +85,7 @@ export function StatRow({
           {unit && <span className="ml-1 text-[12px] text-fog-muted">{unit}</span>}
         </span>
         {sub && (
-          <span className="mt-0.5 max-w-[38ch] break-words text-[11px] leading-snug text-fog-muted">
+          <span className="mt-0.5 max-w-[24ch] break-words text-[11px] leading-snug text-fog-muted">
             {sub}
           </span>
         )}
@@ -99,7 +99,7 @@ export function StatSection({ title, children }: { title: ReactNode; children: R
   return (
     <div className="mt-5">
       <div className="section-label mb-2">{title}</div>
-      <div className="space-y-1.5">{children}</div>
+      <div className="space-y-3">{children}</div>
     </div>
   );
 }

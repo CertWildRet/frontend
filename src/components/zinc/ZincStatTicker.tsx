@@ -33,7 +33,7 @@ export function ZincStatTicker() {
 
   return (
     <div className="relative bg-ink-950/70 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center gap-5 overflow-x-auto px-6 py-2 font-mono text-[12px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mx-auto flex max-w-6xl items-center gap-4 overflow-x-auto px-4 py-2 font-mono text-[12px] [mask-image:linear-gradient(to_right,transparent,#000_14px,#000_calc(100%-22px),transparent)] [scrollbar-width:none] md:gap-5 md:px-6 md:[mask-image:none] [&::-webkit-scrollbar]:hidden">
         {items.map((it, i) => (
           <div key={i} className="flex shrink-0 items-center gap-1.5">
             {it.live ? <span className="live-dot text-pos" /> : null}

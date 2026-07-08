@@ -40,8 +40,8 @@ const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : 
 // Table styling mirrors the Position page's WalletAnalytics tables 1:1.
 const tableWrap = "overflow-x-auto rounded-lg bg-white/[0.02]";
 const theadRow = "bg-ink-800/60 text-left text-fog-muted";
-const th = "px-3 py-2 font-normal";
-const td = "px-3 py-2";
+const th = "px-2 py-2 font-normal sm:px-3";
+const td = "px-2 py-2 sm:px-3";
 const bodyRow = "transition-colors hover:bg-white/[0.03]";
 const oursRow = "bg-[rgba(157,183,216,0.12)] transition-colors";
 
@@ -63,10 +63,10 @@ export default function StatsPage() {
             cost, and the miner leaderboard — with our own dORE pool woven in as our slice of the field.
           </p>
         </div>
-        <div className="flex rounded-lg border border-line bg-ink-800 p-1">
+        <div className="flex w-full rounded-lg border border-line bg-ink-800 p-1 sm:w-auto">
           {(["ORE", "ZINC"] as Token[]).map((t) => (
             <button key={t} onClick={() => setToken(t)}
-              className={`rounded-md px-4 py-1.5 font-mono text-xs transition ${
+              className={`flex-1 rounded-md px-4 py-2 text-center font-mono text-xs transition sm:flex-none sm:py-1.5 ${
                 token === t ? "bg-ink-600 text-white shadow-glow-gold" : "text-fog-muted hover:text-white"}`}>
               {t}
             </button>
@@ -79,10 +79,10 @@ export default function StatsPage() {
       ) : (
         <>
           <HeroBand live={live} />
-          <div className="flex flex-wrap gap-1.5 border-b border-line pb-2">
+          <div className="flex flex-wrap gap-2 border-b border-line pb-2">
             {TABS.map((t) => (
               <button key={t.id} onClick={() => setTab(t.id)}
-                className={`rounded-md px-3 py-1.5 font-mono text-xs transition ${
+                className={`rounded-md px-3 py-2 font-mono text-xs transition ${
                   tab === t.id ? "bg-ink-700 text-white" : "text-fog-muted hover:bg-ink-800 hover:text-white"}`}>
                 {t.label}
               </button>
@@ -176,7 +176,7 @@ function HeroBand({ live }: { live: ReturnType<typeof useOreLive> }) {
           <div className="w-full max-w-[420px]">
             <TileHeatmap perTileSol={board.dep} perTileCount={board.cnt} />
           </div>
-          <div className="flex flex-col justify-center gap-1.5">
+          <div className="flex flex-col justify-center gap-2.5 lg:max-w-[480px]">
             <div className="section-label mb-1">This round</div>
             <StatRow k="Hottest tile" v={hottest >= 0 ? `#${hottest + 1}` : "·"} unit={hottest >= 0 ? `${formatSol(hottestSol, 3)} SOL` : ""} />
             <StatRow k="Spread (top ↔ least)" v={formatSol(spread, 3)} unit="SOL" />
@@ -217,14 +217,12 @@ function OverviewTab() {
             Reconstructed from the cwr_vault program (bucket 0). This is the vault&apos;s own participation
             in the ORE game above — cycles mined, SOL worked, SOL recovered — not the protocol-wide numbers.
           </p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <StatTile variant="inset" label="Cycles mined" value={formatNum(our?.cycles ?? 0)} />
             <StatTile variant="inset" label="SOL deployed" value={formatSol(ourDeployed, 2)} unit="SOL" />
             <StatTile variant="inset" label="SOL recovered" value={formatSol(ourRecovered, 2)} unit="SOL" />
             <StatTile variant="inset" label="Net mining PnL" value={formatSol(ourPnl, 3)} unit="SOL" tone={ourPnl >= 0 ? "silver" : undefined} />
-          </div>
-          <div className="mt-3">
-            <StatTile variant="inset" label="Active LPs" value={formatNum(our?.active_wallets ?? 0)} hint="wallets with shares" className="max-w-[180px]" />
+            <StatTile variant="inset" label="Active LPs" value={formatNum(our?.active_wallets ?? 0)} hint="wallets with shares" />
           </div>
         </div>
       <ChartCard title="Total ORE minted" subtitle="Cumulative emission — increases 1.2 ORE / round (1 ORE + 0.2 to the motherlode). Zoomed to the window so the slope reads.">
@@ -307,12 +305,12 @@ function MotherlodeTab() {
       </div>
       <ChartCard title="Recent motherlode drops" subtitle="Each hit pays the whole pool out and resets it to 0; it rebuilds at +0.2 ORE/round.">
         <div className={tableWrap}>
-          <table className="w-full min-w-[360px] font-mono text-[13px]">
+          <table className="w-full font-mono text-[13px]">
             <thead>
               <tr className={theadRow}>
                 <th className={th}>Round</th>
                 <th className={`${th} text-right`}>ORE paid</th>
-                <th className={`${th} text-right`}>Rounds since prev</th>
+                <th className={`${th} text-right`}>Since prev</th>
               </tr>
             </thead>
             <tbody>
@@ -367,34 +365,41 @@ function LeaderboardTab() {
             <div className="section-label">Our dORE pool in the field</div>
             <span className="font-mono text-[13px] text-fog-muted">ranked by Net SOL across {formatNum(op.total)} miners</span>
           </div>
-          <div className="mt-2 flex flex-wrap items-baseline gap-x-6 gap-y-1">
-            <span className="num text-xl gradient-text">#{formatNum(op.rank)}<span className="text-sm text-fog-muted"> / {formatNum(op.total)}</span></span>
-            <span className="font-mono text-xs text-fog-muted">Net <span className={`num ${netTone(opNet)}`}>{opNet >= 0 ? "+" : ""}{formatSol(opNet, 3)} SOL</span></span>
-            <span className="font-mono text-xs text-fog-muted">deployed <span className="num text-gray-300">{formatSol(lamportsToSol(op.lifetime_deployed), 1)}</span></span>
-            <span className="font-mono text-xs text-fog-muted">earned <span className="num text-gray-300">{formatSol(lamportsToSol(op.lifetime_rewards_sol), 1)}</span></span>
-            <span className="font-mono text-xs text-fog-muted">ORE <span className="num text-gray-300">{formatNum(oreGramsToOre(op.lifetime_rewards_ore), 1)}</span></span>
-          </div>
+          <div className="mt-2 num text-xl gradient-text">#{formatNum(op.rank)}<span className="text-sm text-fog-muted"> / {formatNum(op.total)}</span></div>
+          <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-0 sm:mt-2 sm:flex sm:flex-wrap sm:gap-x-6">
+            {[
+              { k: "Net", el: <span className={`num ${netTone(opNet)}`}>{opNet >= 0 ? "+" : ""}{formatSol(opNet, 3)} SOL</span> },
+              { k: "deployed", el: <span className="num text-gray-300">{formatSol(lamportsToSol(op.lifetime_deployed), 1)} SOL</span> },
+              { k: "earned", el: <span className="num text-gray-300">{formatSol(lamportsToSol(op.lifetime_rewards_sol), 1)} SOL</span> },
+              { k: "ORE", el: <span className="num text-gray-300">{formatNum(oreGramsToOre(op.lifetime_rewards_ore), 1)}</span> },
+            ].map((m) => (
+              <div key={m.k} className="flex items-baseline justify-between gap-2 border-t border-line/50 py-2 font-mono text-xs sm:justify-start sm:border-0 sm:py-0">
+                <dt className="text-fog-muted">{m.k}</dt>
+                <dd>{m.el}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       )}
 
       <ChartCard title="Top miners" subtitle={d?.snapshot_ts ? `Census ${new Date(d.snapshot_ts).toLocaleDateString()} · ranked by ${LB_SORTS.find((x) => x.id === sort)?.label ?? sort}` : "loading census…"}
         right={
-          <div className="flex flex-wrap items-center justify-end gap-1">
+          <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
             {LB_SORTS.map((o) => (
               <button key={o.id} onClick={() => setSort(o.id)}
-                className={`rounded-md px-2 py-1 font-mono text-[12px] transition ${sort === o.id ? "bg-ink-600 text-white" : "text-fog-muted hover:text-white"}`}>{o.label}</button>
+                className={`rounded-md border px-2.5 py-1.5 font-mono text-[12px] transition ${sort === o.id ? "border-ink-600 bg-ink-600 text-white" : "border-line text-fog-muted hover:border-steel hover:text-white"}`}>{o.label}</button>
             ))}
           </div>
         }>
-        <div className="mb-3 flex items-center gap-2 font-mono text-[13px] text-fog-muted">
-          <span>min deployed:</span>
+        <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] text-fog-muted">
+          <span className="shrink-0">min deployed:</span>
           {MIN_DEP.map((v) => (
             <button key={v} onClick={() => setMinDep(v)}
-              className={`rounded px-2 py-0.5 transition ${minDep === v ? "bg-ink-600 text-white" : "hover:text-white"}`}>{v === 0 ? "any" : `${v} SOL`}</button>
+              className={`rounded border px-2.5 py-1 transition ${minDep === v ? "border-ink-600 bg-ink-600 text-white" : "border-line hover:border-steel hover:text-white"}`}>{v === 0 ? "any" : `${v} SOL`}</button>
           ))}
         </div>
         <div className={tableWrap}>
-          <table className="w-full min-w-[600px] font-mono text-[13px]">
+          <table className="w-full font-mono text-[13px] sm:min-w-[600px] lg:max-w-[880px]">
             <thead>
               <tr className={theadRow}>
                 <th className={th}>#</th>
@@ -402,8 +407,8 @@ function LeaderboardTab() {
                 <th className={`${th} text-right`}>Deployed</th>
                 <th className={`${th} text-right`}>Earned</th>
                 <th className={`${th} text-right`}>Net SOL</th>
-                <th className={`${th} text-right`}>ORE</th>
-                <th className={`${th} text-right`}>ROI</th>
+                <th className={`${th} hidden text-right sm:table-cell`}>ORE</th>
+                <th className={`${th} hidden text-right sm:table-cell`}>ROI</th>
               </tr>
             </thead>
             <tbody>
@@ -416,8 +421,8 @@ function LeaderboardTab() {
                     <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(m.lifetime_deployed), 1)}</td>
                     <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(m.lifetime_rewards_sol), 1)}</td>
                     <td className={`${td} num text-right ${netTone(net)}`}>{net >= 0 ? "+" : ""}{formatSol(net, 2)}</td>
-                    <td className={`${td} text-right text-gray-300`}>{formatNum(oreGramsToOre(m.lifetime_rewards_ore), 0)}</td>
-                    <td className={`${td} num text-right text-gold`}>{m.roi ? m.roi.toFixed(2) + "×" : "·"}</td>
+                    <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatNum(oreGramsToOre(m.lifetime_rewards_ore), 0)}</td>
+                    <td className={`${td} hidden num text-right text-gold sm:table-cell`}>{m.roi ? m.roi.toFixed(2) + "×" : "·"}</td>
                   </tr>
                 );
               })}
@@ -466,25 +471,25 @@ function MinersTab() {
         subtitle={d?.snapshot_ts ? `Census snapshot ${new Date(d.snapshot_ts).toLocaleDateString()} · ${formatNum(total)} miners` : "loading…"}
         right={
           <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="search address…"
-            className="w-40 rounded-md border border-line bg-ink-800 px-2.5 py-1 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none" />
+            className="w-full rounded-md border border-line bg-ink-800 px-2.5 py-1.5 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none sm:w-40" />
         }>
-        <div className="mb-3 flex flex-wrap items-center gap-1">
-          <span className="mr-1 font-mono text-[13px] text-fog-muted">sort:</span>
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 shrink-0 font-mono text-[13px] text-fog-muted">sort:</span>
           {MINER_SORTS.map((o) => (
             <button key={o.id} onClick={() => { setSort(o.id); setOffset(0); }}
-              className={`rounded-md px-2 py-1 font-mono text-[12px] transition ${sort === o.id ? "bg-ink-600 text-white" : "text-fog-muted hover:text-white"}`}>{o.label}</button>
+              className={`rounded-md border px-2.5 py-1.5 font-mono text-[12px] transition ${sort === o.id ? "border-ink-600 bg-ink-600 text-white" : "border-line text-fog-muted hover:border-steel hover:text-white"}`}>{o.label}</button>
           ))}
         </div>
         <div className={tableWrap}>
-          <table className="w-full min-w-[640px] font-mono text-[13px]">
+          <table className="w-full font-mono text-[13px] sm:min-w-[640px] lg:max-w-[880px]">
             <thead>
               <tr className={theadRow}>
                 <th className={th}>#</th>
                 <th className={th}>Miner</th>
                 <th className={`${th} text-right`}>Unclaimed ORE</th>
-                <th className={`${th} text-right`}>Refined ORE</th>
+                <th className={`${th} hidden text-right sm:table-cell`}>Refined ORE</th>
                 <th className={`${th} text-right`}>Lifetime SOL</th>
-                <th className={`${th} text-right`}>Lifetime ORE</th>
+                <th className={`${th} hidden text-right sm:table-cell`}>Lifetime ORE</th>
                 <th className={`${th} text-right`}>Net SOL</th>
               </tr>
             </thead>
@@ -496,9 +501,9 @@ function MinersTab() {
                     <td className={`${td} text-fog-muted`}>{offset + i + 1}</td>
                     <td className={`${td} ${mn.is_ours ? "text-steel" : "text-white"}`} title={mn.authority}>{short(mn.authority)}{mn.is_ours ? " ◆ ours" : ""}</td>
                     <td className={`${td} text-right text-gray-300`}>{formatNum(oreGramsToOre(mn.unclaimed_ore), 2)}</td>
-                    <td className={`${td} text-right text-gray-300`}>{formatNum(oreGramsToOre(mn.refined_ore), 2)}</td>
+                    <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatNum(oreGramsToOre(mn.refined_ore), 2)}</td>
                     <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(mn.lifetime_sol), 1)}</td>
-                    <td className={`${td} text-right text-gray-300`}>{formatNum(oreGramsToOre(mn.lifetime_ore), 1)}</td>
+                    <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatNum(oreGramsToOre(mn.lifetime_ore), 1)}</td>
                     <td className={`${td} num text-right ${netTone(net)}`}>{net >= 0 ? "+" : ""}{formatSol(net, 2)}</td>
                   </tr>
                 );
@@ -529,15 +534,15 @@ function RoundsTab() {
     <div className="space-y-5">
       <ChartCard title="Recent rounds" subtitle="The round spine — newest first. Split = jackpot shared across winners. ★ = motherlode hit.">
         <div className={tableWrap}>
-          <table className="w-full min-w-[620px] font-mono text-[13px]">
+          <table className="w-full font-mono text-[13px] sm:min-w-[560px] lg:max-w-[880px]">
             <thead>
               <tr className={theadRow}>
                 <th className={th}>Round</th>
                 <th className={`${th} text-right`}>Deployed</th>
                 <th className={`${th} text-right`}>Miners</th>
-                <th className={`${th} text-right`}>Tile</th>
+                <th className={`${th} hidden text-right sm:table-cell`}>Tile</th>
                 <th className={`${th} text-right`}>Winner</th>
-                <th className={`${th} text-right`}>Rake</th>
+                <th className={`${th} hidden text-right sm:table-cell`}>Rake</th>
                 <th className={`${th} text-right`}>ML</th>
               </tr>
             </thead>
@@ -547,9 +552,9 @@ function RoundsTab() {
                   <td className={`${td} text-white`}>#{formatNum(Number(r.round_id))}</td>
                   <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(r.total_deployed), 2)}</td>
                   <td className={`${td} text-right text-gray-300`}>{r.total_miners ? formatNum(Number(r.total_miners)) : "·"}</td>
-                  <td className={`${td} text-right text-gray-300`}>{r.winning_tile != null ? `#${r.winning_tile + 1}` : "·"}</td>
+                  <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{r.winning_tile != null ? `#${r.winning_tile + 1}` : "·"}</td>
                   <td className={`${td} text-right text-gray-300`}>{r.is_split ? "split" : short(r.top_miner)}</td>
-                  <td className={`${td} text-right text-gray-400`}>{r.winning_tile != null && r.effective_rake_bps ? formatPct(bpsToPct(r.effective_rake_bps) / 100, 1) : "·"}</td>
+                  <td className={`${td} hidden text-right text-gray-400 sm:table-cell`}>{r.winning_tile != null && r.effective_rake_bps ? formatPct(bpsToPct(r.effective_rake_bps) / 100, 1) : "·"}</td>
                   <td className={`${td} text-right`}>{Number(r.motherlode_paid ?? 0) >= 2e10 ? <span className="text-gold">★</span> : <span className="text-fog-muted">·</span>}</td>
                 </tr>
               ))}

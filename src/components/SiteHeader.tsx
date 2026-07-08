@@ -65,14 +65,14 @@ export function SiteHeader() {
         </defs>
       </svg>
 
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-3">
-            <span className="glass grid h-10 w-10 place-items-center rounded-xl">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-6">
+        <div className="flex items-center gap-3 sm:gap-6">
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3">
+            <span className="glass grid h-9 w-9 shrink-0 place-items-center rounded-xl sm:h-10 sm:w-10">
               <PrismMark className="h-5 w-5" />
             </span>
             <span
-              className="text-[19px] font-semibold tracking-[0.16em] text-[#EAECF6]"
+              className="whitespace-nowrap text-[16px] font-semibold tracking-[0.08em] text-[#EAECF6] sm:text-[19px] sm:tracking-[0.16em]"
               style={display}
             >
               Diamond Pools
