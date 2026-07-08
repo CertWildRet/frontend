@@ -128,7 +128,8 @@ export type OreSeriesPoint = {
   winnings: string;
   minted: string;
   rounds: number;
-  avg_miners: string;
+  avg_miners: string | null; // total_miners, live-PDA rounds only → NULL over history
+  avg_winners: string | null; // num_winners, ~all rounds → use this for the miners chart
   motherlode_hits: number;
   avg_rake_bps: number | null;
 };

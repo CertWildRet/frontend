@@ -274,8 +274,10 @@ function TrendsTab() {
         <ChartCard title="Effective rake" subtitle="Protocol take % per bucket (1% admin + ~9.9% buyback). Zoomed — variation is sub-0.01%.">
           <AreaLine points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} color="#E8881A" height={195} zeroBaseline={false} fmt={(v) => v.toFixed(4) + "%"} />
         </ChartCard>
-        <ChartCard title="Unique miners" subtitle="Average miners per round in the bucket.">
-          <AreaLine points={mk((p) => Number(p.avg_miners ?? 0))} height={195} zeroBaseline={false} fmt={(v) => formatNum(v, 0)} />
+        <ChartCard title="Winners / round" subtitle="Avg miners rewarded per round (reset-event count). Full-history; total-miner counts aren't recoverable for closed rounds.">
+          <AreaLine
+            points={pts.filter((p) => p.avg_winners != null).map((p) => ({ label: lbl(p), value: Number(p.avg_winners) }))}
+            height={195} zeroBaseline={false} fmt={(v) => formatNum(v, 0)} />
         </ChartCard>
         <ChartCard title="SOL vaulted (protocol take)" subtitle="Total SOL vaulted (buyback + admin) per bucket.">
           <AreaLine points={mk((p) => lamportsToSol(p.vaulted))} height={195} fmt={(v) => formatSol(v, 1) + " SOL"} yFmt={compactNum} />
@@ -548,7 +550,7 @@ function RoundsTab() {
                   <td className={`${td} text-right text-gray-300`}>{r.winning_tile != null ? `#${r.winning_tile + 1}` : "·"}</td>
                   <td className={`${td} text-right text-gray-300`}>{r.is_split ? "split" : short(r.top_miner)}</td>
                   <td className={`${td} text-right text-gray-400`}>{r.winning_tile != null && r.effective_rake_bps ? formatPct(bpsToPct(r.effective_rake_bps) / 100, 1) : "·"}</td>
-                  <td className={`${td} text-right`}>{r.motherlode_hit ? <span className="text-gold">★</span> : <span className="text-fog-muted">·</span>}</td>
+                  <td className={`${td} text-right`}>{Number(r.motherlode_paid ?? 0) >= 2e10 ? <span className="text-gold">★</span> : <span className="text-fog-muted">·</span>}</td>
                 </tr>
               ))}
             </tbody>
