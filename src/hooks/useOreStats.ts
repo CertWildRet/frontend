@@ -17,7 +17,11 @@ export type Polled<T> = {
   refresh: () => void;
 };
 
-export function usePolled<T>(fetcher: () => Promise<OreEnvelope<T>>, intervalMs = 0): Polled<T> {
+export function usePolled<T>(
+  fetcher: () => Promise<OreEnvelope<T>>,
+  intervalMs = 0,
+  deps: unknown[] = [],
+): Polled<T> {
   const [data, setData] = useState<T | null>(null);
   const [provenance, setProvenance] = useState<OreEnvelope<T>["provenance"] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +29,11 @@ export function usePolled<T>(fetcher: () => Promise<OreEnvelope<T>>, intervalMs 
   const fetchRef = useRef(fetcher);
   fetchRef.current = fetcher;
 
+  // `run` re-identifies when `deps` change (e.g. a new sort/range/query), which
+  // re-triggers the effect below and re-fetches. Empty deps = mount + interval only.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const run = useCallback(async () => {
+    setLoading(true);
     try {
       const env = await fetchRef.current();
       setData(env.data);
@@ -36,7 +44,7 @@ export function usePolled<T>(fetcher: () => Promise<OreEnvelope<T>>, intervalMs 
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, deps);
 
   useEffect(() => {
     let alive = true;

@@ -63,6 +63,7 @@ export type OreSummary = {
     motherlode_pool_at_start: string;
   } | null;
   averages: { rounds: string; avg_deployed: string; avg_miners: string; avg_rake_bps: string } | null;
+  cost: { vaulted: string; minted: string; rounds: number } | null;
   motherlode: MotherlodePool | null;
   prices: { ts: string; sol_usd: number; ore_usd: number } | null;
 };
@@ -78,9 +79,60 @@ export type OreLeaderRow = {
   lifetime_deployed: string;
   lifetime_rewards_sol: string;
   lifetime_rewards_ore: string;
+  net_sol: string;
   roi: number;
+  is_ours: boolean;
 };
-export type OreLeaderboard = { snapshot_ts: string | null; bands: OreBands; top: OreLeaderRow[] };
+export type OurPool = {
+  rank: number;
+  total: number;
+  net_sol: string;
+  lifetime_deployed: string;
+  lifetime_rewards_sol: string;
+  lifetime_rewards_ore: string;
+} | null;
+export type OreLeaderboard = {
+  snapshot_ts: string | null;
+  sort: string;
+  min_deployed_sol: number;
+  bands: OreBands;
+  top: OreLeaderRow[];
+  our_pool: OurPool;
+  our_miner: string;
+};
+
+export type OreMiner = {
+  authority: string;
+  unclaimed_ore: string;
+  refined_ore: string;
+  lifetime_sol: string;
+  lifetime_ore: string;
+  deployed: string;
+  net_sol: string;
+  is_ours: boolean;
+};
+export type OreMiners = {
+  snapshot_ts: string | null;
+  total: number;
+  miners: OreMiner[];
+  limit: number;
+  offset: number;
+  sort: string;
+  our_miner: string;
+};
+
+export type OreSeriesPoint = {
+  bucket_ts: string;
+  deployed: string;
+  vaulted: string;
+  winnings: string;
+  minted: string;
+  rounds: number;
+  avg_miners: string;
+  motherlode_hits: number;
+  avg_rake_bps: number | null;
+};
+export type OreSeries = { range: string; bucket_secs: number; points: OreSeriesPoint[] };
 
 export type OreRng = {
   total_rounds_with_tile: number;
@@ -142,7 +194,17 @@ async function get<T>(path: string): Promise<OreEnvelope<T>> {
 export const fetchOreSummary = () => get<OreSummary>("/ore/summary");
 export const fetchOreRounds = (limit = 200, offset = 0) =>
   get<{ rounds: OreRound[]; limit: number; offset: number }>(`/ore/rounds?limit=${limit}&offset=${offset}`);
-export const fetchOreLeaderboard = () => get<OreLeaderboard>("/ore/leaderboard");
+export const fetchOreLeaderboard = (sort = "net_sol", minDeployed = 0) =>
+  get<OreLeaderboard>(`/ore/leaderboard?sort=${sort}&min_deployed=${minDeployed}`);
+export const fetchOreMiners = (opts: { sort?: string; offset?: number; limit?: number; q?: string } = {}) => {
+  const p = new URLSearchParams();
+  if (opts.sort) p.set("sort", opts.sort);
+  if (opts.offset) p.set("offset", String(opts.offset));
+  if (opts.limit) p.set("limit", String(opts.limit));
+  if (opts.q) p.set("q", opts.q);
+  return get<OreMiners>(`/ore/miners?${p.toString()}`);
+};
+export const fetchOreSeries = (range = "30d") => get<OreSeries>(`/ore/series?range=${range}`);
 export const fetchOreRng = () => get<OreRng>("/ore/rng");
 export const fetchOreMotherlode = () => get<OreMotherlode>("/ore/motherlode");
 export const fetchOreParticipants = (roundId: number) => get<OreParticipants>(`/ore/participants/${roundId}`);
