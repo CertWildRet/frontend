@@ -153,7 +153,10 @@ function HeroBand({ live }: { live: ReturnType<typeof useOreLive> }) {
         subtitle="Exact per-tile deploys for the current round (from the live Round PDA). Intensity = SOL; number = miners."
         right={<span className="font-mono text-[11px] text-fog-muted">{r ? `round #${formatNum(Number(r.round_id))}` : ""}</span>}
       >
-        <TileHeatmap perTileSol={board.dep} perTileCount={board.cnt} />
+        {/* Constrain to the /ore hero board footprint (340px) — full-width was oversized. */}
+        <div className="max-w-[340px]">
+          <TileHeatmap perTileSol={board.dep} perTileCount={board.cnt} />
+        </div>
       </ChartCard>
     </section>
   );
