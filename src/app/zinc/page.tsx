@@ -50,7 +50,7 @@ export default function ZincPage() {
               not-live case is still handled by the NotLivePanel body. */}
           <h1 className="font-display text-2xl font-bold tracking-tight text-white">ZINC</h1>
           <p className="mt-1.5 max-w-2xl text-sm text-fog-dim">
-            Deposit SOL to mint dZINC. A keeper mines the ZINC board around the clock, smelts the
+            Deposit SOL to mint dZINC. A miner mines the ZINC board around the clock, smelts the
             winnings, and holds them for you - the same non-custodial, on-chain model as the ORE pool.
           </p>
         </div>

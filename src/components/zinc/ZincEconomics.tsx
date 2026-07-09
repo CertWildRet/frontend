@@ -205,7 +205,7 @@ export function ZincEconomics({ data }: { data: ZincPoolStats | null }) {
 
       <div className="mt-4 flex flex-col gap-1.5 border-t border-line pt-3 font-mono text-[12px] text-fog-muted sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <span>
-          fee {(feeBps / 100).toFixed(1)}% on deploy volume · keeper full 30-tile coverage
+          fee {(feeBps / 100).toFixed(1)}% on deploy volume · miner full 30-tile coverage
         </span>
         <span>
           SOL ${solUsd ? formatNum(solUsd, 2) : "··"} · ZINC ${zincUsd ? formatNum(zincUsd, 4) : "··"}

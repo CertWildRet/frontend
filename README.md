@@ -1,7 +1,7 @@
 # Diamond Pools
 
 Pooled, non-custodial ORE mining on Solana. Deposit SOL, mine ORE around the
-clock, and let a keeper work the board for you. Funds only ever flow vault to
+clock, and let a miner work the board for you. Funds only ever flow vault to
 ORE and back.
 
 ## Quick start
@@ -18,7 +18,7 @@ npm run dev
 ## Local UI design (mock mode)
 
 When you only want to work on the **frontend UI** — layout, styling, motion — and
-not wire up a wallet, an RPC endpoint, or the live keeper feed, run the app in
+not wire up a wallet, an RPC endpoint, or the live miner feed, run the app in
 **mock mode**. Every data hook returns realistic placeholder data and **skips all
 network calls** (RPC, wallet, SSE), so every screen renders fully populated,
 including the wallet-connected states.

@@ -5,7 +5,7 @@ import { TileHeatmap } from "./TileHeatmap";
 import { FacetMark } from "./FacetMark";
 import { formatNum, formatSol, formatRelative } from "@/lib/format";
 
-// The sole keeper wallet that signs every crank_mine on-chain. Public by design:
+// The sole miner wallet that signs every crank_mine on-chain. Public by design:
 // anyone can verify the crank's moves on an explorer.
 const CRANK_WALLET = "58QKD3siCxvLzgHFezbu8aTacjZFxy7LaYvgMmwQFiCe";
 
@@ -29,7 +29,7 @@ export function LiveCrankPanel() {
                 {CRANK_WALLET.slice(0, 4)}…{CRANK_WALLET.slice(-4)} ↗
               </a>
             </div>
-            <p className="font-mono text-[12px] text-fog-muted">What the keeper is doing on the board, right now.</p>
+            <p className="font-mono text-[12px] text-fog-muted">What the miner is doing on the board, right now.</p>
           </div>
         </div>
         <span className={`chip shrink-0 ${enabled && connected ? "border-pos/40 text-white" : "border-line text-fog-muted"}`}>
@@ -43,7 +43,7 @@ export function LiveCrankPanel() {
           Live feed not configured (set <code className="text-fog-dim">NEXT_PUBLIC_BRAIN_URL</code>).
         </Empty>
       ) : !stats ? (
-        <Empty>Waiting for the first frame from the keeper.</Empty>
+        <Empty>Waiting for the first frame from the miner.</Empty>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[440px_minmax(0,1fr)] lg:items-start">
           {/* Left: the 25-tile board, capped so the 5x5 stays compact and uniform across viewports */}
@@ -55,7 +55,7 @@ export function LiveCrankPanel() {
             <TileHeatmap perTileSol={stats.perTileSol} />
           </div>
 
-          {/* Right: live stats + the keeper's last move */}
+          {/* Right: live stats + the miner's last move */}
           <aside className="flex flex-col gap-5">
             <div className="grid grid-cols-2 gap-4">
               <Metric label="ORE round" value={`#${stats.roundId}`} />
@@ -66,7 +66,7 @@ export function LiveCrankPanel() {
 
             <div className="rounded-xl border border-line bg-ink-800/50 p-4">
               <div className="flex items-center justify-between">
-                <span className="label">Keeper&apos;s last move</span>
+                <span className="label">Miner&apos;s last move</span>
                 {stats.lastCrank && (
                   <span className="font-mono text-[12px] text-fog-muted">{formatRelative(stats.lastCrank.ts)}</span>
                 )}
@@ -93,7 +93,7 @@ export function LiveCrankPanel() {
   );
 }
 
-// Turn the keeper's internal skip/idle reason into plain English (the raw
+// Turn the miner's internal skip/idle reason into plain English (the raw
 // strings like "no idle SOL in vault (sol_in_vault == 0)" come from the brain's
 // decision engine and shouldn't surface to users).
 function humanizeMove(reason: string): string {

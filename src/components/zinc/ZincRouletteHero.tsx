@@ -94,7 +94,7 @@ export function ZincRouletteHero({
       bloom="radial-gradient(circle, rgba(154,107,255,0.16), rgba(255,90,200,0.08) 45%, transparent 72%)"
       dotGlow="rgba(255,90,200,0.6)"
       tilesLabel="30 tiles"
-      blurb="On rounds it mines, the keeper deploys across the whole board; claim when the window opens, or hold your dZINC while its smelted ZINC stays staked as stZINC. Disciplined: it only mines on rounds it likes."
+      blurb="On rounds it mines, the miner deploys across the whole board; claim when the window opens, or hold your dZINC while its smelted ZINC stays staked as stZINC. Disciplined: it only mines on rounds it likes."
       bullets={[
         "30/30 tiles every eligible round, full-board coverage",
         "mine, smelt (-10% fee), stake as stZINC; your dZINC is a pro-rata claim on it all",

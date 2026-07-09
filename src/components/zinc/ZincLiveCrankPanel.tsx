@@ -7,16 +7,16 @@ import { FacetMark } from "../FacetMark";
 import { formatNum, formatSol, formatRelative } from "@/lib/format";
 import type { ZincPoolStats } from "@/lib/cwr";
 
-// The sole keeper wallet signs crank_mine_zinc on-chain too (operator == the
+// The sole miner wallet signs crank_mine_zinc on-chain too (operator == the
 // bucket's operator_wallet). Public by design.
 const CRANK_WALLET = "58QKD3siCxvLzgHFezbu8aTacjZFxy7LaYvgMmwQFiCe";
 
 /**
- * Live dZINC keeper panel — the silver-blue twin of <LiveCrankPanel>. The dZINC
- * board is a 30-tile encrypted full-coverage mask, so when the keeper mines it
+ * Live dZINC miner panel — the silver-blue twin of <LiveCrankPanel>. The dZINC
+ * board is a 30-tile encrypted full-coverage mask, so when the miner mines it
  * deploys ALL 30 tiles uniformly (perTile = perRoundSol / 30). We light the whole
  * board on a crank_mine_zinc and show it idle when it holds. Driven by the ZINC
- * keeper feed's lastCrank (NEXT_PUBLIC_ZINC_BRAIN_URL); the held-ZINC + price
+ * miner feed's lastCrank (NEXT_PUBLIC_ZINC_BRAIN_URL); the held-ZINC + price
  * context comes from the on-chain pool data already on the page.
  */
 export function ZincLiveCrankPanel({ data }: { data: ZincPoolStats | null }) {
@@ -44,7 +44,7 @@ export function ZincLiveCrankPanel({ data }: { data: ZincPoolStats | null }) {
                 {CRANK_WALLET.slice(0, 4)}…{CRANK_WALLET.slice(-4)} ↗
               </a>
             </div>
-            <p className="font-mono text-[12px] text-fog-muted">What the keeper is doing on the ZINC board, right now.</p>
+            <p className="font-mono text-[12px] text-fog-muted">What the miner is doing on the ZINC board, right now.</p>
           </div>
         </div>
         <span className={`chip shrink-0 ${enabled && connected ? "border-pos/40 text-white" : "border-line text-fog-muted"}`}>
@@ -58,7 +58,7 @@ export function ZincLiveCrankPanel({ data }: { data: ZincPoolStats | null }) {
           Live feed not configured (set <code className="text-fog-dim">NEXT_PUBLIC_ZINC_BRAIN_URL</code>).
         </Empty>
       ) : !stats ? (
-        <Empty>Waiting for the first frame from the ZINC keeper.</Empty>
+        <Empty>Waiting for the first frame from the ZINC miner.</Empty>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[440px_minmax(0,1fr)] lg:items-start">
           {/* Left: the 30-tile roulette (the canonical dZINC board format). Full
@@ -87,7 +87,7 @@ export function ZincLiveCrankPanel({ data }: { data: ZincPoolStats | null }) {
             />
           </div>
 
-          {/* Right: live stats + the keeper's last move */}
+          {/* Right: live stats + the miner's last move */}
           <aside className="flex flex-col gap-5">
             <div className="grid grid-cols-2 gap-4">
               <Metric
@@ -106,7 +106,7 @@ export function ZincLiveCrankPanel({ data }: { data: ZincPoolStats | null }) {
 
             <div className="rounded-xl border border-line bg-ink-800/50 p-4">
               <div className="flex items-center justify-between">
-                <span className="label">Keeper&apos;s last move</span>
+                <span className="label">Miner&apos;s last move</span>
                 {last && <span className="font-mono text-[12px] text-fog-muted">{formatRelative(last.ts)}</span>}
               </div>
               {last ? (
@@ -131,7 +131,7 @@ export function ZincLiveCrankPanel({ data }: { data: ZincPoolStats | null }) {
   );
 }
 
-// dZINC keeper hold/skip reasons -> plain English (mirrors LiveCrankPanel).
+// dZINC miner hold/skip reasons -> plain English (mirrors LiveCrankPanel).
 function humanizeMove(reason: string): string {
   const r = reason.toLowerCase();
   if (r.includes("already deployed")) return "Already mined this round. Waiting for the next one.";

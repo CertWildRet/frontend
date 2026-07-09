@@ -139,7 +139,7 @@ export default function PositionPage() {
             </div>
             <div className="mt-4 rounded-xl border border-line bg-ink-800/50 p-4">
               <div className="flex items-center justify-between">
-                <span className="label">Keeper&apos;s last move</span>
+                <span className="label">Miner&apos;s last move</span>
                 {live?.lastCrank && (
                   <span className="font-mono text-[12px] text-fog-muted">{formatRelative(live.lastCrank.ts)}</span>
                 )}
@@ -187,7 +187,7 @@ export default function PositionPage() {
               </div>
               <div className="mt-4 rounded-xl border border-line bg-ink-800/50 p-4">
                 <div className="flex items-center justify-between">
-                  <span className="label">Keeper&apos;s last move</span>
+                  <span className="label">Miner&apos;s last move</span>
                   {zincLive?.lastCrank && (
                     <span className="font-mono text-[12px] text-fog-muted">{formatRelative(zincLive.lastCrank.ts)}</span>
                   )}

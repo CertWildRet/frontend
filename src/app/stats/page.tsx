@@ -14,18 +14,16 @@ import { TabBar, SegmentedControl } from "@/components/primitives/TabBar";
 import { AreaLine, HBars, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
 import { usePolled } from "@/hooks/useOreStats";
 import {
-  fetchStatsOverview, fetchOreRounds, fetchOreMotherlode, fetchOreLeaderboard,
+  fetchOreRounds, fetchOreMotherlode, fetchOreLeaderboard,
   fetchOreMiners, fetchOreSeries, fetchOreCompetition,
   lamportsToSol, oreGramsToOre, bpsToPct,
   type OreRound, type OreSeriesPoint,
 } from "@/lib/oreStats";
 import { formatSol, formatNum, formatPct } from "@/lib/format";
 
-type Token = "ORE" | "ZINC";
-type Tab = "overview" | "trends" | "motherlode" | "leaderboard" | "players" | "miners" | "rounds";
+type Tab = "trends" | "motherlode" | "leaderboard" | "players" | "miners" | "rounds";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "overview", label: "Overview" },
   { id: "trends", label: "Trends" },
   { id: "motherlode", label: "Motherlode" },
   { id: "leaderboard", label: "Leaderboard" },
@@ -69,87 +67,31 @@ function Pager({ offset, total, onPage, unit = "rows" }: { offset: number; total
 }
 
 export default function StatsPage() {
-  const [token, setToken] = useState<Token>("ORE");
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useState<Tab>("trends");
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-white">Stats</h1>
-          <p className="mt-1.5 max-w-2xl text-sm text-fog-dim">
-            The ORE ecosystem end-to-end — emission, rake, the motherlode, board competition, production
-            cost, and the miner leaderboard — with our own dORE pool woven in as our slice of the field.
-          </p>
-        </div>
-        <SegmentedControl
-          aria-label="Token"
-          items={(["ORE", "ZINC"] as Token[]).map((t) => ({ id: t, label: t }))}
-          value={token}
-          onChange={setToken}
-          className="p-1"
-        />
+      <header>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-white">Ore Data</h1>
+        <p className="mt-1.5 max-w-2xl text-sm text-fog-dim">
+          Find alpha in the mining data
+        </p>
       </header>
 
-      {token === "ZINC" ? (
-        <ZincPlaceholder />
-      ) : (
-        <>
-          <TabBar aria-label="Stats sections" items={TABS} value={tab} onChange={setTab} />
-          {tab === "overview" && <OverviewTab />}
-          {tab === "trends" && <TrendsTab />}
-          {tab === "motherlode" && <MotherlodeTab />}
-          {tab === "leaderboard" && <LeaderboardTab />}
-          {tab === "players" && <PlayersTab />}
-          {tab === "miners" && <MinersTab />}
-          {tab === "rounds" && <RoundsTab />}
-        </>
-      )}
+      <TabBar aria-label="Ore Data sections" items={TABS} value={tab} onChange={setTab} />
+      {tab === "trends" && <TrendsTab />}
+      {tab === "motherlode" && <MotherlodeTab />}
+      {tab === "leaderboard" && <LeaderboardTab />}
+      {tab === "players" && <PlayersTab />}
+      {tab === "miners" && <MinersTab />}
+      {tab === "rounds" && <RoundsTab />}
     </div>
   );
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
-function toSeries(rounds: OreRound[], pick: (r: OreRound) => number): Pt[] {
-  return [...rounds].reverse().map((r) => ({ label: `#${r.round_id}`, value: pick(r) }));
-}
 function completeRounds(rounds: OreRound[]): OreRound[] {
   return rounds.filter((r) => r.winning_tile != null && Number(r.total_deployed ?? 0) > 1_000_000_000);
-}
-
-// ── Overview: our-pool weave + headline emission ─────────────────────────────
-function OverviewTab() {
-  const ov = usePolled(fetchStatsOverview, 15_000);
-  const rounds = usePolled(() => fetchOreRounds(200, 0), 30_000);
-  const d = ov.data;
-  const our = d?.our_dore_pool;
-  const ourDeployed = lamportsToSol(our?.sol_deployed_gross);
-  const ourRecovered = lamportsToSol(our?.sol_recovered);
-  const ourPnl = ourRecovered - ourDeployed;
-  const rs = rounds.data?.rounds ?? [];
-
-  return (
-    <div className="space-y-5">
-      <div className="card px-4 py-4">
-          <div className="section-label mb-1">Our dORE pool — our slice of the ORE field</div>
-          <p className="mb-3 font-mono text-[13px] leading-snug text-fog-muted">
-            Reconstructed from the cwr_vault program (bucket 0). This is the vault&apos;s own participation
-            in the ORE game above — cycles mined, SOL worked, SOL recovered — not the protocol-wide numbers.
-          </p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            <StatTile variant="inset" label="Cycles mined" value={formatNum(our?.cycles ?? 0)} />
-            <StatTile variant="inset" label="SOL deployed" value={formatSol(ourDeployed, 2)} unit="SOL" />
-            <StatTile variant="inset" label="SOL recovered" value={formatSol(ourRecovered, 2)} unit="SOL" />
-            <StatTile variant="inset" label="Net mining PnL" value={formatSol(ourPnl, 3)} unit="SOL" tone={ourPnl >= 0 ? "silver" : undefined} />
-            <StatTile variant="inset" label="Active LPs" value={formatNum(our?.active_wallets ?? 0)} hint="wallets with shares" />
-          </div>
-        </div>
-      <ChartCard title="Total ORE minted" subtitle="Cumulative emission — increases 1.2 ORE / round (1 ORE + 0.2 to the motherlode). Zoomed to the window so the slope reads.">
-        <AreaLine points={toSeries(rs.filter((r) => r.cumulative_minted != null), (r) => oreGramsToOre(r.cumulative_minted))} zeroBaseline={false} height={200} fmt={(v) => formatNum(v, 0) + " ORE"} yFmt={(v) => Math.round(v).toLocaleString()} />
-      </ChartCard>
-      <Caveats provenance={ov.provenance} error={ov.error} />
-    </div>
-  );
 }
 
 // ── Trends: range-bucketed time series ───────────────────────────────────────
@@ -647,35 +589,5 @@ function Caveats({ provenance, error }: { provenance: any; error: string | null 
         ))}
       </ul>
     </details>
-  );
-}
-
-// ── ZINC placeholder (v1 stub) ───────────────────────────────────────────────
-function ZincPlaceholder() {
-  return (
-    <>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        {[
-          { label: "Round", accent: true }, { label: "Miners", hint: "this round" }, { label: "ZINC / round", unit: "ZINC" },
-          { label: "Board tiles", hint: "30-tile" }, { label: "Emission", unit: "ZINC" }, { label: "Our dZINC pool", hint: "bucket 1" },
-        ].map((t) => (
-          <div key={t.label} className="card px-4 py-3.5">
-            <div className="label">{t.label}</div>
-            <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className={`num text-xl ${t.accent ? "gradient-text" : "text-white"}`}>···</span>
-              {t.unit && <span className="font-mono text-xs text-fog-muted">{t.unit}</span>}
-            </div>
-            {t.hint && <div className="mt-0.5 font-mono text-[12px] text-fog-muted">{t.hint}</div>}
-          </div>
-        ))}
-      </div>
-      <div className="card border-amber/30">
-        <h3 className="font-display text-base font-semibold text-white">ZINC stats are coming</h3>
-        <p className="mt-2 max-w-2xl font-mono text-[12px] leading-relaxed text-fog-muted">
-          The ORE side ships first. ZINC ecosystem analytics are greenfield — the same pipeline will be
-          cloned for the 30-tile ZINC game and our dZINC pool. Toggle back to <span className="text-white">ORE</span> for the live picture.
-        </p>
-      </div>
-    </>
   );
 }
