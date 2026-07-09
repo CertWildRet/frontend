@@ -5,10 +5,6 @@ import { useVaultData } from "@/hooks/useVaultData";
 import { useUserPosition } from "@/hooks/useUserPosition";
 import { useStats } from "@/hooks/useStats";
 import { useLiveStats } from "@/hooks/useLiveStats";
-import { useZincData } from "@/hooks/useZincData";
-import { useZincPosition } from "@/hooks/useZincPosition";
-import { useZincRoundStats } from "@/hooks/useZincRoundStats";
-import { useZincLiveStats } from "@/hooks/useZincLiveStats";
 import { WalletButton } from "@/components/WalletButton";
 import { WalletAnalytics } from "@/components/WalletAnalytics";
 import { formatNum, formatSol, formatRelative } from "@/lib/format";
@@ -25,17 +21,6 @@ export default function PositionPage() {
   const { pos } = useUserPosition(data?.totalShares ?? 0);
   const stats = useStats();
   const { stats: live, connected: liveOn } = useLiveStats();
-  const { data: zinc, notLive: zincNotLive } = useZincData();
-  const { pos: zincPos } = useZincPosition(zinc?.totalShares ?? 0);
-  // dZINC pool-wide mining feed (mirrors the ORE feed). Per useZincLiveStats,
-  // only lastCrank is ZINC-truthful; round/pot/players come from useZincRoundStats.
-  const { stats: zincRound } = useZincRoundStats();
-  const { stats: zincLive, connected: zincLiveOn } = useZincLiveStats();
-
-  const zincShares = zincPos?.shares ?? 0;
-  const zincFraction = zinc && zinc.totalShares > 0 ? zincShares / zinc.totalShares : 0;
-  const zincYourSol = zinc ? zincFraction * zinc.solInVaultSol : 0;
-  const zincYourZinc = zinc ? zincFraction * zinc.smeltedZincHeld : 0;
 
   const shares = pos?.shares ?? 0;
   const fraction = data && data.totalShares > 0 ? shares / data.totalShares : 0;
@@ -103,25 +88,6 @@ export default function PositionPage() {
             </div>
           </div>
 
-          {/* exact backing - dZINC (only when the pool is live) */}
-          {!zincNotLive && zinc && (
-            <div className="card">
-              <div className="mb-1 flex items-center justify-between">
-                <h2 className="font-display text-base font-semibold text-white">What backs your dZINC</h2>
-                <span className="chip border-[#9A6BFF]/40 text-[#C7B3FF]">exact on-chain</span>
-              </div>
-              <p className="mb-4 font-mono text-[12px] text-fog-muted">
-                Your pro-rata slice of the dZINC pool. On withdraw you receive your SOL plus your smelted ZINC, in kind. No miner, no stORE - SOL + ZINC only.
-              </p>
-              <Line k="dZINC held" v={formatNum(zincShares, 6)} unit="dZINC" />
-              <Line k="Recoverable SOL" v={formatSol(zincYourSol, 6)} unit="SOL" usd={solUsd > 0 ? zincYourSol * solUsd : null} />
-              <Line k="Smelted ZINC (in-kind)" v={formatNum(zincYourZinc, 6)} unit="ZINC" />
-              <div className="mt-2 border-t border-line pt-2">
-                <Line k="Pool share" v={`${formatNum(zincPos?.poolSharePct ?? 0, 2)}%`} strong />
-              </div>
-            </div>
-          )}
-
           {/* what the pool is mining for you - dORE */}
           <div className="card">
             <div className="mb-1 flex items-center justify-between">
@@ -160,57 +126,8 @@ export default function PositionPage() {
             </div>
           </div>
 
-          {/* what the pool is mining for you - dZINC (only when the pool is live) */}
-          {!zincNotLive && zinc && (
-            <div className="card">
-              <div className="mb-1 flex items-center justify-between">
-                <h2 className="font-display text-base font-semibold text-white">What the dZINC pool is mining</h2>
-                <span className={`chip ${zincLiveOn ? "border-pos/40 text-white" : "border-line text-fog-muted"}`}>
-                  {zincLiveOn ? <span className="live-dot text-pos" /> : null}
-                  {zincLiveOn ? "live" : "feed offline"}
-                </span>
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Mini label="Phase" value={zinc.phase === 0 ? "Cranking" : "Deposit & claim"} />
-                <Mini
-                  label="ZINC round"
-                  value={
-                    zincRound?.initialized
-                      ? `#${zincRound.roundId}`
-                      : zincLive?.lastCrank?.roundId
-                        ? `#${zincLive.lastCrank.roundId}`
-                        : "···"
-                  }
-                />
-                <Mini label="ZINC held" value={`${formatNum(zinc.smeltedZincHeld, 2)} ZINC`} />
-                <Mini label="Players" value={zincRound?.initialized ? String(zincRound.players) : "···"} />
-              </div>
-              <div className="mt-4 rounded-xl border border-line bg-ink-800/50 p-4">
-                <div className="flex items-center justify-between">
-                  <span className="label">Keeper&apos;s last move</span>
-                  {zincLive?.lastCrank && (
-                    <span className="font-mono text-[12px] text-fog-muted">{formatRelative(zincLive.lastCrank.ts)}</span>
-                  )}
-                </div>
-                {zincLive?.lastCrank ? (
-                  <p className="mt-1.5 num text-sm">
-                    {zincLive.lastCrank.action === "crank_mine_zinc" ? (
-                      <>
-                        deployed <span className="text-[#C7B3FF]">{formatSol(zincLive.lastCrank.perTileSol, 4)} SOL</span> × 30 tiles
-                      </>
-                    ) : (
-                      <span className="text-fog-dim">holding this round</span>
-                    )}
-                  </p>
-                ) : (
-                  <p className="mt-1.5 font-mono text-sm text-fog-muted">No move yet this session.</p>
-                )}
-              </div>
-            </div>
-          )}
-
           <p className="font-mono text-[11px] text-fog-muted">
-            Full per-round history is below — every window your capital joined and what it won, dORE and dZINC alike.
+            Full per-round history is below — every window your capital joined and what it won.
           </p>
 
           {/* full reconstructed mining history (off-chain analytics indexer) */}
@@ -221,7 +138,7 @@ export default function PositionPage() {
             </div>
             <p className="max-w-2xl text-sm text-fog-dim">
               Every betting round your deployed capital was part of, and exactly what each window won —
-              SOL, ORE and ZINC — attributed to your frozen share. dORE and dZINC alike. Expand any cycle
+              SOL and ORE — attributed to your frozen dORE share. Expand any cycle
               to see the individual crank rounds.
             </p>
             {publicKey && <WalletAnalytics pubkey={publicKey.toBase58()} />}

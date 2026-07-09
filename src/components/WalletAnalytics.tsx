@@ -2,9 +2,9 @@
 
 /**
  * Your full mining history, reconstructed from chain by the analytics service.
- * Per pool (dORE / dZINC): exact cash legs + attributed SOL/ORE/ZINC won, then a
- * per-cycle table you can expand into the actual crank ROUNDS your capital was
- * deployed into and exactly what each window won. Native units only.
+ * For the dORE pool: exact cash legs + attributed SOL/ORE won, then a per-cycle
+ * table you can expand into the actual crank ROUNDS your capital was deployed
+ * into and exactly what each window won. Native units only.
  */
 import { useState } from "react";
 import { useWalletAnalytics } from "@/hooks/useWalletAnalytics";
@@ -12,7 +12,6 @@ import {
   fetchCycleDetail,
   lamportsToSol,
   oreGramsToOre,
-  zincGramsToZinc,
   type WalletCycle,
   type PnlBucket,
   type CycleDetail,
@@ -20,9 +19,8 @@ import {
 import { formatNum, formatSol, formatPct } from "@/lib/format";
 
 const POOLS = [
-  // dORE = the canonical steel accent (#9DB7D8); dZINC keeps its purple identity.
+  // dORE = the canonical steel accent (#9DB7D8).
   { bucket: 0, label: "dORE", asset: "ORE", color: "#9DB7D8", textc: "#9DB7D8" },
-  { bucket: 1, label: "dZINC", asset: "ZINC", color: "#9A6BFF", textc: "#C7B3FF" },
 ] as const;
 
 const tsToMs = (ts?: string | null) => (ts ? Number(ts) * 1000 : 0);
@@ -74,7 +72,7 @@ export function WalletAnalytics({ pubkey }: { pubkey: string }) {
           {provenance.backfill_complete
             ? "Reconstructed from finalized on-chain history."
             : "Historical backfill still running — figures are provisional and may grow."}{" "}
-          Native units only; per-wallet SOL/ORE/ZINC won is pro-rata by your frozen share of each round (there is no per-wallet bet on chain).{" "}
+          Native units only; per-wallet SOL/ORE won is pro-rata by your frozen share of each round (there is no per-wallet bet on chain).{" "}
           ORE mined while a window is open is held in the shared miner (shown per-cycle as &quot;in miner&quot;) and is credited to your won / owed balance at the next settle.
         </p>
       )}
@@ -91,16 +89,13 @@ function PoolSection({
   bucket: PnlBucket;
   cycles: WalletCycle[];
 }) {
-  const isOre = pool.bucket === 0;
   const won = lamportsToSol(bucket.attributed.sol_won_attr_lamports);
   const oreWon = oreGramsToOre(bucket.attributed.uore_rewards_accrued_grams) + oreGramsToOre(bucket.attributed.uore_refined_accrued_grams);
-  const zincWon = zincGramsToZinc(bucket.attributed.zinc_accrued_grams);
   const depIn = lamportsToSol(bucket.exact.sol_in_net_lamports);
   const out = lamportsToSol(bucket.exact.sol_out_lamports);
   const owedSol = lamportsToSol((bucket.current?.recoverable_sol_lamports as string) ?? null);
   const owedOre = oreGramsToOre((bucket.current?.owed_uore_rewards_grams as string) ?? null) + oreGramsToOre((bucket.current?.owed_uore_refined_grams as string) ?? null);
   const owedStore = oreGramsToOre((bucket.current?.owed_store_grams as string) ?? null);
-  const owedZinc = zincGramsToZinc((bucket.current?.owed_zinc_grams as string) ?? null);
 
   return (
     <div className="card">
@@ -118,20 +113,12 @@ function PoolSection({
         <Stat label="Deposited" value={formatSol(depIn, 4)} unit="SOL" />
         <Stat label="Withdrawn" value={formatSol(out, 4)} unit="SOL" />
         <Stat label="SOL won (settled)" value={formatSol(won, 6)} unit="SOL" tone={pool.textc} strong />
-        {isOre ? (
-          <Stat label="ORE won (settled)" value={formatNum(oreWon, 6)} unit="ORE" tone={pool.textc} strong />
-        ) : (
-          <Stat label="ZINC won (settled)" value={formatNum(zincWon, 6)} unit="ZINC" tone={pool.textc} strong />
-        )}
+        <Stat label="ORE won (settled)" value={formatNum(oreWon, 6)} unit="ORE" tone={pool.textc} strong />
         <Stat
           label="Owed now (live)"
           value={formatSol(owedSol, 4)}
           unit="SOL"
-          sub={
-            isOre
-              ? `+ ${formatNum(owedOre, 4)} uORE · ${formatNum(owedStore, 4)} stORE`
-              : `+ ${formatNum(owedZinc, 4)} ZINC`
-          }
+          sub={`+ ${formatNum(owedOre, 4)} uORE · ${formatNum(owedStore, 4)} stORE`}
         />
       </div>
 
@@ -152,7 +139,7 @@ function PoolSection({
               <span>Window</span>
               <span className="text-right">Your share</span>
               <span className="text-right">SOL worked</span>
-              <span className="text-right">{isOre ? "ORE" : "ZINC"} / SOL won</span>
+              <span className="text-right">ORE / SOL won</span>
             </div>
             {cycles.map((c) => (
               <CycleRow key={`${c.bucket_id}-${c.cycle_id}`} c={c} pool={pool} />
@@ -165,7 +152,6 @@ function PoolSection({
 }
 
 function CycleRow({ c, pool }: { c: WalletCycle; pool: (typeof POOLS)[number] }) {
-  const isOre = pool.bucket === 0;
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState<CycleDetail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -175,8 +161,6 @@ function CycleRow({ c, pool }: { c: WalletCycle; pool: (typeof POOLS)[number] })
   const worked = lamportsToSol(c.sol_attributed_net);
   const wonSol = lamportsToSol(c.sol_recovered_attr);
   const wonOre = oreGramsToOre(c.uore_rewards_accrued_grams) + oreGramsToOre(c.uore_refined_accrued_grams);
-  const wonZinc = zincGramsToZinc(c.zinc_accrued_grams);
-  const wonAsset = isOre ? wonOre : wonZinc;
 
   const toggle = () => {
     const next = !open;
@@ -213,7 +197,7 @@ function CycleRow({ c, pool }: { c: WalletCycle; pool: (typeof POOLS)[number] })
         <span className="text-right num" style={{ color: pool.textc }}>
           {c.settled ? (
             <>
-              {formatNum(wonAsset, 4)} {isOre ? "ORE" : "ZINC"}
+              {formatNum(wonOre, 4)} ORE
               <span className="ml-1 text-fog-muted">/ {formatSol(wonSol, 4)} SOL</span>
             </>
           ) : (
@@ -242,7 +226,6 @@ function CycleRow({ c, pool }: { c: WalletCycle; pool: (typeof POOLS)[number] })
 }
 
 function CycleExpanded({ detail, c, pool }: { detail: CycleDetail; c: WalletCycle; pool: (typeof POOLS)[number] }) {
-  const isOre = pool.bucket === 0;
   const cy = detail.cycle;
   const frac = Number(c.share_fraction);
   const s = (k: string) => String(cy[k] ?? "");
@@ -250,7 +233,6 @@ function CycleExpanded({ detail, c, pool }: { detail: CycleDetail; c: WalletCycl
   const deployedNet = lamportsToSol(s("sol_deployed_net"));
   const recovered = cy.sol_recovered == null ? null : lamportsToSol(s("sol_recovered"));
   const fee = lamportsToSol(s("volume_fee_lamports"));
-  const zincCredited = zincGramsToZinc(s("zinc_credited"));
   const motherlode = oreGramsToOre(s("motherlode_grams"));
 
   // Per-round ORE = the in-miner watermark GROWTH at each round (checkpoint deltas,
@@ -274,16 +256,12 @@ function CycleExpanded({ detail, c, pool }: { detail: CycleDetail; c: WalletCycl
       <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
         <Mini k="Deployed (net)" v={`${formatSol(deployedNet, 4)} SOL`} sub={`your ${formatSol(deployedNet * frac, 5)}`} />
         <Mini k="SOL won (window)" v={recovered == null ? "pending settle" : `${formatSol(recovered, 4)} SOL`} sub={recovered == null ? undefined : `your ${formatSol(recovered * frac, 5)}`} />
-        {isOre ? (
-          <Mini
-            k={settled ? "ORE mined (window)" : "ORE in miner (gross)"}
-            v={`${formatNum(oreMined, 6)} ORE`}
-            sub={`your ${formatNum(oreMined * frac, 6)}${settled ? "" : " · credits at settle"}`}
-            tone={pool.textc}
-          />
-        ) : (
-          <Mini k="ZINC smelted (window)" v={`${formatNum(zincCredited, 6)} ZINC`} sub={`your ${formatNum(zincCredited * frac, 6)}`} tone={pool.textc} />
-        )}
+        <Mini
+          k={settled ? "ORE mined (window)" : "ORE in miner (gross)"}
+          v={`${formatNum(oreMined, 6)} ORE`}
+          sub={`your ${formatNum(oreMined * frac, 6)}${settled ? "" : " · credits at settle"}`}
+          tone={pool.textc}
+        />
         <Mini k="Rounds" v={String(cy.num_rounds ?? detail.cranks.length)} sub={`fee ${formatSol(fee, 5)} SOL${motherlode > 0 ? ` · motherlode ${formatNum(motherlode, 2)} ORE` : ""}`} />
       </div>
 
@@ -299,27 +277,25 @@ function CycleExpanded({ detail, c, pool }: { detail: CycleDetail; c: WalletCycl
                   <th className="px-2.5 py-1.5 font-normal">Time</th>
                   <th className="px-2.5 py-1.5 text-right font-normal">Deployed (net)</th>
                   <th className="px-2.5 py-1.5 text-right font-normal">Your slice</th>
-                  {isOre && <th className="px-2.5 py-1.5 text-right font-normal">ORE won</th>}
-                  {isOre && <th className="px-2.5 py-1.5 text-right font-normal">Tiles</th>}
+                  <th className="px-2.5 py-1.5 text-right font-normal">ORE won</th>
+                  <th className="px-2.5 py-1.5 text-right font-normal">Tiles</th>
                 </tr>
               </thead>
               <tbody>
                 {detail.cranks.map((r) => {
                   const net = lamportsToSol(r.net_amount_lamports);
                   const tms = r.block_time ? Date.parse(r.block_time) : 0;
-                  const ore = isOre ? oreByRound.get(r.round_id) : undefined;
+                  const ore = oreByRound.get(r.round_id);
                   return (
                     <tr key={r.sig}>
                       <td className="px-2.5 py-1.5 text-white">#{r.round_id}</td>
                       <td className="px-2.5 py-1.5 text-fog-muted">{tms ? new Date(tms).toLocaleTimeString() : "·"}</td>
                       <td className="px-2.5 py-1.5 text-right text-gray-300">{formatSol(net, 4)}</td>
                       <td className="px-2.5 py-1.5 text-right text-gray-400">{formatSol(net * frac, 5)}</td>
-                      {isOre && (
-                        <td className="px-2.5 py-1.5 text-right" style={{ color: ore ? pool.textc : undefined }}>
-                          {ore == null ? "·" : ore === 0 ? <span className="text-fog-dim">0</span> : formatNum(ore, 6)}
-                        </td>
-                      )}
-                      {isOre && <td className="px-2.5 py-1.5 text-right text-fog-muted">{r.squares_selected}</td>}
+                      <td className="px-2.5 py-1.5 text-right" style={{ color: ore ? pool.textc : undefined }}>
+                        {ore == null ? "·" : ore === 0 ? <span className="text-fog-dim">0</span> : formatNum(ore, 6)}
+                      </td>
+                      <td className="px-2.5 py-1.5 text-right text-fog-muted">{r.squares_selected}</td>
                     </tr>
                   );
                 })}

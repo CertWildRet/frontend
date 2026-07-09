@@ -11,9 +11,9 @@ import { StatTickerGate } from "@/components/StatTickerGate";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
-  title: "Diamond Pools · autonomous ORE and ZINC mining",
+  title: "Diamond Pools · autonomous ORE mining",
   description:
-    "Deposit SOL, mine ORE and ZINC around the clock, and let a keeper work the board for you. A non-custodial Solana vault by Diamond Pools.",
+    "Deposit SOL, mine ORE around the clock, and let a keeper work the board for you. A non-custodial Solana vault by Diamond Pools.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -37,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <span className="font-display text-[20px] font-bold tracking-[0.22em] text-[#EAECF6]">Diamond Pools</span>
                   </div>
                   <p className="mt-3 text-xs leading-relaxed text-[#9AA3C8]">
-                    Pooled, non-custodial ORE and ZINC mining on Solana. Funds only ever flow vault to miner and back.
+                    Pooled, non-custodial ORE mining on Solana. Funds only ever flow vault to miner and back.
                   </p>
                 </div>
                 <div className="flex gap-12">

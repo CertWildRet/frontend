@@ -6,8 +6,7 @@
  * ORE-first: the whole ORE game (emission, rake, motherlode, competition,
  * leaderboard, production cost) with OUR dORE pool woven in as our slice of the
  * field. Serves a live "daily-joe" hero band (via the analytics WebSocket) AND
- * financial-analyst tabs. ZINC is a placeholder for v1. Native units; USD is a
- * labelled off-chain overlay.
+ * financial-analyst tabs. Native units; USD is a labelled off-chain overlay.
  */
 import { useEffect, useMemo, useState } from "react";
 import { StatTile, StatRow } from "@/components/primitives/Stat";
@@ -23,7 +22,6 @@ import {
 } from "@/lib/oreStats";
 import { formatSol, formatNum, formatPct } from "@/lib/format";
 
-type Token = "ORE" | "ZINC";
 type Tab = "overview" | "trends" | "motherlode" | "leaderboard" | "players" | "miners" | "rounds";
 
 const TABS: { id: Tab; label: string }[] = [
@@ -71,54 +69,36 @@ function Pager({ offset, total, onPage, unit = "rows" }: { offset: number; total
 }
 
 export default function StatsPage() {
-  const [token, setToken] = useState<Token>("ORE");
   const [tab, setTab] = useState<Tab>("overview");
   const live = useOreLive();
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-white">Stats</h1>
-          <p className="mt-1.5 max-w-2xl text-sm text-fog-dim">
-            The ORE ecosystem end-to-end — emission, rake, the motherlode, board competition, production
-            cost, and the miner leaderboard — with our own dORE pool woven in as our slice of the field.
-          </p>
-        </div>
-        <div className="flex w-full rounded-lg border border-line bg-ink-800 p-1 sm:w-auto">
-          {(["ORE", "ZINC"] as Token[]).map((t) => (
-            <button key={t} onClick={() => setToken(t)}
-              className={`flex-1 rounded-md px-4 py-2 text-center font-mono text-xs transition sm:flex-none sm:py-1.5 ${
-                token === t ? "bg-ink-600 text-white shadow-glow-gold" : "text-fog-muted hover:text-white"}`}>
-              {t}
-            </button>
-          ))}
-        </div>
+      <header>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-white">Stats</h1>
+        <p className="mt-1.5 max-w-2xl text-sm text-fog-dim">
+          The ORE ecosystem end-to-end — emission, rake, the motherlode, board competition, production
+          cost, and the miner leaderboard — with our own dORE pool woven in as our slice of the field.
+        </p>
       </header>
 
-      {token === "ZINC" ? (
-        <ZincPlaceholder />
-      ) : (
-        <>
-          <HeroBand live={live} />
-          <div className="flex flex-wrap gap-2 border-b border-line pb-2">
-            {TABS.map((t) => (
-              <button key={t.id} onClick={() => setTab(t.id)}
-                className={`rounded-md px-3 py-2 font-mono text-xs transition ${
-                  tab === t.id ? "bg-ink-700 text-white" : "text-fog-muted hover:bg-ink-800 hover:text-white"}`}>
-                {t.label}
-              </button>
-            ))}
-          </div>
-          {tab === "overview" && <OverviewTab />}
-          {tab === "trends" && <TrendsTab />}
-          {tab === "motherlode" && <MotherlodeTab />}
-          {tab === "leaderboard" && <LeaderboardTab />}
-          {tab === "players" && <PlayersTab />}
-          {tab === "miners" && <MinersTab />}
-          {tab === "rounds" && <RoundsTab />}
-        </>
-      )}
+      <HeroBand live={live} />
+      <div className="flex flex-wrap gap-2 border-b border-line pb-2">
+        {TABS.map((t) => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`rounded-md px-3 py-2 font-mono text-xs transition ${
+              tab === t.id ? "bg-ink-700 text-white" : "text-fog-muted hover:bg-ink-800 hover:text-white"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === "overview" && <OverviewTab />}
+      {tab === "trends" && <TrendsTab />}
+      {tab === "motherlode" && <MotherlodeTab />}
+      {tab === "leaderboard" && <LeaderboardTab />}
+      {tab === "players" && <PlayersTab />}
+      {tab === "miners" && <MinersTab />}
+      {tab === "rounds" && <RoundsTab />}
     </div>
   );
 }
@@ -751,35 +731,5 @@ function Caveats({ provenance, error }: { provenance: any; error: string | null 
         ))}
       </ul>
     </details>
-  );
-}
-
-// ── ZINC placeholder (v1 stub) ───────────────────────────────────────────────
-function ZincPlaceholder() {
-  return (
-    <>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        {[
-          { label: "Round", accent: true }, { label: "Miners", hint: "this round" }, { label: "ZINC / round", unit: "ZINC" },
-          { label: "Board tiles", hint: "30-tile" }, { label: "Emission", unit: "ZINC" }, { label: "Our dZINC pool", hint: "bucket 1" },
-        ].map((t) => (
-          <div key={t.label} className="card px-4 py-3.5">
-            <div className="label">{t.label}</div>
-            <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className={`num text-xl ${t.accent ? "gradient-text" : "text-white"}`}>···</span>
-              {t.unit && <span className="font-mono text-xs text-fog-muted">{t.unit}</span>}
-            </div>
-            {t.hint && <div className="mt-0.5 font-mono text-[12px] text-fog-muted">{t.hint}</div>}
-          </div>
-        ))}
-      </div>
-      <div className="card border-amber/30">
-        <h3 className="font-display text-base font-semibold text-white">ZINC stats are coming</h3>
-        <p className="mt-2 max-w-2xl font-mono text-[12px] leading-relaxed text-fog-muted">
-          The ORE side ships first. ZINC ecosystem analytics are greenfield — the same pipeline will be
-          cloned for the 30-tile ZINC game and our dZINC pool. Toggle back to <span className="text-white">ORE</span> for the live picture.
-        </p>
-      </div>
-    </>
   );
 }

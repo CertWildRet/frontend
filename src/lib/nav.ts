@@ -1,7 +1,6 @@
 /** Single source of truth for the primary nav (desktop SiteHeader + MobileNav). */
 export const NAV_ITEMS = [
   { href: "/ore", label: "ORE" },
-  { href: "/zinc", label: "ZINC" },
   { href: "/stats", label: "Stats" },
   { href: "/position", label: "Position" },
   { href: "/referral", label: "Referral" },

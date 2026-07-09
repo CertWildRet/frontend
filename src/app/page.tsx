@@ -6,7 +6,6 @@ import {
   ArrowIcon,
   Tilt,
 } from "./parts";
-import { ZincRoulette } from "@/components/zinc/ZincRoulette";
 import { PauseWhenOffscreen } from "@/components/PauseWhenOffscreen";
 import { HeroLiveStrip } from "@/components/HeroLiveStrip";
 
@@ -14,20 +13,20 @@ import { HeroLiveStrip } from "@/components/HeroLiveStrip";
 const STEPS = [
   {
     n: "01",
-    t: "Get dORE & dZINC tokens",
-    d: "Each is your pro-rata share of a Diamond Pool. dORE tracks ORE, dZINC tracks ZINC.",
+    t: "Get dORE tokens",
+    d: "Your pro-rata share of the Diamond Pool. dORE tracks ORE.",
     Graphic: StepTokenGraphic,
   },
   {
     n: "02",
     t: "Let our algorithms do the work",
-    d: "It mines the full ORE board (25 tiles) and the ZINC wheel (30 tiles), only on rounds that are EV-positive.",
+    d: "It mines the full ORE board (25 tiles), only on rounds that are EV-positive.",
     Graphic: StepBoardGraphic,
   },
   {
     n: "03",
     t: "Claim or let it keep working",
-    d: "Pull out to SOL during any open claim window, or hold on. dORE compounds into stORE; dZINC holds your smelted ZINC in kind.",
+    d: "Pull out to SOL during any open claim window, or hold on. dORE compounds into stORE.",
     Graphic: StepYieldGraphic,
   },
 ];
@@ -233,7 +232,7 @@ export default function DispersionLanding() {
             </span>
           </h1>
           <p className="mt-7 max-w-[560px] text-[17px] leading-relaxed text-[#A8B0D4]">
-            Join the Diamond Pools and mine ORE and ZINC, each pool as one whale.
+            Join the Diamond Pool and mine ORE as one whale.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3.5">
@@ -265,7 +264,7 @@ export default function DispersionLanding() {
       </section>
 
       {/* live-proof strip fills the first-view negative space (and gives direct
-          dORE / dZINC entry). Outside the hero section so the centered diamond
+          dORE entry). Outside the hero section so the centered diamond
           doesn't drift. */}
       <div className="mt-12 sm:mt-14">
         <HeroLiveStrip />
@@ -369,7 +368,7 @@ export default function DispersionLanding() {
             <p className="text-[15px] leading-relaxed text-[#A8B0D4]">
               We build on advantages that don&apos;t depend on someone else
               playing badly. Pooling lowers your variance. Holding dORE
-              compounds yield via stORE; dZINC holds your smelted ZINC in kind.
+              compounds yield via stORE.
               Flexible claims let you take profit without giving up your position.
             </p>
           </div>
@@ -399,7 +398,7 @@ export default function DispersionLanding() {
               explorer at any time. The vault holds the SOL, the program mines it,
               and funds only ever move{" "}
               <span className="text-[#EAECF6]" style={mono}>
-                vault → ORE / ZINC → back
+                vault → ORE → back
               </span>
               .
             </p>
@@ -407,10 +406,10 @@ export default function DispersionLanding() {
         </div>
       </section>
 
-      {/* ══ POOLS - two crystal shards ═════════════════════════════ */}
+      {/* ══ POOL - the dORE crystal shard ══════════════════════════ */}
       <section className="mt-28">
-        <SectionLabel k="pools" t="Two shards. Both lit." />
-        <PauseWhenOffscreen className="mt-9 grid gap-6 md:grid-cols-2">
+        <SectionLabel k="pool" t="One shard. Lit." />
+        <PauseWhenOffscreen className="mx-auto mt-9 max-w-xl">
           {/* dORE - LIVE */}
           <Tilt>
             <div
@@ -482,93 +481,6 @@ export default function DispersionLanding() {
               </Link>
             </div>
           </Tilt>
-
-          {/* dZINC - LIVE */}
-          <Tilt>
-            <div
-              className={`${styles.glass} ${styles.spectralEdge} ${styles.cutBL} relative flex h-full flex-col overflow-hidden rounded-3xl p-8`}
-            >
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full"
-                style={{
-                  background:
-                    "radial-gradient(circle,rgba(154,107,255,0.18),transparent 70%)",
-                }}
-              />
-              <div className="flex items-center justify-between">
-                <h3 className="text-[24px] font-bold text-[#EAECF6]" style={display}>
-                  dZINC
-                </h3>
-                <span
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] tracking-[0.2em]"
-                  style={{
-                    ...mono,
-                    background: "rgba(154,107,255,0.14)",
-                    boxShadow: "inset 0 0 0 1px rgba(154,107,255,0.4)",
-                    color: "#C7B3FF",
-                  }}
-                >
-                  <span className={`${styles.liveDot} h-1.5 w-1.5 rounded-full bg-[#9A6BFF]`} />
-                  LIVE
-                </span>
-              </div>
-
-              {/* dZINC signature: the 30-tile roulette ring, full coverage */}
-              <div className="mt-5 flex justify-center">
-                <ZincRoulette
-                  size={164}
-                  litTiles="all"
-                  animated
-                  center={
-                    <>
-                      <span
-                        className="text-[20px] font-bold leading-none text-[#EAECF6]"
-                        style={display}
-                      >
-                        30<span className="text-[#C7B3FF]">/</span>30
-                      </span>
-                      <span
-                        className="mt-1 text-[8.5px] uppercase tracking-[0.28em] text-[#9AA3C8]"
-                        style={mono}
-                      >
-                        tiles lit
-                      </span>
-                    </>
-                  }
-                />
-              </div>
-
-              <p className="mt-5 text-[14.5px] leading-relaxed text-[#A8B0D4]">
-                Full 30-tile ZINC coverage, production-cost gated. The keeper mines,
-                smelts the winnings, and holds them; withdraw any open window.
-              </p>
-              <ul className="mt-6 space-y-3">
-                {[
-                  "deposit SOL, mint dZINC",
-                  "1% on volume, nothing on idle",
-                  "claim SOL plus smelted ZINC, in kind",
-                ].map((b) => (
-                  <li key={b} className="flex items-center gap-3 text-[14px] text-[#C6CCEC]">
-                    <span
-                      className="h-2 w-2 rotate-45"
-                      style={{
-                        background: "linear-gradient(135deg,#9A6BFF,#FF5AC8)",
-                      }}
-                    />
-                    {b}
-                  </li>
-                ))}
-              </ul>
-              <div className="flex-1" aria-hidden />
-              <Link
-                href="/zinc"
-                className={`${styles.ignite} mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-medium text-[#EAECF6]`}
-              >
-                Enter dZINC <ArrowIcon className="h-4 w-4" />
-              </Link>
-            </div>
-          </Tilt>
         </PauseWhenOffscreen>
       </section>
 
@@ -621,7 +533,7 @@ export default function DispersionLanding() {
             className="relative text-[clamp(1.8rem,4vw,3rem)] font-bold leading-[1.05] text-[#EAECF6]"
             style={display}
           >
-            Pool your SOL. Mine ORE and ZINC like a whale.
+            Pool your SOL. Mine ORE like a whale.
           </h2>
           <p className="relative mx-auto mt-4 max-w-[500px] text-[15px] text-[#A8B0D4]">
             One disciplined pool, a keeper that never sleeps, and a claim window
@@ -680,17 +592,14 @@ function HowRow({
   );
 }
 
-/* Step 1 - SOL refracts into the dORE + dZINC share tokens.
-   A single shared spectral ring orbits BOTH shards as a pair; one light
-   particle rides that orbit and warms whichever shard it passes (dZINC right,
-   dORE left). A faint STATIC spectral track wires the two shards together even
-   between passes. Compositor-safe: only transform/opacity animate; every glow
-   is a static drop-shadow/box-shadow, brightening pulses overlay opacity, and
-   everything shares one 7.2s timeline so nothing can desync. */
+/* Step 1 - SOL refracts into the dORE share token. The spectral ring orbits the
+   shard and one light particle rides that orbit, warming it. Compositor-safe:
+   only transform/opacity animate; every glow is a static drop-shadow/box-shadow,
+   brightening pulses overlay opacity, and everything shares one 7.2s timeline so
+   nothing can desync. */
 function StepTokenGraphic() {
   const tokens = [
     { id: "doreTok", label: "dORE", g: ["#22E0E6", "#5B6CFF", "#9A6BFF"], glow: "rgba(34,224,230,0.5)" },
-    { id: "dzincTok", label: "dZINC", g: ["#9A6BFF", "#C56BFF", "#FF5AC8"], glow: "rgba(255,90,200,0.5)" },
   ];
   const Shard = (t: (typeof tokens)[number]) => (
     <svg
@@ -775,21 +684,14 @@ function OreBoard({ size, animated = true }: { size: number; animated?: boolean 
   );
 }
 
-/* Step 2 - the keeper mines BOTH boards (ORE 25-tile + ZINC 30-tile wheel),
-   only on EV-positive rounds. */
+/* Step 2 - the keeper mines the ORE board (25 tiles), only on EV-positive rounds. */
 function StepBoardGraphic() {
   return (
     <div className="absolute inset-0 flex items-center justify-center gap-6 px-2">
       <div className="flex flex-col items-center gap-2.5">
-        <OreBoard size={116} />
+        <OreBoard size={134} />
         <span className="text-[9.5px] uppercase tracking-[0.22em] text-[#8FA8E0]" style={mono}>
           ORE · 25
-        </span>
-      </div>
-      <div className="flex flex-col items-center gap-2.5">
-        <ZincRoulette size={134} litTiles="all" animated />
-        <span className="text-[9.5px] uppercase tracking-[0.22em] text-[#C7B3FF]" style={mono}>
-          ZINC · 30
         </span>
       </div>
       <span

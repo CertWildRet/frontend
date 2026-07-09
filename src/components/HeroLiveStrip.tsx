@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useLiveStats } from "@/hooks/useLiveStats";
-import { useZincRoundStats } from "@/hooks/useZincRoundStats";
 import { formatNum, formatSol } from "@/lib/format";
 
 const mono = { fontFamily: "'JetBrains Mono Variable', monospace" } as const;
@@ -10,15 +9,12 @@ const mono = { fontFamily: "'JetBrains Mono Variable', monospace" } as const;
 type Metric = { k: string; v: string; unit?: string };
 
 /**
- * Hero live-proof strip: both pools working the board right now. dORE metrics
- * from the ORE brain SSE; dZINC from the keeper's /api/zinc-round-state (round
- * id / pot / players — per-tile is encrypted, these aggregates are not). Laid
- * out as two equal columns (pill header + its metrics tidily beneath) so nothing
- * ragged-wraps. Degrades gracefully when a feed is off.
+ * Hero live-proof strip: the dORE pool working the board right now, metrics from
+ * the ORE brain SSE (round / deployed / miners). Degrades gracefully when the
+ * feed is off.
  */
 export function HeroLiveStrip() {
   const { stats: ore, connected, enabled } = useLiveStats();
-  const { stats: zinc } = useZincRoundStats();
   const live = enabled && connected;
 
   const oreMetrics: Metric[] = [
@@ -26,14 +22,6 @@ export function HeroLiveStrip() {
     { k: "deployed", v: ore ? formatSol(ore.totalDeployedSol, 1) : "···", unit: "SOL" },
     { k: "miners", v: ore ? formatNum(ore.totalMiners) : "···" },
   ];
-  const zincMetrics: Metric[] =
-    zinc && zinc.initialized
-      ? [
-          { k: "round", v: `#${zinc.roundId}` },
-          { k: "pot", v: formatSol(zinc.totalDeployedSol, 1), unit: "SOL" },
-          { k: "players", v: formatNum(zinc.players) },
-        ]
-      : [{ k: "coverage", v: "30 / 30 tiles" }];
 
   return (
     <div className="glass relative overflow-hidden rounded-2xl px-5 py-4 sm:px-6">
@@ -47,19 +35,11 @@ export function HeroLiveStrip() {
           className={`chip shrink-0 self-start lg:self-center ${live ? "border-pos/40 text-white" : "border-line text-fog-muted"}`}
         >
           {live ? <span className="live-dot text-pos" /> : null}
-          {live ? "live on-chain" : enabled ? "connecting" : "two pools"}
+          {live ? "live on-chain" : enabled ? "connecting" : "the pool"}
         </span>
 
-        <div className="grid flex-1 grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-0">
-          <PoolBlock href="/ore" label="dORE" dot="#22E0E6" border="#5B6CFF" metrics={oreMetrics} className="sm:pr-6" />
-          <PoolBlock
-            href="/zinc"
-            label="dZINC"
-            dot="#9A6BFF"
-            border="#9A6BFF"
-            metrics={zincMetrics}
-            className="sm:border-l sm:border-line sm:pl-6"
-          />
+        <div className="flex-1">
+          <PoolBlock href="/ore" label="dORE" dot="#22E0E6" border="#5B6CFF" metrics={oreMetrics} />
         </div>
       </div>
     </div>
