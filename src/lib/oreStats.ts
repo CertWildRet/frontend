@@ -177,7 +177,7 @@ export type OreCompetition = {
   latest: {
     round_id: number;
     coverage: number | null;
-    players: { rank: number; authority: string; is_ours: boolean; total_sol: string; deploys: number; squares: number; max_single: string }[];
+    players: { rank: number; authority: string; is_ours: boolean; total_sol: string; deploys: number; tiles: number; max_single: string }[];
   } | null;
   threshold_series: { round_id: number; rank10_sol: number }[];
   our_miner: string;
