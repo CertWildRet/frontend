@@ -494,7 +494,7 @@ function PlayersTab() {
   return (
     <div className="space-y-5">
       {/* WINDOW control — the analysis window; drives every threshold + the competition table */}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-sm text-fog-muted">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[13px] text-fog-muted">
         <span>Analysing the</span>
         <div className="flex rounded-lg border border-line bg-ink-800 p-0.5">
           {COMPETE_WINDOWS.map((w) => (
@@ -509,10 +509,10 @@ function PlayersTab() {
       <div className="card px-4 py-4">
         <div className="section-label mb-2">To be top-N next round — how much to deploy</div>
         <div className="mb-4 flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 font-mono text-sm text-fog-muted">reach</span>
+          <span className="mr-1 font-mono text-[13px] text-fog-muted">reach</span>
           {RANK_CHOICES.map((r) => (
             <button key={r} title={`Show the deploy that lands you at rank ${r}`} onClick={() => setRank(r)}
-              className={`rounded-md border px-3 py-1.5 font-mono text-[13px] transition ${rank === r ? "border-ink-600 bg-ink-600 text-white" : "border-line text-fog-muted hover:border-steel hover:text-white"}`}>Top {r}</button>
+              className={`rounded-md border px-3 py-1.5 font-mono text-xs transition ${rank === r ? "border-ink-600 bg-ink-600 text-white" : "border-line text-fog-muted hover:border-steel hover:text-white"}`}>Top {r}</button>
           ))}
         </div>
         {thr && thr.median_sol != null ? (
@@ -520,9 +520,9 @@ function PlayersTab() {
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
               <span className="font-mono text-sm text-fog-muted">Deploy</span>
               <span className="num text-3xl gradient-text">≈ {formatSol(thr.median_sol, 3)}<span className="ml-1 text-lg text-fog-muted">SOL</span></span>
-              <span className="font-mono text-sm text-fog-muted">to crack <span className="text-white">top {rank}</span></span>
+              <span className="font-mono text-[13px] text-fog-muted">to crack <span className="text-white">top {rank}</span></span>
             </div>
-            <div className="mt-1.5 font-mono text-sm leading-snug text-fog-muted">
+            <div className="mt-1.5 font-mono text-[13px] leading-snug text-fog-muted">
               median deploy of the #{rank} wallet over the last {n} rounds · range {formatSol(thr.min_sol ?? 0, 3)}–{formatSol(thr.max_sol ?? 0, 3)} SOL · avg {formatSol(thr.avg_sol ?? 0, 3)}
             </div>
           </>
@@ -534,7 +534,7 @@ function PlayersTab() {
       {/* price of each tier */}
       <ChartCard title="Price of each tier" subtitle={`Median deploy that landed a wallet at each rank over the last ${n} rounds. Your picked rank is highlighted.`}>
         <div className={tableWrap}>
-          <table className="w-full font-mono text-sm sm:min-w-[440px]">
+          <table className="w-full font-mono text-[13px]">
             <thead><tr className={theadRow}>
               <th className={th}>Rank</th>
               <th className={`${th} text-right`}>Median deploy</th>
@@ -558,7 +558,7 @@ function PlayersTab() {
       {/* your competition — persistent top players */}
       <ChartCard title="Your competition" subtitle={`The persistent top wallets across the last ${n} rounds — who you're up against every round.`}>
         <div className={tableWrap}>
-          <table className="w-full font-mono text-sm sm:min-w-[520px]">
+          <table className="w-full font-mono text-[13px] sm:min-w-[520px]">
             <thead><tr className={theadRow}>
               <th className={th}>#</th><th className={th}>Wallet</th>
               <th className={`${th} text-right`}>Rounds active</th>
@@ -584,7 +584,7 @@ function PlayersTab() {
       <ChartCard title={d?.latest ? `Last round — #${formatNum(d.latest.round_id)}` : "Last round"}
         subtitle={cov != null ? `Every wallet's deploy this round, ranked. Captured ≈${cov}% of the round's on-chain SOL.` : "Every wallet's deploy in the most recent round, ranked."}>
         <div className={tableWrap}>
-          <table className="w-full font-mono text-sm sm:min-w-[520px]">
+          <table className="w-full font-mono text-[13px] sm:min-w-[520px]">
             <thead><tr className={theadRow}>
               <th className={th}>#</th><th className={th}>Wallet</th>
               <th className={`${th} text-right`}>Deployed</th>
