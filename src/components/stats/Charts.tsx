@@ -29,7 +29,7 @@ export function ChartCard({
   variant = "default",
   cutCorner = "tr",
 }: {
-  title: string;
+  title?: string;
   subtitle?: string;
   children: React.ReactNode;
   right?: React.ReactNode;
@@ -46,13 +46,15 @@ export function ChartCard({
 
   return (
     <div className={wrapperClass}>
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-        <div className="min-w-0">
-          <div className="section-label">{title}</div>
-          {subtitle && <div className="mt-0.5 font-mono text-[12.5px] leading-snug text-fog-muted">{subtitle}</div>}
+      {(title || subtitle || right) && (
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+          <div className="min-w-0">
+            {title && <div className="section-label">{title}</div>}
+            {subtitle && <div className="mt-0.5 font-mono text-[12.5px] leading-snug text-fog-muted">{subtitle}</div>}
+          </div>
+          {right}
         </div>
-        {right}
-      </div>
+      )}
       {children}
     </div>
   );

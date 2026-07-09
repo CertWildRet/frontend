@@ -105,7 +105,7 @@ function TrendsTab() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div className="section-label">Time series · {series.data?.range ?? range}</div>
+        <div className="section-label">Showing {series.data?.range ?? range} of data</div>
         <SegmentedControl aria-label="Time range" items={RANGES} value={range} onChange={setRange} />
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
@@ -116,7 +116,7 @@ function TrendsTab() {
           <AreaLine spectral points={mk(costOf)} height={195} zeroBaseline={false} fmt={(v) => formatSol(v, 5) + " SOL"} yFmt={(v) => v.toFixed(3)} />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="tr" title="Effective rake" subtitle="Protocol take % per bucket (1% admin + ~9.9% buyback). Zoomed — variation is sub-0.01%.">
-          <AreaLine spectral points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} height={195} zeroBaseline={false} fmt={(v) => v.toFixed(4) + "%"} />
+          <AreaLine spectral points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} height={195} zeroBaseline={false} fmt={(v) => v.toFixed(4) + "%"} yFmt={(v) => v.toFixed(2) + "%"} />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="bl" title="Winners / round" subtitle="Avg miners rewarded per round (reset-event count). Full-history; total-miner counts aren't recoverable for closed rounds.">
           <AreaLine
@@ -140,10 +140,14 @@ function TrendsTab() {
 function MotherlodeTab() {
   const [offset, setOffset] = useState(0);
   const ml = usePolled(() => fetchOreMotherlode(PAGE, offset), 20_000, [offset]);
+  const mlChart = usePolled(() => fetchOreMotherlode(50, 0), 20_000, []);
   const d = ml.data;
   const total = d?.total ?? 0;
   const pool = oreGramsToOre(d?.current?.pool_grams);
   const sinceHit = d?.current ? d.current.current_round - (d.current.last_hit_round ?? d.current.current_round) : 0;
+  const mlChartPts: Pt[] = [...(mlChart.data?.recent_hits ?? [])]
+    .reverse()
+    .map((h) => ({ label: `#${formatNum(Number(h.round_id))}`, value: solOf(h.motherlode_paid) }));
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -152,6 +156,17 @@ function MotherlodeTab() {
         <StatTile label="Last hit" value={d?.current?.last_hit_round ? `#${formatNum(d.current.last_hit_round)}` : "···"} hint="most recent drop" />
         <StatTile label="Total hits" value={formatNum(total)} hint="all-time (≥ 0.2 ORE)" />
       </div>
+      <ChartCard variant="dispersion" cutCorner="tr" title="Motherlode payouts" subtitle="Last 50 hits — ORE paid per round.">
+        <AreaLine
+          spectral
+          points={mlChartPts}
+          height={210}
+          zeroBaseline={false}
+          fmt={(v) => formatNum(v, 1) + " ORE"}
+          yFmt={(v) => formatNum(v, 0)}
+          yLabel="ORE paid by round"
+        />
+      </ChartCard>
       <ChartCard title="Recent motherlode drops" subtitle="Each hit pays the whole pool out and resets it to 0; it rebuilds at +0.2 ORE/round.">
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px]">
@@ -195,8 +210,8 @@ function RoundAnalysisTab() {
   return (
     <div className="space-y-5">
       {/* WINDOW control — the analysis window; drives every threshold + the competition table */}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[13px] text-fog-muted">
-        <span>Analysing the</span>
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 font-mono text-[13px] text-fog-muted">
+        <span>Using the last {rounds} rounds of data.</span>
         <SegmentedControl
           aria-label="Competition window"
           items={COMPETE_WINDOWS.map((w) => ({
@@ -207,7 +222,6 @@ function RoundAnalysisTab() {
           value={String(rounds)}
           onChange={(id) => setRounds(Number(id))}
         />
-        <span>rounds{n ? ` · ${n} with deploy data` : ""}</span>
       </div>
 
       {/* headline: pick a RANK → the deploy that reaches it (only affects this number + the highlighted tier row) */}
@@ -544,16 +558,21 @@ function RoundsTab() {
     setRanges({});
     (async () => {
       const next: Record<number, TileDeployRange | null> = {};
-      await Promise.all(
-        pending.map(async (r) => {
-          try {
-            const { data } = await fetchOreRound(r.round_id);
-            next[r.round_id] = roundTileDeployRange(data.round);
-          } catch {
-            next[r.round_id] = null;
-          }
-        }),
-      );
+      const BATCH = 6;
+      for (let i = 0; i < pending.length; i += BATCH) {
+        if (cancelled) return;
+        const batch = pending.slice(i, i + BATCH);
+        await Promise.all(
+          batch.map(async (r) => {
+            try {
+              const { data } = await fetchOreRound(r.round_id);
+              next[r.round_id] = roundTileDeployRange(data.round);
+            } catch {
+              next[r.round_id] = null;
+            }
+          }),
+        );
+      }
       if (!cancelled) setRanges(next);
     })();
     return () => {
@@ -563,7 +582,7 @@ function RoundsTab() {
 
   return (
     <div className="space-y-5">
-      <ChartCard title="Recent rounds" subtitle="The round spine — newest first. Split = jackpot shared across winners. Max spread = hottest minus coldest tile; % = spread ÷ coldest.">
+      <ChartCard subtitle="Split = jackpot shared across winners. Max spread = hottest minus coldest tile; % = spread ÷ coldest.">
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px] sm:min-w-[560px]">
             <thead>
