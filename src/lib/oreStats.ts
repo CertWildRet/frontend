@@ -6,12 +6,12 @@
  *
  * Live layer: the same service exposes a WebSocket at /stream (see useOreLive).
  */
-import { ANALYTICS_URL, lamportsToSol, oreGramsToOre } from "./analytics";
+import { ANALYTICS_URL, ANALYTICS_WS_URL, lamportsToSol, oreGramsToOre } from "./analytics";
 
 export { lamportsToSol, oreGramsToOre };
 
-/** ws(s):// origin for the analytics WebSocket (derived from the REST origin). */
-export const ORE_WS_URL = `${ANALYTICS_URL.replace(/^http/, "ws")}/stream`;
+/** ws(s):// origin for the analytics WebSocket (always upstream, not the REST proxy). */
+export const ORE_WS_URL = ANALYTICS_WS_URL;
 
 export type OreProvenance = {
   ore_max_round: string;
