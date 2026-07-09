@@ -5,18 +5,16 @@
  *
  * ORE-first: the whole ORE game (emission, rake, motherlode, competition,
  * leaderboard, production cost) with OUR dORE pool woven in as our slice of the
- * field. Serves a live "daily-joe" hero band (via the analytics WebSocket) AND
- * financial-analyst tabs. ZINC is a placeholder for v1. Native units; USD is a
+ * field. Financial-analyst tabs. ZINC is a placeholder for v1. Native units; USD is a
  * labelled off-chain overlay.
  */
-import { useEffect, useMemo, useState } from "react";
-import { StatTile, StatRow } from "@/components/primitives/Stat";
-import { TileHeatmap } from "@/components/TileHeatmap";
+import { useEffect, useState } from "react";
+import { StatTile } from "@/components/primitives/Stat";
+import { TabBar, SegmentedControl } from "@/components/primitives/TabBar";
 import { AreaLine, HBars, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
-import { useOreLive } from "@/hooks/useOreLive";
 import { usePolled } from "@/hooks/useOreStats";
 import {
-  fetchOreSummary, fetchStatsOverview, fetchOreRounds, fetchOreMotherlode, fetchOreLeaderboard,
+  fetchStatsOverview, fetchOreRounds, fetchOreMotherlode, fetchOreLeaderboard,
   fetchOreMiners, fetchOreSeries, fetchOreCompetition,
   lamportsToSol, oreGramsToOre, bpsToPct,
   type OreRound, type OreSeriesPoint,
@@ -73,7 +71,6 @@ function Pager({ offset, total, onPage, unit = "rows" }: { offset: number; total
 export default function StatsPage() {
   const [token, setToken] = useState<Token>("ORE");
   const [tab, setTab] = useState<Tab>("overview");
-  const live = useOreLive();
 
   return (
     <div className="space-y-8">
@@ -85,31 +82,20 @@ export default function StatsPage() {
             cost, and the miner leaderboard — with our own dORE pool woven in as our slice of the field.
           </p>
         </div>
-        <div className="flex w-full rounded-lg border border-line bg-ink-800 p-1 sm:w-auto">
-          {(["ORE", "ZINC"] as Token[]).map((t) => (
-            <button key={t} onClick={() => setToken(t)}
-              className={`flex-1 rounded-md px-4 py-2 text-center font-mono text-xs transition sm:flex-none sm:py-1.5 ${
-                token === t ? "bg-ink-600 text-white shadow-glow-gold" : "text-fog-muted hover:text-white"}`}>
-              {t}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          aria-label="Token"
+          items={(["ORE", "ZINC"] as Token[]).map((t) => ({ id: t, label: t }))}
+          value={token}
+          onChange={setToken}
+          className="p-1"
+        />
       </header>
 
       {token === "ZINC" ? (
         <ZincPlaceholder />
       ) : (
         <>
-          <HeroBand live={live} />
-          <div className="flex flex-wrap gap-2 border-b border-line pb-2">
-            {TABS.map((t) => (
-              <button key={t.id} onClick={() => setTab(t.id)}
-                className={`rounded-md px-3 py-2 font-mono text-xs transition ${
-                  tab === t.id ? "bg-ink-700 text-white" : "text-fog-muted hover:bg-ink-800 hover:text-white"}`}>
-                {t.label}
-              </button>
-            ))}
-          </div>
+          <TabBar aria-label="Stats sections" items={TABS} value={tab} onChange={setTab} />
           {tab === "overview" && <OverviewTab />}
           {tab === "trends" && <TrendsTab />}
           {tab === "motherlode" && <MotherlodeTab />}
@@ -120,107 +106,6 @@ export default function StatsPage() {
         </>
       )}
     </div>
-  );
-}
-
-// ── Live daily-joe hero band ─────────────────────────────────────────────────
-function HeroBand({ live }: { live: ReturnType<typeof useOreLive> }) {
-  const summary = usePolled(fetchOreSummary, 15_000);
-  const s = summary.data;
-  const r = live.round;
-
-  const board = useMemo(() => {
-    const dep = (r?.deployed ?? []).map((x) => lamportsToSol(x));
-    const cnt = (r?.count ?? []).map((x) => Number(x));
-    return { dep, cnt };
-  }, [r]);
-
-  const roundId = r?.round_id ?? (s?.latest_round?.round_id ?? null);
-  const miners = r ? Number(r.total_miners ?? 0) : Number(s?.latest_round?.total_miners ?? 0);
-  const deployed = r ? lamportsToSol(r.total_deployed) : lamportsToSol(s?.latest_round?.total_deployed);
-  const solPerMiner = miners > 0 ? deployed / miners : 0;
-  const mlPool = oreGramsToOre(s?.motherlode?.pool_grams);
-  const cumMinted = oreGramsToOre(s?.cumulative?.cumulative_minted);
-  const avgRake = bpsToPct(s?.averages?.avg_rake_bps);
-  const price = s?.prices;
-
-  // cost per ORE = SOL vaulted / ORE minted (recent window). Compared to the ORE
-  // price to reveal the real margin — the "is mining profitable?" read.
-  const costPerOre = s?.cost && Number(s.cost.minted) > 0 ? lamportsToSol(s.cost.vaulted) / oreGramsToOre(s.cost.minted) : 0;
-  const oreSol = price && price.sol_usd > 0 ? price.ore_usd / price.sol_usd : 0;
-  const overPct = oreSol > 0 && costPerOre > 0 ? (costPerOre / oreSol - 1) * 100 : 0;
-
-  const spread = board.dep.length ? Math.max(...board.dep) - Math.min(...board.dep) : 0;
-  const hottest = board.dep.length ? board.dep.indexOf(Math.max(...board.dep)) : -1;
-  const hottestSol = hottest >= 0 ? board.dep[hottest] : 0;
-  const pot = r ? lamportsToSol(r.total_winnings) : 0;
-  const vault = r ? lamportsToSol(r.total_vaulted) : 0;
-  const topMiner = r?.top_miner ?? null;
-
-  // total_vaulted reads 0 from chain mid-round (it only settles at round end), so
-  // "Vaulted this round" would sit dead at 0 the whole round. Project it live from
-  // what we CAN see — total deployed × the (very stable ~10.5%) effective rake — so
-  // it grows with the round. Falls back to the exact on-chain value once settled.
-  const vaultProjected = avgRake > 0 ? deployed * (avgRake / 100) : 0;
-  const vaultProjecting = vault <= 0 && vaultProjected > 0;
-  const vaultShown = vault > 0 ? vault : vaultProjected;
-
-  return (
-    <section className="space-y-4">
-      <div className="flex items-center gap-2">
-        <span className={`inline-block h-2 w-2 rounded-full ${live.connected ? "animate-pulse-dot bg-pos" : "bg-fog-muted"}`} />
-        <span className="font-mono text-[13px] text-fog-muted">
-          {live.connected ? "LIVE — streaming from analytics" : "connecting to live stream…"}
-          {price && (
-            <span className="ml-2 text-fog-dim">
-              · ORE ${price.ore_usd.toFixed(2)} · SOL ${price.sol_usd.toFixed(2)} <span className="text-fog-muted">(off-chain)</span>
-            </span>
-          )}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatTile label="Current round" value={roundId != null ? `#${formatNum(Number(roundId))}` : "···"} tone="gold" hint={live.connected ? "live" : "last seen"} />
-        <StatTile label="Miners this round" value={miners ? formatNum(miners) : "···"} hint="deploying now" />
-        <StatTile label="SOL deployed" value={deployed ? formatSol(deployed, 2) : "···"} unit="SOL" hint="this round" />
-        <StatTile label="SOL / miner" value={solPerMiner ? formatSol(solPerMiner, 3) : "···"} unit="SOL" hint="avg stake" />
-        <StatTile label="Motherlode pool" value={mlPool ? formatNum(mlPool, 1) : "···"} unit="ORE" tone="silver" hint="waiting to drop (1-in-625)" />
-        <StatTile label="Avg effective rake" value={avgRake ? formatPct(avgRake / 100, 2) : "···"} hint="1% admin + ~9.9% buyback" />
-        <StatTile
-          label="Cost / ORE"
-          value={costPerOre ? formatSol(costPerOre, 3) : "···"}
-          unit="SOL"
-          hint={oreSol > 0 && costPerOre > 0 ? (
-            <>vs {formatSol(oreSol, 3)} SOL price · <span className={overPct > 0 ? "text-red" : "text-pos"}>{overPct > 0 ? "+" : ""}{overPct.toFixed(0)}% {overPct > 0 ? "over" : "under"}</span></>
-          ) : "SOL vaulted / ORE minted"}
-        />
-        <StatTile label="ORE minted" value={cumMinted ? formatNum(cumMinted, 0) : "···"} unit="ORE" hint="cumulative, all rounds" />
-      </div>
-
-      {/* live board + live-round detail */}
-      <ChartCard
-        title="Live board — SOL per tile"
-        subtitle="Exact per-tile deploys for the current round (live Round PDA). Intensity = SOL; number = miners."
-        right={<span className="font-mono text-[13px] text-fog-muted">{r ? `round #${formatNum(Number(r.round_id))}` : ""}</span>}
-      >
-        {/* laptop: heatmap left at a sane size, "This round" enlarged + pinned to
-            the right edge (justify-between), so the slack sits in the MIDDLE rather
-            than dangling to the right of the stats. Mobile stays stacked. */}
-        <div className="grid gap-x-10 gap-y-6 lg:flex lg:items-center lg:justify-between">
-          <div className="w-full max-w-[420px] lg:max-w-[480px] lg:shrink-0">
-            <TileHeatmap perTileSol={board.dep} perTileCount={board.cnt} />
-          </div>
-          <div className="flex flex-col justify-center gap-4 lg:w-[420px] lg:shrink-0">
-            <div className="section-label mb-1 lg:text-[13px]">This round</div>
-            <StatRow className="lg:text-sm" k="Hottest tile" v={hottest >= 0 ? `#${hottest + 1}` : "·"} unit={hottest >= 0 ? `${formatSol(hottestSol, 3)} SOL` : ""} />
-            <StatRow className="lg:text-sm" k="Spread (top ↔ least)" v={formatSol(spread, 3)} unit="SOL" />
-            <StatRow className="lg:text-sm" k="Pot (winnings)" v={formatSol(pot, 2)} unit="SOL" />
-            <StatRow className="lg:text-sm" k="Vaulted this round" v={`${vaultProjecting ? "≈ " : ""}${formatSol(vaultShown, 4)}`} unit="SOL" sub={vaultProjecting ? `projected: deployed × ${avgRake.toFixed(1)}% rake · settles at round end` : "the round's protocol take (buyback + admin)"} />
-            <StatRow className="lg:text-sm" k="Solo winner (so far)" v={short(topMiner)} />
-          </div>
-        </div>
-      </ChartCard>
-    </section>
   );
 }
 
@@ -286,15 +171,7 @@ function TrendsTab() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div className="section-label">Time series · {series.data?.range ?? range}</div>
-        <div className="flex rounded-lg border border-line bg-ink-800 p-0.5">
-          {RANGES.map((r) => (
-            <button key={r.id} onClick={() => setRange(r.id)}
-              className={`rounded-md px-2.5 py-1 font-mono text-[13px] transition ${
-                range === r.id ? "bg-ink-600 text-white" : "text-fog-muted hover:text-white"}`}>
-              {r.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl aria-label="Time range" items={RANGES} value={range} onChange={setRange} />
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
         <ChartCard title="SOL deployed" subtitle="Total SOL staked per bucket.">
@@ -419,19 +296,24 @@ function LeaderboardTab() {
 
       <ChartCard title="Top miners" subtitle={d?.snapshot_ts ? `Census ${new Date(d.snapshot_ts).toLocaleDateString()} · ranked by ${LB_SORTS.find((x) => x.id === sort)?.label ?? sort}` : "loading census…"}
         right={
-          <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
-            {LB_SORTS.map((o) => (
-              <button key={o.id} onClick={() => { setSort(o.id); setOffset(0); }}
-                className={`rounded-md border px-2.5 py-1.5 font-mono text-[12px] transition ${sort === o.id ? "border-ink-600 bg-ink-600 text-white" : "border-line text-fog-muted hover:border-steel hover:text-white"}`}>{o.label}</button>
-            ))}
-          </div>
+          <SegmentedControl
+            aria-label="Leaderboard sort"
+            variant="loose"
+            className="sm:justify-end"
+            items={LB_SORTS}
+            value={sort}
+            onChange={(id) => { setSort(id); setOffset(0); }}
+          />
         }>
         <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] text-fog-muted">
           <span className="shrink-0">min deployed:</span>
-          {MIN_DEP.map((v) => (
-            <button key={v} onClick={() => { setMinDep(v); setOffset(0); }}
-              className={`rounded border px-2.5 py-1 transition ${minDep === v ? "border-ink-600 bg-ink-600 text-white" : "border-line hover:border-steel hover:text-white"}`}>{v === 0 ? "any" : `${v} SOL`}</button>
-          ))}
+          <SegmentedControl
+            aria-label="Minimum deployed"
+            variant="loose"
+            items={MIN_DEP.map((v) => ({ id: String(v), label: v === 0 ? "any" : `${v} SOL` }))}
+            value={String(minDep)}
+            onChange={(id) => { setMinDep(Number(id)); setOffset(0); }}
+          />
         </div>
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px] sm:min-w-[600px]">
@@ -496,12 +378,16 @@ function PlayersTab() {
       {/* WINDOW control — the analysis window; drives every threshold + the competition table */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[13px] text-fog-muted">
         <span>Analysing the</span>
-        <div className="flex rounded-lg border border-line bg-ink-800 p-0.5">
-          {COMPETE_WINDOWS.map((w) => (
-            <button key={w} title={`Recompute the thresholds & the competition table over the last ${w} rounds`} onClick={() => setRounds(w)}
-              className={`rounded-md px-2.5 py-1 transition ${rounds === w ? "bg-ink-600 text-white" : "hover:text-white"}`}>last {w}</button>
-          ))}
-        </div>
+        <SegmentedControl
+          aria-label="Competition window"
+          items={COMPETE_WINDOWS.map((w) => ({
+            id: String(w),
+            label: `last ${w}`,
+            title: `Recompute the thresholds & the competition table over the last ${w} rounds`,
+          }))}
+          value={String(rounds)}
+          onChange={(id) => setRounds(Number(id))}
+        />
         <span>rounds{n ? ` · ${n} with deploy data` : ""}</span>
       </div>
 
@@ -510,10 +396,17 @@ function PlayersTab() {
         <div className="section-label mb-2">To be top-N next round — how much to deploy</div>
         <div className="mb-4 flex flex-wrap items-center gap-1.5">
           <span className="mr-1 font-mono text-[13px] text-fog-muted">reach</span>
-          {RANK_CHOICES.map((r) => (
-            <button key={r} title={`Show the deploy that lands you at rank ${r}`} onClick={() => setRank(r)}
-              className={`rounded-md border px-3 py-1.5 font-mono text-xs transition ${rank === r ? "border-ink-600 bg-ink-600 text-white" : "border-line text-fog-muted hover:border-steel hover:text-white"}`}>Top {r}</button>
-          ))}
+          <SegmentedControl
+            aria-label="Target rank"
+            variant="loose"
+            items={RANK_CHOICES.map((r) => ({
+              id: String(r),
+              label: `Top ${r}`,
+              title: `Show the deploy that lands you at rank ${r}`,
+            }))}
+            value={String(rank)}
+            onChange={(id) => setRank(Number(id))}
+          />
         </div>
         {thr && thr.median_sol != null ? (
           <>
@@ -640,10 +533,13 @@ function MinersTab() {
         }>
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
           <span className="mr-1 shrink-0 font-mono text-[13px] text-fog-muted">sort:</span>
-          {MINER_SORTS.map((o) => (
-            <button key={o.id} onClick={() => { setSort(o.id); setOffset(0); }}
-              className={`rounded-md border px-2.5 py-1.5 font-mono text-[12px] transition ${sort === o.id ? "border-ink-600 bg-ink-600 text-white" : "border-line text-fog-muted hover:border-steel hover:text-white"}`}>{o.label}</button>
-          ))}
+          <SegmentedControl
+            aria-label="Miner sort"
+            variant="loose"
+            items={MINER_SORTS}
+            value={sort}
+            onChange={(id) => { setSort(id); setOffset(0); }}
+          />
         </div>
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px] sm:min-w-[640px]">

@@ -5,16 +5,16 @@ import { usePathname } from "next/navigation";
 import { WalletButton } from "@/components/WalletButton";
 import { MobileNav } from "@/components/MobileNav";
 import { NAV_ITEMS, isActiveRoute } from "@/lib/nav";
-
-const display = { fontFamily: "'Chakra Petch', sans-serif" } as const;
+import {
+  tabActiveClass,
+  tabActiveGlow,
+  tabDisplayFont,
+  tabIdleClass,
+} from "@/components/primitives/TabBar";
 
 // The active pill's fill + spectral border live in the .spectral-edge class
 // (border-box technique); here we only add the outer glow + font.
-const activeStyle = {
-  ...display,
-  boxShadow:
-    "0 0 24px -6px rgba(91,108,255,0.65), inset 0 1px 0 rgba(255,255,255,0.15)",
-} as const;
+const activeStyle = { ...tabDisplayFont, ...tabActiveGlow } as const;
 
 /** The dispersion prism mark - spectral-stroke triangle (matches the /3 logo). */
 function PrismMark({ className = "" }: { className?: string }) {
@@ -73,7 +73,7 @@ export function SiteHeader() {
             </span>
             <span
               className="whitespace-nowrap text-[16px] font-semibold tracking-[0.08em] text-[#EAECF6] sm:text-[19px] sm:tracking-[0.16em]"
-              style={display}
+              style={tabDisplayFont}
             >
               Diamond Pools
             </span>
@@ -85,11 +85,11 @@ export function SiteHeader() {
                 <Link
                   key={l.href}
                   href={l.href}
-                  style={active ? activeStyle : display}
+                  style={active ? activeStyle : tabDisplayFont}
                   className={
                     active
-                      ? "spectral-edge relative rounded-lg px-3.5 py-1.5 text-[14px] font-semibold text-white"
-                      : "rounded-lg border border-transparent px-3 py-1.5 text-[14px] font-semibold text-[#C6CCEC] transition-colors hover:bg-[rgba(234,236,246,0.06)] hover:text-[#EAECF6]"
+                      ? `${tabActiveClass} px-3.5 py-1.5 text-[14px]`
+                      : `${tabIdleClass} px-3 py-1.5 text-[14px]`
                   }
                 >
                   {l.label}

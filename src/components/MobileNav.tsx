@@ -5,6 +5,12 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_ITEMS, isActiveRoute } from "@/lib/nav";
+import {
+  tabActiveClass,
+  tabActiveGlow,
+  tabDisplayFont,
+  tabIdleClass,
+} from "@/components/primitives/TabBar";
 
 const ANIM_MS = 300;
 
@@ -117,9 +123,12 @@ export function MobileNav() {
                             key={l.href}
                             href={l.href}
                             onClick={() => setOpen(false)}
-                            className={`rounded-md px-3 py-2.5 text-sm transition ${
-                              active ? "bg-ink-800 text-white" : "text-fog-dim hover:bg-ink-800 hover:text-white"
-                            }`}
+                            style={active ? { ...tabDisplayFont, ...tabActiveGlow } : tabDisplayFont}
+                            className={
+                              active
+                                ? `${tabActiveClass} px-3 py-2.5 text-sm`
+                                : `${tabIdleClass} px-3 py-2.5 text-sm`
+                            }
                           >
                             {l.label}
                           </Link>
