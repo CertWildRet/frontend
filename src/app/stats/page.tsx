@@ -4,9 +4,8 @@
  * /stats — the ORE-ecosystem Stats page.
  *
  * ORE-first: the whole ORE game (emission, rake, motherlode, competition,
- * leaderboard, production cost) with OUR dORE pool woven in as our slice of the
- * field. Financial-analyst tabs. ZINC is a placeholder for v1. Native units; USD is a
- * labelled off-chain overlay.
+ * miner ranking, production cost). Financial-analyst tabs. ZINC is a placeholder
+ * for v1. Native units; USD is a labelled off-chain overlay.
  */
 import { useEffect, useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
@@ -14,21 +13,21 @@ import { TabBar, SegmentedControl } from "@/components/primitives/TabBar";
 import { AreaLine, HBars, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
 import { usePolled } from "@/hooks/useOreStats";
 import {
-  fetchOreRounds, fetchOreMotherlode, fetchOreLeaderboard,
+  fetchOreRounds, fetchOreRound, fetchOreMotherlode, fetchOreLeaderboard,
   fetchOreMiners, fetchOreSeries, fetchOreCompetition,
-  lamportsToSol, oreGramsToOre, bpsToPct,
-  type OreRound, type OreSeriesPoint,
+  lamportsToSol, oreGramsToOre, roundTileDeployRange, roundMaxSpreadFrac,
+  type TileDeployRange,
+  type OreSeriesPoint,
 } from "@/lib/oreStats";
 import { formatSol, formatNum, formatPct } from "@/lib/format";
 
-type Tab = "trends" | "motherlode" | "leaderboard" | "players" | "miners" | "rounds";
+type Tab = "trends" | "round_analysis" | "miners" | "motherlode" | "rounds";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "trends", label: "Trends" },
+  { id: "round_analysis", label: "Round Analysis" },
+  { id: "miners", label: "Search Miners" },
   { id: "motherlode", label: "Motherlode" },
-  { id: "leaderboard", label: "Leaderboard" },
-  { id: "players", label: "Players" },
-  { id: "miners", label: "Miners" },
   { id: "rounds", label: "Rounds" },
 ];
 
@@ -80,18 +79,12 @@ export default function StatsPage() {
 
       <TabBar aria-label="Ore Data sections" items={TABS} value={tab} onChange={setTab} />
       {tab === "trends" && <TrendsTab />}
-      {tab === "motherlode" && <MotherlodeTab />}
-      {tab === "leaderboard" && <LeaderboardTab />}
-      {tab === "players" && <PlayersTab />}
+      {tab === "round_analysis" && <RoundAnalysisTab />}
       {tab === "miners" && <MinersTab />}
+      {tab === "motherlode" && <MotherlodeTab />}
       {tab === "rounds" && <RoundsTab />}
     </div>
   );
-}
-
-// ── helpers ──────────────────────────────────────────────────────────────────
-function completeRounds(rounds: OreRound[]): OreRound[] {
-  return rounds.filter((r) => r.winning_tile != null && Number(r.total_deployed ?? 0) > 1_000_000_000);
 }
 
 // ── Trends: range-bucketed time series ───────────────────────────────────────
@@ -187,127 +180,10 @@ function MotherlodeTab() {
   );
 }
 
-// ── Leaderboard: Net-SOL profit ranking + our-pool position ──────────────────
-const LB_SORTS: { id: string; label: string }[] = [
-  { id: "net_sol", label: "Net SOL" }, { id: "earned", label: "SOL earned" }, { id: "deployed", label: "SOL deployed" },
-  { id: "ore", label: "ORE earned" }, { id: "roi", label: "Gross ROI" },
-];
-const MIN_DEP = [0, 1, 10, 100];
-function LeaderboardTab() {
-  const [sort, setSort] = useState("net_sol");
-  const [minDep, setMinDep] = useState(0);
-  const [offset, setOffset] = useState(0);
-  const lb = usePolled(() => fetchOreLeaderboard(sort, minDep, offset), 0, [sort, minDep, offset]);
-  const d = lb.data;
-  const total = d?.total ?? 0;
-  const b = d?.bands;
-  const op = d?.our_pool;
-  const bandRows = b
-    ? [
-        { label: "#1", value: b.top1 }, { label: "top 5%", value: b.b05 }, { label: "top 10%", value: b.b10 },
-        { label: "top 20%", value: b.b20 }, { label: "top 30%", value: b.b30 }, { label: "top 50%", value: b.b50 },
-        { label: "all", value: b.avg_all },
-      ]
-    : [];
-  const opNet = lamportsToSol(op?.net_sol);
-
-  return (
-    <div className="space-y-5">
-      {/* our pool's position — the thing no other tracker shows */}
-      {op && (
-        <div className="card border-steel/30 px-4 py-3">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <div className="section-label">Our dORE pool in the field</div>
-            <span className="font-mono text-[13px] text-fog-muted">ranked by Net SOL across {formatNum(op.total)} miners</span>
-          </div>
-          <div className="mt-2 num text-xl gradient-text">#{formatNum(op.rank)}<span className="text-sm text-fog-muted"> / {formatNum(op.total)}</span></div>
-          <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-0 sm:mt-2 sm:flex sm:flex-wrap sm:gap-x-6">
-            {[
-              { k: "Net", el: <span className={`num ${netTone(opNet)}`}>{opNet >= 0 ? "+" : ""}{formatSol(opNet, 3)} SOL</span> },
-              { k: "deployed", el: <span className="num text-gray-300">{formatSol(lamportsToSol(op.lifetime_deployed), 1)} SOL</span> },
-              { k: "earned", el: <span className="num text-gray-300">{formatSol(lamportsToSol(op.lifetime_rewards_sol), 1)} SOL</span> },
-              { k: "ORE", el: <span className="num text-gray-300">{formatNum(oreGramsToOre(op.lifetime_rewards_ore), 1)}</span> },
-            ].map((m) => (
-              <div key={m.k} className="flex items-baseline justify-between gap-2 border-t border-line/50 py-2 font-mono text-xs sm:justify-start sm:border-0 sm:py-0">
-                <dt className="text-fog-muted">{m.k}</dt>
-                <dd>{m.el}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      )}
-
-      <ChartCard title="Top miners" subtitle={d?.snapshot_ts ? `Census ${new Date(d.snapshot_ts).toLocaleDateString()} · ranked by ${LB_SORTS.find((x) => x.id === sort)?.label ?? sort}` : "loading census…"}
-        right={
-          <SegmentedControl
-            aria-label="Leaderboard sort"
-            variant="loose"
-            className="sm:justify-end"
-            items={LB_SORTS}
-            value={sort}
-            onChange={(id) => { setSort(id); setOffset(0); }}
-          />
-        }>
-        <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] text-fog-muted">
-          <span className="shrink-0">min deployed:</span>
-          <SegmentedControl
-            aria-label="Minimum deployed"
-            variant="loose"
-            items={MIN_DEP.map((v) => ({ id: String(v), label: v === 0 ? "any" : `${v} SOL` }))}
-            value={String(minDep)}
-            onChange={(id) => { setMinDep(Number(id)); setOffset(0); }}
-          />
-        </div>
-        <div className={tableWrap}>
-          <table className="w-full font-mono text-[13px] sm:min-w-[600px]">
-            <thead>
-              <tr className={theadRow}>
-                <th className={th}>#</th>
-                <th className={th}>Miner</th>
-                <th className={`${th} text-right`}>Deployed</th>
-                <th className={`${th} text-right`}>Earned</th>
-                <th className={`${th} text-right`}>Net SOL</th>
-                <th className={`${th} hidden text-right sm:table-cell`}>ORE</th>
-                <th className={`${th} hidden text-right sm:table-cell`}>ROI</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(d?.top ?? []).map((m, i) => {
-                const net = lamportsToSol(m.net_sol);
-                return (
-                  <tr key={m.authority} className={m.is_ours ? oursRow : bodyRow}>
-                    <td className={`${td} text-fog-muted`}>{offset + i + 1}</td>
-                    <td className={`${td} ${m.is_ours ? "text-steel" : "text-white"}`} title={m.authority}>{short(m.authority)}{m.is_ours ? " ◆ ours" : ""}</td>
-                    <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(m.lifetime_deployed), 1)}</td>
-                    <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(m.lifetime_rewards_sol), 1)}</td>
-                    <td className={`${td} num text-right ${netTone(net)}`}>{net >= 0 ? "+" : ""}{formatSol(net, 2)}</td>
-                    <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatNum(oreGramsToOre(m.lifetime_rewards_ore), 0)}</td>
-                    <td className={`${td} hidden num text-right text-gold sm:table-cell`}>{m.roi ? m.roi.toFixed(2) + "×" : "·"}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <Pager offset={offset} total={total} onPage={setOffset} unit="miners" />
-        <p className="mt-3 max-w-3xl font-mono text-[13px] leading-snug text-fog-muted">
-          <span className="text-gray-300">Net SOL</span> = lifetime returned SOL − deployed (real profit, can be negative).
-          ROI is the gross returned/deployed ratio. Both from the on-chain returned-SOL watermark (may include stake-back).
-        </p>
-      </ChartCard>
-
-      <ChartCard title="Gross ROI by percentile band" subtitle={b ? `${formatNum(b.n)} miners with a deploy · a size-neutral view` : ""}>
-        {b ? <div className="max-w-3xl"><HBars rows={bandRows} /></div> : <p className="font-mono text-xs text-fog-muted">No census yet.</p>}
-      </ChartCard>
-      <Caveats provenance={lb.provenance} error={lb.error} />
-    </div>
-  );
-}
-
-// ── Players: competition — top players + "what deploy gets me top-N" ──────────
+// ── Round Analysis: competition — top players + "what deploy gets me top-N" ──
 const COMPETE_WINDOWS = [10, 25, 50];
 const RANK_CHOICES = [1, 3, 5, 10, 20];
-function PlayersTab() {
+function RoundAnalysisTab() {
   const [rounds, setRounds] = useState(10);
   const [rank, setRank] = useState(10);
   const c = usePolled(() => fetchOreCompetition(rounds), 20_000, [rounds]);
@@ -446,14 +322,43 @@ function PlayersTab() {
   );
 }
 
-// ── Miners: full census explorer ─────────────────────────────────────────────
+// ── Search Miners: ranked census explorer (leaderboard + address search) ─────
 const MINER_SORTS: { id: string; label: string }[] = [
-  { id: "unclaimed", label: "Unclaimed ORE" }, { id: "refined", label: "Refined ORE" },
-  { id: "lifetime_ore", label: "Lifetime ORE" }, { id: "lifetime_sol", label: "Lifetime SOL" },
-  { id: "net_sol", label: "Net SOL" }, { id: "deployed", label: "Deployed" },
+  { id: "net_sol", label: "Net SOL" },
+  { id: "earned", label: "SOL earned" },
+  { id: "deployed", label: "SOL deployed" },
+  { id: "ore", label: "ORE earned" },
+  { id: "roi", label: "Gross ROI" },
+  { id: "unclaimed", label: "Unclaimed ORE" },
+  { id: "refined", label: "Refined ORE" },
+  { id: "lifetime_ore", label: "Lifetime ORE" },
+  { id: "lifetime_sol", label: "Lifetime SOL" },
 ];
+/** Sorts served by /ore/leaderboard (supports min-deployed filter + ROI bands). */
+const LB_SORT_IDS = new Set(["net_sol", "earned", "deployed", "ore", "roi"]);
+/** Map leaderboard-only sort ids onto /ore/miners when searching by address. */
+const MINERS_SORT_FALLBACK: Record<string, string> = {
+  earned: "lifetime_sol",
+  ore: "lifetime_ore",
+  roi: "net_sol",
+};
+const MIN_DEP = [0, 1, 10, 100];
+
+type MinerRow = {
+  authority: string;
+  is_ours: boolean;
+  deployed: string;
+  earned: string;
+  ore: string;
+  net_sol: string;
+  roi: number | null;
+  unclaimed: string | null;
+  refined: string | null;
+};
+
 function MinersTab() {
-  const [sort, setSort] = useState("unclaimed");
+  const [sort, setSort] = useState("net_sol");
+  const [minDep, setMinDep] = useState(0);
   const [qInput, setQInput] = useState("");
   const [q, setQ] = useState("");
   const [offset, setOffset] = useState(0);
@@ -461,21 +366,84 @@ function MinersTab() {
     const t = setTimeout(() => { setQ(qInput.trim()); setOffset(0); }, 350);
     return () => clearTimeout(t);
   }, [qInput]);
-  const m = usePolled(() => fetchOreMiners({ sort, offset, q, limit: PAGE }), 0, [sort, offset, q]);
-  const d = m.data;
+
+  const useLeaderboard = LB_SORT_IDS.has(sort) && !q;
+  const polled = usePolled(async () => {
+    if (useLeaderboard) {
+      const env = await fetchOreLeaderboard(sort, minDep, offset);
+      const rows: MinerRow[] = (env.data.top ?? []).map((m) => ({
+        authority: m.authority,
+        is_ours: m.is_ours,
+        deployed: m.lifetime_deployed,
+        earned: m.lifetime_rewards_sol,
+        ore: m.lifetime_rewards_ore,
+        net_sol: m.net_sol,
+        roi: m.roi,
+        unclaimed: null,
+        refined: null,
+      }));
+      return {
+        ...env,
+        data: {
+          mode: "leaderboard" as const,
+          snapshot_ts: env.data.snapshot_ts,
+          total: env.data.total,
+          bands: env.data.bands,
+          rows,
+        },
+      };
+    }
+    const minersSort = MINERS_SORT_FALLBACK[sort] ?? sort;
+    const env = await fetchOreMiners({ sort: minersSort, offset, q, limit: PAGE });
+    const rows: MinerRow[] = (env.data.miners ?? []).map((mn) => ({
+      authority: mn.authority,
+      is_ours: mn.is_ours,
+      deployed: mn.deployed,
+      earned: mn.lifetime_sol,
+      ore: mn.lifetime_ore,
+      net_sol: mn.net_sol,
+      roi: null,
+      unclaimed: mn.unclaimed_ore,
+      refined: mn.refined_ore,
+    }));
+    return {
+      ...env,
+      data: {
+        mode: "miners" as const,
+        snapshot_ts: env.data.snapshot_ts,
+        total: env.data.total,
+        bands: null,
+        rows,
+      },
+    };
+  }, 0, [useLeaderboard, sort, minDep, offset, q]);
+
+  const d = polled.data;
   const total = d?.total ?? 0;
+  const b = d?.bands ?? null;
+  const bandRows = b
+    ? [
+        { label: "#1", value: b.top1 }, { label: "top 5%", value: b.b05 }, { label: "top 10%", value: b.b10 },
+        { label: "top 20%", value: b.b20 }, { label: "top 30%", value: b.b30 }, { label: "top 50%", value: b.b50 },
+        { label: "all", value: b.avg_all },
+      ]
+    : [];
+  const sortLabel = MINER_SORTS.find((x) => x.id === sort)?.label ?? sort;
+  const rows = d?.rows ?? [];
 
   return (
     <div className="space-y-5">
       <ChartCard
-        title="All miners"
-        subtitle={d?.snapshot_ts ? `Census snapshot ${new Date(d.snapshot_ts).toLocaleDateString()} · ${formatNum(total)} miners` : "loading…"}
+        title="Miners"
+        subtitle={d?.snapshot_ts
+          ? `Census ${new Date(d.snapshot_ts).toLocaleDateString()} · ${formatNum(total)} miners · ranked by ${sortLabel}`
+          : "loading census…"}
         right={
           <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="search address…"
             className="w-full rounded-md border border-line bg-ink-800 px-2.5 py-1.5 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none sm:w-64" />
         }>
-        <div className="mb-3 flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 shrink-0 font-mono text-[13px] text-fog-muted">sort:</span>
+        <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] text-fog-muted">
+          <span className="shrink-0">sort:</span>
           <SegmentedControl
             aria-label="Miner sort"
             variant="loose"
@@ -484,31 +452,57 @@ function MinersTab() {
             onChange={(id) => { setSort(id); setOffset(0); }}
           />
         </div>
+        {useLeaderboard && (
+          <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] text-fog-muted">
+            <span className="shrink-0">min deployed:</span>
+            <SegmentedControl
+              aria-label="Minimum deployed"
+              variant="loose"
+              items={MIN_DEP.map((v) => ({ id: String(v), label: v === 0 ? "any" : `${v} SOL` }))}
+              value={String(minDep)}
+              onChange={(id) => { setMinDep(Number(id)); setOffset(0); }}
+            />
+          </div>
+        )}
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px] sm:min-w-[640px]">
             <thead>
               <tr className={theadRow}>
                 <th className={th}>#</th>
                 <th className={th}>Miner</th>
-                <th className={`${th} text-right`}>Unclaimed ORE</th>
-                <th className={`${th} hidden text-right sm:table-cell`}>Refined ORE</th>
-                <th className={`${th} text-right`}>Lifetime SOL</th>
-                <th className={`${th} hidden text-right sm:table-cell`}>Lifetime ORE</th>
+                <th className={`${th} text-right`}>Deployed</th>
+                <th className={`${th} text-right`}>Earned</th>
                 <th className={`${th} text-right`}>Net SOL</th>
+                <th className={`${th} hidden text-right sm:table-cell`}>ORE</th>
+                {useLeaderboard ? (
+                  <th className={`${th} hidden text-right sm:table-cell`}>ROI</th>
+                ) : (
+                  <>
+                    <th className={`${th} hidden text-right sm:table-cell`}>Unclaimed</th>
+                    <th className={`${th} hidden text-right sm:table-cell`}>Refined</th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody>
-              {(d?.miners ?? []).map((mn, i) => {
-                const net = lamportsToSol(mn.net_sol);
+              {rows.map((m, i) => {
+                const net = lamportsToSol(m.net_sol);
                 return (
-                  <tr key={mn.authority} className={mn.is_ours ? oursRow : bodyRow}>
+                  <tr key={m.authority} className={m.is_ours ? oursRow : bodyRow}>
                     <td className={`${td} text-fog-muted`}>{offset + i + 1}</td>
-                    <td className={`${td} ${mn.is_ours ? "text-steel" : "text-white"}`} title={mn.authority}>{short(mn.authority)}{mn.is_ours ? " ◆ ours" : ""}</td>
-                    <td className={`${td} text-right text-gray-300`}>{formatNum(oreGramsToOre(mn.unclaimed_ore), 2)}</td>
-                    <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatNum(oreGramsToOre(mn.refined_ore), 2)}</td>
-                    <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(mn.lifetime_sol), 1)}</td>
-                    <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatNum(oreGramsToOre(mn.lifetime_ore), 1)}</td>
+                    <td className={`${td} ${m.is_ours ? "text-steel" : "text-white"}`} title={m.authority}>{short(m.authority)}{m.is_ours ? " ◆ ours" : ""}</td>
+                    <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(m.deployed), 1)}</td>
+                    <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(m.earned), 1)}</td>
                     <td className={`${td} num text-right ${netTone(net)}`}>{net >= 0 ? "+" : ""}{formatSol(net, 2)}</td>
+                    <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatNum(oreGramsToOre(m.ore), useLeaderboard ? 0 : 1)}</td>
+                    {useLeaderboard ? (
+                      <td className={`${td} hidden num text-right text-gold sm:table-cell`}>{m.roi ? m.roi.toFixed(2) + "×" : "·"}</td>
+                    ) : (
+                      <>
+                        <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatNum(oreGramsToOre(m.unclaimed), 2)}</td>
+                        <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatNum(oreGramsToOre(m.refined), 2)}</td>
+                      </>
+                    )}
                   </tr>
                 );
               })}
@@ -516,8 +510,20 @@ function MinersTab() {
           </table>
         </div>
         <Pager offset={offset} total={total} onPage={setOffset} unit="miners" />
+        {useLeaderboard && (
+          <p className="mt-3 max-w-3xl font-mono text-[13px] leading-snug text-fog-muted">
+            <span className="text-gray-300">Net SOL</span> = lifetime returned SOL − deployed (real profit, can be negative).
+            ROI is the gross returned/deployed ratio. Both from the on-chain returned-SOL watermark (may include stake-back).
+          </p>
+        )}
       </ChartCard>
-      <Caveats provenance={m.provenance} error={m.error} />
+
+      {useLeaderboard && (
+        <ChartCard title="Gross ROI by percentile band" subtitle={b ? `${formatNum(b.n)} miners with a deploy · a size-neutral view` : ""}>
+          {b ? <div className="max-w-3xl"><HBars rows={bandRows} /></div> : <p className="font-mono text-xs text-fog-muted">No census yet.</p>}
+        </ChartCard>
+      )}
+      <Caveats provenance={polled.provenance} error={polled.error} />
     </div>
   );
 }
@@ -525,12 +531,39 @@ function MinersTab() {
 // ── Rounds: recent spine table ───────────────────────────────────────────────
 function RoundsTab() {
   const [offset, setOffset] = useState(0);
+  const [ranges, setRanges] = useState<Record<number, TileDeployRange | null>>({});
   const rounds = usePolled(() => fetchOreRounds(PAGE, offset), 20_000, [offset]);
   const rs = rounds.data?.rounds ?? [];
   const total = rounds.data?.total ?? 0;
+  const roundIds = rs.map((r) => r.round_id).join(",");
+
+  useEffect(() => {
+    const pending = rs.filter((r) => r.source === "EVENT" && roundTileDeployRange(r) === null);
+    if (!pending.length) return;
+    let cancelled = false;
+    setRanges({});
+    (async () => {
+      const next: Record<number, TileDeployRange | null> = {};
+      await Promise.all(
+        pending.map(async (r) => {
+          try {
+            const { data } = await fetchOreRound(r.round_id);
+            next[r.round_id] = roundTileDeployRange(data.round);
+          } catch {
+            next[r.round_id] = null;
+          }
+        }),
+      );
+      if (!cancelled) setRanges(next);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [roundIds]);
+
   return (
     <div className="space-y-5">
-      <ChartCard title="Recent rounds" subtitle="The round spine — newest first. Split = jackpot shared across winners. ★ = motherlode hit.">
+      <ChartCard title="Recent rounds" subtitle="The round spine — newest first. Split = jackpot shared across winners. Max spread = hottest minus coldest tile; % = spread ÷ coldest.">
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px] sm:min-w-[560px]">
             <thead>
@@ -540,8 +573,8 @@ function RoundsTab() {
                 <th className={`${th} text-right`}>Miners</th>
                 <th className={`${th} hidden text-right sm:table-cell`}>Tile</th>
                 <th className={`${th} text-right`}>Winner</th>
-                <th className={`${th} hidden text-right sm:table-cell`}>Rake</th>
-                <th className={`${th} text-right`}>ML</th>
+                <th className={`${th} hidden text-right sm:table-cell`}>Max spread</th>
+                <th className={`${th} hidden text-right sm:table-cell`}>Max spread %</th>
               </tr>
             </thead>
             <tbody>
@@ -552,8 +585,19 @@ function RoundsTab() {
                   <td className={`${td} text-right text-gray-300`}>{r.total_miners ? formatNum(Number(r.total_miners)) : "·"}</td>
                   <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{r.winning_tile != null ? `#${r.winning_tile + 1}` : "·"}</td>
                   <td className={`${td} text-right text-gray-300`}>{r.is_split ? "split" : short(r.top_miner)}</td>
-                  <td className={`${td} hidden text-right text-gray-400 sm:table-cell`}>{r.winning_tile != null && r.effective_rake_bps ? formatPct(bpsToPct(r.effective_rake_bps) / 100, 1) : "·"}</td>
-                  <td className={`${td} text-right`}>{Number(r.motherlode_paid ?? 0) >= 2e10 ? <span className="text-gold">★</span> : <span className="text-fog-muted">·</span>}</td>
+                  <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>
+                    {(() => {
+                      const range = roundTileDeployRange(r) ?? ranges[r.round_id];
+                      return range != null ? `${formatSol(lamportsToSol(range.spread.toString()), 3)} SOL` : "·";
+                    })()}
+                  </td>
+                  <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>
+                    {(() => {
+                      const range = roundTileDeployRange(r) ?? ranges[r.round_id];
+                      const frac = range ? roundMaxSpreadFrac(range) : null;
+                      return frac != null ? formatPct(frac, 2) : "·";
+                    })()}
+                  </td>
                 </tr>
               ))}
             </tbody>

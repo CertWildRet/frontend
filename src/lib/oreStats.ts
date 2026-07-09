@@ -50,7 +50,49 @@ export type OreRound = {
   cumulative_vaulted: string | null;
   cumulative_admin_fees: string | null;
   winning_tile: number | null;
+  /** Precomputed max−min tile deploy (lamports), when the API includes it. */
+  max_spread?: string | null;
 };
+
+/** Round detail — per-tile deploy + miner counts (from `/ore/round/:id`). */
+export type OreRoundDetail = OreRound & {
+  [key: `deployed_${number}`]: string | undefined;
+  [key: `count_${number}`]: string | undefined;
+};
+
+export const ORE_TILE_COUNT = 25;
+
+export type TileDeployRange = { min: bigint; max: bigint; spread: bigint };
+
+/** Min/max/spread tile deploy (lamports). Uses `max_spread` when tiles are absent. */
+export function roundTileDeployRange(r: OreRound | OreRoundDetail): TileDeployRange | null {
+  let min: bigint | null = null;
+  let max: bigint | null = null;
+  for (let i = 0; i < ORE_TILE_COUNT; i++) {
+    const raw = (r as OreRoundDetail)[`deployed_${i}`];
+    if (raw == null || raw === "") continue;
+    const v = BigInt(raw);
+    if (min === null || v < min) min = v;
+    if (max === null || v > max) max = v;
+  }
+  if (min != null && max != null) return { min, max, spread: max - min };
+  if (r.max_spread != null && r.max_spread !== "") {
+    const spread = BigInt(r.max_spread);
+    return { min: 0n, max: spread, spread };
+  }
+  return null;
+}
+
+/** Max−min SOL deployed across the 25 tiles (lamports). */
+export function roundMaxSpreadLamports(r: OreRound | OreRoundDetail): bigint | null {
+  return roundTileDeployRange(r)?.spread ?? null;
+}
+
+/** Spread as a fraction of the coldest tile deploy (for formatPct). */
+export function roundMaxSpreadFrac(range: TileDeployRange): number | null {
+  if (range.min === 0n) return null;
+  return Number(range.spread) / Number(range.min);
+}
 
 export type MotherlodePool = { current_round: number; last_hit_round: number | null; pool_grams: string };
 
@@ -221,6 +263,8 @@ async function get<T>(path: string): Promise<OreEnvelope<T>> {
 export const fetchOreSummary = () => get<OreSummary>("/ore/summary");
 export const fetchOreRounds = (limit = 200, offset = 0) =>
   get<{ rounds: OreRound[]; limit: number; offset: number; total: number }>(`/ore/rounds?limit=${limit}&offset=${offset}`);
+export const fetchOreRound = (roundId: number | string) =>
+  get<{ round: OreRoundDetail }>(`/ore/round/${roundId}`);
 export const fetchOreLeaderboard = (sort = "net_sol", minDeployed = 0, offset = 0, limit = 50) =>
   get<OreLeaderboard>(`/ore/leaderboard?sort=${sort}&min_deployed=${minDeployed}&offset=${offset}&limit=${limit}`);
 export const fetchOreMiners = (opts: { sort?: string; offset?: number; limit?: number; q?: string } = {}) => {
