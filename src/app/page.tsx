@@ -7,6 +7,8 @@ import {
 } from "./parts";
 import { PauseWhenOffscreen } from "@/components/PauseWhenOffscreen";
 import { HeroLiveStrip } from "@/components/HeroLiveStrip";
+import { SPECTRAL_CHART } from "@/lib/spectral";
+import { SpectralChartDefs } from "@/lib/SpectralChartDefs";
 
 /* ── inline data ─────────────────────────────────────────────────── */
 const STEPS = [
@@ -638,15 +640,7 @@ function StepYieldGraphic() {
   return (
     <svg className={styles.howChart} viewBox="0 0 100 100" aria-hidden>
       <defs>
-        <linearGradient id="apyLine" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0" stopColor="#22E0E6" />
-          <stop offset="0.5" stopColor="#5B6CFF" />
-          <stop offset="1" stopColor="#FF5AC8" />
-        </linearGradient>
-        <linearGradient id="apyArea" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#5B6CFF" stopOpacity="0.4" />
-          <stop offset="1" stopColor="#5B6CFF" stopOpacity="0" />
-        </linearGradient>
+        <SpectralChartDefs lineId="apyLine" areaId="apyArea" />
       </defs>
       <line x1="6" y1="84" x2="94" y2="84" stroke="rgba(255,255,255,0.08)" strokeWidth="0.6" />
       {/* AREA - fades in on the same SMIL clock as the draw. */}
@@ -680,7 +674,7 @@ function StepYieldGraphic() {
         fill="none"
         strokeDasharray="1"
         strokeDashoffset="1"
-        style={{ filter: "drop-shadow(0 0 3px rgba(91,108,255,0.7))" }}
+        style={{ filter: SPECTRAL_CHART.lineGlow }}
       >
         <animate
           attributeName="stroke-dashoffset"
@@ -702,9 +696,9 @@ function StepYieldGraphic() {
         cx="0"
         cy="0"
         r="2.6"
-        fill="#EAF6FF"
+        fill={SPECTRAL_CHART.mark}
         opacity="0"
-        style={{ filter: "drop-shadow(0 0 5px rgba(255,90,200,0.9))" }}
+        style={{ filter: SPECTRAL_CHART.markGlow }}
       >
         <animate
           attributeName="opacity"
@@ -736,8 +730,8 @@ function StepYieldGraphic() {
         cx="94"
         cy="10"
         r="2.6"
-        fill="#EAF6FF"
-        style={{ filter: "drop-shadow(0 0 5px rgba(255,90,200,0.9))" }}
+        fill={SPECTRAL_CHART.mark}
+        style={{ filter: SPECTRAL_CHART.markGlow }}
       />
     </svg>
   );

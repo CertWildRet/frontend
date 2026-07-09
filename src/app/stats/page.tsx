@@ -116,25 +116,26 @@ function TrendsTab() {
         <SegmentedControl aria-label="Time range" items={RANGES} value={range} onChange={setRange} />
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
-        <ChartCard title="SOL deployed" subtitle="Total SOL staked per bucket.">
-          <AreaLine points={mk((p) => lamportsToSol(p.deployed))} height={195} fmt={(v) => formatSol(v, 0) + " SOL"} yFmt={compactNum} />
+        <ChartCard variant="dispersion" cutCorner="tr" title="SOL deployed" subtitle="Total SOL staked per bucket.">
+          <AreaLine spectral points={mk((p) => lamportsToSol(p.deployed))} height={195} fmt={(v) => formatSol(v, 0) + " SOL"} yFmt={compactNum} />
         </ChartCard>
-        <ChartCard title="Cost per ORE" subtitle="SOL vaulted ÷ ORE minted — the production cost.">
-          <AreaLine points={mk(costOf)} color="#E8881A" height={195} zeroBaseline={false} fmt={(v) => formatSol(v, 5) + " SOL"} yFmt={(v) => v.toFixed(3)} />
+        <ChartCard variant="dispersion" cutCorner="bl" title="Cost per ORE" subtitle="SOL vaulted ÷ ORE minted — the production cost.">
+          <AreaLine spectral points={mk(costOf)} height={195} zeroBaseline={false} fmt={(v) => formatSol(v, 5) + " SOL"} yFmt={(v) => v.toFixed(3)} />
         </ChartCard>
-        <ChartCard title="Effective rake" subtitle="Protocol take % per bucket (1% admin + ~9.9% buyback). Zoomed — variation is sub-0.01%.">
-          <AreaLine points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} color="#E8881A" height={195} zeroBaseline={false} fmt={(v) => v.toFixed(4) + "%"} />
+        <ChartCard variant="dispersion" cutCorner="tr" title="Effective rake" subtitle="Protocol take % per bucket (1% admin + ~9.9% buyback). Zoomed — variation is sub-0.01%.">
+          <AreaLine spectral points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} height={195} zeroBaseline={false} fmt={(v) => v.toFixed(4) + "%"} />
         </ChartCard>
-        <ChartCard title="Winners / round" subtitle="Avg miners rewarded per round (reset-event count). Full-history; total-miner counts aren't recoverable for closed rounds.">
+        <ChartCard variant="dispersion" cutCorner="bl" title="Winners / round" subtitle="Avg miners rewarded per round (reset-event count). Full-history; total-miner counts aren't recoverable for closed rounds.">
           <AreaLine
+            spectral
             points={pts.filter((p) => p.avg_winners != null).map((p) => ({ label: lbl(p), value: Number(p.avg_winners) }))}
             height={195} zeroBaseline={false} fmt={(v) => formatNum(v, 0)} />
         </ChartCard>
-        <ChartCard title="SOL vaulted (protocol take)" subtitle="Total SOL vaulted (buyback + admin) per bucket.">
-          <AreaLine points={mk((p) => lamportsToSol(p.vaulted))} height={195} fmt={(v) => formatSol(v, 1) + " SOL"} yFmt={compactNum} />
+        <ChartCard variant="dispersion" cutCorner="tr" title="SOL vaulted (protocol take)" subtitle="Total SOL vaulted (buyback + admin) per bucket.">
+          <AreaLine spectral points={mk((p) => lamportsToSol(p.vaulted))} height={195} fmt={(v) => formatSol(v, 1) + " SOL"} yFmt={compactNum} />
         </ChartCard>
-        <ChartCard title="Motherlode hits" subtitle="Jackpot drops per bucket (1-in-625/round).">
-          <AreaLine points={mk((p) => p.motherlode_hits)} color="#4ADE80" height={195} fmt={(v) => formatNum(v, 0)} />
+        <ChartCard variant="dispersion" cutCorner="bl" title="Motherlode hits" subtitle="Jackpot drops per bucket (1-in-625/round).">
+          <AreaLine spectral points={mk((p) => p.motherlode_hits)} height={195} fmt={(v) => formatNum(v, 0)} />
         </ChartCard>
       </div>
       <Caveats provenance={series.provenance} error={series.error} />
