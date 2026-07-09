@@ -163,6 +163,26 @@ export type OreParticipant = {
 };
 export type OreParticipants = { round_id: number; miner_count: number; miners: OreParticipant[] };
 
+export type OreCompetition = {
+  window: { rounds_analyzed: number; from_round?: number; to_round?: number };
+  thresholds: {
+    rank: number;
+    rounds_with_rank: number;
+    median_sol: number | null;
+    min_sol: number | null;
+    max_sol: number | null;
+    avg_sol: number | null;
+  }[];
+  regulars: { authority: string; is_ours: boolean; rounds_active: number; avg_sol: number; max_sol: number }[];
+  latest: {
+    round_id: number;
+    coverage: number | null;
+    players: { rank: number; authority: string; is_ours: boolean; total_sol: string; deploys: number; squares: number; max_single: string }[];
+  } | null;
+  threshold_series: { round_id: number; rank10_sol: number }[];
+  our_miner: string;
+};
+
 export type StatsOverview = {
   ore: {
     round_id: number;
@@ -216,6 +236,7 @@ export const fetchOreRng = () => get<OreRng>("/ore/rng");
 export const fetchOreMotherlode = (limit = 50, offset = 0) =>
   get<OreMotherlode>(`/ore/motherlode?limit=${limit}&offset=${offset}`);
 export const fetchOreParticipants = (roundId: number) => get<OreParticipants>(`/ore/participants/${roundId}`);
+export const fetchOreCompetition = (rounds = 10) => get<OreCompetition>(`/ore/competition?rounds=${rounds}`);
 export const fetchStatsOverview = () => get<StatsOverview>("/stats/overview");
 
 /** Rake bps -> percent (10.5% ≈ 1050 bps). */

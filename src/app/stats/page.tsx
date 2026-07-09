@@ -17,20 +17,21 @@ import { useOreLive } from "@/hooks/useOreLive";
 import { usePolled } from "@/hooks/useOreStats";
 import {
   fetchOreSummary, fetchStatsOverview, fetchOreRounds, fetchOreMotherlode, fetchOreLeaderboard,
-  fetchOreMiners, fetchOreSeries,
+  fetchOreMiners, fetchOreSeries, fetchOreCompetition,
   lamportsToSol, oreGramsToOre, bpsToPct,
   type OreRound, type OreSeriesPoint,
 } from "@/lib/oreStats";
 import { formatSol, formatNum, formatPct } from "@/lib/format";
 
 type Token = "ORE" | "ZINC";
-type Tab = "overview" | "trends" | "motherlode" | "leaderboard" | "miners" | "rounds";
+type Tab = "overview" | "trends" | "motherlode" | "leaderboard" | "players" | "miners" | "rounds";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "trends", label: "Trends" },
   { id: "motherlode", label: "Motherlode" },
   { id: "leaderboard", label: "Leaderboard" },
+  { id: "players", label: "Players" },
   { id: "miners", label: "Miners" },
   { id: "rounds", label: "Rounds" },
 ];
@@ -113,6 +114,7 @@ export default function StatsPage() {
           {tab === "trends" && <TrendsTab />}
           {tab === "motherlode" && <MotherlodeTab />}
           {tab === "leaderboard" && <LeaderboardTab />}
+          {tab === "players" && <PlayersTab />}
           {tab === "miners" && <MinersTab />}
           {tab === "rounds" && <RoundsTab />}
         </>
@@ -473,6 +475,132 @@ function LeaderboardTab() {
         {b ? <div className="max-w-3xl"><HBars rows={bandRows} /></div> : <p className="font-mono text-xs text-fog-muted">No census yet.</p>}
       </ChartCard>
       <Caveats provenance={lb.provenance} error={lb.error} />
+    </div>
+  );
+}
+
+// ── Players: competition — top players + "what deploy gets me top-N" ──────────
+const COMPETE_WINDOWS = [10, 25, 50];
+const RANK_CHOICES = [1, 3, 5, 10, 20];
+function PlayersTab() {
+  const [rounds, setRounds] = useState(10);
+  const [rank, setRank] = useState(10);
+  const c = usePolled(() => fetchOreCompetition(rounds), 20_000, [rounds]);
+  const d = c.data;
+  const thr = d?.thresholds.find((t) => t.rank === rank);
+  const n = d?.window.rounds_analyzed ?? 0;
+  const cov = d?.latest?.coverage != null ? Math.round(d.latest.coverage * 100) : null;
+
+  return (
+    <div className="space-y-5">
+      {/* headline "am I top-N next round?" tool */}
+      <div className="card px-4 py-4">
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="section-label">To be top-N next round — how much to deploy</div>
+          <div className="flex rounded-lg border border-line bg-ink-800 p-0.5">
+            {COMPETE_WINDOWS.map((w) => (
+              <button key={w} onClick={() => setRounds(w)}
+                className={`rounded-md px-2.5 py-1 font-mono text-[13px] transition ${rounds === w ? "bg-ink-600 text-white" : "text-fog-muted hover:text-white"}`}>last {w}</button>
+            ))}
+          </div>
+        </div>
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          {RANK_CHOICES.map((r) => (
+            <button key={r} onClick={() => setRank(r)}
+              className={`rounded-md border px-3 py-1.5 font-mono text-xs transition ${rank === r ? "border-ink-600 bg-ink-600 text-white" : "border-line text-fog-muted hover:border-steel hover:text-white"}`}>Top {r}</button>
+          ))}
+        </div>
+        {thr && thr.median_sol != null ? (
+          <>
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+              <span className="font-mono text-sm text-fog-muted">Deploy</span>
+              <span className="num text-3xl gradient-text">≈ {formatSol(thr.median_sol, 3)}<span className="ml-1 text-lg text-fog-muted">SOL</span></span>
+              <span className="font-mono text-[13px] text-fog-muted">to crack <span className="text-white">top {rank}</span></span>
+            </div>
+            <div className="mt-1.5 font-mono text-[13px] leading-snug text-fog-muted">
+              median deploy of the #{rank} wallet over the last {n} rounds · range {formatSol(thr.min_sol ?? 0, 3)}–{formatSol(thr.max_sol ?? 0, 3)} SOL · avg {formatSol(thr.avg_sol ?? 0, 3)}
+            </div>
+          </>
+        ) : (
+          <div className="font-mono text-sm text-fog-muted">Not enough deploy data for top {rank} over the last {n} rounds.</div>
+        )}
+      </div>
+
+      {/* price of each tier */}
+      <ChartCard title="Price of each tier" subtitle={`Median deploy that landed a wallet at each rank over the last ${n} rounds.`}>
+        <div className={tableWrap}>
+          <table className="w-full font-mono text-[13px]">
+            <thead><tr className={theadRow}>
+              <th className={th}>Rank</th>
+              <th className={`${th} text-right`}>Median deploy</th>
+              <th className={`${th} text-right`}>Range</th>
+              <th className={`${th} hidden text-right sm:table-cell`}>Avg</th>
+            </tr></thead>
+            <tbody>
+              {(d?.thresholds ?? []).filter((t) => t.median_sol != null).map((t) => (
+                <tr key={t.rank} className={bodyRow}>
+                  <td className={`${td} text-white`}>Top {t.rank}</td>
+                  <td className={`${td} num text-right text-gold`}>{formatSol(t.median_sol ?? 0, 3)} SOL</td>
+                  <td className={`${td} text-right text-gray-400`}>{formatSol(t.min_sol ?? 0, 3)}–{formatSol(t.max_sol ?? 0, 3)}</td>
+                  <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatSol(t.avg_sol ?? 0, 3)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </ChartCard>
+
+      {/* your competition — persistent top players */}
+      <ChartCard title="Your competition" subtitle={`The persistent top wallets across the last ${n} rounds — who you're up against every round.`}>
+        <div className={tableWrap}>
+          <table className="w-full font-mono text-[13px] sm:min-w-[520px]">
+            <thead><tr className={theadRow}>
+              <th className={th}>#</th><th className={th}>Wallet</th>
+              <th className={`${th} text-right`}>Rounds active</th>
+              <th className={`${th} text-right`}>Avg / round</th>
+              <th className={`${th} hidden text-right sm:table-cell`}>Biggest</th>
+            </tr></thead>
+            <tbody>
+              {(d?.regulars ?? []).map((r, i) => (
+                <tr key={r.authority} className={r.is_ours ? oursRow : bodyRow}>
+                  <td className={`${td} text-fog-muted`}>{i + 1}</td>
+                  <td className={`${td} ${r.is_ours ? "text-steel" : "text-white"}`} title={r.authority}>{short(r.authority)}{r.is_ours ? " ◆ ours" : ""}</td>
+                  <td className={`${td} text-right text-gray-300`}>{r.rounds_active}/{n}</td>
+                  <td className={`${td} num text-right text-gold`}>{formatSol(r.avg_sol, 3)}</td>
+                  <td className={`${td} num hidden text-right text-gray-300 sm:table-cell`}>{formatSol(r.max_sol, 3)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </ChartCard>
+
+      {/* last round's board */}
+      <ChartCard title={d?.latest ? `Last round — #${formatNum(d.latest.round_id)}` : "Last round"}
+        subtitle={cov != null ? `Every wallet's deploy this round, ranked. Captured ≈${cov}% of the round's on-chain SOL.` : "Every wallet's deploy in the most recent round, ranked."}>
+        <div className={tableWrap}>
+          <table className="w-full font-mono text-[13px] sm:min-w-[520px]">
+            <thead><tr className={theadRow}>
+              <th className={th}>#</th><th className={th}>Wallet</th>
+              <th className={`${th} text-right`}>Deployed</th>
+              <th className={`${th} hidden text-right sm:table-cell`}>Tile-bets</th>
+              <th className={`${th} hidden text-right sm:table-cell`}>Deploys</th>
+            </tr></thead>
+            <tbody>
+              {(d?.latest?.players ?? []).map((p) => (
+                <tr key={p.authority} className={p.is_ours ? oursRow : bodyRow}>
+                  <td className={`${td} text-fog-muted`}>{p.rank}</td>
+                  <td className={`${td} ${p.is_ours ? "text-steel" : "text-white"}`} title={p.authority}>{short(p.authority)}{p.is_ours ? " ◆ ours" : ""}</td>
+                  <td className={`${td} num text-right text-gold`}>{formatSol(lamportsToSol(p.total_sol), 3)} SOL</td>
+                  <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{p.squares}</td>
+                  <td className={`${td} hidden text-right text-gray-400 sm:table-cell`}>{p.deploys}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </ChartCard>
+      <Caveats provenance={c.provenance} error={c.error} />
     </div>
   );
 }
