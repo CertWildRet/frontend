@@ -18,6 +18,8 @@ import {
   lamportsToSol, oreGramsToOre, roundTileDeployRange, roundMaxSpreadFrac,
   type TileDeployRange,
   type OreSeriesPoint,
+  type OreEnvelope,
+  type OreBands,
 } from "@/lib/oreStats";
 import { formatSol, formatNum, formatPct } from "@/lib/format";
 
@@ -370,6 +372,16 @@ type MinerRow = {
   refined: string | null;
 };
 
+// Unified shape for both fetch branches (leaderboard census vs live miners
+// search) so usePolled binds a single envelope type.
+type MinersTabData = {
+  mode: "leaderboard" | "miners";
+  snapshot_ts: string | null;
+  total: number;
+  bands: OreBands | null;
+  rows: MinerRow[];
+};
+
 function MinersTab() {
   const [sort, setSort] = useState("net_sol");
   const [minDep, setMinDep] = useState(0);
@@ -382,7 +394,7 @@ function MinersTab() {
   }, [qInput]);
 
   const useLeaderboard = LB_SORT_IDS.has(sort) && !q;
-  const polled = usePolled(async () => {
+  const polled = usePolled(async (): Promise<OreEnvelope<MinersTabData>> => {
     if (useLeaderboard) {
       const env = await fetchOreLeaderboard(sort, minDep, offset);
       const rows: MinerRow[] = (env.data.top ?? []).map((m) => ({
