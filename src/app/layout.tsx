@@ -5,6 +5,7 @@ import "@fontsource/chakra-petch/700.css";
 import "@fontsource-variable/sora";
 import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import { Providers } from "@/components/Providers";
 import { FacetMark } from "@/components/FacetMark";
 import { StatTickerGate } from "@/components/StatTickerGate";
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </footer>
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
