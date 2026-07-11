@@ -58,7 +58,7 @@ const TEAM = [
     name: "br0wnD3v",
     role: "Infrastructure",
     avatar: "/brown.png",
-    d: "Contracts, miner, and the rails. Builds the machine that runs the board nonstop. Also devs for Adrena",
+    d: "Contracts, miner, and the rails. Builds the machine that runs the board nonstop. Also devs for Adrena DEX.",
     x: "https://x.com/anuj_tnr",
   },
   {
@@ -72,7 +72,7 @@ const TEAM = [
     name: "ZeDef_Koala",
     role: "Quant",
     avatar: "/koala.png",
-    d: "Thats our quant. Our quantitative, our math specialist! Also maths for Adrena.",
+    d: "Thats our quant. Our quantitative, our math specialist! Also maths for Adrena DEX.",
     x: "https://x.com/ZeDef_Koala",
   },
 ];

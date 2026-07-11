@@ -51,25 +51,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <span className="font-display text-[20px] font-bold tracking-[0.22em] text-[#EAECF6]">Diamond Pools</span>
                   </div>
                 </div>
-                <div className="flex gap-12">
+                {/* <div className="flex gap-12">
                   <FooterCol title="Product" links={["How it works", "FAQ"]} />
                   <FooterCol title="Legal" links={["About", "Terms", "Privacy"]} />
-                </div>
+                </div> */}
                 <div className="flex flex-col items-start gap-4 sm:items-end">
                   <div className="flex gap-2">
                     <Social label="X" href="https://x.com/orestackapp" />
                     <Social label="Discord" href="https://discord.gg/KP7bBKFsg" />
                   </div>
                   <span className="flex items-center gap-2 font-mono text-[12px] text-[#9AA3C8]">
+                    Built on
                     <Image
-                      src="/logo.png"
-                      alt=""
-                      width={16}
-                      height={16}
-                      aria-hidden
-                      className="h-4 w-4 shrink-0 rounded object-cover"
+                      src="/solana-logo.png"
+                      alt="Solana"
+                      width={80}
+                      height={20}
+                      className="h-5 w-auto"
                     />
-                    built on Solana
                   </span>
                 </div>
               </div>
