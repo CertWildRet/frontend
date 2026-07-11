@@ -265,12 +265,16 @@
 
 .tableRow:hover {
   background: linear-gradient(90deg, rgba(34, 224, 230, 0.045), rgba(154, 107, 255, 0.055));
-  box-shadow: inset 2px 0 0 rgba(34, 224, 230, 0.55);
+  box-shadow: inset 3px 0 0 rgba(34, 224, 230, 0.55);
 }
 
 .oursRow {
-  background: linear-gradient(90deg, rgba(34, 224, 230, 0.1), rgba(91, 108, 255, 0.1), rgba(154, 107, 255, 0.08));
-  box-shadow: inset 2px 0 0 var(--stats-cyan);
+  background: linear-gradient(90deg, rgba(34, 224, 230, 0.22), rgba(91, 108, 255, 0.2), rgba(154, 107, 255, 0.16));
+  box-shadow: inset 5px 0 0 var(--stats-cyan), 0 0 24px -6px rgba(34, 224, 230, 0.55);
+}
+
+.oursRow td {
+  color: #eaecf6;
 }
 
 @keyframes spectrumFlow {

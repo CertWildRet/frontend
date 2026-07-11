@@ -238,7 +238,6 @@ function RoundAnalysisTab() {
   const d = c.data;
   const thr = d?.thresholds.find((t) => t.rank === rank);
   const n = d?.window.rounds_analyzed ?? 0;
-  const cov = d?.latest?.coverage != null ? Math.round(d.latest.coverage * 100) : null;
 
   return (
     <div className="space-y-5">
@@ -257,62 +256,72 @@ function RoundAnalysisTab() {
         />
       </div>
 
-      {/* headline: pick a RANK → the deploy that reaches it (only affects this number + the highlighted tier row) */}
-      <div className="card px-4 py-4">
-        <div className="section-label mb-2">To be top-N next round — how much to deploy</div>
-        <div className="mb-4 flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 font-mono text-[13px] text-fog-muted">reach</span>
-          <SegmentedControl
-            aria-label="Target rank"
-            variant="loose"
-            items={RANK_CHOICES.map((r) => ({
-              id: String(r),
-              label: `Top ${r}`,
-              title: `Show the deploy that lands you at rank ${r}`,
-            }))}
-            value={String(rank)}
-            onChange={(id) => setRank(Number(id))}
-          />
+      {/* headline + tier pricing — side by side on large screens */}
+      <div className="grid gap-5 lg:grid-cols-3 lg:items-start">
+        <div className="lg:col-span-1">
+          <ChartCard
+            title="To be top-N next round"
+            subtitle="How much to deploy to crack your target rank."
+          >
+            <div className="mb-4 flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 font-mono text-[13px] text-fog-muted">reach</span>
+              <SegmentedControl
+                aria-label="Target rank"
+                variant="loose"
+                items={RANK_CHOICES.map((r) => ({
+                  id: String(r),
+                  label: `Top ${r}`,
+                  title: `Show the deploy that lands you at rank ${r}`,
+                }))}
+                value={String(rank)}
+                onChange={(id) => setRank(Number(id))}
+              />
+            </div>
+            {thr && thr.median_sol != null ? (
+              <>
+                <div className="flex flex-col gap-1">
+                  <span className="font-mono text-sm text-fog-muted">Deploy</span>
+                  <span className="num text-3xl gradient-text">≈ {formatSol(thr.median_sol, 3)}<span className="ml-1 text-lg text-fog-muted">SOL</span></span>
+                  <span className="font-mono text-[13px] text-fog-muted">to crack <span className="text-white">top {rank}</span></span>
+                </div>
+                <div className="mt-3 font-mono text-[13px] leading-snug text-fog-muted">
+                  median deploy of the #{rank} wallet over the last {n} rounds · range {formatSol(thr.min_sol ?? 0, 3)}–{formatSol(thr.max_sol ?? 0, 3)} SOL · avg {formatSol(thr.avg_sol ?? 0, 3)}
+                </div>
+              </>
+            ) : (
+              <div className="font-mono text-sm text-fog-muted">Not enough deploy data for top {rank} over the last {n} rounds.</div>
+            )}
+          </ChartCard>
         </div>
-        {thr && thr.median_sol != null ? (
-          <>
-            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              <span className="font-mono text-sm text-fog-muted">Deploy</span>
-              <span className="num text-3xl gradient-text">≈ {formatSol(thr.median_sol, 3)}<span className="ml-1 text-lg text-fog-muted">SOL</span></span>
-              <span className="font-mono text-[13px] text-fog-muted">to crack <span className="text-white">top {rank}</span></span>
-            </div>
-            <div className="mt-1.5 font-mono text-[13px] leading-snug text-fog-muted">
-              median deploy of the #{rank} wallet over the last {n} rounds · range {formatSol(thr.min_sol ?? 0, 3)}–{formatSol(thr.max_sol ?? 0, 3)} SOL · avg {formatSol(thr.avg_sol ?? 0, 3)}
-            </div>
-          </>
-        ) : (
-          <div className="font-mono text-sm text-fog-muted">Not enough deploy data for top {rank} over the last {n} rounds.</div>
-        )}
-      </div>
 
-      {/* price of each tier */}
-      <ChartCard title="Price of each tier" subtitle={`Median deploy that landed a wallet at each rank over the last ${n} rounds. Your picked rank is highlighted.`}>
-        <div className={tableWrap}>
-          <table className="w-full font-mono text-[13px]">
-            <thead><tr className={theadRow}>
-              <th className={th}>Rank</th>
-              <th className={`${th} text-right`}>Median deploy</th>
-              <th className={`${th} text-right`}>Range</th>
-              <th className={`${th} hidden text-right sm:table-cell`}>Avg</th>
-            </tr></thead>
-            <tbody>
-              {(d?.thresholds ?? []).filter((t) => t.median_sol != null).map((t) => (
-                <tr key={t.rank} className={t.rank === rank ? oursRow : bodyRow}>
-                  <td className={`${td} text-white`}>Top {t.rank}</td>
-                  <td className={`${td} num text-right text-gold`}>{formatSol(t.median_sol ?? 0, 3)} SOL</td>
-                  <td className={`${td} text-right text-gray-400`}>{formatSol(t.min_sol ?? 0, 3)}–{formatSol(t.max_sol ?? 0, 3)}</td>
-                  <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatSol(t.avg_sol ?? 0, 3)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="lg:col-span-2">
+          <ChartCard
+            title="Price of each tier"
+            subtitle={`Median deploy that landed a wallet at each rank over the last ${n} rounds. Your picked rank is highlighted.`}
+          >
+            <div className={tableWrap}>
+              <table className="w-full font-mono text-[13px]">
+                <thead><tr className={theadRow}>
+                  <th className={th}>Rank</th>
+                  <th className={`${th} text-right`}>Median deploy</th>
+                  <th className={`${th} text-right`}>Range</th>
+                  <th className={`${th} hidden text-right sm:table-cell`}>Avg</th>
+                </tr></thead>
+                <tbody>
+                  {(d?.thresholds ?? []).filter((t) => t.median_sol != null).map((t) => (
+                    <tr key={t.rank} className={t.rank === rank ? oursRow : bodyRow}>
+                      <td className={`${td} text-white`}>Top {t.rank}</td>
+                      <td className={`${td} num text-right text-gold`}>{formatSol(t.median_sol ?? 0, 3)} SOL</td>
+                      <td className={`${td} text-right text-gray-400`}>{formatSol(t.min_sol ?? 0, 3)}–{formatSol(t.max_sol ?? 0, 3)}</td>
+                      <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatSol(t.avg_sol ?? 0, 3)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </ChartCard>
         </div>
-      </ChartCard>
+      </div>
 
       {/* your competition — persistent top players */}
       <ChartCard title="Your competition" subtitle={`The persistent top wallets across the last ${n} rounds — who you're up against every round.`}>
@@ -332,32 +341,6 @@ function RoundAnalysisTab() {
                   <td className={`${td} text-right text-gray-300`}>{r.rounds_active}/{n}</td>
                   <td className={`${td} num text-right text-gold`}>{formatSol(r.avg_sol, 3)}</td>
                   <td className={`${td} num hidden text-right text-gray-300 sm:table-cell`}>{formatSol(r.max_sol, 3)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </ChartCard>
-
-      {/* last round's board */}
-      <ChartCard title={d?.latest ? `Last round — #${formatNum(d.latest.round_id)}` : "Last round"}
-        subtitle={cov != null ? `Every wallet's deploy this round, ranked. Captured ≈${cov}% of the round's on-chain SOL.` : "Every wallet's deploy in the most recent round, ranked."}>
-        <div className={tableWrap}>
-          <table className="w-full font-mono text-[13px] sm:min-w-[520px]">
-            <thead><tr className={theadRow}>
-              <th className={th}>#</th><th className={th}>Wallet</th>
-              <th className={`${th} text-right`}>Deployed</th>
-              <th className={`${th} hidden text-right sm:table-cell`}>Tiles</th>
-              <th className={`${th} hidden text-right sm:table-cell`}>Deploys</th>
-            </tr></thead>
-            <tbody>
-              {(d?.latest?.players ?? []).map((p) => (
-                <tr key={p.authority} className={p.is_ours ? oursRow : bodyRow}>
-                  <td className={`${td} text-fog-muted`}>{p.rank}</td>
-                  <td className={`${td} ${p.is_ours ? "text-steel" : "text-white"}`} title={p.authority}>{short(p.authority)}{p.is_ours ? " ◆ ours" : ""}</td>
-                  <td className={`${td} num text-right text-gold`}>{formatSol(lamportsToSol(p.total_sol), 3)} SOL</td>
-                  <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{p.tiles}<span className="text-fog-muted">/25</span></td>
-                  <td className={`${td} hidden text-right text-gray-400 sm:table-cell`}>{p.deploys}</td>
                 </tr>
               ))}
             </tbody>

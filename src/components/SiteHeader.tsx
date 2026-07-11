@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { WalletButton } from "@/components/WalletButton";
 import { MobileNav } from "@/components/MobileNav";
@@ -15,18 +16,6 @@ import {
 // The active pill's fill + spectral border live in the .spectral-edge class
 // (border-box technique); here we only add the outer glow + font.
 const activeStyle = { ...tabDisplayFont, ...tabActiveGlow } as const;
-
-/** The dispersion prism mark - spectral-stroke triangle (matches the /3 logo). */
-function PrismMark({ className = "" }: { className?: string }) {
-  const sp = "url(#site-spectral)";
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <path d="M12 3 21 19 3 19 12 3Z" stroke={sp} strokeWidth="1.4" strokeLinejoin="round" />
-      <path d="M12 3 12 19" stroke={sp} strokeWidth="1" opacity="0.6" />
-      <path d="M2 12 12 11 22 12" stroke="#EAECF6" strokeWidth="0.9" opacity="0.5" />
-    </svg>
-  );
-}
 
 /**
  * The single, app-wide top bar - dispersion/glass theme. Renders the prism
@@ -68,9 +57,14 @@ export function SiteHeader() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-6">
         <div className="flex items-center gap-3 sm:gap-6">
           <Link href="/" className="flex items-center gap-2.5 sm:gap-3">
-            <span className="glass grid h-9 w-9 shrink-0 place-items-center rounded-xl sm:h-10 sm:w-10">
-              <PrismMark className="h-5 w-5" />
-            </span>
+            <Image
+              src="/logo.png"
+              alt="Diamond Pools"
+              width={40}
+              height={40}
+              priority
+              className="h-9 w-9 shrink-0 rounded-xl object-cover sm:h-10 sm:w-10"
+            />
             <span
               className="whitespace-nowrap text-[16px] font-semibold tracking-[0.08em] text-[#EAECF6] sm:text-[19px] sm:tracking-[0.16em]"
               style={tabDisplayFont}
