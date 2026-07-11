@@ -193,7 +193,7 @@ export function PoolEconomics({
 
       <div className="mt-4 flex flex-col gap-1.5 border-t border-line pt-3 font-mono text-[12px] text-fog-muted sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <span>
-          per-round deploy {stats ? `${formatNum(stats.keeper.minSolPerRound, 3)} SOL` : "···"} · keeper{" "}
+          per-round deploy {stats ? `${formatNum(stats.keeper.minSolPerRound, 3)} SOL` : "···"} · miner{" "}
           {stats?.keeper.mode ?? "···"}
         </span>
         <span>

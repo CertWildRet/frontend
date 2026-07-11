@@ -280,7 +280,7 @@ function Dashboard({
             onChange={(e) => onOptIn(e.target.checked)}
             className="accent-[#9DB7D8]"
           />
-          Auto-payout (the keeper sends my rewards)
+          Auto-payout (the miner sends my rewards)
         </label>
       </div>
     </Card>

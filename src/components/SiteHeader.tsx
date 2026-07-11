@@ -1,32 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { WalletButton } from "@/components/WalletButton";
 import { MobileNav } from "@/components/MobileNav";
 import { NAV_ITEMS, isActiveRoute } from "@/lib/nav";
-
-const display = { fontFamily: "'Chakra Petch', sans-serif" } as const;
+import {
+  tabActiveClass,
+  tabActiveGlow,
+  tabDisplayFont,
+  tabIdleClass,
+} from "@/components/primitives/TabBar";
 
 // The active pill's fill + spectral border live in the .spectral-edge class
 // (border-box technique); here we only add the outer glow + font.
-const activeStyle = {
-  ...display,
-  boxShadow:
-    "0 0 24px -6px rgba(91,108,255,0.65), inset 0 1px 0 rgba(255,255,255,0.15)",
-} as const;
-
-/** The dispersion prism mark - spectral-stroke triangle (matches the /3 logo). */
-function PrismMark({ className = "" }: { className?: string }) {
-  const sp = "url(#site-spectral)";
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <path d="M12 3 21 19 3 19 12 3Z" stroke={sp} strokeWidth="1.4" strokeLinejoin="round" />
-      <path d="M12 3 12 19" stroke={sp} strokeWidth="1" opacity="0.6" />
-      <path d="M2 12 12 11 22 12" stroke="#EAECF6" strokeWidth="0.9" opacity="0.5" />
-    </svg>
-  );
-}
+const activeStyle = { ...tabDisplayFont, ...tabActiveGlow } as const;
 
 /**
  * The single, app-wide top bar - dispersion/glass theme. Renders the prism
@@ -67,13 +56,18 @@ export function SiteHeader() {
 
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-6">
         <div className="flex items-center gap-3 sm:gap-6">
-          <Link href="/" className="flex items-center gap-2.5 sm:gap-3">
-            <span className="glass grid h-9 w-9 shrink-0 place-items-center rounded-xl sm:h-10 sm:w-10">
-              <PrismMark className="h-5 w-5" />
-            </span>
+          <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/logo.png"
+              alt="Diamond Pools"
+              width={80}
+              height={80}
+              priority
+              className="h-20 w-20 shrink-0 rounded-xl object-cover"
+            />
             <span
               className="whitespace-nowrap text-[16px] font-semibold tracking-[0.08em] text-[#EAECF6] sm:text-[19px] sm:tracking-[0.16em]"
-              style={display}
+              style={tabDisplayFont}
             >
               Diamond Pools
             </span>
@@ -85,11 +79,11 @@ export function SiteHeader() {
                 <Link
                   key={l.href}
                   href={l.href}
-                  style={active ? activeStyle : display}
+                  style={active ? activeStyle : tabDisplayFont}
                   className={
                     active
-                      ? "spectral-edge relative rounded-lg px-3.5 py-1.5 text-[14px] font-semibold text-white"
-                      : "rounded-lg border border-transparent px-3 py-1.5 text-[14px] font-semibold text-[#C6CCEC] transition-colors hover:bg-[rgba(234,236,246,0.06)] hover:text-[#EAECF6]"
+                      ? `${tabActiveClass} px-3.5 py-1.5 text-[14px]`
+                      : `${tabIdleClass} px-3 py-1.5 text-[14px]`
                   }
                 >
                   {l.label}

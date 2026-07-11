@@ -1,7 +1,7 @@
 # Diamond Pools
 
 Pooled, non-custodial ORE mining on Solana. Deposit SOL, mine ORE around the
-clock, and let a keeper work the board for you. Funds only ever flow vault to
+clock, and let a miner work the board for you. Funds only ever flow vault to
 ORE and back.
 
 ## Quick start
@@ -18,7 +18,7 @@ npm run dev
 ## Local UI design (mock mode)
 
 When you only want to work on the **frontend UI** — layout, styling, motion — and
-not wire up a wallet, an RPC endpoint, or the live keeper feed, run the app in
+not wire up a wallet, an RPC endpoint, or the live miner feed, run the app in
 **mock mode**. Every data hook returns realistic placeholder data and **skips all
 network calls** (RPC, wallet, SSE), so every screen renders fully populated,
 including the wallet-connected states.
@@ -73,11 +73,11 @@ can navigate the design without a live backend.
 
 ## Pages
 
-| Route | What it shows | Source |
-|---|---|---|
-| `/` | Three bucket cards (Simple / Refined / Ultra) + current ORE round state | `GET /api/buckets`, `GET /api/round-state` |
-| `/dashboard` | Per-user position (paste-address read-only in v1; wallet-adapter in v2) | `GET /api/user/:wallet` |
-| `/health` | Brain uptime, last round, NAV reports per bucket, SOL-buffer events | `GET /status` (already exists on brain) |
+| Route        | What it shows                                                           | Source                                     |
+| ------------ | ----------------------------------------------------------------------- | ------------------------------------------ |
+| `/`          | Three bucket cards (Simple / Refined / Ultra) + current ORE round state | `GET /api/buckets`, `GET /api/round-state` |
+| `/dashboard` | Per-user position (paste-address read-only in v1; wallet-adapter in v2) | `GET /api/user/:wallet`                    |
+| `/health`    | Brain uptime, last round, NAV reports per bucket, SOL-buffer events     | `GET /status` (already exists on brain)    |
 
 The dashboard's deposit/withdraw buttons are stubs — wallet integration via
 `@solana/wallet-adapter-react` is v2 once the contracts are deployed.
@@ -114,3 +114,7 @@ npm run start       # serve production build
 3. Add NAV chart (per-bucket NAV trajectory over time)
 4. Add the per-tile heatmap (current ORE round, all 25 tiles)
 5. Show recent motherlode hits + which bucket caught them
+
+---
+
+ZINC stays here

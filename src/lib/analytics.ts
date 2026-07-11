@@ -7,9 +7,18 @@
  */
 import { ZINC_DECIMALS, SHARE_DECIMALS } from "./cwr";
 
-export const ANALYTICS_URL = (
-  process.env.NEXT_PUBLIC_ANALYTICS_URL || "https://analytics-mwav.onrender.com"
+const UPSTREAM = (
+  process.env.ANALYTICS_URL ||
+  process.env.NEXT_PUBLIC_ANALYTICS_URL ||
+  "https://analytics-mwav.onrender.com"
 ).replace(/\/$/, "");
+
+/** Browser → same-origin proxy; SSR/server → upstream directly. */
+export const ANALYTICS_URL =
+  typeof window !== "undefined" ? "/api/analytics" : UPSTREAM;
+
+/** WebSocket always targets upstream (no browser proxy for /stream). */
+export const ANALYTICS_WS_URL = `${UPSTREAM.replace(/^http/, "ws")}/stream`;
 
 export const BUCKET = { dORE: 0, dZINC: 1 } as const;
 const ORE_GRAMS_PER_ORE = 1e11; // ORE / stORE: 11 decimals

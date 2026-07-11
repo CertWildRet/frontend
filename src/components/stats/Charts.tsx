@@ -8,7 +8,10 @@
  * there's no px/DOM coordinate mapping. Palette matches the design tokens:
  * steel #9DB7D8 (primary), amber #E8881A (secondary), green #4ADE80.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import styles from "@/app/dispersion.module.css";
+import { SPECTRAL_CHART, spectralChartAreaUrl, spectralChartLineUrl } from "@/lib/spectral";
+import { SpectralChartDefs } from "@/lib/SpectralChartDefs";
 
 const STEEL = "#9DB7D8";
 const GRID = "rgba(255,255,255,0.06)";
@@ -23,21 +26,42 @@ export function ChartCard({
   subtitle,
   children,
   right,
+  variant = "default",
+  cutCorner = "tr",
 }: {
-  title: string;
+  title?: string;
   subtitle?: string;
   children: React.ReactNode;
   right?: React.ReactNode;
+  /** Home-page step-row glass container — spectral edge + crystal cut. */
+  variant?: "default" | "dispersion";
+  /** Crystal cut corner when variant is dispersion. */
+  cutCorner?: "tr" | "bl";
 }) {
+  const cutClass = cutCorner === "bl" ? styles.cutBL : styles.cutTR;
+  const wrapperClass =
+    variant === "dispersion"
+      ? `${styles.glass} ${styles.spectralEdge} ${cutClass} overflow-hidden rounded-3xl px-5 py-5 sm:px-6 sm:py-6`
+      : `${styles.glass} ${styles.spectralEdge} ${cutClass} overflow-hidden rounded-2xl px-5 py-5 sm:px-6 sm:py-6`;
+
   return (
-    <div className="card px-4 py-4">
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-        <div className="min-w-0">
-          <div className="section-label">{title}</div>
-          {subtitle && <div className="mt-0.5 font-mono text-[12.5px] leading-snug text-fog-muted">{subtitle}</div>}
+    <div className={wrapperClass}>
+      {(title || subtitle || right) && (
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+          <div className="min-w-0">
+            {title && (
+              <h2
+                className="text-[17px] font-semibold tracking-tight text-[#EAECF6]"
+                style={{ fontFamily: "'Chakra Petch', sans-serif" }}
+              >
+                {title}
+              </h2>
+            )}
+            {subtitle && <div className="mt-1 font-mono text-[12px] leading-relaxed text-[#9AA3C8]">{subtitle}</div>}
+          </div>
+          {right}
         </div>
-        {right}
-      </div>
+      )}
       {children}
     </div>
   );
@@ -76,6 +100,7 @@ export function AreaLine({
   yFmt,
   yLabel,
   zeroBaseline = true,
+  spectral = false,
 }: {
   points: Pt[];
   color?: string;
@@ -84,7 +109,10 @@ export function AreaLine({
   yFmt?: (v: number) => string;
   yLabel?: string;
   zeroBaseline?: boolean;
+  /** Home-page APY chart look: cyan→blue→pink stroke + purple gradient fill. */
+  spectral?: boolean;
 }) {
+  const uid = useId().replace(/:/g, "");
   const [hover, setHover] = useState<number | null>(null);
   // Render at the container's ACTUAL pixel width (viewBox == px) so fonts/marks are
   // a constant size regardless of chart width — a shared viewBox otherwise scales
@@ -136,7 +164,11 @@ export function AreaLine({
 
   const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(" ");
   const area = `${line} L${x(n - 1).toFixed(1)},${plotB.toFixed(1)} L${x(0).toFixed(1)},${plotB.toFixed(1)} Z`;
-  const gid = `g-${color.replace(/[^a-z0-9]/gi, "")}`;
+  const areaGid = spectral ? `spectral-area-${uid}` : `g-${color.replace(/[^a-z0-9]/gi, "")}-${uid}`;
+  const lineGid = `spectral-line-${uid}`;
+  const markColor = spectral ? SPECTRAL_CHART.mark : color;
+  const markGlow = spectral ? SPECTRAL_CHART.markGlow : undefined;
+  const lineGlow = spectral ? SPECTRAL_CHART.lineGlow : undefined;
 
   const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -162,10 +194,14 @@ export function AreaLine({
         onMouseLeave={() => setHover(null)}
       >
         <defs>
-          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.24" />
-            <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-          </linearGradient>
+          {spectral ? (
+            <SpectralChartDefs lineId={lineGid} areaId={areaGid} />
+          ) : (
+            <linearGradient id={areaGid} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity="0.24" />
+              <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+            </linearGradient>
+          )}
         </defs>
         {gy.map((g, gi) => {
           const yy = padT + g * (plotB - padT);
@@ -177,9 +213,25 @@ export function AreaLine({
             </g>
           );
         })}
-        <path d={area} fill={`url(#${gid})`} />
-        <path d={line} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-        <circle cx={x(n - 1)} cy={y(points[n - 1].value)} r={3.5} fill={color} stroke={SURFACE} strokeWidth={1.5} />
+        <path d={area} fill={spectral ? spectralChartAreaUrl(areaGid) : `url(#${areaGid})`} />
+        <path
+          d={line}
+          fill="none"
+          stroke={spectral ? spectralChartLineUrl(lineGid) : color}
+          strokeWidth={2}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          style={lineGlow ? { filter: lineGlow } : undefined}
+        />
+        <circle
+          cx={x(n - 1)}
+          cy={y(points[n - 1].value)}
+          r={3.5}
+          fill={markColor}
+          stroke={SURFACE}
+          strokeWidth={1.5}
+          style={markGlow ? { filter: markGlow } : undefined}
+        />
         {xt.map((idx, ti) => (
           <text key={ti} x={x(idx)} y={H - 8} fontSize={FS} fill={AXIS} fontFamily="monospace"
             textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{points[idx].label}</text>
@@ -187,7 +239,7 @@ export function AreaLine({
         {hover != null && (
           <g>
             <line x1={x(hover)} y1={padT} x2={x(hover)} y2={plotB} stroke={AXIS} strokeWidth={1} strokeDasharray="3 3" />
-            <circle cx={x(hover)} cy={y(points[hover].value)} r={4} fill={color} stroke={SURFACE} strokeWidth={1.5} />
+            <circle cx={x(hover)} cy={y(points[hover].value)} r={4} fill={markColor} stroke={SURFACE} strokeWidth={1.5} style={markGlow ? { filter: markGlow } : undefined} />
             <Tooltip x={x(hover)} y={y(points[hover].value)} W={W} lines={[points[hover].label, fmt(points[hover].value)]} />
           </g>
         )}
@@ -269,7 +321,15 @@ export function HBars({
         <div key={r.label} className="flex items-center gap-3">
           <span className="w-16 shrink-0 font-mono text-[12.5px] text-fog-muted">{r.label}</span>
           <div className="relative h-4 flex-1 overflow-hidden rounded bg-ink-700">
-            <div className="h-full rounded" style={{ width: `${Math.min(100, (r.value / max) * 100)}%`, background: color, opacity: 0.7 }} />
+            <div
+              className="h-full rounded"
+              style={{
+                width: `${Math.min(100, (r.value / max) * 100)}%`,
+                background: `linear-gradient(90deg, ${color}, #5B6CFF 52%, #9A6BFF)`,
+                boxShadow: "0 0 16px rgba(91,108,255,0.45)",
+                opacity: 0.82,
+              }}
+            />
           </div>
           <span className="num w-16 shrink-0 text-right text-xs text-gray-200">{fmt(r.value)}</span>
         </div>
