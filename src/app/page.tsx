@@ -66,6 +66,12 @@ const TEAM = [
     avatar: "/will.png",
     d: "Product, brand, and direction. Makes pooled mining read clean and feel serious.",
   },
+  {
+    name: "ZeDef_Koala",
+    role: "Quant",
+    avatar: "/koala.png",
+    d: "Thats our quant. Our quantitative, our math specialist!",
+  },
 ];
 
 const HERO_SPECS = [
