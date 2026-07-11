@@ -62,22 +62,22 @@ const TEAM = [
   },
   {
     name: "Willd",
-    role: "Product Manager",
+    role: "Product",
     avatar: "/will.png",
-    d: "Product, brand, and direction. Makes pooled mining read clean and feel serious.",
+    d: "Product, brand, and direction. Makes pooled mining read clean and feel serious. Ex-Minemore.",
   },
   {
     name: "ZeDef_Koala",
     role: "Quant",
     avatar: "/koala.png",
-    d: "Thats our quant. Our quantitative, our math specialist!",
+    d: "Thats our quant. Our quantitative, our math specialist! Ex-Adrena.",
   },
 ];
 
 const HERO_SPECS = [
   "Non-custodial",
   "Transparent",
-  "No dOre claim fee",
+  "Lowest fees",
   "Built by miners for miners",
 ];
 
@@ -420,7 +420,7 @@ export default function DispersionLanding() {
       {/* ══ TEAM ═══════════════════════════════════════════════════ */}
       <section className="mt-28">
         <SectionLabel k="the team" t="Built by Solana natives." />
-        <div className="mt-9 grid gap-5 sm:grid-cols-2">
+        <div className="mt-9 grid gap-5 sm:grid-cols-3">
           {TEAM.map((m) => (
             <div
               key={m.name}
@@ -430,7 +430,7 @@ export default function DispersionLanding() {
                 <Image src={m.avatar} alt={m.name} fill sizes="56px" className="object-cover" />
               </span>
               <div>
-                <div className="flex flex-wrap items-baseline gap-2">
+                <div className="flex flex-col gap-0.5">
                   <h3 className="text-[18px] font-semibold text-[#EAECF6]" style={display}>
                     {m.name}
                   </h3>

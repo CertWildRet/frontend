@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
 import { TabBar, SegmentedControl } from "@/components/primitives/TabBar";
+import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { AreaLine, HBars, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
 import { usePolled } from "@/hooks/useOreStats";
 import {
@@ -337,7 +338,9 @@ function RoundAnalysisTab() {
               {(d?.regulars ?? []).map((r, i) => (
                 <tr key={r.authority} className={r.is_ours ? oursRow : bodyRow}>
                   <td className={`${td} text-fog-muted`}>{i + 1}</td>
-                  <td className={`${td} ${r.is_ours ? "text-steel" : "text-white"}`} title={r.authority}>{short(r.authority)}{r.is_ours ? " ◆ ours" : ""}</td>
+                  <td className={`${td} ${r.is_ours ? "text-steel" : "text-white"}`}>
+                    <CopyAddress address={r.authority} />{r.is_ours ? " ◆ ours" : ""}
+                  </td>
                   <td className={`${td} text-right text-gray-300`}>{r.rounds_active}/{n}</td>
                   <td className={`${td} num text-right text-gold`}>{formatSol(r.avg_sol, 3)}</td>
                   <td className={`${td} num hidden text-right text-gray-300 sm:table-cell`}>{formatSol(r.max_sol, 3)}</td>
@@ -530,7 +533,9 @@ function MinersTab() {
                 return (
                   <tr key={m.authority} className={m.is_ours ? oursRow : bodyRow}>
                     <td className={`${td} text-fog-muted`}>{offset + i + 1}</td>
-                    <td className={`${td} ${m.is_ours ? "text-steel" : "text-white"}`} title={m.authority}>{short(m.authority)}{m.is_ours ? " ◆ ours" : ""}</td>
+                    <td className={`${td} ${m.is_ours ? "text-steel" : "text-white"}`}>
+                      <CopyAddress address={m.authority} />{m.is_ours ? " ◆ ours" : ""}
+                    </td>
                     <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(m.deployed), 1)}</td>
                     <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(m.earned), 1)}</td>
                     <td className={`${td} num text-right ${netTone(net)}`}>{net >= 0 ? "+" : ""}{formatSol(net, 2)}</td>
@@ -629,7 +634,9 @@ function RoundsTab() {
                   <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(r.total_deployed), 2)}</td>
                   <td className={`${td} text-right text-gray-300`}>{r.total_miners ? formatNum(Number(r.total_miners)) : "·"}</td>
                   <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{r.winning_tile != null ? `#${r.winning_tile + 1}` : "·"}</td>
-                  <td className={`${td} text-right text-gray-300`}>{r.is_split ? "split" : short(r.top_miner)}</td>
+                  <td className={`${td} text-right text-gray-300`}>
+                    {r.is_split ? "split" : <CopyAddress address={r.top_miner} />}
+                  </td>
                   <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>
                     {(() => {
                       const range = roundTileDeployRange(r) ?? ranges[r.round_id];

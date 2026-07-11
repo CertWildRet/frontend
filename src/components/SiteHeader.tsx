@@ -56,14 +56,14 @@ export function SiteHeader() {
 
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-6">
         <div className="flex items-center gap-3 sm:gap-6">
-          <Link href="/" className="flex items-center gap-2.5 sm:gap-3">
+          <Link href="/" className="flex items-center gap-2">
             <Image
               src="/logo.png"
               alt="Diamond Pools"
-              width={40}
-              height={40}
+              width={80}
+              height={80}
               priority
-              className="h-9 w-9 shrink-0 rounded-xl object-cover sm:h-10 sm:w-10"
+              className="h-20 w-20 shrink-0 rounded-xl object-cover"
             />
             <span
               className="whitespace-nowrap text-[16px] font-semibold tracking-[0.08em] text-[#EAECF6] sm:text-[19px] sm:tracking-[0.16em]"
