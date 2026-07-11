@@ -15,6 +15,13 @@ export const metadata: Metadata = {
   title: "Diamond Pools · autonomous ORE and ZINC mining",
   description:
     "Deposit SOL, mine ORE around the clock, and let a miner work the board for you. A non-custodial Solana vault by Diamond Pools.",
+  icons: {
+    icon: [
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon.png", sizes: "any", type: "image/png" },
+    ],
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
