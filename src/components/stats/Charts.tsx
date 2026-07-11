@@ -42,15 +42,22 @@ export function ChartCard({
   const wrapperClass =
     variant === "dispersion"
       ? `${styles.glass} ${styles.spectralEdge} ${cutClass} overflow-hidden rounded-3xl px-5 py-5 sm:px-6 sm:py-6`
-      : "card px-4 py-4";
+      : `${styles.glass} ${styles.spectralEdge} ${cutClass} overflow-hidden rounded-2xl px-5 py-5 sm:px-6 sm:py-6`;
 
   return (
     <div className={wrapperClass}>
       {(title || subtitle || right) && (
         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
           <div className="min-w-0">
-            {title && <div className="section-label">{title}</div>}
-            {subtitle && <div className="mt-0.5 font-mono text-[12.5px] leading-snug text-fog-muted">{subtitle}</div>}
+            {title && (
+              <h2
+                className="text-[17px] font-semibold tracking-tight text-[#EAECF6]"
+                style={{ fontFamily: "'Chakra Petch', sans-serif" }}
+              >
+                {title}
+              </h2>
+            )}
+            {subtitle && <div className="mt-1 font-mono text-[12px] leading-relaxed text-[#9AA3C8]">{subtitle}</div>}
           </div>
           {right}
         </div>
@@ -314,7 +321,15 @@ export function HBars({
         <div key={r.label} className="flex items-center gap-3">
           <span className="w-16 shrink-0 font-mono text-[12.5px] text-fog-muted">{r.label}</span>
           <div className="relative h-4 flex-1 overflow-hidden rounded bg-ink-700">
-            <div className="h-full rounded" style={{ width: `${Math.min(100, (r.value / max) * 100)}%`, background: color, opacity: 0.7 }} />
+            <div
+              className="h-full rounded"
+              style={{
+                width: `${Math.min(100, (r.value / max) * 100)}%`,
+                background: `linear-gradient(90deg, ${color}, #5B6CFF 52%, #9A6BFF)`,
+                boxShadow: "0 0 16px rgba(91,108,255,0.45)",
+                opacity: 0.82,
+              }}
+            />
           </div>
           <span className="num w-16 shrink-0 text-right text-xs text-gray-200">{fmt(r.value)}</span>
         </div>

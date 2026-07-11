@@ -22,6 +22,7 @@ import {
   type OreBands,
 } from "@/lib/oreStats";
 import { formatSol, formatNum, formatPct } from "@/lib/format";
+import styles from "./stats.module.css";
 
 type Tab = "trends" | "round_analysis" | "miners" | "motherlode" | "rounds";
 
@@ -36,12 +37,12 @@ const TABS: { id: Tab; label: string }[] = [
 const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "—");
 
 // Table styling mirrors the Position page's WalletAnalytics tables 1:1.
-const tableWrap = "overflow-x-auto rounded-lg bg-white/[0.02]";
-const theadRow = "bg-ink-800/60 text-left text-fog-muted";
+const tableWrap = styles.tableWrap;
+const theadRow = `${styles.tableHead} text-left`;
 const th = "px-2 py-2 font-normal sm:px-3";
 const td = "px-2 py-2 sm:px-3";
-const bodyRow = "transition-colors hover:bg-white/[0.03]";
-const oursRow = "bg-[rgba(157,183,216,0.12)] transition-colors";
+const bodyRow = styles.tableRow;
+const oursRow = `${styles.tableRow} ${styles.oursRow}`;
 
 const solOf = (grams?: string | null) => oreGramsToOre(grams); // ORE grams -> ORE
 const netTone = (v: number) => (v > 0 ? "text-pos" : v < 0 ? "text-red" : "text-gray-300");
@@ -71,20 +72,50 @@ export default function StatsPage() {
   const [tab, setTab] = useState<Tab>("trends");
 
   return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="font-display text-2xl font-bold tracking-tight text-white">Ore Data</h1>
-        <p className="mt-1.5 max-w-2xl text-sm text-fog-dim">
-          Find alpha in the mining data
+    <div className={styles.page}>
+      <header className={styles.hero}>
+        <div className={styles.eyebrow}>
+          <span className={styles.liveDot} aria-hidden />
+          ORE intelligence layer
+        </div>
+        <h1 className={styles.title}>
+          Dig into the Data,
+          <br />
+          <span className={styles.titleAccent}>Find the Alpha</span>
+        </h1>
+        <p className={styles.subtitle}>
+          Follow deployment, production cost, miner behavior, and every
+          motherlode hit across the ORE mining economy.
         </p>
+        <div className={styles.signals} aria-label="Data coverage">
+          <span className={styles.signal}>On-chain data</span>
+          <span className={styles.signal}>Live polling</span>
+          <span className={styles.signal}>Full v3 coverage</span>
+        </div>
+        <div className={styles.lens} aria-hidden>
+          <span className={styles.lensRing} />
+          <div className={styles.board}>
+            {Array.from({ length: 25 }).map((_, i) => (
+              <span
+                key={i}
+                className={styles.tile}
+                style={{ animationDelay: `${i * 80}ms` }}
+              />
+            ))}
+          </div>
+        </div>
       </header>
 
-      <TabBar aria-label="Ore Data sections" items={TABS} value={tab} onChange={setTab} />
-      {tab === "trends" && <TrendsTab />}
-      {tab === "round_analysis" && <RoundAnalysisTab />}
-      {tab === "miners" && <MinersTab />}
-      {tab === "motherlode" && <MotherlodeTab />}
-      {tab === "rounds" && <RoundsTab />}
+      <div className={styles.tabDock}>
+        <TabBar aria-label="Ore Data sections" items={TABS} value={tab} onChange={setTab} />
+      </div>
+      <div className={styles.content}>
+        {tab === "trends" && <TrendsTab />}
+        {tab === "round_analysis" && <RoundAnalysisTab />}
+        {tab === "miners" && <MinersTab />}
+        {tab === "motherlode" && <MotherlodeTab />}
+        {tab === "rounds" && <RoundsTab />}
+      </div>
     </div>
   );
 }
