@@ -58,19 +58,22 @@ const TEAM = [
     name: "br0wnD3v",
     role: "Infrastructure",
     avatar: "/brown.png",
-    d: "Contracts, miner, and the rails. Builds the machine that runs the board nonstop.",
+    d: "Contracts, miner, and the rails. Builds the machine that runs the board nonstop. Also devs for Adrena",
+    x: "https://x.com/anuj_tnr",
   },
   {
     name: "Willd",
     role: "Product",
     avatar: "/will.png",
     d: "Product, brand, and direction. Makes pooled mining read clean and feel serious. Ex-Minemore.",
+    x: "https://x.com/willdxyz",
   },
   {
     name: "ZeDef_Koala",
     role: "Quant",
     avatar: "/koala.png",
-    d: "Thats our quant. Our quantitative, our math specialist! Ex-Adrena.",
+    d: "Thats our quant. Our quantitative, our math specialist! Also maths for Adrena.",
+    x: "https://x.com/ZeDef_Koala",
   },
 ];
 
@@ -429,14 +432,27 @@ export default function DispersionLanding() {
               <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl ring-1 ring-[rgba(154,167,216,0.3)]">
                 <Image src={m.avatar} alt={m.name} fill sizes="56px" className="object-cover" />
               </span>
-              <div>
-                <div className="flex flex-col gap-0.5">
-                  <h3 className="text-[18px] font-semibold text-[#EAECF6]" style={display}>
-                    {m.name}
-                  </h3>
-                  <span className="text-[12px] tracking-[0.16em] text-[#7FA0E0]" style={mono}>
-                    {m.role}
-                  </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-col gap-0.5">
+                    <h3 className="text-[18px] font-semibold text-[#EAECF6]" style={display}>
+                      {m.name}
+                    </h3>
+                    <span className="text-[12px] tracking-[0.16em] text-[#7FA0E0]" style={mono}>
+                      {m.role}
+                    </span>
+                  </div>
+                  <a
+                    href={m.x}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`${m.name} on X`}
+                    className="mt-0.5 flex-shrink-0 text-[#9AA3C8] transition-colors hover:text-white"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.91-5.622Zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                  </a>
                 </div>
                 <p className="mt-2 text-[14px] leading-relaxed text-[#9AA3C8]">
                   {m.d}
