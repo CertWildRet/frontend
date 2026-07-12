@@ -215,11 +215,12 @@ export type OreCompetition = {
     max_sol: number | null;
     avg_sol: number | null;
   }[];
-  regulars: { authority: string; is_ours: boolean; rounds_active: number; avg_sol: number; max_sol: number }[];
+  /** via_pool = the managed-mining crank wallet signing this miner's deploys (null/absent = self-driven). */
+  regulars: { authority: string; is_ours: boolean; rounds_active: number; avg_sol: number; max_sol: number; via_pool?: string | null }[];
   latest: {
     round_id: number;
     coverage: number | null;
-    players: { rank: number; authority: string; is_ours: boolean; total_sol: string; deploys: number; tiles: number; max_single: string }[];
+    players: { rank: number; authority: string; is_ours: boolean; total_sol: string; deploys: number; tiles: number; max_single: string; via_pool?: string | null }[];
   } | null;
   threshold_series: { round_id: number; rank10_sol: number }[];
   our_miner: string;

@@ -340,6 +340,14 @@ function RoundAnalysisTab() {
                   <td className={`${td} text-fog-muted`}>{i + 1}</td>
                   <td className={`${td} ${r.is_ours ? "text-steel" : "text-white"}`}>
                     <CopyAddress address={r.authority} />{r.is_ours ? " ◆ ours" : ""}
+                    {r.via_pool && (
+                      <span
+                        className="ml-1.5 rounded border border-line px-1 py-px text-[10px] uppercase tracking-[0.1em] text-fog-muted"
+                        title={`Managed by pool crank ${r.via_pool}`}
+                      >
+                        pool
+                      </span>
+                    )}
                   </td>
                   <td className={`${td} text-right text-gray-300`}>{r.rounds_active}/{n}</td>
                   <td className={`${td} num text-right text-gold`}>{formatSol(r.avg_sol, 3)}</td>
