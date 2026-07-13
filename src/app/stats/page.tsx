@@ -723,17 +723,22 @@ function MinersTab() {
   const rows = d?.rows ?? [];
   const exactAddress = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(q) ? q : null;
 
+  // A searched wallet filters the table to its own row — auto-expand it there
+  // instead of rendering a second copy of the panel above the table.
+  useEffect(() => {
+    if (exactAddress) setExpanded(exactAddress);
+  }, [exactAddress]);
+
   return (
     <div className="space-y-5">
       {exactAddress && (
-        <div className="space-y-3">
-          <button type="button" onClick={() => setQInput("")}
-            className="flex items-center gap-1.5 rounded-md border border-line bg-ink-800 px-3 py-1.5 font-mono text-[13px] font-semibold text-fog-muted transition-colors hover:border-steel hover:text-white">
-            <span aria-hidden>←</span> Back to all miners
-          </button>
-          <MinerDetail pubkey={exactAddress} />
-        </div>
+        <button type="button" onClick={() => setQInput("")}
+          className="flex items-center gap-1.5 rounded-md border border-line bg-ink-800 px-3 py-1.5 font-mono text-[13px] font-semibold text-fog-muted transition-colors hover:border-steel hover:text-white">
+          <span aria-hidden>←</span> Back to all miners
+        </button>
       )}
+      {/* census-missing wallets have no table row to expand (event history only) */}
+      {exactAddress && !polled.loading && rows.length === 0 && <MinerDetail pubkey={exactAddress} />}
       <ChartCard
         title="Miners"
         subtitle={d?.snapshot_ts
