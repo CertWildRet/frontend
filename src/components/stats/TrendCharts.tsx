@@ -52,12 +52,12 @@ function TrendTooltip({ x, y, W, lines }: { x: number; y: number; W: number; lin
   );
 }
 
-function EmptyBox({ h, loading }: { h: number; loading?: boolean }) {
+function EmptyBox({ h, loading, text }: { h: number; loading?: boolean; text?: string }) {
   if (loading) return <ChartSkeleton height={h} />;
   return (
-    <div className="flex items-center justify-center rounded-lg border border-line bg-ink-800/40 font-mono text-xs text-fog-muted"
+    <div className="flex items-center justify-center rounded-lg border border-line bg-ink-800/40 px-6 text-center font-mono text-xs leading-relaxed text-fog-muted"
       style={{ height: h }}>
-      no data yet
+      {text ?? "no data yet"}
     </div>
   );
 }
@@ -95,6 +95,7 @@ export function DualLine({
   bFmt = (v: number) => v.toFixed(2),
   loading = false,
   shared = false,
+  emptyText,
 }: {
   a: TPt[]; b: TPt[]; aName: string; bName: string;
   aColor?: string; bColor?: string; height?: number;
@@ -102,12 +103,14 @@ export function DualLine({
   loading?: boolean;
   /** Same-unit series: one combined y-scale, single left axis (no dual-axis). */
   shared?: boolean;
+  /** Copy shown when there are no points yet (and not loading). */
+  emptyText?: string;
 }) {
   const [ref, W] = useMeasuredWidth();
   const [hover, setHover] = useState<number | null>(null);
   const H = height, padL = 52, padR = 52, padT = 14, padB = 26;
   const n = a.length;
-  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} /></div>;
+  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} text={emptyText} /></div>;
 
   const sa = shared
     ? scaleOf([...a.map((p) => p.value), ...b.map((p) => p.value)])

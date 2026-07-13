@@ -31,7 +31,7 @@ import {
 import { formatSol, formatNum, formatPct } from "@/lib/format";
 import styles from "./stats.module.css";
 
-type Tab = "trends" | "round_analysis" | "miners" | "motherlode" | "rounds" | "ecosystem";
+type Tab = "trends" | "round_analysis" | "miners" | "motherlode" | "rounds";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "trends", label: "Trends" },
@@ -39,7 +39,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "miners", label: "Search Miners" },
   { id: "motherlode", label: "Motherlode" },
   { id: "rounds", label: "Rounds" },
-  { id: "ecosystem", label: "Ecosystem" },
 ];
 
 const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "—");
@@ -142,7 +141,6 @@ export default function StatsPage() {
         {visited.has("miners") && <div hidden={tab !== "miners"}><MinersTab /></div>}
         {visited.has("motherlode") && <div hidden={tab !== "motherlode"}><MotherlodeTab /></div>}
         {visited.has("rounds") && <div hidden={tab !== "rounds"}><RoundsTab /></div>}
-        {visited.has("ecosystem") && <div hidden={tab !== "ecosystem"}><EcosystemTab /></div>}
       </div>
     </div>
   );
@@ -235,18 +233,26 @@ function TrendsTab() {
               aName="refining APR (unclaimed)" bName="stORE staking APR"
               aColor="#22E0E6" bColor="#E8881A" height={210}
               aFmt={(v) => formatNum(v, 1) + "%"} bFmt={(v) => formatNum(v, 1) + "%"}
-              loading={yields.loading} />
+              loading={yields.loading}
+              emptyText="collecting on-chain snapshots — first points appear within ~2 hours; the full 7-day view completes by Jul 20" />
           </ChartCard>
         </div>
         {/* (4) motherlode — full width */}
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="bl" title="Motherlode pop value"
             subtitle={`Past pop sizes vs the 125 ORE long-run expectation (dashed) — last bar is the live pool, still accruing 0.2/round.${ml?.avg_pop_ore != null ? ` Historical average pop: ${formatNum(ml.avg_pop_ore, 1)} ORE over ${formatNum(ml.pops.length)} pops.` : ""}`}>
-            <Bars bars={popBars} height={205} expected={125} fmt={(v) => formatNum(v, 1) + " ORE"}
+            <div className="mb-1.5 flex flex-wrap gap-4 font-mono text-[11px] text-fog-muted">
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#5B6CFF] opacity-70" /> past pop payout</span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#5B6CFF]" /> live pool (not popped yet)</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block h-0 w-4 border-t border-dashed border-fog-muted" /> 125 ORE = what a pop pays on average if it hits on schedule (0.2/round × 1-in-625)</span>
+            </div>
+            <Bars bars={popBars} height={205} expected={125} expectedLabel="expected: 125 ORE" fmt={(v) => formatNum(v, 1) + " ORE"}
               highlight={(i) => i === popBars.length - 1} color="#5B6CFF" loading={trends.loading} />
           </ChartCard>
         </div>
       </div>
+
+      <EcosystemSection />
 
       <details className="group">
         <summary className="flex cursor-pointer select-none items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.16em] text-fog-muted transition-colors hover:text-white [&::-webkit-details-marker]:hidden" style={{ listStyle: "none" }}>
@@ -955,7 +961,7 @@ function MinerDetail({ pubkey }: { pubkey: string }) {
 const ECO_RANGES: { id: string; label: string }[] = [
   { id: "30d", label: "30D" }, { id: "90d", label: "90D" }, { id: "all", label: "All" },
 ];
-function EcosystemTab() {
+function EcosystemSection() {
   const [range, setRange] = useState("90d");
   const eco = usePolled(() => fetchOreEcosystem(range), 60_000, [range]);
   const pts = eco.data?.points ?? [];
@@ -967,10 +973,10 @@ function EcosystemTab() {
     pts.map((p) => ({ label: dayLbl(p.day_ts), value: pick(p) }));
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 border-t border-line pt-6">
       <div className="flex flex-wrap items-center justify-between gap-y-2">
         <div className="section-label">
-          Supply, buybacks &amp; market structure
+          Ecosystem — supply, buybacks &amp; market structure
           <Refreshing active={eco.fetching && !!eco.data} />
         </div>
         <SegmentedControl aria-label="Time range" items={ECO_RANGES} value={range} onChange={setRange} />

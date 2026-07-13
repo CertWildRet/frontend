@@ -60,10 +60,10 @@ export function SiteHeader() {
             <Image
               src="/logo.png"
               alt="Diamond Pools"
-              width={80}
-              height={80}
+              width={40}
+              height={40}
               priority
-              className="h-20 w-20 shrink-0 rounded-xl object-cover"
+              className="h-9 w-9 shrink-0 object-contain sm:h-10 sm:w-10"
             />
             <span
               className="whitespace-nowrap text-[16px] font-semibold tracking-[0.08em] text-[#EAECF6] sm:text-[19px] sm:tracking-[0.16em]"

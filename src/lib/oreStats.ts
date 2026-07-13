@@ -52,6 +52,9 @@ export type OreRound = {
   winning_tile: number | null;
   /** Precomputed max−min tile deploy (lamports), when the API includes it. */
   max_spread?: string | null;
+  /** Event-derived per-tile extremes (lamports) — exact for all covered rounds. */
+  tile_max?: string | null;
+  tile_min?: string | null;
 };
 
 /** Round detail — per-tile deploy + miner counts (from `/ore/round/:id`). */
@@ -76,6 +79,11 @@ export function roundTileDeployRange(r: OreRound | OreRoundDetail): TileDeployRa
     if (max === null || v > max) max = v;
   }
   if (min != null && max != null) return { min, max, spread: max - min };
+  if (r.tile_max != null && r.tile_min != null && r.tile_max !== "") {
+    const tmax = BigInt(r.tile_max);
+    const tmin = BigInt(r.tile_min);
+    return { min: tmin, max: tmax, spread: tmax - tmin };
+  }
   if (r.max_spread != null && r.max_spread !== "") {
     const spread = BigInt(r.max_spread);
     return { min: 0n, max: spread, spread };

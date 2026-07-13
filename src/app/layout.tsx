@@ -44,9 +44,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <Image
                       src="/logo.png"
                       alt="Diamond Pools"
-                      width={64}
-                      height={64}
-                      className="h-16 w-16 shrink-0 rounded-lg object-cover"
+                      width={32}
+                      height={32}
+                      className="h-8 w-8 shrink-0 object-contain"
                     />
                     <span className="font-display text-[20px] font-bold tracking-[0.22em] text-[#EAECF6]">Diamond Pools</span>
                   </div>

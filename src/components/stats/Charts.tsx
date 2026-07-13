@@ -260,6 +260,7 @@ export function Bars({
   height = 190,
   fmt = (v) => v.toLocaleString(),
   expected,
+  expectedLabel,
   highlight,
   loading = false,
 }: {
@@ -268,6 +269,8 @@ export function Bars({
   height?: number;
   fmt?: (v: number) => string;
   expected?: number; // draws a dashed reference line (e.g. uniform expectation)
+  /** Small caption rendered on the expected line so it explains itself. */
+  expectedLabel?: string;
   highlight?: (i: number) => boolean;
   loading?: boolean;
 }) {
@@ -302,7 +305,12 @@ export function Bars({
       style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }} onPointerLeave={() => setHover(null)}>
       <line x1={0} y1={H - padB} x2={W} y2={H - padB} stroke={GRID} strokeWidth={1} />
       {expected != null && (
-        <line x1={0} y1={y(expected)} x2={W} y2={y(expected)} stroke={AXIS} strokeWidth={1} strokeDasharray="4 3" />
+        <g>
+          <line x1={0} y1={y(expected)} x2={W} y2={y(expected)} stroke={AXIS} strokeWidth={1} strokeDasharray="4 3" />
+          {expectedLabel && (
+            <text x={W - 4} y={y(expected) - 5} fontSize={11} fill={AXIS} textAnchor="end" fontFamily="monospace">{expectedLabel}</text>
+          )}
+        </g>
       )}
       {bars.map((b, i) => {
         const bx = i * bw + gap / 2;
