@@ -1111,7 +1111,9 @@ function MinerDetail({ pubkey }: { pubkey: string }) {
         </div>
       )}
 
+      {/* favorite-tiles section removed from the miner panel per request
       {d.tiles && d.tiles.some((t) => t > 0) && <FavoriteSquares tiles={d.tiles} />}
+      */}
 
       {d.series.length > 1 && <MinerTrend series={d.series} pricesNow={d.prices_now} roundsWin={roundsWin} setRoundsWin={setRoundsWin} />}
 
