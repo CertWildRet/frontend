@@ -12,7 +12,7 @@ import { StatTickerGate } from "@/components/StatTickerGate";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
-  title: "Diamond Pools · autonomous ORE and ZINC mining",
+  title: "Diamond Pools · autonomous ORE mining",
   description:
     "Deposit SOL, mine ORE around the clock, and let a miner work the board for you. A non-custodial Solana vault by Diamond Pools.",
   icons: {
