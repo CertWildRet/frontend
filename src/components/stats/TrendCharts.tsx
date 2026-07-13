@@ -1,0 +1,342 @@
+"use client";
+
+/**
+ * Trends-tab chart primitives — hand-rolled SVG, NO charting dependency, same
+ * idiom as Charts.tsx (measured px-true viewBox, recessive grid, monospace axis
+ * text, in-SVG tooltip). Three shapes the miner-actionable layout needs:
+ *   DualLine    two series, independent left/right y-scales (prices)
+ *   CostEvChart market ratio + production cost (left, SOL/ORE) with the EV%
+ *               difference as a signed green/red area (right axis)
+ *   BarsLine    bars on the left scale + a line on the right (activity)
+ * Dual axes are deliberate here — the quant's layout spec pins each pairing.
+ */
+import { useEffect, useRef, useState } from "react";
+
+const GRID = "rgba(255,255,255,0.06)";
+const AXIS = "#9094A0";
+const SURFACE = "#0E1222";
+const FS = 11;
+
+export type TPt = { label: string; value: number | null };
+
+function useMeasuredWidth(initial = 680): [React.RefObject<HTMLDivElement>, number] {
+  const ref = useRef<HTMLDivElement>(null);
+  const [w, setW] = useState(initial);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver((es) => {
+      const cw = es[0]?.contentRect.width;
+      if (cw && cw > 60) setW(Math.round(cw));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, w];
+}
+
+function TrendTooltip({ x, y, W, lines }: { x: number; y: number; W: number; lines: string[] }) {
+  const w = Math.max(...lines.map((l) => l.length)) * 7.2 + 16;
+  const h = lines.length * 16 + 10;
+  const left = x + w + 10 > W ? x - w - 8 : x + 8;
+  const top = Math.max(2, y - h - 8);
+  return (
+    <g pointerEvents="none">
+      <rect x={left} y={top} width={w} height={h} rx={5} fill={SURFACE} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
+      {lines.map((l, i) => (
+        <text key={i} x={left + 8} y={top + 15 + i * 16} fontSize={12} fontFamily="monospace"
+          fill={i === 0 ? AXIS : "#EDEDF0"} fontWeight={i === 0 ? 400 : 600}>{l}</text>
+      ))}
+    </g>
+  );
+}
+
+function EmptyBox({ h }: { h: number }) {
+  return (
+    <div className="flex items-center justify-center rounded-lg border border-line bg-ink-800/40 font-mono text-xs text-fog-muted"
+      style={{ height: h }}>
+      no data yet
+    </div>
+  );
+}
+
+/** Path for a series with gaps (null values break the line). */
+function gapPath(pts: (number | null)[], x: (i: number) => number, y: (v: number) => number): string {
+  let d = "";
+  let pen = false;
+  pts.forEach((v, i) => {
+    if (v == null) { pen = false; return; }
+    d += `${pen ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)} `;
+    pen = true;
+  });
+  return d;
+}
+
+function scaleOf(values: (number | null)[], zeroFloor = false): { min: number; max: number } {
+  const vs = values.filter((v): v is number => v != null);
+  if (!vs.length) return { min: 0, max: 1 };
+  const lo = Math.min(...vs);
+  const hi = Math.max(...vs);
+  const pad = (hi - lo) * 0.12 || Math.abs(hi) * 0.05 || 1;
+  let min = lo - pad;
+  const max = hi + pad;
+  if (zeroFloor && lo >= 0) min = Math.max(0, min);
+  return { min, max };
+}
+
+// ── DualLine: two series, independent left/right axes ────────────────────────
+export function DualLine({
+  a, b, aName, bName,
+  aColor = "#22E0E6", bColor = "#9DB7D8",
+  height = 210,
+  aFmt = (v: number) => v.toFixed(2),
+  bFmt = (v: number) => v.toFixed(2),
+}: {
+  a: TPt[]; b: TPt[]; aName: string; bName: string;
+  aColor?: string; bColor?: string; height?: number;
+  aFmt?: (v: number) => string; bFmt?: (v: number) => string;
+}) {
+  const [ref, W] = useMeasuredWidth();
+  const [hover, setHover] = useState<number | null>(null);
+  const H = height, padL = 52, padR = 52, padT = 14, padB = 26;
+  const n = a.length;
+  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} /></div>;
+
+  const sa = scaleOf(a.map((p) => p.value));
+  const sb = scaleOf(b.map((p) => p.value));
+  const plotR = W - padR, plotB = H - padB;
+  const x = (i: number) => padL + (i / Math.max(1, n - 1)) * (plotR - padL);
+  const ya = (v: number) => padT + (1 - (v - sa.min) / (sa.max - sa.min || 1)) * (plotB - padT);
+  const yb = (v: number) => padT + (1 - (v - sb.min) / (sb.max - sb.min || 1)) * (plotB - padT);
+
+  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * W;
+    setHover(Math.max(0, Math.min(n - 1, Math.round(((px - padL) / Math.max(1, plotR - padL)) * (n - 1)))));
+  };
+  const gy = [0, 0.25, 0.5, 0.75, 1];
+  const nTicks = Math.min(5, n);
+  const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
+
+  return (
+    <div ref={ref} className="w-full">
+      <div className="mb-1.5 flex gap-4 font-mono text-[11px] text-fog-muted">
+        <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: aColor }} /> {aName}</span>
+        <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: bColor }} /> {bName}</span>
+      </div>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${aName} and ${bName}`}
+        style={{ display: "block", maxWidth: "100%", overflow: "visible" }} onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+        {gy.map((g, gi) => {
+          const yy = padT + g * (plotB - padT);
+          return (
+            <g key={gi}>
+              <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
+              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fill={aColor} opacity={0.85} textAnchor="end" fontFamily="monospace">{aFmt(sa.max - g * (sa.max - sa.min))}</text>
+              <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fill={bColor} opacity={0.85} textAnchor="start" fontFamily="monospace">{bFmt(sb.max - g * (sb.max - sb.min))}</text>
+            </g>
+          );
+        })}
+        <path d={gapPath(a.map((p) => p.value), x, ya)} fill="none" stroke={aColor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        <path d={gapPath(b.map((p) => p.value), x, yb)} fill="none" stroke={bColor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        {xt.map((idx, ti) => (
+          <text key={ti} x={x(idx)} y={H - 8} fontSize={FS} fill={AXIS} fontFamily="monospace"
+            textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{a[idx].label}</text>
+        ))}
+        {hover != null && (
+          <g>
+            <line x1={x(hover)} y1={padT} x2={x(hover)} y2={plotB} stroke={AXIS} strokeWidth={1} strokeDasharray="3 3" />
+            {a[hover].value != null && <circle cx={x(hover)} cy={ya(a[hover].value!)} r={3.5} fill={aColor} stroke={SURFACE} strokeWidth={1.5} />}
+            {b[hover].value != null && <circle cx={x(hover)} cy={yb(b[hover].value!)} r={3.5} fill={bColor} stroke={SURFACE} strokeWidth={1.5} />}
+            <TrendTooltip x={x(hover)} y={padT + 10} W={W} lines={[
+              a[hover].label,
+              `${aName}: ${a[hover].value != null ? aFmt(a[hover].value!) : "·"}`,
+              `${bName}: ${b[hover].value != null ? bFmt(b[hover].value!) : "·"}`,
+            ]} />
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+}
+
+// ── CostEvChart: market vs production cost (left) + signed EV% area (right) ──
+export function CostEvChart({
+  market, cost, ev,
+  height = 240,
+}: {
+  market: TPt[]; cost: TPt[]; ev: TPt[];
+  height?: number;
+}) {
+  const [ref, W] = useMeasuredWidth();
+  const [hover, setHover] = useState<number | null>(null);
+  const H = height, padL = 52, padR = 52, padT = 14, padB = 26;
+  const MARKET = "#9DB7D8", COST = "#E8881A", POS = "#4ADE80", NEG = "#F87171";
+  const n = market.length;
+  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} /></div>;
+
+  const sl = scaleOf([...market.map((p) => p.value), ...cost.map((p) => p.value)], true);
+  // EV scale symmetric around 0 so the zero line sits at a stable position.
+  const evAbs = Math.max(...ev.map((p) => Math.abs(p.value ?? 0)), 5) * 1.15;
+  const plotR = W - padR, plotB = H - padB;
+  const x = (i: number) => padL + (i / Math.max(1, n - 1)) * (plotR - padL);
+  const yl = (v: number) => padT + (1 - (v - sl.min) / (sl.max - sl.min || 1)) * (plotB - padT);
+  const ye = (v: number) => padT + (1 - (v + evAbs) / (2 * evAbs)) * (plotB - padT);
+  const zeroY = ye(0);
+
+  // Signed area: clip the ev area above/below the zero line into green/red.
+  let evArea = "";
+  {
+    const pts = ev.map((p) => p.value);
+    let seg: string[] = [];
+    let start = -1;
+    pts.forEach((v, i) => {
+      if (v == null) { if (seg.length) { evArea += `M${seg.join(" L")} L${x(i - 1).toFixed(1)},${zeroY.toFixed(1)} L${x(start).toFixed(1)},${zeroY.toFixed(1)} Z `; seg = []; } return; }
+      if (!seg.length) start = i;
+      seg.push(`${x(i).toFixed(1)},${ye(v).toFixed(1)}`);
+    });
+    if (seg.length) evArea += `M${seg.join(" L")} L${x(n - 1).toFixed(1)},${zeroY.toFixed(1)} L${x(start).toFixed(1)},${zeroY.toFixed(1)} Z`;
+  }
+
+  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * W;
+    setHover(Math.max(0, Math.min(n - 1, Math.round(((px - padL) / Math.max(1, plotR - padL)) * (n - 1)))));
+  };
+  const gy = [0, 0.25, 0.5, 0.75, 1];
+  const nTicks = Math.min(5, n);
+  const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
+  const evNow = ev[n - 1]?.value;
+
+  return (
+    <div ref={ref} className="w-full">
+      <div className="mb-1.5 flex flex-wrap items-center gap-4 font-mono text-[11px] text-fog-muted">
+        <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: MARKET }} /> market (ORE/SOL)</span>
+        <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: COST }} /> production cost</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: POS, opacity: 0.55 }} /> EV+ <span className="h-2.5 w-2.5 rounded-sm" style={{ background: NEG, opacity: 0.55 }} /> EV−</span>
+        {evNow != null && (
+          <span className="ml-auto rounded border border-line px-1.5 py-0.5 text-[11px]" style={{ color: evNow >= 0 ? POS : NEG }}>
+            EV now {evNow >= 0 ? "+" : ""}{evNow.toFixed(1)}%
+          </span>
+        )}
+      </div>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="production cost vs market with EV"
+        style={{ display: "block", maxWidth: "100%", overflow: "visible" }} onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+        <defs>
+          <clipPath id="ev-above"><rect x={0} y={0} width={W} height={zeroY} /></clipPath>
+          <clipPath id="ev-below"><rect x={0} y={zeroY} width={W} height={H - zeroY} /></clipPath>
+        </defs>
+        {gy.map((g, gi) => {
+          const yy = padT + g * (plotB - padT);
+          return (
+            <g key={gi}>
+              <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
+              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fill={AXIS} textAnchor="end" fontFamily="monospace">{(sl.max - g * (sl.max - sl.min)).toFixed(2)}</text>
+              <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fill={AXIS} textAnchor="start" fontFamily="monospace">{(evAbs - g * 2 * evAbs).toFixed(0)}%</text>
+            </g>
+          );
+        })}
+        {/* EV area: same path clipped twice, tinted by sign */}
+        <path d={evArea} fill={POS} opacity={0.28} clipPath="url(#ev-above)" />
+        <path d={evArea} fill={NEG} opacity={0.28} clipPath="url(#ev-below)" />
+        <line x1={padL} y1={zeroY} x2={plotR} y2={zeroY} stroke={AXIS} strokeWidth={1} strokeDasharray="4 3" opacity={0.7} />
+        <path d={gapPath(cost.map((p) => p.value), x, yl)} fill="none" stroke={COST} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        <path d={gapPath(market.map((p) => p.value), x, yl)} fill="none" stroke={MARKET} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        {xt.map((idx, ti) => (
+          <text key={ti} x={x(idx)} y={H - 8} fontSize={FS} fill={AXIS} fontFamily="monospace"
+            textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{market[idx].label}</text>
+        ))}
+        {hover != null && (
+          <g>
+            <line x1={x(hover)} y1={padT} x2={x(hover)} y2={plotB} stroke={AXIS} strokeWidth={1} strokeDasharray="3 3" />
+            <TrendTooltip x={x(hover)} y={padT + 10} W={W} lines={[
+              market[hover].label,
+              `market: ${market[hover].value != null ? market[hover].value!.toFixed(3) : "·"} SOL/ORE`,
+              `cost:   ${cost[hover].value != null ? cost[hover].value!.toFixed(3) : "·"} SOL/ORE`,
+              `EV:     ${ev[hover].value != null ? (ev[hover].value! >= 0 ? "+" : "") + ev[hover].value!.toFixed(1) + "%" : "·"}`,
+            ]} />
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+}
+
+// ── BarsLine: bars (left axis) + line (right axis) ───────────────────────────
+export function BarsLine({
+  bars, line, barName, lineName,
+  barColor = "#5B6CFF", lineColor = "#E8881A",
+  height = 210,
+  barFmt = (v: number) => v.toFixed(1),
+  lineFmt = (v: number) => v.toFixed(0),
+}: {
+  bars: TPt[]; line: TPt[]; barName: string; lineName: string;
+  barColor?: string; lineColor?: string; height?: number;
+  barFmt?: (v: number) => string; lineFmt?: (v: number) => string;
+}) {
+  const [ref, W] = useMeasuredWidth();
+  const [hover, setHover] = useState<number | null>(null);
+  const H = height, padL = 52, padR = 52, padT = 14, padB = 26;
+  const n = bars.length;
+  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} /></div>;
+
+  const sb = scaleOf(bars.map((p) => p.value), true);
+  sb.min = 0;
+  const sln = scaleOf(line.map((p) => p.value), true);
+  const plotR = W - padR, plotB = H - padB;
+  const bw = (plotR - padL) / n;
+  const gap = Math.min(4, bw * 0.25);
+  const xC = (i: number) => padL + i * bw + bw / 2;
+  const yB = (v: number) => padT + (1 - v / (sb.max || 1)) * (plotB - padT);
+  const yL = (v: number) => padT + (1 - (v - sln.min) / (sln.max - sln.min || 1)) * (plotB - padT);
+
+  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * W;
+    setHover(Math.max(0, Math.min(n - 1, Math.floor((px - padL) / bw))));
+  };
+  const gy = [0, 0.25, 0.5, 0.75, 1];
+  const nTicks = Math.min(5, n);
+  const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
+
+  return (
+    <div ref={ref} className="w-full">
+      <div className="mb-1.5 flex gap-4 font-mono text-[11px] text-fog-muted">
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: barColor, opacity: 0.7 }} /> {barName}</span>
+        <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: lineColor }} /> {lineName}</span>
+      </div>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${barName} and ${lineName}`}
+        style={{ display: "block", maxWidth: "100%", overflow: "visible" }} onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+        {gy.map((g, gi) => {
+          const yy = padT + g * (plotB - padT);
+          return (
+            <g key={gi}>
+              <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
+              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fill={barColor} opacity={0.85} textAnchor="end" fontFamily="monospace">{barFmt(sb.max - g * sb.max)}</text>
+              <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fill={lineColor} opacity={0.85} textAnchor="start" fontFamily="monospace">{lineFmt(sln.max - g * (sln.max - sln.min))}</text>
+            </g>
+          );
+        })}
+        {bars.map((b, i) =>
+          b.value != null ? (
+            <rect key={i} x={padL + i * bw + gap / 2} y={yB(b.value)} width={Math.max(1, bw - gap)}
+              height={Math.max(0, plotB - yB(b.value))} rx={2} fill={barColor} opacity={hover === i ? 0.95 : 0.55} />
+          ) : null,
+        )}
+        <path d={gapPath(line.map((p) => p.value), xC, yL)} fill="none" stroke={lineColor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        {xt.map((idx, ti) => (
+          <text key={ti} x={xC(idx)} y={H - 8} fontSize={FS} fill={AXIS} fontFamily="monospace"
+            textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{bars[idx].label}</text>
+        ))}
+        {hover != null && (
+          <g>
+            <TrendTooltip x={xC(hover)} y={padT + 10} W={W} lines={[
+              bars[hover].label,
+              `${barName}: ${bars[hover].value != null ? barFmt(bars[hover].value!) : "·"}`,
+              `${lineName}: ${line[hover].value != null ? lineFmt(line[hover].value!) : "·"}`,
+            ]} />
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+}

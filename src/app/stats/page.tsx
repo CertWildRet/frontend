@@ -11,14 +11,16 @@ import { useEffect, useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
 import { TabBar, SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
-import { AreaLine, HBars, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
+import { AreaLine, Bars, HBars, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
+import { DualLine, CostEvChart, BarsLine, type TPt } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
 import {
   fetchOreRounds, fetchOreRound, fetchOreMotherlode, fetchOreLeaderboard,
-  fetchOreMiners, fetchOreSeries, fetchOreCompetition,
+  fetchOreMiners, fetchOreSeries, fetchOreCompetition, fetchOreTrends,
   lamportsToSol, oreGramsToOre, roundTileDeployRange, roundMaxSpreadFrac,
   type TileDeployRange,
   type OreSeriesPoint,
+  type OreTrendPoint,
   type OreEnvelope,
   type OreBands,
 } from "@/lib/oreStats";
@@ -121,51 +123,124 @@ export default function StatsPage() {
   );
 }
 
-// ── Trends: range-bucketed time series ───────────────────────────────────────
+// ── Trends: the miner-actionable dashboard (quant layout spec, ORE_PC v2) ─────
+// Four charts answering "should I deploy right now": prices, production cost vs
+// market with the EV gap, activity, and the motherlode pool vs its expectation.
+// Protocol-operator charts (rake / vaulted / winners) live in a collapsed
+// section below — kept for an eventual protocol/LP view, out of the miner path.
 const RANGES: { id: string; label: string }[] = [
-  { id: "7d", label: "7D" }, { id: "30d", label: "30D" }, { id: "90d", label: "90D" }, { id: "1y", label: "1Y" }, { id: "all", label: "All" },
+  { id: "7d", label: "7D" }, { id: "30d", label: "30D" }, { id: "90d", label: "90D" }, { id: "all", label: "All" },
 ];
 function TrendsTab() {
   const [range, setRange] = useState("30d");
-  const series = usePolled(() => fetchOreSeries(range), 60_000, [range]);
+  const trends = usePolled(() => fetchOreTrends(range), 60_000, [range]);
+  const tp = trends.data?.points ?? [];
+  const ml = trends.data?.motherlode;
+
+  const dayLbl = (ts: number) => {
+    const dt = new Date(ts * 1000);
+    return `${dt.getMonth() + 1}/${dt.getDate()}`;
+  };
+  const mkT = (pick: (p: OreTrendPoint) => number | null): TPt[] =>
+    tp.map((p) => ({ label: dayLbl(p.day_ts), value: pick(p) }));
+
+  // Motherlode: last 48 pops as bars + the LIVE pool as the final (highlighted) bar.
+  const POPS_SHOWN = 48;
+  const popBars: Pt[] = (ml?.pops ?? []).slice(-POPS_SHOWN).map((h) => ({ label: `#${formatNum(Number(h.round_id))}`, value: h.pop_ore }));
+  if (ml?.current_pool_ore != null) popBars.push({ label: "now (accruing)", value: ml.current_pool_ore });
+  const evNow = [...tp].reverse().find((p) => p.ev_pct != null)?.ev_pct ?? null;
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div className="section-label">Showing {trends.data?.range ?? range} of data</div>
+        <SegmentedControl aria-label="Time range" items={RANGES} value={range} onChange={setRange} />
+      </div>
+
+      {/* hero band: the three numbers a miner acts on */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatTile label="Mining EV now"
+          value={
+            <span className={evNow != null && evNow >= 0 ? "text-pos" : "text-red"}>
+              {evNow != null ? `${evNow >= 0 ? "+" : ""}${formatNum(evNow, 1)}%` : "···"}
+            </span>
+          }
+          hint="vs buying ORE at market (today)" />
+        <StatTile label="Production cost" value={tp.length && tp[tp.length - 1].prod_cost_sol != null ? formatNum(tp[tp.length - 1].prod_cost_sol!, 3) : "···"} unit="SOL/ORE" hint="measured on-chain, today" />
+        <StatTile label="Motherlode pool" value={ml?.current_pool_ore != null ? formatNum(ml.current_pool_ore, 1) : "···"} unit="ORE" tone="gold"
+          hint={`expected pop 125 · past avg ${ml?.avg_pop_ore != null ? formatNum(ml.avg_pop_ore, 0) : "·"}`} />
+        <StatTile label="Miners today" value={tp.length && tp[tp.length - 1].unique_miners != null ? formatNum(tp[tp.length - 1].unique_miners!) : "···"} hint="unique wallets that deployed" />
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        {/* (2) the money chart — full width */}
+        <div className="lg:col-span-2">
+          <ChartCard variant="dispersion" cutCorner="tr" title="Production cost vs market (+EV)"
+            subtitle="SOL cost to mine 1 ORE (measured: admin + vaulted, ÷ expected ORE incl. motherlode) vs buying at market. Green = mining is +EV.">
+            <CostEvChart market={mkT((p) => p.market_ratio_sol)} cost={mkT((p) => p.prod_cost_sol)} ev={mkT((p) => p.ev_pct)} height={250} />
+          </ChartCard>
+        </div>
+        {/* (1) prices */}
+        <ChartCard variant="dispersion" cutCorner="bl" title="ORE & SOL price" subtitle="Market prices (USD). A cheap ORE or a ratio discount is a call to action.">
+          <DualLine a={mkT((p) => p.ore_usd)} b={mkT((p) => p.sol_usd)} aName="ORE $" bName="SOL $" height={205}
+            aFmt={(v) => "$" + formatNum(v, 1)} bFmt={(v) => "$" + formatNum(v, 0)} />
+        </ChartCard>
+        {/* (3) activity */}
+        <ChartCard variant="dispersion" cutCorner="tr" title="Mining activity" subtitle="Avg SOL deployed per round (bars) and unique miners per day (line, exact on-chain count).">
+          <BarsLine bars={mkT((p) => p.avg_deployed_sol)} line={mkT((p) => p.unique_miners)} barName="SOL / round" lineName="unique miners" height={205}
+            barFmt={(v) => formatNum(v, 1)} lineFmt={(v) => formatNum(v, 0)} />
+        </ChartCard>
+        {/* (4) motherlode — full width */}
+        <div className="lg:col-span-2">
+          <ChartCard variant="dispersion" cutCorner="bl" title="Motherlode pop value"
+            subtitle={`Past pop sizes vs the 125 ORE long-run expectation (dashed) — last bar is the live pool, still accruing 0.2/round.${ml?.avg_pop_ore != null ? ` Historical average pop: ${formatNum(ml.avg_pop_ore, 1)} ORE over ${formatNum(ml.pops.length)} pops.` : ""}`}>
+            <Bars bars={popBars} height={205} expected={125} fmt={(v) => formatNum(v, 1) + " ORE"}
+              highlight={(i) => i === popBars.length - 1} color="#5B6CFF" />
+          </ChartCard>
+        </div>
+      </div>
+
+      <details className="group">
+        <summary className="cursor-pointer select-none font-mono text-[12px] uppercase tracking-[0.16em] text-fog-muted transition-colors hover:text-white">
+          Protocol internals (rake · vaulted · winners) ▸
+        </summary>
+        <div className="mt-4"><ProtocolCharts range={range} /></div>
+      </details>
+
+      <Caveats provenance={trends.provenance} error={trends.error} />
+    </div>
+  );
+}
+
+/** The old protocol-operator charts, demoted out of the miner path (rendered only
+ *  when the details section is opened — the hook only mounts then). */
+function ProtocolCharts({ range }: { range: string }) {
+  const seriesRange = range === "all" ? "all" : range; // /ore/series shares range ids
+  const series = usePolled(() => fetchOreSeries(seriesRange), 60_000, [seriesRange]);
   const pts = series.data?.points ?? [];
   const lbl = (p: OreSeriesPoint) => {
     const dt = new Date(Number(p.bucket_ts) * 1000);
     return range === "7d" ? `${dt.getMonth() + 1}/${dt.getDate()} ${dt.getHours()}:00` : `${dt.getMonth() + 1}/${dt.getDate()}`;
   };
   const mk = (pick: (p: OreSeriesPoint) => number): Pt[] => pts.map((p) => ({ label: lbl(p), value: pick(p) }));
-  const costOf = (p: OreSeriesPoint) => { const o = oreGramsToOre(p.minted); return o > 0 ? lamportsToSol(p.vaulted) / o : 0; };
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div className="section-label">Showing {series.data?.range ?? range} of data</div>
-        <SegmentedControl aria-label="Time range" items={RANGES} value={range} onChange={setRange} />
-      </div>
-      <div className="grid gap-5 lg:grid-cols-2">
-        <ChartCard variant="dispersion" cutCorner="tr" title="SOL deployed" subtitle="Total SOL staked per bucket.">
-          <AreaLine spectral points={mk((p) => lamportsToSol(p.deployed))} height={195} fmt={(v) => formatSol(v, 0) + " SOL"} yFmt={compactNum} />
-        </ChartCard>
-        <ChartCard variant="dispersion" cutCorner="bl" title="Cost per ORE" subtitle="SOL vaulted ÷ ORE minted — the production cost.">
-          <AreaLine spectral points={mk(costOf)} height={195} zeroBaseline={false} fmt={(v) => formatSol(v, 5) + " SOL"} yFmt={(v) => v.toFixed(3)} />
-        </ChartCard>
-        <ChartCard variant="dispersion" cutCorner="tr" title="Effective rake" subtitle="Protocol take % per bucket (1% admin + ~9.9% buyback). Zoomed — variation is sub-0.01%.">
-          <AreaLine spectral points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} height={195} zeroBaseline={false} fmt={(v) => v.toFixed(4) + "%"} yFmt={(v) => v.toFixed(2) + "%"} />
-        </ChartCard>
-        <ChartCard variant="dispersion" cutCorner="bl" title="Winners / round" subtitle="Avg miners rewarded per round (reset-event count). Full-history; total-miner counts aren't recoverable for closed rounds.">
-          <AreaLine
-            spectral
-            points={pts.filter((p) => p.avg_winners != null).map((p) => ({ label: lbl(p), value: Number(p.avg_winners) }))}
-            height={195} zeroBaseline={false} fmt={(v) => formatNum(v, 0)} />
-        </ChartCard>
-        <ChartCard variant="dispersion" cutCorner="tr" title="SOL vaulted (protocol take)" subtitle="Total SOL vaulted (buyback + admin) per bucket.">
-          <AreaLine spectral points={mk((p) => lamportsToSol(p.vaulted))} height={195} fmt={(v) => formatSol(v, 1) + " SOL"} yFmt={compactNum} />
-        </ChartCard>
-        <ChartCard variant="dispersion" cutCorner="bl" title="Motherlode hits" subtitle="Jackpot drops per bucket (1-in-625/round).">
-          <AreaLine spectral points={mk((p) => p.motherlode_hits)} height={195} fmt={(v) => formatNum(v, 0)} />
-        </ChartCard>
-      </div>
-      <Caveats provenance={series.provenance} error={series.error} />
+    <div className="grid gap-5 lg:grid-cols-2">
+      <ChartCard variant="dispersion" cutCorner="tr" title="SOL deployed" subtitle="Total SOL staked per bucket.">
+        <AreaLine spectral points={mk((p) => lamportsToSol(p.deployed))} height={195} fmt={(v) => formatSol(v, 0) + " SOL"} yFmt={compactNum} />
+      </ChartCard>
+      <ChartCard variant="dispersion" cutCorner="bl" title="Effective rake" subtitle="Protocol take % per bucket (1% admin + ~9.9% buyback). Zoomed — variation is sub-0.01%.">
+        <AreaLine spectral points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} height={195} zeroBaseline={false} fmt={(v) => v.toFixed(4) + "%"} yFmt={(v) => v.toFixed(2) + "%"} />
+      </ChartCard>
+      <ChartCard variant="dispersion" cutCorner="tr" title="SOL vaulted (protocol take)" subtitle="Total SOL vaulted (buyback + admin) per bucket.">
+        <AreaLine spectral points={mk((p) => lamportsToSol(p.vaulted))} height={195} fmt={(v) => formatSol(v, 1) + " SOL"} yFmt={compactNum} />
+      </ChartCard>
+      <ChartCard variant="dispersion" cutCorner="bl" title="Winners / round" subtitle="Avg miners rewarded per round (reset-event count).">
+        <AreaLine
+          spectral
+          points={pts.filter((p) => p.avg_winners != null).map((p) => ({ label: lbl(p), value: Number(p.avg_winners) }))}
+          height={195} zeroBaseline={false} fmt={(v) => formatNum(v, 0)} />
+      </ChartCard>
     </div>
   );
 }

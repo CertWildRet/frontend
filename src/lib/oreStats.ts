@@ -226,6 +226,34 @@ export type OreCompetition = {
   our_miner: string;
 };
 
+// ── /ore/trends : the miner-actionable Trends page payload ───────────────────
+export type OreTrendPoint = {
+  day_ts: number;
+  rounds: number;
+  sol_usd: number | null;
+  ore_usd: number | null;
+  market_ratio_sol: number | null;
+  prod_cost_sol: number | null;
+  prod_cost_claimed_sol: number | null;
+  ev_pct: number | null;
+  ev_claimed_pct: number | null;
+  avg_deployed_sol: number | null;
+  total_deployed_sol: number;
+  unique_miners: number | null;
+  deploy_count: number | null;
+};
+export type OreTrends = {
+  range: string;
+  points: OreTrendPoint[];
+  motherlode: {
+    pops: { round_id: string; ts: number; pop_ore: number }[];
+    current_pool_ore: number | null;
+    as_of_round: string | null;
+    expected_pop_ore: number;
+    avg_pop_ore: number | null;
+  };
+};
+
 export type StatsOverview = {
   ore: {
     round_id: number;
@@ -277,6 +305,7 @@ export const fetchOreMiners = (opts: { sort?: string; offset?: number; limit?: n
   return get<OreMiners>(`/ore/miners?${p.toString()}`);
 };
 export const fetchOreSeries = (range = "30d") => get<OreSeries>(`/ore/series?range=${range}`);
+export const fetchOreTrends = (range = "30d") => get<OreTrends>(`/ore/trends?range=${range}`);
 export const fetchOreRng = () => get<OreRng>("/ore/rng");
 export const fetchOreMotherlode = (limit = 50, offset = 0) =>
   get<OreMotherlode>(`/ore/motherlode?limit=${limit}&offset=${offset}`);

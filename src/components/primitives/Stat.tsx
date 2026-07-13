@@ -33,7 +33,7 @@ export function StatTile({
   className,
 }: {
   label: ReactNode;
-  value: string;
+  value: ReactNode;
   unit?: string;
   hint?: ReactNode;
   tone?: Tone;
