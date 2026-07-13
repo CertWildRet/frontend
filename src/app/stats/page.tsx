@@ -892,8 +892,11 @@ function MinerDetail({ pubkey }: { pubkey: string }) {
     );
   }
   const c = d.census;
-  const deployed = lamportsToSol(c?.lifetime_deployed ?? null);
-  const returned = lamportsToSol(c?.lifetime_rewards_sol ?? null);
+  const censusMissing = !c;
+  const deployed = censusMissing && d.hit_stats?.dep_sol != null
+    ? Number(d.hit_stats.dep_sol) / 1e9 : lamportsToSol(c?.lifetime_deployed ?? null);
+  const returned = censusMissing && d.hit_stats?.won_sol != null
+    ? Number(d.hit_stats.won_sol) / 1e9 : lamportsToSol(c?.lifetime_rewards_sol ?? null);
   const net = returned - deployed;
   const oreLifetime = solOf(c?.lifetime_rewards_ore ?? null);
   const unclaimed = solOf(c?.rewards_ore ?? null);
@@ -903,6 +906,8 @@ function MinerDetail({ pubkey }: { pubkey: string }) {
   const firstTs = d.events?.first_ts ? new Date(Number(d.events.first_ts) * 1000) : null;
   const lastTs = d.events?.last_ts ? new Date(Number(d.events.last_ts) * 1000) : null;
   const dv = d.derived;
+  const hasEvents = !!d.events && d.series.length > 0;
+  const covTs = d.coverage?.min_ts ? new Date(d.coverage.min_ts * 1000) : null;
 
   return (
     <ChartCard
@@ -933,19 +938,31 @@ function MinerDetail({ pubkey }: { pubkey: string }) {
         )}
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <StatTile variant="inset" label="Deployed (lifetime)" value={formatSol(deployed, 2)} unit="SOL" />
-        <StatTile variant="inset" label="Returned (lifetime)" value={formatSol(returned, 2)} unit="SOL" />
+        <StatTile variant="inset" label={censusMissing ? "Deployed (window)" : "Deployed (lifetime)"} value={formatSol(deployed, 2)} unit="SOL" />
+        <StatTile variant="inset" label={censusMissing ? "Won (window)" : "Returned (lifetime)"} value={formatSol(returned, 2)} unit="SOL" />
         <StatTile variant="inset" label="Net SOL"
           value={<span className={netTone(net)}>{formatSol(net, 2)}</span>} unit="SOL" hint="returned − deployed" />
         <StatTile variant="inset" label="ORE earned" value={formatNum(oreLifetime, 2)} unit="ORE" tone="gold"
           hint={`unclaimed ${formatNum(unclaimed, 2)} · refined (live) ${formatNum(refinedLive, 2)}`} />
-        <StatTile variant="inset" label="Hit rate"
-          value={hitRate != null ? formatPct(hitRate) : "···"}
-          hint={hs ? `${formatNum(hs.hits)} of ${formatNum(hs.rounds)} rounds` : "event window"} />
-        <StatTile variant="inset" label="Active since"
-          value={firstTs ? `${firstTs.getMonth() + 1}/${firstTs.getDate()}` : "···"}
-          hint={d.events ? `${formatNum(d.events.rounds)} rounds · ${formatNum(d.events.deploys)} deploys` : undefined} />
+        {hasEvents && (
+          <StatTile variant="inset" label="Hit rate"
+            value={hitRate != null ? formatPct(hitRate) : "···"}
+            hint={hs ? `${formatNum(hs.hits)} of ${formatNum(hs.rounds)} rounds` : "event window"} />
+        )}
+        {hasEvents && (
+          <StatTile variant="inset" label="Active since"
+            value={firstTs ? `${firstTs.getMonth() + 1}/${firstTs.getDate()}` : "···"}
+            hint={d.events ? `${formatNum(d.events.rounds)} rounds · ${formatNum(d.events.deploys)} deploys` : undefined} />
+        )}
       </div>
+
+      {!hasEvents && (
+        <div className="mt-3 rounded-lg border border-line bg-white/[0.02] px-4 py-3 font-mono text-[13px] leading-relaxed text-[#B7BDD2]">
+          No deploys in the covered event window
+          {covTs ? ` (round history currently reaches back to ${covTs.toLocaleDateString()} and deepens daily as the backfill digs toward genesis)` : ""}.
+          This wallet last mined before that; the figures above are its lifetime on-chain census totals.
+        </div>
+      )}
 
       {dv && (
         <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
@@ -966,6 +983,7 @@ function MinerDetail({ pubkey }: { pubkey: string }) {
 
       {d.series.length > 1 && <MinerTrend series={d.series} />}
 
+      {d.history.length > 0 && (<>
       <div className={`${tableWrap} mt-4`}>
         <table className="w-full font-mono text-[13px] sm:min-w-[560px]">
           <thead><tr className={theadRow}>
@@ -1009,6 +1027,7 @@ function MinerDetail({ pubkey }: { pubkey: string }) {
         Last {d.history.length} rounds (event window). SOL outcomes are exact (per-tile stakes reconstructed
         from deploy events); ORE from a HIT follows the winner lottery, so it isn't shown per round.
       </p>
+      </>)}
     </ChartCard>
   );
 }
