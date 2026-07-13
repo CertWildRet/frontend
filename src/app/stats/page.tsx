@@ -18,17 +18,20 @@ import { usePolled } from "@/hooks/useOreStats";
 import {
   fetchOreRounds, fetchOreRound, fetchOreMotherlode, fetchOreLeaderboard,
   fetchOreMiners, fetchOreSeries, fetchOreCompetition, fetchOreTrends,
+  fetchOreEcosystem, fetchOreMiner,
   lamportsToSol, oreGramsToOre, roundTileDeployRange, roundMaxSpreadFrac,
   type TileDeployRange,
   type OreSeriesPoint,
   type OreTrendPoint,
+  type OreEcoPoint,
+  type OreMinerDetail,
   type OreEnvelope,
   type OreBands,
 } from "@/lib/oreStats";
 import { formatSol, formatNum, formatPct } from "@/lib/format";
 import styles from "./stats.module.css";
 
-type Tab = "trends" | "round_analysis" | "miners" | "motherlode" | "rounds";
+type Tab = "trends" | "round_analysis" | "miners" | "motherlode" | "rounds" | "ecosystem";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "trends", label: "Trends" },
@@ -36,6 +39,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "miners", label: "Search Miners" },
   { id: "motherlode", label: "Motherlode" },
   { id: "rounds", label: "Rounds" },
+  { id: "ecosystem", label: "Ecosystem" },
 ];
 
 const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "—");
@@ -138,6 +142,7 @@ export default function StatsPage() {
         {visited.has("miners") && <div hidden={tab !== "miners"}><MinersTab /></div>}
         {visited.has("motherlode") && <div hidden={tab !== "motherlode"}><MotherlodeTab /></div>}
         {visited.has("rounds") && <div hidden={tab !== "rounds"}><RoundsTab /></div>}
+        {visited.has("ecosystem") && <div hidden={tab !== "ecosystem"}><EcosystemTab /></div>}
       </div>
     </div>
   );
@@ -516,6 +521,7 @@ type MinersTabData = {
   snapshot_ts: string | null;
   total: number;
   bands: OreBands | null;
+  net_positive_pct: number | null;
   rows: MinerRow[];
 };
 
@@ -552,6 +558,7 @@ function MinersTab() {
           snapshot_ts: env.data.snapshot_ts,
           total: env.data.total,
           bands: env.data.bands,
+          net_positive_pct: env.data.net_positive_pct,
           rows,
         },
       };
@@ -576,6 +583,7 @@ function MinersTab() {
         snapshot_ts: env.data.snapshot_ts,
         total: env.data.total,
         bands: null,
+        net_positive_pct: null,
         rows,
       },
     };
@@ -593,9 +601,11 @@ function MinersTab() {
     : [];
   const sortLabel = MINER_SORTS.find((x) => x.id === sort)?.label ?? sort;
   const rows = d?.rows ?? [];
+  const exactAddress = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(q) ? q : null;
 
   return (
     <div className="space-y-5">
+      {exactAddress && <MinerDetail pubkey={exactAddress} />}
       <ChartCard
         title="Miners"
         subtitle={d?.snapshot_ts
@@ -605,6 +615,12 @@ function MinersTab() {
           <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="search address…"
             className="w-full rounded-md border border-line bg-ink-800 px-2.5 py-1.5 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none sm:w-64" />
         }>
+        {d?.net_positive_pct != null && (
+          <div className="mb-3 font-mono text-[12.5px] text-fog-muted">
+            <span className="text-pos">{formatPct(d.net_positive_pct)}</span> of miners are net-positive lifetime
+            (SOL returned − deployed, plus ORE earned at today's market ratio)
+          </div>
+        )}
         <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] text-fog-muted">
           <span className="shrink-0">sort:</span>
           <SegmentedControl
@@ -652,7 +668,9 @@ function MinersTab() {
               {rows.map((m, i) => {
                 const net = lamportsToSol(m.net_sol);
                 return (
-                  <tr key={m.authority} className={m.is_ours ? oursRow : bodyRow}>
+                  <tr key={m.authority} className={`${m.is_ours ? oursRow : bodyRow} cursor-pointer`}
+                    title="Click to inspect this wallet"
+                    onClick={() => { setQInput(m.authority); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); }}>
                     <td className={`${td} text-fog-muted`}>{offset + i + 1}</td>
                     <td className={`${td} ${m.is_ours ? "text-steel" : "text-white"}`}>
                       <CopyAddress address={m.authority} />{m.is_ours ? " ◆ ours" : ""}
@@ -813,5 +831,187 @@ function Caveats({ provenance, error, onRetry }: { provenance: any; error: strin
         ))}
       </ul>
     </details>
+  );
+}
+
+// ── Miner detail: the wallet P&L lookup (mounts when the search box holds a full address) ──
+function MinerDetail({ pubkey }: { pubkey: string }) {
+  const det = usePolled(() => fetchOreMiner(pubkey), 30_000, [pubkey]);
+  const d = det.data;
+  if (det.loading && !d) {
+    return <div className="grid grid-cols-2 gap-3 md:grid-cols-4"><TileSkeleton /><TileSkeleton /><TileSkeleton /><TileSkeleton /></div>;
+  }
+  if (!d) {
+    return (
+      <div className="card px-4 py-3 font-mono text-[13px] text-fog-muted">
+        {det.error?.includes("404") ? `No miner found for ${short(pubkey)} — this wallet has never deployed.` : det.error ?? "…"}
+      </div>
+    );
+  }
+  const c = d.census;
+  const deployed = lamportsToSol(c?.lifetime_deployed ?? null);
+  const returned = lamportsToSol(c?.lifetime_rewards_sol ?? null);
+  const net = returned - deployed;
+  const oreLifetime = solOf(c?.lifetime_rewards_ore ?? null);
+  const unclaimed = solOf(c?.rewards_ore ?? null);
+  const refinedLive = solOf(c?.refined_live ?? null);
+  const hs = d.hit_stats;
+  const hitRate = hs && hs.rounds > 0 ? hs.hits / hs.rounds : null;
+  const firstTs = d.events?.first_ts ? new Date(Number(d.events.first_ts) * 1000) : null;
+
+  return (
+    <ChartCard
+      title={`Miner ${short(pubkey)}`}
+      subtitle={`Wallet P&L — lifetime on-chain census + event-exact round history${d.managed_by.length ? "" : ""}`}
+      right={<CopyAddress address={pubkey} className="font-mono text-[13px] text-fog-muted" />}
+    >
+      {d.managed_by.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 font-mono text-[12px] text-fog-muted">
+          managed by
+          {d.managed_by.map((m) => (
+            <span key={m.pubkey} className="rounded border border-line px-1.5 py-0.5" title={m.pubkey}>
+              pool {short(m.pubkey)}
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        <StatTile variant="inset" label="Deployed (lifetime)" value={formatSol(deployed, 2)} unit="SOL" />
+        <StatTile variant="inset" label="Returned (lifetime)" value={formatSol(returned, 2)} unit="SOL" />
+        <StatTile variant="inset" label="Net SOL"
+          value={<span className={netTone(net)}>{formatSol(net, 2)}</span>} unit="SOL" hint="returned − deployed" />
+        <StatTile variant="inset" label="ORE earned" value={formatNum(oreLifetime, 2)} unit="ORE" tone="gold"
+          hint={`unclaimed ${formatNum(unclaimed, 2)} · refined (live) ${formatNum(refinedLive, 2)}`} />
+        <StatTile variant="inset" label="Hit rate"
+          value={hitRate != null ? formatPct(hitRate) : "···"}
+          hint={hs ? `${formatNum(hs.hits)} of ${formatNum(hs.rounds)} rounds` : "event window"} />
+        <StatTile variant="inset" label="Active since"
+          value={firstTs ? `${firstTs.getMonth() + 1}/${firstTs.getDate()}` : "···"}
+          hint={d.events ? `${formatNum(d.events.rounds)} rounds · ${formatNum(d.events.deploys)} deploys` : undefined} />
+      </div>
+
+      <div className={`${tableWrap} mt-4`}>
+        <table className="w-full font-mono text-[13px] sm:min-w-[560px]">
+          <thead><tr className={theadRow}>
+            <th className={th}>Round</th>
+            <th className={`${th} text-right`}>Deployed</th>
+            <th className={`${th} hidden text-right sm:table-cell`}>Tiles</th>
+            <th className={`${th} text-right`}>Result</th>
+            <th className={`${th} text-right`}>SOL back</th>
+            <th className={`${th} text-right`}>Net</th>
+          </tr></thead>
+          <tbody>
+            {d.history.map((h) => {
+              const dep = lamportsToSol(h.deployed);
+              const stakeW = Number(h.stake_w ?? "0");
+              const hit = stakeW > 0;
+              const dws = Number(h.deployed_winning_square ?? "0");
+              const won = hit && dws > 0
+                ? (stakeW * 0.99 + Number(h.total_winnings ?? "0") * (stakeW / dws)) / 1e9
+                : 0;
+              const rowNet = won - dep;
+              const tiles = (() => { let m = BigInt(h.mask_union ?? "0"), n = 0; while (m > 0n) { n += Number(m & 1n); m >>= 1n; } return n; })();
+              return (
+                <tr key={h.round_id} className={bodyRow}>
+                  <td className={`${td} text-white`}>#{formatNum(Number(h.round_id))}</td>
+                  <td className={`${td} text-right text-gray-300`}>{formatSol(dep, 3)}</td>
+                  <td className={`${td} hidden text-right text-fog-muted sm:table-cell`}>{tiles}</td>
+                  <td className={`${td} text-right`}>
+                    {h.winning_tile == null
+                      ? <span className="text-fog-dim">refund</span>
+                      : hit ? <span className="text-pos">HIT</span> : <span className="text-fog-muted">miss</span>}
+                  </td>
+                  <td className={`${td} num text-right text-gray-300`}>{won > 0 ? formatSol(won, 3) : "·"}</td>
+                  <td className={`${td} num text-right ${netTone(rowNet)}`}>{formatSol(rowNet, 3)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-2 font-mono text-[12px] leading-relaxed text-fog-muted">
+        Last {d.history.length} rounds (event window). SOL outcomes are exact (per-tile stakes reconstructed
+        from deploy events); ORE from a HIT follows the winner lottery, so it isn't shown per round.
+      </p>
+    </ChartCard>
+  );
+}
+
+// ── Ecosystem: investor metrics — supply, buybacks, pools, whales, claims ─────
+const ECO_RANGES: { id: string; label: string }[] = [
+  { id: "30d", label: "30D" }, { id: "90d", label: "90D" }, { id: "all", label: "All" },
+];
+function EcosystemTab() {
+  const [range, setRange] = useState("90d");
+  const eco = usePolled(() => fetchOreEcosystem(range), 60_000, [range]);
+  const pts = eco.data?.points ?? [];
+  const sum = eco.data?.summary;
+  const dayLbl = (ts: number) => { const dt = new Date(ts * 1000); return `${dt.getMonth() + 1}/${dt.getDate()}`; };
+  const mkP = (pick: (p: OreEcoPoint) => number | null): Pt[] =>
+    pts.filter((p) => pick(p) != null).map((p) => ({ label: dayLbl(p.day_ts), value: pick(p)! }));
+  const mkN = (pick: (p: OreEcoPoint) => number | null): TPt[] =>
+    pts.map((p) => ({ label: dayLbl(p.day_ts), value: pick(p) }));
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-y-2">
+        <div className="section-label">
+          Supply, buybacks &amp; market structure
+          <Refreshing active={eco.fetching && !!eco.data} />
+        </div>
+        <SegmentedControl aria-label="Time range" items={ECO_RANGES} value={range} onChange={setRange} />
+      </div>
+
+      {eco.loading && !eco.data ? (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4"><TileSkeleton /><TileSkeleton /><TileSkeleton /><TileSkeleton /></div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <StatTile label="Circulating ORE" value={sum?.circulating_ore != null ? formatNum(sum.circulating_ore, 0) : "···"} unit="ORE" tone="gold" hint="from the last buyback event" />
+          <StatTile label="Burned (window)" value={sum?.lifetime_burned_ore != null ? formatNum(sum.lifetime_burned_ore, 0) : "···"} unit="ORE" hint={`+ ${sum?.lifetime_shared_ore != null ? formatNum(sum.lifetime_shared_ore, 0) : "·"} shared to stakers`} />
+          <StatTile label="Buyback SOL (window)" value={sum?.lifetime_buyback_sol != null ? formatNum(sum.lifetime_buyback_sol, 0) : "···"} unit="SOL" hint="swapped into ORE and burned" />
+          <StatTile label="Unclaimed ORE now" value={sum?.unclaimed_ore_now != null ? formatNum(sum.unclaimed_ore_now, 0) : "···"} unit="ORE" hint="supply overhang, earning refining" />
+        </div>
+      )}
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div className="lg:col-span-2">
+          <ChartCard variant="dispersion" cutCorner="tr" title="Emission vs burn"
+            subtitle="ORE minted per day vs ORE destroyed by buyback burns — the net issuance picture.">
+            <DualLine a={mkN((p) => p.minted_ore)} b={mkN((p) => p.burned_ore)} aName="minted / day" bName="burned / day"
+              aColor="#22E0E6" bColor="#F87171" height={220}
+              aFmt={(v) => formatNum(v, 0)} bFmt={(v) => formatNum(v, 0)} loading={eco.loading} />
+          </ChartCard>
+        </div>
+        <ChartCard variant="dispersion" cutCorner="bl" title="Cumulative net issuance"
+          subtitle="Running minted − burned over the window. Falling = deflationary stretch.">
+          <AreaLine spectral points={mkP((p) => p.cum_net_ore)} height={200} zeroBaseline={false}
+            fmt={(v) => formatNum(v, 0) + " ORE"} yFmt={compactNum} loading={eco.loading} />
+        </ChartCard>
+        <ChartCard variant="dispersion" cutCorner="tr" title="Buyback pressure"
+          subtitle="SOL spent buying ORE per day (10% of losing tiles flows here).">
+          <AreaLine spectral points={mkP((p) => p.buyback_sol)} height={200}
+            fmt={(v) => formatSol(v, 1) + " SOL"} yFmt={compactNum} loading={eco.loading} />
+        </ChartCard>
+        <ChartCard variant="dispersion" cutCorner="bl" title="Pooled-mining share"
+          subtitle="% of deployed SOL flowing through managed cranks (a signer driving ≥3 miners that day).">
+          <AreaLine points={mkP((p) => p.pool_share_pct)} height={200} zeroBaseline={false} color="#9A6BFF"
+            fmt={(v) => formatNum(v, 1) + "%"} yFmt={(v) => formatNum(v, 0) + "%"} loading={eco.loading} />
+        </ChartCard>
+        <ChartCard variant="dispersion" cutCorner="tr" title="Whale concentration"
+          subtitle="Top-10 miner authorities' share of deployed SOL per day.">
+          <AreaLine points={mkP((p) => p.top10_share_pct)} height={200} zeroBaseline={false} color="#E8881A"
+            fmt={(v) => formatNum(v, 1) + "%"} yFmt={(v) => formatNum(v, 0) + "%"} loading={eco.loading} />
+        </ChartCard>
+        <div className="lg:col-span-2">
+          <ChartCard variant="dispersion" cutCorner="bl" title="Claims flow"
+            subtitle="What miners cash out per day — SOL winnings vs ORE claims. Falling ORE claims = holders letting the pile refine.">
+            <DualLine a={mkN((p) => p.claims_sol)} b={mkN((p) => p.claims_ore)} aName="SOL claimed" bName="ORE claimed"
+              aColor="#9DB7D8" bColor="#22E0E6" height={210}
+              aFmt={(v) => formatNum(v, 0)} bFmt={(v) => formatNum(v, 0)} loading={eco.loading} />
+          </ChartCard>
+        </div>
+      </div>
+      <Caveats provenance={eco.provenance} error={eco.error} onRetry={eco.refresh} />
+    </div>
   );
 }

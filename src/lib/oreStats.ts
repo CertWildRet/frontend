@@ -142,6 +142,9 @@ export type OreLeaderboard = {
   our_pool: OurPool;
   our_miner: string;
   total: number;
+  /** Share of miners (with a deploy) whose SOL net + ORE at today's ratio is positive. */
+  net_positive_pct: number | null;
+  ore_sol_ratio: number | null;
   limit: number;
   offset: number;
 };
@@ -254,6 +257,46 @@ export type OreTrends = {
   };
 };
 
+// ── /ore/ecosystem : investor metrics ─────────────────────────────────────────
+export type OreEcoPoint = {
+  day_ts: number;
+  minted_ore: number; burned_ore: number | null; shared_ore: number | null;
+  net_ore: number; cum_net_ore: number;
+  buyback_sol: number | null;
+  claims_sol: number | null; claims_ore: number | null;
+  unclaimed_ore: number | null;
+  deployed_sol: number | null;
+  pool_share_pct: number | null; top10_share_pct: number | null;
+};
+export type OreEcosystem = {
+  range: string;
+  points: OreEcoPoint[];
+  summary: {
+    circulating_ore: number | null; circulating_as_of: number | null;
+    lifetime_burned_ore: number | null; lifetime_shared_ore: number | null;
+    lifetime_buyback_sol: number | null; unclaimed_ore_now: number | null;
+  };
+};
+
+// ── /ore/miner/:pubkey : wallet P&L detail ────────────────────────────────────
+export type OreMinerDetail = {
+  pubkey: string;
+  census: {
+    snapshot_ts: string; rewards_sol: string; rewards_ore: string; refined_live: string;
+    lifetime_rewards_sol: string; lifetime_rewards_ore: string; lifetime_deployed: string;
+    last_claim_ore_at: number; last_claim_sol_at: number;
+  } | null;
+  events: { deploys: number; rounds: number; deployed: string; first_ts: string | null; last_ts: string | null } | null;
+  hit_stats: { rounds: number; hits: number; won_sol: string | null; dep_sol: string | null } | null;
+  claims: { claim_type: number; amount: string; n: number }[];
+  managed_by: { pubkey: string; n: number }[];
+  history: {
+    round_id: string; ts: string | null; deployed: string; mask_union: string; stake_w: string;
+    winning_tile: number | null; total_winnings: string | null; deployed_winning_square: string | null;
+    total_minted: string | null; is_split: number | null;
+  }[];
+};
+
 export type StatsOverview = {
   ore: {
     round_id: number;
@@ -306,6 +349,8 @@ export const fetchOreMiners = (opts: { sort?: string; offset?: number; limit?: n
 };
 export const fetchOreSeries = (range = "30d") => get<OreSeries>(`/ore/series?range=${range}`);
 export const fetchOreTrends = (range = "30d") => get<OreTrends>(`/ore/trends?range=${range}`);
+export const fetchOreEcosystem = (range = "90d") => get<OreEcosystem>(`/ore/ecosystem?range=${range}`);
+export const fetchOreMiner = (pubkey: string) => get<OreMinerDetail>(`/ore/miner/${pubkey}`);
 export const fetchOreRng = () => get<OreRng>("/ore/rng");
 export const fetchOreMotherlode = (limit = 50, offset = 0) =>
   get<OreMotherlode>(`/ore/motherlode?limit=${limit}&offset=${offset}`);
