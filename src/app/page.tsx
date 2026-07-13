@@ -288,7 +288,7 @@ export default function DispersionLanding() {
       {/* ══ HOW IT WORKS ═══════════════════════════════════════════ */}
       <section className="mt-20">
         <SectionLabel t="How it works" />
-        <PauseWhenOffscreen className="mt-12 flex flex-col gap-6 sm:gap-7">
+        <PauseWhenOffscreen className="mt-12 grid gap-6 md:grid-cols-3 sm:gap-7">
           {STEPS.map((step, i) => (
             <HowRow key={step.n} step={step} flip={i % 2 === 1} />
           ))}
@@ -524,28 +524,23 @@ function HowRow({
     <div
       className={`${styles.glass} ${styles.spectralEdge} ${
         flip ? styles.cutBL : styles.cutTR
-      } ${styles.rise} grid items-center gap-8 rounded-3xl p-8 sm:p-10 md:grid-cols-2 md:gap-14 md:p-14`}
+      } ${styles.rise} flex flex-col rounded-3xl p-6 sm:p-7`}
     >
-      <div className={`flex justify-center ${flip ? "md:order-2" : ""}`}>
-        <div className={styles.howStage}>
+      <div className="flex justify-center">
+        <div className={styles.howStage} style={{ maxWidth: 190 }}>
           <Graphic />
         </div>
       </div>
-      <div className={flip ? "md:order-1" : ""}>
-        <div className="flex items-center gap-3">
-          <span className="text-[13px] tracking-[0.34em] text-[#7FA0E0]" style={mono}>
-            {n}
-          </span>
-          <span className="h-px flex-1 bg-gradient-to-r from-[rgba(127,160,224,0.45)] to-transparent" />
-        </div>
-        <h3
-          className="mt-5 text-[26px] font-semibold leading-tight text-[#EAECF6] sm:text-[30px]"
-          style={display}
-        >
-          {t}
-        </h3>
-        <p className="mt-4 max-w-[44ch] text-[16px] leading-relaxed text-[#9AA3C8]">{d}</p>
+      <div className="mt-5 flex items-center gap-3">
+        <span className="text-[13px] tracking-[0.34em] text-[#7FA0E0]" style={mono}>
+          {n}
+        </span>
+        <span className="h-px flex-1 bg-gradient-to-r from-[rgba(127,160,224,0.45)] to-transparent" />
       </div>
+      <h3 className="mt-3 text-[20px] font-semibold leading-snug text-[#EAECF6]" style={display}>
+        {t}
+      </h3>
+      <p className="mt-2.5 text-[14.5px] leading-relaxed text-[#9AA3C8]">{d}</p>
     </div>
   );
 }
