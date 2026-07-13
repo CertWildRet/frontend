@@ -1028,7 +1028,7 @@ function EcosystemSection() {
           </ChartCard>
         </div>
       </div>
-      <Caveats provenance={eco.provenance} error={eco.error} onRetry={eco.refresh} />
+      <Caveats provenance={null} error={eco.error} onRetry={eco.refresh} />
     </div>
   );
 }
