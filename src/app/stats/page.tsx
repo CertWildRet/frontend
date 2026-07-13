@@ -879,7 +879,8 @@ function Caveats({ provenance, error, onRetry }: { provenance: any; error: strin
 
 // ── Miner detail: the wallet P&L lookup (mounts when the search box holds a full address) ──
 function MinerDetail({ pubkey }: { pubkey: string }) {
-  const det = usePolled(() => fetchOreMiner(pubkey), 30_000, [pubkey]);
+  const [roundsWin, setRoundsWin] = useState("1000");
+  const det = usePolled(() => fetchOreMiner(pubkey, Math.max(1000, Number(roundsWin))), 30_000, [pubkey, roundsWin]);
   const d = det.data;
   if (det.loading && !d) {
     return <div className="grid grid-cols-2 gap-3 md:grid-cols-4"><TileSkeleton /><TileSkeleton /><TileSkeleton /><TileSkeleton /></div>;
@@ -964,6 +965,19 @@ function MinerDetail({ pubkey }: { pubkey: string }) {
         </div>
       )}
 
+      {hasEvents && hs && (
+        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <StatTile variant="inset" label="Rounds"
+            value={<span>{formatNum(hs.rounds)} <span className="text-[13px] text-fog-muted">{hitRate != null ? formatPct(hitRate) : ""}</span></span>}
+            hint="event window · win rate" />
+          <StatTile variant="inset" label="Net SOL"
+            value={<span className={netTone((Number(hs.won_sol ?? 0) - Number(hs.dep_sol ?? 0)) / 1e9)}>{formatSol((Number(hs.won_sol ?? 0) - Number(hs.dep_sol ?? 0)) / 1e9, 3)}</span>}
+            unit="SOL" hint="won − deployed (window)" />
+          <StatTile variant="inset" label="Deployed" value={formatSol(Number(hs.dep_sol ?? 0) / 1e9, 2)} unit="SOL" hint="event window" />
+          <StatTile variant="inset" label="Won" value={formatSol(Number(hs.won_sol ?? 0) / 1e9, 2)} unit="SOL" hint="event window" />
+        </div>
+      )}
+
       {dv && (
         <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
           <StatTile variant="inset" label="Avg bet" value={formatSol(dv.avg_bet_sol, 3)} unit="SOL" hint="per round" />
@@ -975,13 +989,18 @@ function MinerDetail({ pubkey }: { pubkey: string }) {
             value={<span><span className="text-pos">{dv.longest_hit_streak}</span> / <span className="text-red">{dv.longest_miss_streak}</span></span>}
             hint={`longest hit / miss · now ${dv.current_streak > 0 ? "+" : ""}${dv.current_streak}`} />
           <StatTile variant="inset" label="ORE won (window)" value={formatNum(dv.ore_won_expected, 3)} unit="ORE" hint={`last ${formatNum(dv.rounds)} rounds`} />
-          <StatTile variant="inset" label="ORE cost" value={dv.ore_cost_sol != null && dv.ore_cost_sol > 0 ? formatNum(dv.ore_cost_sol, 3) : "·"} unit="SOL/ORE" hint="net SOL spent per ORE won" />
+          <StatTile variant="inset" label="ORE cost"
+            value={dv.ore_cost_sol != null && dv.ore_cost_sol > 0
+              ? formatNum(dv.ore_cost_sol, 3)
+              : dv.ore_won_expected > 0 ? <span className="text-pos">free</span> : "·"}
+            unit={dv.ore_cost_sol != null && dv.ore_cost_sol > 0 ? "SOL/ORE" : undefined}
+            hint={dv.ore_cost_sol != null && dv.ore_cost_sol > 0 ? "net SOL spent per ORE won" : dv.ore_won_expected > 0 ? "mined at a net SOL profit" : "no ORE won in window"} />
         </div>
       )}
 
       {d.tiles && d.tiles.some((t) => t > 0) && <FavoriteSquares tiles={d.tiles} />}
 
-      {d.series.length > 1 && <MinerTrend series={d.series} />}
+      {d.series.length > 1 && <MinerTrend series={d.series} roundsWin={roundsWin} setRoundsWin={setRoundsWin} />}
 
       {d.history.length > 0 && (<>
       <div className={`${tableWrap} mt-4`}>
@@ -1142,9 +1161,12 @@ function FavoriteSquares({ tiles }: { tiles: number[] }) {
 }
 
 /** Cumulative P/L trend with window + currency controls (event-exact rounds). */
-function MinerTrend({ series }: { series: OreMinerDetail["series"] }) {
-  const [win, setWin] = useState("500");
-  const [cur, setCur] = useState<"sol" | "usd">("sol");
+function MinerTrend({ series, roundsWin, setRoundsWin }: {
+  series: OreMinerDetail["series"]; roundsWin: string; setRoundsWin: (v: string) => void;
+}) {
+  const win = roundsWin;
+  const setWin = setRoundsWin;
+  const [cur, setCur] = useState<"sol" | "usd">("usd");
   const n = Math.min(Number(win), series.length);
   const slice = series.slice(-n);
   const hasUsd = slice.some((p) => p.net_usd != null);
@@ -1162,11 +1184,11 @@ function MinerTrend({ series }: { series: OreMinerDetail["series"] }) {
         <div className="flex flex-wrap items-center gap-2">
           {hasUsd && (
             <SegmentedControl aria-label="Currency" variant="loose"
-              items={[{ id: "sol", label: "SOL" }, { id: "usd", label: "USD" }]}
+              items={[{ id: "sol", label: "SOL only" }, { id: "usd", label: "USD (SOL+ORE)" }]}
               value={cur} onChange={(id) => setCur(id as "sol" | "usd")} />
           )}
           <SegmentedControl aria-label="Rounds window" variant="loose"
-            items={[{ id: "100", label: "100" }, { id: "500", label: "500" }, { id: "1000", label: "1000" }]}
+            items={[{ id: "100", label: "100" }, { id: "500", label: "500" }, { id: "1000", label: "1000" }, { id: "2500", label: "2500" }, { id: "5000", label: "5000" }]}
             value={win} onChange={setWin} />
         </div>
       </div>

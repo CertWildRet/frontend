@@ -308,7 +308,7 @@ export type OreMinerDetail = {
   /** Per-tile deploy counts (25) across every deploy in the event window. */
   tiles: number[] | null;
   /** Per-round P/L, oldest -> newest (up to 1000 rounds). */
-  series: { round_id: number; ts: number; net_sol: number; cum_sol: number; hit: boolean; net_usd: number | null }[];
+  series: { round_id: number; ts: number; net_sol: number; cum_sol: number; hit: boolean; ore_won: number; net_usd: number | null }[];
   derived: {
     rounds: number; avg_bet_sol: number;
     best_win_sol: number | null; worst_loss_sol: number | null;
@@ -378,7 +378,7 @@ export const fetchOreSeries = (range = "30d") => get<OreSeries>(`/ore/series?ran
 export const fetchOreTrends = (range = "30d") => get<OreTrends>(`/ore/trends?range=${range}`);
 export const fetchOreEcosystem = (range = "90d") => get<OreEcosystem>(`/ore/ecosystem?range=${range}`);
 export const fetchOreYields = () => get<OreYields>(`/ore/yields`);
-export const fetchOreMiner = (pubkey: string) => get<OreMinerDetail>(`/ore/miner/${pubkey}`);
+export const fetchOreMiner = (pubkey: string, rounds = 1000) => get<OreMinerDetail>(`/ore/miner/${pubkey}?rounds=${rounds}`);
 export const fetchOreRng = () => get<OreRng>("/ore/rng");
 export const fetchOreMotherlode = (limit = 50, offset = 0) =>
   get<OreMotherlode>(`/ore/motherlode?limit=${limit}&offset=${offset}`);
