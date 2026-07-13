@@ -943,7 +943,7 @@ function MinerDetail({ pubkey }: { pubkey: string }) {
         <StatTile variant="inset" label="Net SOL"
           value={<span className={netTone(net)}>{formatSol(net, 2)}</span>} unit="SOL" hint="returned − deployed" />
         <StatTile variant="inset" label="ORE earned" value={formatNum(oreLifetime, 2)} unit="ORE" tone="gold"
-          hint={`unclaimed ${formatNum(unclaimed, 2)} · refined (live) ${formatNum(refinedLive, 2)}`} />
+          hint={unclaimed > 0 || refinedLive > 0 ? `unclaimed ${formatNum(unclaimed, 2)} · refined (live) ${formatNum(refinedLive, 2)}` : "all claimed"} />
         {hasEvents && (
           <StatTile variant="inset" label="Hit rate"
             value={hitRate != null ? formatPct(hitRate) : "···"}
