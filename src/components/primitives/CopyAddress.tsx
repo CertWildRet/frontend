@@ -16,7 +16,7 @@ export function CopyAddress({
 }) {
   const [copied, setCopied] = useState(false);
 
-  if (!address) return <span className={className}>—</span>;
+  if (!address) return <span className={className}>·</span>;
 
   const short = `${address.slice(0, 4)}…${address.slice(-4)}`;
 

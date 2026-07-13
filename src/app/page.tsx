@@ -15,7 +15,7 @@ const STEPS = [
   {
     n: "01",
     t: "Get dORE tokens",
-    d: "Your pro-rata share of the Diamond Pool — dORE tracks ORE.",
+    d: "Your pro-rata share of the Diamond Pool. dORE tracks ORE.",
     Graphic: StepTokenGraphic,
   },
   {

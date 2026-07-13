@@ -332,7 +332,7 @@ export type StatsOverview = {
 
 const unreachable = () =>
   new Error(
-    `Can't reach the ORE stats service (${ANALYTICS_URL}). It may be waking up (free tier) or the ORE ingest may be disabled — retry in a moment.`,
+    `Can't reach the ORE stats service (${ANALYTICS_URL}). It may be waking up (free tier) or the ORE ingest may be disabled. Retry in a moment.`,
   );
 
 async function get<T>(path: string): Promise<OreEnvelope<T>> {

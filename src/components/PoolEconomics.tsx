@@ -187,7 +187,7 @@ export function PoolEconomics({
         <p className="mt-1 font-mono text-[11px] leading-relaxed text-fog-muted">
           Hopium, not the real number: values all mined ORE at its highest price in the past year
           (${formatNum(oreAthUsd, 0)}), not the live price. What the PnL <span className="italic">could</span> be if
-          ORE round-trips to its past-year high — not what it is.
+          ORE round-trips to its past-year high, not what it is.
         </p>
       </Section>
 

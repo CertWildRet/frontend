@@ -41,7 +41,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "rounds", label: "Rounds" },
 ];
 
-const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "—");
+const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "·");
 
 // Table styling mirrors the Position page's WalletAnalytics tables 1:1.
 const tableWrap = styles.tableWrap;
@@ -227,8 +227,8 @@ function TrendsTab() {
         </ChartCard>
         {/* (5) yields — refining vs staking APR (quant spec: APR %, 7d rolling) */}
         <div className="lg:col-span-2">
-          <ChartCard variant="dispersion" cutCorner="tr" title="Yields — hold unclaimed vs claim & stake"
-            subtitle={`Refining APR (what your unclaimed ORE earns from others' claim fees) vs stORE staking APR. Annualized, rolling window up to 7d${yields.data?.latest?.window_days != null && yields.data.latest.window_days < 6.5 ? ` (currently ${formatNum(yields.data.latest.window_days, 1)}d — precise history began Jul 13)` : ""}.`}>
+          <ChartCard variant="dispersion" cutCorner="tr" title="Yields · hold unclaimed vs claim & stake"
+            subtitle={`Refining APR (what your unclaimed ORE earns from others' claim fees) vs stORE staking APR. Annualized, rolling window up to 7d${yields.data?.latest?.window_days != null && yields.data.latest.window_days < 6.5 ? ` (currently ${formatNum(yields.data.latest.window_days, 1)}d, precise history began Jul 13)` : ""}.`}>
             <DualLine shared
               a={(yields.data?.points ?? []).map((p) => ({ label: new Date(p.hour_ts * 1000).getMonth() + 1 + "/" + new Date(p.hour_ts * 1000).getDate() + " " + new Date(p.hour_ts * 1000).getHours() + ":00", value: p.refining_apr }))}
               b={(yields.data?.points ?? []).map((p) => ({ label: new Date(p.hour_ts * 1000).getMonth() + 1 + "/" + new Date(p.hour_ts * 1000).getDate() + " " + new Date(p.hour_ts * 1000).getHours() + ":00", value: p.staking_apr }))}
@@ -236,13 +236,13 @@ function TrendsTab() {
               aColor="#22E0E6" bColor="#E8881A" height={210}
               aFmt={(v) => formatNum(v, 1) + "%"} bFmt={(v) => formatNum(v, 1) + "%"}
               loading={yields.loading}
-              emptyText="collecting on-chain snapshots — first points appear within ~2 hours; the full 7-day view completes by Jul 20" />
+              emptyText="collecting on-chain snapshots. First points appear within ~2 hours; the full 7-day view completes by Jul 20." />
           </ChartCard>
         </div>
         {/* (4) motherlode — full width */}
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="bl" title="Motherlode pop value"
-            subtitle={`Past pop sizes vs the 125 ORE long-run expectation (dashed) — last bar is the live pool, still accruing 0.2/round.${ml?.avg_pop_ore != null ? ` Historical average pop: ${formatNum(ml.avg_pop_ore, 1)} ORE over ${formatNum(ml.pops.length)} pops.` : ""}`}>
+            subtitle={`Past pop sizes vs the 125 ORE long-run expectation (dashed). Last bar is the live pool, still accruing 0.2/round.${ml?.avg_pop_ore != null ? ` Historical average pop: ${formatNum(ml.avg_pop_ore, 1)} ORE over ${formatNum(ml.pops.length)} pops.` : ""}`}>
             <div className="mb-1.5 flex flex-wrap gap-4 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
               <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#5B6CFF] opacity-70" /> past pop payout</span>
               <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#22E0E6]" /> live pool (not popped yet)</span>
@@ -283,7 +283,7 @@ function ProtocolCharts() {
     <div className="space-y-5 border-t border-line pt-6">
       <div className="flex flex-wrap items-center justify-between gap-y-2">
         <div className="section-label">
-          Protocol internals — rake · vaulted · winners
+          Protocol internals · rake, vaulted, winners
           <Refreshing active={series.fetching && !!series.data} />
         </div>
         <SegmentedControl aria-label="Protocol time range" items={PROTOCOL_RANGES} value={range} onChange={setRange} />
@@ -292,7 +292,7 @@ function ProtocolCharts() {
       <ChartCard variant="dispersion" cutCorner="tr" title="SOL deployed" subtitle="Total SOL staked per bucket.">
         <AreaLine spectral points={mk((p) => lamportsToSol(p.deployed))} height={195} fmt={(v) => formatSol(v, 0) + " SOL"} yFmt={compactNum} />
       </ChartCard>
-      <ChartCard variant="dispersion" cutCorner="bl" title="Effective rake" subtitle="Protocol take % per bucket (1% admin + ~9.9% buyback). Zoomed — variation is sub-0.01%.">
+      <ChartCard variant="dispersion" cutCorner="bl" title="Effective rake" subtitle="Protocol take % per bucket (1% admin + ~9.9% buyback). Zoomed; variation is sub-0.01%.">
         <AreaLine spectral points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} height={195} zeroBaseline={false} fmt={(v) => v.toFixed(4) + "%"} yFmt={(v) => v.toFixed(2) + "%"} />
       </ChartCard>
       <ChartCard variant="dispersion" cutCorner="tr" title="SOL vaulted (protocol take)" subtitle="Total SOL vaulted (buyback + admin) per bucket.">
@@ -329,7 +329,7 @@ function MotherlodeTab() {
         <StatTile label="Last hit" value={d?.current?.last_hit_round ? `#${formatNum(d.current.last_hit_round)}` : "···"} hint="most recent drop" />
         <StatTile label="Total hits" value={formatNum(total)} hint="all-time (≥ 0.2 ORE)" />
       </div>
-      <ChartCard variant="dispersion" cutCorner="tr" title="Motherlode payouts" subtitle="Last 50 hits — ORE paid per round.">
+      <ChartCard variant="dispersion" cutCorner="tr" title="Motherlode payouts" subtitle="Last 50 hits: ORE paid per round.">
         <AreaLine
           spectral
           points={mlChartPts}
@@ -470,7 +470,7 @@ function RoundAnalysisTab() {
       </div>
 
       {/* your competition — persistent top players */}
-      <ChartCard title="Your competition" subtitle={`The persistent top wallets across the last ${n} rounds — who you're up against every round.`}>
+      <ChartCard title="Your competition" subtitle={`The persistent top wallets across the last ${n} rounds: who you're up against every round.`}>
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px] sm:min-w-[520px]">
             <thead><tr className={theadRow}>
@@ -873,7 +873,7 @@ function MinerDetail({ pubkey }: { pubkey: string }) {
   if (!d) {
     return (
       <div className="card px-4 py-3 font-mono text-[13px] text-fog-muted">
-        {det.error?.includes("404") ? `No miner found for ${short(pubkey)} — this wallet has never deployed.` : det.error ?? "…"}
+        {det.error?.includes("404") ? `No miner found for ${short(pubkey)}: this wallet has never deployed.` : det.error ?? "…"}
       </div>
     );
   }
@@ -891,7 +891,7 @@ function MinerDetail({ pubkey }: { pubkey: string }) {
   return (
     <ChartCard
       title={`Miner ${short(pubkey)}`}
-      subtitle={`Wallet P&L — lifetime on-chain census + event-exact round history${d.managed_by.length ? "" : ""}`}
+      subtitle={`Wallet P&L: lifetime on-chain census + event-exact round history${d.managed_by.length ? "" : ""}`}
       right={<CopyAddress address={pubkey} className="font-mono text-[13px] text-fog-muted" />}
     >
       {d.managed_by.length > 0 && (
@@ -985,7 +985,7 @@ function EcosystemSection() {
     <div className="space-y-5 border-t border-line pt-6">
       <div className="flex flex-wrap items-center justify-between gap-y-2">
         <div className="section-label">
-          Ecosystem — supply, buybacks &amp; market structure
+          Ecosystem · supply, buybacks &amp; market structure
           <Refreshing active={eco.fetching && !!eco.data} />
         </div>
         <SegmentedControl aria-label="Time range" items={ECO_RANGES} value={range} onChange={setRange} />
@@ -1005,7 +1005,7 @@ function EcosystemSection() {
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="tr" title="Emission vs burn"
-            subtitle="ORE minted per day vs ORE destroyed by buyback burns — the net issuance picture.">
+            subtitle="ORE minted per day vs ORE destroyed by buyback burns: the net issuance picture.">
             <DualLine a={mkN((p) => p.minted_ore)} b={mkN((p) => p.burned_ore)} aName="minted / day" bName="burned / day"
               aColor="#22E0E6" bColor="#F87171" height={220}
               aFmt={(v) => formatNum(v, 0)} bFmt={(v) => formatNum(v, 0)} loading={eco.loading} />
@@ -1033,7 +1033,7 @@ function EcosystemSection() {
         </ChartCard>
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="bl" title="Claims flow"
-            subtitle="What miners cash out per day — SOL winnings vs ORE claims. Falling ORE claims = holders letting the pile refine.">
+            subtitle="What miners cash out per day: SOL winnings vs ORE claims. Falling ORE claims = holders letting the pile refine.">
             <DualLine a={mkN((p) => p.claims_sol)} b={mkN((p) => p.claims_ore)} aName="SOL claimed" bName="ORE claimed"
               aColor="#9DB7D8" bColor="#22E0E6" height={210}
               aFmt={(v) => formatNum(v, 0)} bFmt={(v) => formatNum(v, 0)} loading={eco.loading} />

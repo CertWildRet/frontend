@@ -71,7 +71,7 @@ export function WalletAnalytics({ pubkey }: { pubkey: string }) {
         <p className="font-mono text-[10.5px] leading-relaxed text-fog-muted">
           {provenance.backfill_complete
             ? "Reconstructed from finalized on-chain history."
-            : "Historical backfill still running — figures are provisional and may grow."}{" "}
+            : "Historical backfill still running; figures are provisional and may grow."}{" "}
           Native units only; per-wallet SOL/ORE won is pro-rata by your frozen share of each round (there is no per-wallet bet on chain).{" "}
           ORE mined while a window is open is held in the shared miner (shown per-cycle as &quot;in miner&quot;) and is credited to your won / owed balance at the next settle.
         </p>
