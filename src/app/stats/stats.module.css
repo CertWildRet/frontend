@@ -100,7 +100,9 @@
 
 .titleAccent {
   display: inline-block;
-  background: linear-gradient(110deg, #22e0e6, #7d88ff 42%, #d988ff 72%, #ff86d9);
+  /* palindromic tile: every repeat edge is cyan|cyan, so the sweep can never
+     show a pink->cyan wall no matter the phase */
+  background: linear-gradient(110deg, #22e0e6, #7d88ff 22%, #d988ff 38%, #ff86d9 50%, #d988ff 62%, #7d88ff 78%, #22e0e6);
   background-size: 180% 100%;
   -webkit-background-clip: text;
   background-clip: text;
