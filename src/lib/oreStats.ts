@@ -255,6 +255,8 @@ export type OreTrendPoint = {
 };
 export type OreTrends = {
   range: string;
+  /** Live signal: trailing ~30 settled rounds × latest spot — refreshes every poll. */
+  now: { prod_cost_sol: number; market_ratio_sol: number; ev_pct: number; rounds_window: number } | null;
   points: OreTrendPoint[];
   motherlode: {
     pops: { round_id: string; ts: number; pop_ore: number }[];

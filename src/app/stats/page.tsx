@@ -152,7 +152,7 @@ export default function StatsPage() {
 // Protocol-operator charts (rake / vaulted / winners) live in a collapsed
 // section below — kept for an eventual protocol/LP view, out of the miner path.
 const RANGES: { id: string; label: string }[] = [
-  { id: "7d", label: "7D" }, { id: "30d", label: "30D" }, { id: "90d", label: "90D" }, { id: "all", label: "All" },
+  { id: "24h", label: "24H" }, { id: "7d", label: "7D" }, { id: "30d", label: "30D" }, { id: "90d", label: "90D" }, { id: "all", label: "All" },
 ];
 function TrendsTab() {
   const [range, setRange] = useState("30d");
@@ -163,6 +163,7 @@ function TrendsTab() {
 
   const dayLbl = (ts: number) => {
     const dt = new Date(ts * 1000);
+    if (range === "24h") return `${dt.getHours()}:${String(dt.getMinutes()).padStart(2, "0")}`;
     return `${dt.getMonth() + 1}/${dt.getDate()}`;
   };
   const mkT = (pick: (p: OreTrendPoint) => number | null): TPt[] =>
@@ -172,7 +173,8 @@ function TrendsTab() {
   const POPS_SHOWN = 48;
   const popBars: Pt[] = (ml?.pops ?? []).slice(-POPS_SHOWN).map((h) => ({ label: `#${formatNum(Number(h.round_id))}`, value: h.pop_ore }));
   if (ml?.current_pool_ore != null) popBars.push({ label: "now (accruing)", value: ml.current_pool_ore });
-  const evNow = [...tp].reverse().find((p) => p.ev_pct != null)?.ev_pct ?? null;
+  const nowLive = trends.data?.now ?? null;
+  const evNow = nowLive?.ev_pct ?? [...tp].reverse().find((p) => p.ev_pct != null)?.ev_pct ?? null;
 
   return (
     <div className="space-y-5">
@@ -197,8 +199,8 @@ function TrendsTab() {
               {evNow != null ? `${evNow >= 0 ? "+" : ""}${formatNum(evNow, 1)}%` : "···"}
             </span>
           }
-          hint="vs buying ORE at market (today)" />
-        <StatTile label="Production cost" value={tp.length && tp[tp.length - 1].prod_cost_sol != null ? formatNum(tp[tp.length - 1].prod_cost_sol!, 3) : "···"} unit="SOL/ORE" hint="measured on-chain, today" />
+          hint={nowLive ? `live · last ${nowLive.rounds_window} rounds × spot` : "vs buying ORE at market (today)"} />
+        <StatTile label="Production cost" value={nowLive ? formatNum(nowLive.prod_cost_sol, 3) : tp.length && tp[tp.length - 1].prod_cost_sol != null ? formatNum(tp[tp.length - 1].prod_cost_sol!, 3) : "···"} unit="SOL/ORE" hint={nowLive ? "live · trailing ~35 min" : "measured on-chain, today"} />
         <StatTile label="Motherlode pool" value={ml?.current_pool_ore != null ? formatNum(ml.current_pool_ore, 1) : "···"} unit="ORE" tone="gold"
           hint={`expected pop 125 · past avg ${ml?.avg_pop_ore != null ? formatNum(ml.avg_pop_ore, 0) : "·"}`} />
         <StatTile label="Miners today" value={tp.length && tp[tp.length - 1].unique_miners != null ? formatNum(tp[tp.length - 1].unique_miners!) : "···"} hint="unique wallets that deployed" />
