@@ -74,6 +74,23 @@ function gapPath(pts: (number | null)[], x: (i: number) => number, y: (v: number
   return d;
 }
 
+/** gapPath variant that ALSO lifts the pen when the value drops below the
+ *  previous point — renders reset-style sawtooths (the motherlode pool) as
+ *  broken ascending segments instead of drawing the vertical reset cliff. */
+function dropPath(pts: (number | null)[], x: (i: number) => number, y: (v: number) => number): string {
+  let d = "";
+  let pen = false;
+  let prev: number | null = null;
+  pts.forEach((v, i) => {
+    if (v == null) { pen = false; prev = null; return; }
+    if (prev != null && v < prev) pen = false;
+    d += `${pen ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)} `;
+    pen = true;
+    prev = v;
+  });
+  return d;
+}
+
 function scaleOf(values: (number | null)[], zeroFloor = false): { min: number; max: number } {
   const vs = values.filter((v): v is number => v != null);
   if (!vs.length) return { min: 0, max: 1 };
@@ -95,6 +112,7 @@ export function DualLine({
   bFmt = (v: number) => v.toFixed(2),
   loading = false,
   shared = false,
+  band,
   emptyText,
 }: {
   a: TPt[]; b: TPt[]; aName: string; bName: string;
@@ -103,6 +121,9 @@ export function DualLine({
   loading?: boolean;
   /** Same-unit series: one combined y-scale, single left axis (no dual-axis). */
   shared?: boolean;
+  /** shared-mode only: fill the gap between the lines, green where a > b and
+   *  red where a < b, and name it in the legend + tooltip (the "carry"). */
+  band?: { name: string };
   /** Copy shown when there are no points yet (and not loading). */
   emptyText?: string;
 }) {
@@ -132,9 +153,12 @@ export function DualLine({
 
   return (
     <div ref={ref} className="w-full">
-      <div className="mb-1.5 flex gap-4 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
+      <div className="mb-1.5 flex flex-wrap gap-4 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: aColor }} /> {aName}</span>
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: bColor }} /> {bName}</span>
+        {shared && band && (
+          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: "#4ADE80", opacity: 0.5 }} /> {band.name}</span>
+        )}
       </div>
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${aName} and ${bName}`}
         style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }} onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)}>
@@ -148,6 +172,15 @@ export function DualLine({
                 <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={bColor} textAnchor="start" fontFamily="monospace">{bFmt(sb.max - g * (sb.max - sb.min))}</text>
               )}
             </g>
+          );
+        })}
+        {shared && band && Array.from({ length: n - 1 }, (_, i) => i + 1).map((i) => {
+          const a0 = a[i - 1].value, a1 = a[i].value, b0 = b[i - 1].value, b1 = b[i].value;
+          if (a0 == null || a1 == null || b0 == null || b1 == null) return null;
+          const pos = (a0 + a1) / 2 >= (b0 + b1) / 2;
+          return (
+            <path key={`band-${i}`} opacity={0.16} fill={pos ? "#4ADE80" : "#F87171"}
+              d={`M${x(i - 1).toFixed(1)},${ya(a0).toFixed(1)} L${x(i).toFixed(1)},${ya(a1).toFixed(1)} L${x(i).toFixed(1)},${yb(b1).toFixed(1)} L${x(i - 1).toFixed(1)},${yb(b0).toFixed(1)} Z`} />
           );
         })}
         <path d={gapPath(a.map((p) => p.value), x, ya)} fill="none" stroke={aColor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
@@ -165,6 +198,9 @@ export function DualLine({
               a[hover].label,
               `${aName}: ${a[hover].value != null ? aFmt(a[hover].value!) : "·"}`,
               `${bName}: ${b[hover].value != null ? bFmt(b[hover].value!) : "·"}`,
+              ...(shared && band && a[hover].value != null && b[hover].value != null
+                ? [`carry: ${a[hover].value! - b[hover].value! >= 0 ? "+" : ""}${aFmt(a[hover].value! - b[hover].value!)}`]
+                : []),
             ]} />
           </g>
         )}
@@ -284,11 +320,14 @@ export function BarsLine({
   height = 210,
   barFmt = (v: number) => v.toFixed(1),
   lineFmt = (v: number) => v.toFixed(0),
+  lineBreakOnDrop = false,
   loading = false,
 }: {
   bars: TPt[]; line: TPt[]; barName: string; lineName: string;
   barColor?: string; lineColor?: string; height?: number;
   barFmt?: (v: number) => string; lineFmt?: (v: number) => string;
+  /** Sawtooth series (motherlode pool): break the line where it resets down. */
+  lineBreakOnDrop?: boolean;
   loading?: boolean;
 }) {
   const [ref, W] = useMeasuredWidth();
@@ -340,7 +379,7 @@ export function BarsLine({
               height={Math.max(0, plotB - yB(b.value))} rx={2} fill={barColor} opacity={hover === i ? 0.95 : 0.55} />
           ) : null,
         )}
-        <path d={gapPath(line.map((p) => p.value), xC, yL)} fill="none" stroke={lineColor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        <path d={(lineBreakOnDrop ? dropPath : gapPath)(line.map((p) => p.value), xC, yL)} fill="none" stroke={lineColor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
         {xt.map((idx, ti) => (
           <text key={ti} x={xC(idx)} y={H - 8} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily="monospace"
             textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{bars[idx].label}</text>
@@ -359,6 +398,96 @@ export function BarsLine({
   );
 }
 
+
+// ── PopBars: motherlode pops vs the 125 ORE long-run average ─────────────────
+// EV-chart language on bars: the slice of a pop ABOVE 125 is green (surplus),
+// pops that landed short of 125 draw red, the live still-accruing pool is cyan.
+export function PopBars({
+  bars, expected, height = 210,
+  fmt = (v: number) => v.toFixed(1),
+  liveLast = false,
+  loading = false,
+}: {
+  bars: TPt[]; expected: number; height?: number;
+  fmt?: (v: number) => string;
+  /** The final bar is the live pool (not a settled pop). */
+  liveLast?: boolean;
+  loading?: boolean;
+}) {
+  const [ref, W] = useMeasuredWidth();
+  const [hover, setHover] = useState<number | null>(null);
+  const H = height, padL = 52, padR = 14, padT = 14, padB = 26;
+  const POS = "#4ADE80", NEG = "#F87171", BASE = "#5B6CFF", LIVE = "#22E0E6";
+  const n = bars.length;
+  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} /></div>;
+
+  const hi = Math.max(...bars.map((p) => p.value ?? 0), expected) * 1.12;
+  const plotR = W - padR, plotB = H - padB;
+  const bw = (plotR - padL) / n;
+  const gap = Math.min(4, bw * 0.25);
+  const xC = (i: number) => padL + i * bw + bw / 2;
+  const y = (v: number) => padT + (1 - v / (hi || 1)) * (plotB - padT);
+  const yExp = y(expected);
+
+  const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * W;
+    setHover(Math.max(0, Math.min(n - 1, Math.floor((px - padL) / bw))));
+  };
+  const gy = [0, 0.25, 0.5, 0.75, 1];
+  const nTicks = Math.min(5, n);
+  const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
+
+  return (
+    <div ref={ref} className="w-full">
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="motherlode pops vs long-run average"
+        style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }} onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)}>
+        {gy.map((g, gi) => {
+          const yy = padT + g * (plotB - padT);
+          return (
+            <g key={gi}>
+              <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
+              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={AXIS} textAnchor="end" fontFamily="monospace">{fmt(hi - g * hi)}</text>
+            </g>
+          );
+        })}
+        {bars.map((b, i) => {
+          if (b.value == null) return null;
+          const v = b.value;
+          const isLive = liveLast && i === n - 1;
+          const bx = padL + i * bw + gap / 2;
+          const bwid = Math.max(1, bw - gap);
+          const hot = hover === i;
+          if (isLive) {
+            return <rect key={i} x={bx} y={y(v)} width={bwid} height={Math.max(0, plotB - y(v))} rx={2} fill={LIVE} opacity={hot ? 1 : 0.9} />;
+          }
+          if (v >= expected) {
+            return (
+              <g key={i}>
+                <rect x={bx} y={yExp} width={bwid} height={Math.max(0, plotB - yExp)} rx={2} fill={BASE} opacity={hot ? 0.85 : 0.55} />
+                <rect x={bx} y={y(v)} width={bwid} height={Math.max(0, yExp - y(v))} rx={2} fill={POS} opacity={hot ? 0.95 : 0.7} />
+              </g>
+            );
+          }
+          return <rect key={i} x={bx} y={y(v)} width={bwid} height={Math.max(0, plotB - y(v))} rx={2} fill={NEG} opacity={hot ? 0.9 : 0.6} />;
+        })}
+        <line x1={padL} y1={yExp} x2={plotR} y2={yExp} stroke={AXIS} strokeWidth={1} strokeDasharray="4 3" opacity={0.8} />
+        <text x={plotR - 4} y={yExp - 5} fontSize={FS} fontWeight={700} fill={AXIS} textAnchor="end" fontFamily="monospace">{fmt(expected)}</text>
+        {xt.map((idx, ti) => (
+          <text key={ti} x={xC(idx)} y={H - 8} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily="monospace"
+            textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{bars[idx].label}</text>
+        ))}
+        {hover != null && bars[hover].value != null && (
+          <TrendTooltip x={xC(hover)} y={padT + 10} W={W} lines={
+            liveLast && hover === n - 1
+              ? [bars[hover].label, `live pool: ${fmt(bars[hover].value!)}`, `vs avg: ${bars[hover].value! - expected >= 0 ? "+" : ""}${fmt(bars[hover].value! - expected)}`]
+              : [bars[hover].label, `pop: ${fmt(bars[hover].value!)}`, `vs avg: ${bars[hover].value! - expected >= 0 ? "+" : ""}${fmt(bars[hover].value! - expected)}`]
+          } />
+        )}
+      </svg>
+    </div>
+  );
+}
 
 // ── PnlChart: cumulative P/L line with signed green/red fill + end badge ─────
 export function PnlChart({

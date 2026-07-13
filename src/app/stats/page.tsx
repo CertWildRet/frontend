@@ -12,8 +12,8 @@ import { StatTile } from "@/components/primitives/Stat";
 import { TabBar, SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { TileSkeleton, RowsSkeleton, Refreshing } from "@/components/primitives/Skeleton";
-import { AreaLine, Bars, HBars, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
-import { DualLine, CostEvChart, BarsLine, PnlChart, type TPt } from "@/components/stats/TrendCharts";
+import { AreaLine, HBars, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
+import { DualLine, CostEvChart, BarsLine, PnlChart, PopBars, type TPt } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
 import {
   fetchOreRounds, fetchOreRound, fetchOreMotherlode, fetchOreLeaderboard,
@@ -200,6 +200,9 @@ function TrendsTab() {
   const yPts = yields.data?.points ?? [];
   const avgRefin = avgOf(yPts.map((p) => p.refining_apr));
   const avgStake = avgOf(yPts.map((p) => p.staking_apr));
+  const latestY = yields.data?.latest;
+  const carryNow = latestY?.refining_apr != null && latestY?.staking_apr != null
+    ? latestY.refining_apr - latestY.staking_apr : null;
   const hLbl = (ts: number) => {
     const dt = new Date(ts * 1000);
     return `${dt.getMonth() + 1}/${dt.getDate()} ${dt.getHours()}:00`;
@@ -270,23 +273,24 @@ function TrendsTab() {
           <DualLine a={mkT((p) => p.ore_usd)} b={mkT((p) => p.sol_usd)} aName="ORE $" bName="SOL $" height={205}
             aFmt={(v) => "$" + formatNum(v, 1)} bFmt={(v) => "$" + formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
-        {/* (3) activity */}
-        <ChartCard variant="dispersion" cutCorner="tr" title="Mining activity" subtitle="Avg SOL deployed per round (bars) and unique miners per day (line, exact on-chain count).">
-          <BarsLine bars={mkT((p) => p.avg_deployed_sol)} line={mkT((p) => p.unique_miners)} barName="SOL / round" lineName="unique miners" height={205}
+        {/* (3) activity — deploys vs the motherlode pool filling up */}
+        <ChartCard variant="dispersion" cutCorner="tr" title="Mining activity" subtitle="Avg SOL deployed per round (bars) vs the motherlode pool filling toward its next pop (line, resets when it pops). Watch deploys chase a fat pool.">
+          <BarsLine bars={mkT((p) => p.avg_deployed_sol)} line={mkT((p) => p.ml_pool_ore)} barName="SOL / round" lineName="motherlode pool (ORE)" lineBreakOnDrop height={205}
             barFmt={(v) => formatNum(v, 1)} lineFmt={(v) => formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
         {/* (5) yields — refining vs staking APR (quant spec: APR %, 7d rolling) */}
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="tr" title="Yields · hold unclaimed vs claim & stake"
-            subtitle={`Refining APR (what your unclaimed ORE earns from others' claim fees) vs stORE staking APR. Annualized, rolling window up to 7d${yields.data?.latest?.window_days != null && yields.data.latest.window_days < 6.5 ? ` (currently ${formatNum(yields.data.latest.window_days, 1)}d, precise history began Jul 13)` : ""}.`}
-            right={(avgRefin != null || avgStake != null) ? (
+            subtitle={`Refining APR (what your unclaimed ORE earns from others' claim fees) vs stORE staking APR. The shaded gap between them is the unclaimed carry: the extra APR you keep by NOT claiming. Annualized, rolling window up to 7d${yields.data?.latest?.window_days != null && yields.data.latest.window_days < 6.5 ? ` (currently ${formatNum(yields.data.latest.window_days, 1)}d, precise history began Jul 13)` : ""}.`}
+            right={(avgRefin != null || avgStake != null || carryNow != null) ? (
               <span className="flex items-center gap-2.5 rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold"
-                title="Simple average of the plotted rolling-window points">
+                title="Averages are over the plotted points; carry = refining APR minus staking APR right now">
                 {avgRefin != null && <span style={{ color: "#22E0E6" }}>refining avg {formatNum(avgRefin, 1)}%</span>}
                 {avgStake != null && <span style={{ color: "#E8881A" }}>staking avg {formatNum(avgStake, 1)}%</span>}
+                {carryNow != null && <span className={carryNow >= 0 ? "text-pos" : "text-red"}>carry now {carryNow >= 0 ? "+" : ""}{formatNum(carryNow, 1)}%</span>}
               </span>
             ) : undefined}>
-            <DualLine shared
+            <DualLine shared band={{ name: "unclaimed carry (refining minus staking)" }}
               a={yPts.map((p) => ({ label: hLbl(p.hour_ts), value: p.refining_apr }))}
               b={yPts.map((p) => ({ label: hLbl(p.hour_ts), value: p.staking_apr }))}
               aName="refining APR (unclaimed)" bName="stORE staking APR"
@@ -318,14 +322,22 @@ function TrendsTab() {
         {/* (4) motherlode — full width */}
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="bl" title="Motherlode pop value"
-            subtitle={`Past pop sizes vs the 125 ORE long-run expectation (dashed). Last bar is the live pool, still accruing 0.2/round.${ml?.avg_pop_ore != null ? ` Historical average pop: ${formatNum(ml.avg_pop_ore, 1)} ORE over ${formatNum(ml.pops.length)} pops.` : ""}`}>
+            subtitle={`Every pop vs the 125 ORE long-run average (dashed). Green slice = the part above 125, red bars fell short. Last bar is the live pool, still filling 0.2/round.${ml?.avg_pop_ore != null ? ` Historical average pop: ${formatNum(ml.avg_pop_ore, 1)} ORE over ${formatNum(ml.pops.length)} pops.` : ""}`}
+            right={ml?.current_pool_ore != null ? (
+              <span className="rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold"
+                style={{ color: ml.current_pool_ore - 125 >= 0 ? "#4ADE80" : "#F87171" }}
+                title="Pop premium = the live motherlode pool minus the 125 ORE long-run average pop. Positive = the pool is already fatter than an average pop pays.">
+                pop premium {ml.current_pool_ore - 125 >= 0 ? "+" : ""}{formatNum(ml.current_pool_ore - 125, 1)} ORE
+              </span>
+            ) : undefined}>
             <div className="mb-1.5 flex flex-wrap gap-4 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#5B6CFF] opacity-70" /> past pop payout</span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#4ADE80] opacity-80" /> pop above 125 (surplus slice)</span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#F87171] opacity-70" /> pop below 125</span>
               <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#22E0E6]" /> live pool (not popped yet)</span>
-              <span className="flex items-center gap-1.5"><span className="inline-block h-0 w-4 border-t border-dashed border-fog-muted" /> 125 ORE = what a pop pays on average if it hits on schedule (0.2/round × 1-in-625)</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block h-0 w-4 border-t border-dashed border-fog-muted" /> 125 ORE = long-run average pop (0.2/round × 1-in-625)</span>
             </div>
-            <Bars bars={popBars} height={205} expected={125} expectedLabel="expected: 125 ORE" fmt={(v) => formatNum(v, 1) + " ORE"}
-              highlight={(i) => i === popBars.length - 1} highlightColor="#22E0E6" color="#5B6CFF" loading={trends.loading} />
+            <PopBars bars={popBars} height={205} expected={125} fmt={(v) => formatNum(v, 1) + " ORE"}
+              liveLast={ml?.current_pool_ore != null} loading={trends.loading} />
           </ChartCard>
         </div>
       </div>
@@ -354,6 +366,8 @@ function ProtocolCharts() {
     return range === "7d" ? `${dt.getMonth() + 1}/${dt.getDate()} ${dt.getHours()}:00` : `${dt.getMonth() + 1}/${dt.getDate()}`;
   };
   const mk = (pick: (p: OreSeriesPoint) => number): Pt[] => pts.map((p) => ({ label: lbl(p), value: pick(p) }));
+  // matches /ore/series bucketing: 7d hourly, 30d/90d daily, 1y/all weekly
+  const seriesPer = range === "7d" ? "hour" : range === "1y" || range === "all" ? "week" : "day";
 
   return (
     <div className="space-y-5 border-t border-line pt-6">
@@ -365,13 +379,13 @@ function ProtocolCharts() {
         <SegmentedControl aria-label="Protocol time range" items={PROTOCOL_RANGES} value={range} onChange={setRange} />
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
-      <ChartCard variant="dispersion" cutCorner="tr" title="SOL deployed" subtitle="Total SOL staked per bucket.">
+      <ChartCard variant="dispersion" cutCorner="tr" title="SOL deployed" subtitle={`Total SOL deployed to play the rounds, per ${seriesPer}.`}>
         <AreaLine spectral points={mk((p) => lamportsToSol(p.deployed))} height={195} fmt={(v) => formatSol(v, 0) + " SOL"} yFmt={compactNum} />
       </ChartCard>
-      <ChartCard variant="dispersion" cutCorner="bl" title="Effective rake" subtitle="Protocol take % per bucket (1% admin + ~9.9% buyback). Zoomed; variation is sub-0.01%.">
+      <ChartCard variant="dispersion" cutCorner="bl" title="Effective rake" subtitle={`What the protocol keeps of the SOL played, per ${seriesPer} (1% admin + ~9.9% buyback). Zoomed way in; it barely moves.`}>
         <AreaLine spectral points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} height={195} zeroBaseline={false} fmt={(v) => v.toFixed(4) + "%"} yFmt={(v) => v.toFixed(2) + "%"} />
       </ChartCard>
-      <ChartCard variant="dispersion" cutCorner="tr" title="SOL vaulted (protocol take)" subtitle="Total SOL vaulted (buyback + admin) per bucket.">
+      <ChartCard variant="dispersion" cutCorner="tr" title="SOL vaulted (protocol take)" subtitle={`Total SOL the protocol kept (buyback + admin fee), per ${seriesPer}.`}>
         <AreaLine spectral points={mk((p) => lamportsToSol(p.vaulted))} height={195} fmt={(v) => formatSol(v, 1) + " SOL"} yFmt={compactNum} />
       </ChartCard>
       <ChartCard variant="dispersion" cutCorner="bl" title="Winners / round" subtitle="Avg miners rewarded per round (reset-event count).">

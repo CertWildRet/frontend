@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { WalletButton } from "@/components/WalletButton";
 import { MobileNav } from "@/components/MobileNav";
+import { HeaderTicker } from "@/components/HeaderTicker";
 import { NAV_ITEMS, isActiveRoute } from "@/lib/nav";
 import {
   tabActiveClass,
@@ -92,6 +93,7 @@ export function SiteHeader() {
             })}
           </nav>
         </div>
+        <HeaderTicker />
         <div className="flex items-center gap-2">
           <WalletButton />
           <MobileNav />

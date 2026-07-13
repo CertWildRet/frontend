@@ -252,6 +252,8 @@ export type OreTrendPoint = {
   total_deployed_sol: number;
   unique_miners: number | null;
   deploy_count: number | null;
+  /** Motherlode pool at the end of the bucket (sawtooth; resets on pop). */
+  ml_pool_ore: number | null;
 };
 export type OreTrends = {
   range: string;
