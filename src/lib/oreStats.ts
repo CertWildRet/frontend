@@ -297,6 +297,11 @@ export type OreMinerDetail = {
   }[];
 };
 
+export type OreYields = {
+  points: { hour_ts: number; refining_apr: number | null; staking_apr: number | null; window_days: number | null }[];
+  latest: { hour_ts: number; refining_apr: number | null; staking_apr: number | null; window_days: number | null } | null;
+};
+
 export type StatsOverview = {
   ore: {
     round_id: number;
@@ -350,6 +355,7 @@ export const fetchOreMiners = (opts: { sort?: string; offset?: number; limit?: n
 export const fetchOreSeries = (range = "30d") => get<OreSeries>(`/ore/series?range=${range}`);
 export const fetchOreTrends = (range = "30d") => get<OreTrends>(`/ore/trends?range=${range}`);
 export const fetchOreEcosystem = (range = "90d") => get<OreEcosystem>(`/ore/ecosystem?range=${range}`);
+export const fetchOreYields = () => get<OreYields>(`/ore/yields`);
 export const fetchOreMiner = (pubkey: string) => get<OreMinerDetail>(`/ore/miner/${pubkey}`);
 export const fetchOreRng = () => get<OreRng>("/ore/rng");
 export const fetchOreMotherlode = (limit = 50, offset = 0) =>

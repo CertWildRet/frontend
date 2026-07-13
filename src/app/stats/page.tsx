@@ -18,7 +18,7 @@ import { usePolled } from "@/hooks/useOreStats";
 import {
   fetchOreRounds, fetchOreRound, fetchOreMotherlode, fetchOreLeaderboard,
   fetchOreMiners, fetchOreSeries, fetchOreCompetition, fetchOreTrends,
-  fetchOreEcosystem, fetchOreMiner,
+  fetchOreEcosystem, fetchOreMiner, fetchOreYields,
   lamportsToSol, oreGramsToOre, roundTileDeployRange, roundMaxSpreadFrac,
   type TileDeployRange,
   type OreSeriesPoint,
@@ -159,6 +159,7 @@ const RANGES: { id: string; label: string }[] = [
 function TrendsTab() {
   const [range, setRange] = useState("30d");
   const trends = usePolled(() => fetchOreTrends(range), 60_000, [range]);
+  const yields = usePolled(() => fetchOreYields(), 120_000, []);
   const tp = trends.data?.points ?? [];
   const ml = trends.data?.motherlode;
 
@@ -224,6 +225,19 @@ function TrendsTab() {
           <BarsLine bars={mkT((p) => p.avg_deployed_sol)} line={mkT((p) => p.unique_miners)} barName="SOL / round" lineName="unique miners" height={205}
             barFmt={(v) => formatNum(v, 1)} lineFmt={(v) => formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
+        {/* (5) yields — refining vs staking APR (quant spec: APR %, 7d rolling) */}
+        <div className="lg:col-span-2">
+          <ChartCard variant="dispersion" cutCorner="tr" title="Yields — hold unclaimed vs claim & stake"
+            subtitle={`Refining APR (what your unclaimed ORE earns from others' claim fees) vs stORE staking APR. Annualized, rolling window up to 7d${yields.data?.latest?.window_days != null && yields.data.latest.window_days < 6.5 ? ` (currently ${formatNum(yields.data.latest.window_days, 1)}d — precise history began Jul 13)` : ""}.`}>
+            <DualLine shared
+              a={(yields.data?.points ?? []).map((p) => ({ label: new Date(p.hour_ts * 1000).getMonth() + 1 + "/" + new Date(p.hour_ts * 1000).getDate() + " " + new Date(p.hour_ts * 1000).getHours() + ":00", value: p.refining_apr }))}
+              b={(yields.data?.points ?? []).map((p) => ({ label: new Date(p.hour_ts * 1000).getMonth() + 1 + "/" + new Date(p.hour_ts * 1000).getDate() + " " + new Date(p.hour_ts * 1000).getHours() + ":00", value: p.staking_apr }))}
+              aName="refining APR (unclaimed)" bName="stORE staking APR"
+              aColor="#22E0E6" bColor="#E8881A" height={210}
+              aFmt={(v) => formatNum(v, 1) + "%"} bFmt={(v) => formatNum(v, 1) + "%"}
+              loading={yields.loading} />
+          </ChartCard>
+        </div>
         {/* (4) motherlode — full width */}
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="bl" title="Motherlode pop value"

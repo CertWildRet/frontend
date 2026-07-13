@@ -94,11 +94,14 @@ export function DualLine({
   aFmt = (v: number) => v.toFixed(2),
   bFmt = (v: number) => v.toFixed(2),
   loading = false,
+  shared = false,
 }: {
   a: TPt[]; b: TPt[]; aName: string; bName: string;
   aColor?: string; bColor?: string; height?: number;
   aFmt?: (v: number) => string; bFmt?: (v: number) => string;
   loading?: boolean;
+  /** Same-unit series: one combined y-scale, single left axis (no dual-axis). */
+  shared?: boolean;
 }) {
   const [ref, W] = useMeasuredWidth();
   const [hover, setHover] = useState<number | null>(null);
@@ -106,8 +109,10 @@ export function DualLine({
   const n = a.length;
   if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} /></div>;
 
-  const sa = scaleOf(a.map((p) => p.value));
-  const sb = scaleOf(b.map((p) => p.value));
+  const sa = shared
+    ? scaleOf([...a.map((p) => p.value), ...b.map((p) => p.value)])
+    : scaleOf(a.map((p) => p.value));
+  const sb = shared ? sa : scaleOf(b.map((p) => p.value));
   const plotR = W - padR, plotB = H - padB;
   const x = (i: number) => padL + (i / Math.max(1, n - 1)) * (plotR - padL);
   const ya = (v: number) => padT + (1 - (v - sa.min) / (sa.max - sa.min || 1)) * (plotB - padT);
@@ -135,8 +140,10 @@ export function DualLine({
           return (
             <g key={gi}>
               <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
-              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fill={aColor} opacity={0.85} textAnchor="end" fontFamily="monospace">{aFmt(sa.max - g * (sa.max - sa.min))}</text>
-              <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fill={bColor} opacity={0.85} textAnchor="start" fontFamily="monospace">{bFmt(sb.max - g * (sb.max - sb.min))}</text>
+              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fill={shared ? AXIS : aColor} opacity={0.85} textAnchor="end" fontFamily="monospace">{aFmt(sa.max - g * (sa.max - sa.min))}</text>
+              {!shared && (
+                <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fill={bColor} opacity={0.85} textAnchor="start" fontFamily="monospace">{bFmt(sb.max - g * (sb.max - sb.min))}</text>
+              )}
             </g>
           );
         })}
