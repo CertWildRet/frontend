@@ -686,9 +686,13 @@
   top: -4%;
   animation: howEvPulse 3.4s ease-in-out infinite;
 }
+/* Synced to the board's diagonal wave: tiles light from 20%+delay (first tile
+   0.68s) through 44%+max-delay (last tile dims ~2.54s = 75%). The badge ignites
+   just BEFORE the first tile (16% = 0.54s) and relaxes as the last one dims
+   (73%) — the story reads "gate flags EV+ -> board mines". Same 3.4s clock. */
 @keyframes howEvPulse {
-  0%, 12%, 100% { opacity: 0.3; transform: scale(0.92); }
-  22%, 52% { opacity: 1; transform: scale(1); }
+  0%, 10%, 84%, 100% { opacity: 0.3; transform: scale(0.92); }
+  16%, 73% { opacity: 1; transform: scale(1); }
 }
 
 /* Step 3 - value compounds upward into APY.
