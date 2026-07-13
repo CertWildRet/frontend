@@ -46,7 +46,7 @@ const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : 
 // Table styling mirrors the Position page's WalletAnalytics tables 1:1.
 const tableWrap = styles.tableWrap;
 const theadRow = `${styles.tableHead} text-left`;
-const th = "px-2 py-2 font-normal sm:px-3";
+const th = "px-2 py-2 font-bold sm:px-3";
 const td = "px-2 py-2 sm:px-3";
 const bodyRow = styles.tableRow;
 const oursRow = `${styles.tableRow} ${styles.oursRow}`;
@@ -243,7 +243,7 @@ function TrendsTab() {
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="bl" title="Motherlode pop value"
             subtitle={`Past pop sizes vs the 125 ORE long-run expectation (dashed) — last bar is the live pool, still accruing 0.2/round.${ml?.avg_pop_ore != null ? ` Historical average pop: ${formatNum(ml.avg_pop_ore, 1)} ORE over ${formatNum(ml.pops.length)} pops.` : ""}`}>
-            <div className="mb-1.5 flex flex-wrap gap-4 font-mono text-[11px] text-fog-muted">
+            <div className="mb-1.5 flex flex-wrap gap-4 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
               <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#5B6CFF] opacity-70" /> past pop payout</span>
               <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#22E0E6]" /> live pool (not popped yet)</span>
               <span className="flex items-center gap-1.5"><span className="inline-block h-0 w-4 border-t border-dashed border-fog-muted" /> 125 ORE = what a pop pays on average if it hits on schedule (0.2/round × 1-in-625)</span>

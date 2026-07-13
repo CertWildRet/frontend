@@ -265,7 +265,8 @@
   }
 
   .label {
-    @apply font-mono text-[12px] uppercase tracking-[0.18em] text-fog-muted;
+    @apply font-mono text-[13px] font-bold uppercase tracking-[0.16em];
+    color: #aeb6d1;
   }
   .num {
     @apply font-mono tabular-nums text-fog;
@@ -297,6 +298,8 @@
      stop hand-appending `text-white` to .label. */
   .section-label {
     @apply label text-white;
+    font-size: 14.5px;
+    font-weight: 700;
   }
 
   /* the secondary / withdraw action (Claim). One source of truth so the two

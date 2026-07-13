@@ -16,7 +16,7 @@ import { ChartSkeleton } from "@/components/primitives/Skeleton";
 
 const STEEL = "#9DB7D8";
 const GRID = "rgba(255,255,255,0.06)";
-const AXIS = "#9094A0"; // fog-muted
+const AXIS = "#B7BDD2"; // lightened for axis legibility (was fog-muted #9094A0)
 const SURFACE = "#0E1222"; // ink-800 (tooltip bg)
 
 export type Pt = { label: string; value: number };
@@ -52,13 +52,13 @@ export function ChartCard({
           <div className="min-w-0">
             {title && (
               <h2
-                className="text-[17px] font-semibold tracking-tight text-[#EAECF6]"
+                className="text-[19px] font-semibold tracking-tight text-[#EAECF6]"
                 style={{ fontFamily: "'Chakra Petch', sans-serif" }}
               >
                 {title}
               </h2>
             )}
-            {subtitle && <div className="mt-1 font-mono text-[12px] leading-relaxed text-[#9AA3C8]">{subtitle}</div>}
+            {subtitle && <div className="mt-1 font-mono text-[13px] leading-relaxed text-[#A8B0CC]">{subtitle}</div>}
           </div>
           {right}
         </div>
@@ -138,7 +138,7 @@ export function AreaLine({
   const padR = 14;
   const padT = 14;
   const padB = 26;
-  const FS = 11; // px — real, because viewBox is 1:1 with rendered px
+  const FS = 12; // px — real, because viewBox is 1:1 with rendered px
   const n = points.length;
   const yl = yFmt ?? fmt;
 
@@ -214,7 +214,7 @@ export function AreaLine({
           return (
             <g key={gi}>
               <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
-              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fill={AXIS} textAnchor="end" fontFamily="monospace">{yl(val)}</text>
+              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={AXIS} textAnchor="end" fontFamily="monospace">{yl(val)}</text>
             </g>
           );
         })}
@@ -238,7 +238,7 @@ export function AreaLine({
           style={markGlow ? { filter: markGlow } : undefined}
         />
         {xt.map((idx, ti) => (
-          <text key={ti} x={x(idx)} y={H - 8} fontSize={FS} fill={AXIS} fontFamily="monospace"
+          <text key={ti} x={x(idx)} y={H - 8} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily="monospace"
             textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{points[idx].label}</text>
         ))}
         {hover != null && (
@@ -311,7 +311,7 @@ export function Bars({
         <g>
           <line x1={0} y1={y(expected)} x2={W} y2={y(expected)} stroke={AXIS} strokeWidth={1} strokeDasharray="4 3" />
           {expectedLabel && (
-            <text x={W - 4} y={y(expected) - 5} fontSize={11} fill={AXIS} textAnchor="end" fontFamily="monospace">{expectedLabel}</text>
+            <text x={W - 4} y={y(expected) - 5} fontSize={12} fontWeight={700} fill={AXIS} textAnchor="end" fontFamily="monospace">{expectedLabel}</text>
           )}
         </g>
       )}
@@ -330,7 +330,7 @@ export function Bars({
           </g>
         );
       })}
-      <text x={2} y={padT - 2} fontSize={11} fill={AXIS} fontFamily="monospace">{fmt(vMax)}</text>
+      <text x={2} y={padT - 2} fontSize={12} fontWeight={700} fill={AXIS} fontFamily="monospace">{fmt(vMax)}</text>
       {hover != null && (
         <Tooltip x={hover * bw + bw / 2} y={y(bars[hover].value)} W={W} lines={[bars[hover].label, fmt(bars[hover].value)]} />
       )}
@@ -354,7 +354,7 @@ export function HBars({
     <div className="space-y-2">
       {rows.map((r) => (
         <div key={r.label} className="flex items-center gap-3">
-          <span className="w-16 shrink-0 font-mono text-[12.5px] text-fog-muted">{r.label}</span>
+          <span className="w-16 shrink-0 font-mono text-[13px] font-bold text-[#bcc3da]">{r.label}</span>
           <div className="relative h-4 flex-1 overflow-hidden rounded bg-ink-700">
             <div
               className="h-full rounded"
@@ -366,7 +366,7 @@ export function HBars({
               }}
             />
           </div>
-          <span className="num w-16 shrink-0 text-right text-xs text-gray-200">{fmt(r.value)}</span>
+          <span className="num w-16 shrink-0 text-right text-[13px] font-semibold text-gray-100">{fmt(r.value)}</span>
         </div>
       ))}
     </div>

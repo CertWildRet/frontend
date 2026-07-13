@@ -14,9 +14,9 @@ import { useEffect, useRef, useState } from "react";
 import { ChartSkeleton } from "@/components/primitives/Skeleton";
 
 const GRID = "rgba(255,255,255,0.06)";
-const AXIS = "#9094A0";
+const AXIS = "#B7BDD2"; // lightened for axis legibility
 const SURFACE = "#0E1222";
-const FS = 11;
+const FS = 12;
 
 export type TPt = { label: string; value: number | null };
 
@@ -132,7 +132,7 @@ export function DualLine({
 
   return (
     <div ref={ref} className="w-full">
-      <div className="mb-1.5 flex gap-4 font-mono text-[11px] text-fog-muted">
+      <div className="mb-1.5 flex gap-4 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: aColor }} /> {aName}</span>
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: bColor }} /> {bName}</span>
       </div>
@@ -143,9 +143,9 @@ export function DualLine({
           return (
             <g key={gi}>
               <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
-              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fill={shared ? AXIS : aColor} opacity={0.85} textAnchor="end" fontFamily="monospace">{aFmt(sa.max - g * (sa.max - sa.min))}</text>
+              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={shared ? AXIS : aColor} textAnchor="end" fontFamily="monospace">{aFmt(sa.max - g * (sa.max - sa.min))}</text>
               {!shared && (
-                <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fill={bColor} opacity={0.85} textAnchor="start" fontFamily="monospace">{bFmt(sb.max - g * (sb.max - sb.min))}</text>
+                <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={bColor} textAnchor="start" fontFamily="monospace">{bFmt(sb.max - g * (sb.max - sb.min))}</text>
               )}
             </g>
           );
@@ -153,7 +153,7 @@ export function DualLine({
         <path d={gapPath(a.map((p) => p.value), x, ya)} fill="none" stroke={aColor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
         <path d={gapPath(b.map((p) => p.value), x, yb)} fill="none" stroke={bColor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
         {xt.map((idx, ti) => (
-          <text key={ti} x={x(idx)} y={H - 8} fontSize={FS} fill={AXIS} fontFamily="monospace"
+          <text key={ti} x={x(idx)} y={H - 8} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily="monospace"
             textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{a[idx].label}</text>
         ))}
         {hover != null && (
@@ -225,7 +225,7 @@ export function CostEvChart({
 
   return (
     <div ref={ref} className="w-full">
-      <div className="mb-1.5 flex flex-wrap items-center gap-4 font-mono text-[11px] text-fog-muted">
+      <div className="mb-1.5 flex flex-wrap items-center gap-4 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: MARKET }} /> market (ORE/SOL)</span>
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: COST }} /> production cost</span>
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: POS, opacity: 0.55 }} /> EV+ <span className="h-2.5 w-2.5 rounded-sm" style={{ background: NEG, opacity: 0.55 }} /> EV−</span>
@@ -246,8 +246,8 @@ export function CostEvChart({
           return (
             <g key={gi}>
               <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
-              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fill={AXIS} textAnchor="end" fontFamily="monospace">{(sl.max - g * (sl.max - sl.min)).toFixed(2)}</text>
-              <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fill={AXIS} textAnchor="start" fontFamily="monospace">{(evAbs - g * 2 * evAbs).toFixed(0)}%</text>
+              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={AXIS} textAnchor="end" fontFamily="monospace">{(sl.max - g * (sl.max - sl.min)).toFixed(2)}</text>
+              <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={AXIS} textAnchor="start" fontFamily="monospace">{(evAbs - g * 2 * evAbs).toFixed(0)}%</text>
             </g>
           );
         })}
@@ -258,7 +258,7 @@ export function CostEvChart({
         <path d={gapPath(cost.map((p) => p.value), x, yl)} fill="none" stroke={COST} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
         <path d={gapPath(market.map((p) => p.value), x, yl)} fill="none" stroke={MARKET} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
         {xt.map((idx, ti) => (
-          <text key={ti} x={x(idx)} y={H - 8} fontSize={FS} fill={AXIS} fontFamily="monospace"
+          <text key={ti} x={x(idx)} y={H - 8} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily="monospace"
             textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{market[idx].label}</text>
         ))}
         {hover != null && (
@@ -318,7 +318,7 @@ export function BarsLine({
 
   return (
     <div ref={ref} className="w-full">
-      <div className="mb-1.5 flex gap-4 font-mono text-[11px] text-fog-muted">
+      <div className="mb-1.5 flex gap-4 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: barColor, opacity: 0.7 }} /> {barName}</span>
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: lineColor }} /> {lineName}</span>
       </div>
@@ -329,8 +329,8 @@ export function BarsLine({
           return (
             <g key={gi}>
               <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
-              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fill={barColor} opacity={0.85} textAnchor="end" fontFamily="monospace">{barFmt(sb.max - g * sb.max)}</text>
-              <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fill={lineColor} opacity={0.85} textAnchor="start" fontFamily="monospace">{lineFmt(sln.max - g * (sln.max - sln.min))}</text>
+              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={barColor} textAnchor="end" fontFamily="monospace">{barFmt(sb.max - g * sb.max)}</text>
+              <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={lineColor} textAnchor="start" fontFamily="monospace">{lineFmt(sln.max - g * (sln.max - sln.min))}</text>
             </g>
           );
         })}
@@ -342,7 +342,7 @@ export function BarsLine({
         )}
         <path d={gapPath(line.map((p) => p.value), xC, yL)} fill="none" stroke={lineColor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
         {xt.map((idx, ti) => (
-          <text key={ti} x={xC(idx)} y={H - 8} fontSize={FS} fill={AXIS} fontFamily="monospace"
+          <text key={ti} x={xC(idx)} y={H - 8} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily="monospace"
             textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{bars[idx].label}</text>
         ))}
         {hover != null && (
