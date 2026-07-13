@@ -725,7 +725,15 @@ function MinersTab() {
 
   return (
     <div className="space-y-5">
-      {exactAddress && <MinerDetail pubkey={exactAddress} />}
+      {exactAddress && (
+        <div className="space-y-3">
+          <button type="button" onClick={() => setQInput("")}
+            className="flex items-center gap-1.5 rounded-md border border-line bg-ink-800 px-3 py-1.5 font-mono text-[13px] font-semibold text-fog-muted transition-colors hover:border-steel hover:text-white">
+            <span aria-hidden>←</span> Back to all miners
+          </button>
+          <MinerDetail pubkey={exactAddress} />
+        </div>
+      )}
       <ChartCard
         title="Miners"
         subtitle={d?.snapshot_ts
