@@ -488,7 +488,7 @@ function RoundAnalysisTab() {
                     <CopyAddress address={r.authority} />{r.is_ours ? " ◆ ours" : ""}
                     {r.via_pool && (
                       <span
-                        className="ml-1.5 rounded border border-line px-1 py-px text-[10px] uppercase tracking-[0.1em] text-fog-muted"
+                        className="ml-1.5 rounded border border-line px-1.5 py-0.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-[#B7BDD2]"
                         title={`Managed by pool crank ${r.via_pool}`}
                       >
                         pool

@@ -230,7 +230,7 @@ export function CostEvChart({
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: COST }} /> production cost</span>
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: POS, opacity: 0.55 }} /> EV+ <span className="h-2.5 w-2.5 rounded-sm" style={{ background: NEG, opacity: 0.55 }} /> EV−</span>
         {evNow != null && (
-          <span className="ml-auto rounded border border-line px-1.5 py-0.5 text-[11px]" style={{ color: evNow >= 0 ? POS : NEG }}>
+          <span className="ml-auto rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold" style={{ color: evNow >= 0 ? POS : NEG }}>
             EV now {evNow >= 0 ? "+" : ""}{evNow.toFixed(1)}%
           </span>
         )}
