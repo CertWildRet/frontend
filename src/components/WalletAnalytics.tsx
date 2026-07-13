@@ -36,7 +36,7 @@ export function WalletAnalytics({ pubkey }: { pubkey: string }) {
   if (error) {
     return (
       <div className="card">
-        <p className="font-mono text-[12px] text-neg">{error}</p>
+        <p className="font-mono text-[12px] text-red">{error}</p>
         <button onClick={reload} className="mt-3 chip text-fog-muted hover:text-white">retry</button>
       </div>
     );
@@ -216,7 +216,7 @@ function CycleRow({ c, pool }: { c: WalletCycle; pool: (typeof POOLS)[number] })
         <div className="overflow-hidden">
           <div className="px-3 pb-3 pt-1">
             {loading && <p className="font-mono text-[11px] text-fog-muted">Loading rounds…</p>}
-            {err && <p className="font-mono text-[11px] text-neg">{err}</p>}
+            {err && <p className="font-mono text-[11px] text-red">{err}</p>}
             {detail && <CycleExpanded detail={detail} c={c} pool={pool} />}
           </div>
         </div>

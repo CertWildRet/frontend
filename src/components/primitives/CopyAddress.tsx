@@ -35,7 +35,7 @@ export function CopyAddress({
         type="button"
         onClick={handleCopy}
         aria-label="Copy address"
-        className="group flex-shrink-0 rounded p-0.5 text-fog-muted transition hover:text-white"
+        className="group -my-1 flex-shrink-0 rounded p-1.5 text-fog-muted transition hover:bg-white/[0.06] hover:text-white"
       >
         {copied ? (
           // checkmark

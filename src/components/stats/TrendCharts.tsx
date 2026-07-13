@@ -11,6 +11,7 @@
  * Dual axes are deliberate here — the quant's layout spec pins each pairing.
  */
 import { useEffect, useRef, useState } from "react";
+import { ChartSkeleton } from "@/components/primitives/Skeleton";
 
 const GRID = "rgba(255,255,255,0.06)";
 const AXIS = "#9094A0";
@@ -51,7 +52,8 @@ function TrendTooltip({ x, y, W, lines }: { x: number; y: number; W: number; lin
   );
 }
 
-function EmptyBox({ h }: { h: number }) {
+function EmptyBox({ h, loading }: { h: number; loading?: boolean }) {
+  if (loading) return <ChartSkeleton height={h} />;
   return (
     <div className="flex items-center justify-center rounded-lg border border-line bg-ink-800/40 font-mono text-xs text-fog-muted"
       style={{ height: h }}>
@@ -91,16 +93,18 @@ export function DualLine({
   height = 210,
   aFmt = (v: number) => v.toFixed(2),
   bFmt = (v: number) => v.toFixed(2),
+  loading = false,
 }: {
   a: TPt[]; b: TPt[]; aName: string; bName: string;
   aColor?: string; bColor?: string; height?: number;
   aFmt?: (v: number) => string; bFmt?: (v: number) => string;
+  loading?: boolean;
 }) {
   const [ref, W] = useMeasuredWidth();
   const [hover, setHover] = useState<number | null>(null);
   const H = height, padL = 52, padR = 52, padT = 14, padB = 26;
   const n = a.length;
-  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} /></div>;
+  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} /></div>;
 
   const sa = scaleOf(a.map((p) => p.value));
   const sb = scaleOf(b.map((p) => p.value));
@@ -109,7 +113,7 @@ export function DualLine({
   const ya = (v: number) => padT + (1 - (v - sa.min) / (sa.max - sa.min || 1)) * (plotB - padT);
   const yb = (v: number) => padT + (1 - (v - sb.min) / (sb.max - sb.min || 1)) * (plotB - padT);
 
-  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+  const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     const px = ((e.clientX - r.left) / r.width) * W;
     setHover(Math.max(0, Math.min(n - 1, Math.round(((px - padL) / Math.max(1, plotR - padL)) * (n - 1)))));
@@ -125,7 +129,7 @@ export function DualLine({
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: bColor }} /> {bName}</span>
       </div>
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${aName} and ${bName}`}
-        style={{ display: "block", maxWidth: "100%", overflow: "visible" }} onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+        style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }} onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)}>
         {gy.map((g, gi) => {
           const yy = padT + g * (plotB - padT);
           return (
@@ -163,16 +167,18 @@ export function DualLine({
 export function CostEvChart({
   market, cost, ev,
   height = 240,
+  loading = false,
 }: {
   market: TPt[]; cost: TPt[]; ev: TPt[];
   height?: number;
+  loading?: boolean;
 }) {
   const [ref, W] = useMeasuredWidth();
   const [hover, setHover] = useState<number | null>(null);
   const H = height, padL = 52, padR = 52, padT = 14, padB = 26;
   const MARKET = "#9DB7D8", COST = "#E8881A", POS = "#4ADE80", NEG = "#F87171";
   const n = market.length;
-  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} /></div>;
+  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} /></div>;
 
   const sl = scaleOf([...market.map((p) => p.value), ...cost.map((p) => p.value)], true);
   // EV scale symmetric around 0 so the zero line sits at a stable position.
@@ -197,7 +203,7 @@ export function CostEvChart({
     if (seg.length) evArea += `M${seg.join(" L")} L${x(n - 1).toFixed(1)},${zeroY.toFixed(1)} L${x(start).toFixed(1)},${zeroY.toFixed(1)} Z`;
   }
 
-  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+  const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     const px = ((e.clientX - r.left) / r.width) * W;
     setHover(Math.max(0, Math.min(n - 1, Math.round(((px - padL) / Math.max(1, plotR - padL)) * (n - 1)))));
@@ -220,7 +226,7 @@ export function CostEvChart({
         )}
       </div>
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="production cost vs market with EV"
-        style={{ display: "block", maxWidth: "100%", overflow: "visible" }} onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+        style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }} onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)}>
         <defs>
           <clipPath id="ev-above"><rect x={0} y={0} width={W} height={zeroY} /></clipPath>
           <clipPath id="ev-below"><rect x={0} y={zeroY} width={W} height={H - zeroY} /></clipPath>
@@ -268,16 +274,18 @@ export function BarsLine({
   height = 210,
   barFmt = (v: number) => v.toFixed(1),
   lineFmt = (v: number) => v.toFixed(0),
+  loading = false,
 }: {
   bars: TPt[]; line: TPt[]; barName: string; lineName: string;
   barColor?: string; lineColor?: string; height?: number;
   barFmt?: (v: number) => string; lineFmt?: (v: number) => string;
+  loading?: boolean;
 }) {
   const [ref, W] = useMeasuredWidth();
   const [hover, setHover] = useState<number | null>(null);
   const H = height, padL = 52, padR = 52, padT = 14, padB = 26;
   const n = bars.length;
-  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} /></div>;
+  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} /></div>;
 
   const sb = scaleOf(bars.map((p) => p.value), true);
   sb.min = 0;
@@ -289,7 +297,7 @@ export function BarsLine({
   const yB = (v: number) => padT + (1 - v / (sb.max || 1)) * (plotB - padT);
   const yL = (v: number) => padT + (1 - (v - sln.min) / (sln.max - sln.min || 1)) * (plotB - padT);
 
-  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+  const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     const px = ((e.clientX - r.left) / r.width) * W;
     setHover(Math.max(0, Math.min(n - 1, Math.floor((px - padL) / bw))));
@@ -305,7 +313,7 @@ export function BarsLine({
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: lineColor }} /> {lineName}</span>
       </div>
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${barName} and ${lineName}`}
-        style={{ display: "block", maxWidth: "100%", overflow: "visible" }} onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+        style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }} onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)}>
         {gy.map((g, gi) => {
           const yy = padT + g * (plotB - padT);
           return (

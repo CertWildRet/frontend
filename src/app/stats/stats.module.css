@@ -45,6 +45,7 @@
   content: "";
   position: absolute;
   inset: 0;
+  border-radius: inherit;
   padding: 1px;
   pointer-events: none;
   background: linear-gradient(125deg, rgba(34, 224, 230, 0.8), rgba(91, 108, 255, 0.35) 35%, rgba(154, 107, 255, 0.55) 64%, rgba(255, 90, 200, 0.55));
@@ -189,7 +190,8 @@
 .tabDock {
   position: sticky;
   z-index: 20;
-  top: 12px;
+  /* must clear the sticky site header (~104px) or the dock hides behind it */
+  top: 118px;
   margin-top: 22px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;

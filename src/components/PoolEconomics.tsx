@@ -197,7 +197,7 @@ export function PoolEconomics({
           {stats?.keeper.mode ?? "···"}
         </span>
         <span>
-          SOL ${solUsd ? formatNum(solUsd, 2) : "··"} · ORE ${oreUsd ? formatNum(oreUsd, 2) : "··"} · stORE $
+          SOL ${solUsd ? formatNum(solUsd, 2) : "···"} · ORE ${oreUsd ? formatNum(oreUsd, 2) : "···"} · stORE $
           {storeUsd ? formatNum(storeUsd, 2) : "··"}{storeRate ? ` (${formatNum(storeRate, 3)}×)` : ""}
         </span>
       </div>

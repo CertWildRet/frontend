@@ -5,7 +5,7 @@ import { useVaultData } from "@/hooks/useVaultData";
 
 /**
  * Thin live data strip under the header. Honest: live values come from the
- * keeper feed when it's connected, otherwise they read "··". The fee is read
+ * keeper feed when it's connected, otherwise they read "···". The fee is read
  * live from the bucket; tiles (25) is a fixed protocol constant.
  */
 export function StatTicker() {
@@ -17,14 +17,14 @@ export function StatTicker() {
     ? data.pullFeeEnabled
       ? `${(data.pullFeeBps / 100).toFixed(1)}%`
       : "0%"
-    : "··";
+    : "···";
 
   const items: { k: string; v: string; live?: boolean }[] = [
     { k: "crank", v: enabled ? (connected ? "online" : "connecting") : "standby", live: online },
-    { k: "round", v: stats ? `#${stats.roundId}` : "··" },
-    { k: "deployed", v: stats ? `${stats.totalDeployedSol.toFixed(2)} SOL` : "··" },
-    { k: "motherlode", v: stats ? `${stats.motherlodePoolOre.toFixed(1)} ORE` : "··" },
-    { k: "miners", v: stats ? String(stats.totalMiners) : "··" },
+    { k: "round", v: stats ? `#${stats.roundId}` : "···" },
+    { k: "deployed", v: stats ? `${stats.totalDeployedSol.toFixed(2)} SOL` : "···" },
+    { k: "motherlode", v: stats ? `${stats.motherlodePoolOre.toFixed(1)} ORE` : "···" },
+    { k: "miners", v: stats ? String(stats.totalMiners) : "···" },
     { k: "tiles", v: "25" },
     { k: "fee", v: fee },
   ];

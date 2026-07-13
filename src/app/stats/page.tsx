@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
 import { TabBar, SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
+import { TileSkeleton, RowsSkeleton, Refreshing } from "@/components/primitives/Skeleton";
 import { AreaLine, Bars, HBars, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
 import { DualLine, CostEvChart, BarsLine, type TPt } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
@@ -53,14 +54,14 @@ const netTone = (v: number) => (v > 0 ? "text-pos" : v < 0 ? "text-red" : "text-
 const PAGE = 50; // shared page size for every paginated table
 
 // One pagination control for every table (rows N–M of TOTAL + Prev/Next).
-function Pager({ offset, total, onPage, unit = "rows" }: { offset: number; total: number; onPage: (o: number) => void; unit?: string }) {
+function Pager({ offset, total, onPage, unit = "rows", loading = false }: { offset: number; total: number; onPage: (o: number) => void; unit?: string; loading?: boolean }) {
   const pages = Math.max(1, Math.ceil(total / PAGE));
   const page = Math.floor(offset / PAGE) + 1;
   const from = total === 0 ? 0 : offset + 1;
   const to = Math.min(offset + PAGE, total);
   return (
     <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 font-mono text-[13px] text-fog-muted">
-      <span>{formatNum(from)}–{formatNum(to)} of {formatNum(total)} {unit} · page {formatNum(page)} / {formatNum(pages)}</span>
+      <span>{loading ? "loading…" : `${formatNum(from)}–${formatNum(to)} of ${formatNum(total)} ${unit} · page ${formatNum(page)} / ${formatNum(pages)}`}</span>
       <div className="flex gap-2">
         <button disabled={offset === 0} onClick={() => onPage(Math.max(0, offset - PAGE))}
           className="rounded border border-line px-3 py-1.5 disabled:opacity-40 enabled:hover:border-steel enabled:hover:text-white">Prev</button>
@@ -71,8 +72,27 @@ function Pager({ offset, total, onPage, unit = "rows" }: { offset: number; total
   );
 }
 
+/** Shimmer placeholder rows for a table's first load (never on background polls). */
+function SkeletonRows({ cols, rows = 8 }: { cols: number; rows?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, i) => (
+        <tr key={`sk-${i}`}>
+          <td colSpan={cols} className="px-2 py-2 sm:px-3">
+            <div className="h-4 animate-pulse rounded bg-white/[0.05]" style={{ opacity: 1 - i * 0.09 }} />
+          </td>
+        </tr>
+      ))}
+    </>
+  );
+}
+
 export default function StatsPage() {
   const [tab, setTab] = useState<Tab>("trends");
+  // Visited tabs stay MOUNTED (hidden) so their fetched data + pagination
+  // survive tab switches — switching back is instant instead of a blank refetch.
+  const [visited, setVisited] = useState<Set<Tab>>(() => new Set(["trends" as Tab]));
+  const openTab = (t: Tab) => { setVisited((v) => (v.has(t) ? v : new Set(v).add(t))); setTab(t); };
 
   return (
     <div className={styles.page}>
@@ -110,14 +130,14 @@ export default function StatsPage() {
       </header>
 
       <div className={styles.tabDock}>
-        <TabBar aria-label="Ore Data sections" items={TABS} value={tab} onChange={setTab} />
+        <TabBar aria-label="Ore Data sections" items={TABS} value={tab} onChange={openTab} />
       </div>
       <div className={styles.content}>
-        {tab === "trends" && <TrendsTab />}
-        {tab === "round_analysis" && <RoundAnalysisTab />}
-        {tab === "miners" && <MinersTab />}
-        {tab === "motherlode" && <MotherlodeTab />}
-        {tab === "rounds" && <RoundsTab />}
+        {visited.has("trends") && <div hidden={tab !== "trends"}><TrendsTab /></div>}
+        {visited.has("round_analysis") && <div hidden={tab !== "round_analysis"}><RoundAnalysisTab /></div>}
+        {visited.has("miners") && <div hidden={tab !== "miners"}><MinersTab /></div>}
+        {visited.has("motherlode") && <div hidden={tab !== "motherlode"}><MotherlodeTab /></div>}
+        {visited.has("rounds") && <div hidden={tab !== "rounds"}><RoundsTab /></div>}
       </div>
     </div>
   );
@@ -152,12 +172,20 @@ function TrendsTab() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div className="section-label">Showing {trends.data?.range ?? range} of data</div>
+      <div className="flex flex-wrap items-center justify-between gap-y-2">
+        <div className="section-label">
+          Showing {trends.loading ? range : trends.data?.range ?? range} of data
+          <Refreshing active={trends.fetching && !!trends.data} />
+        </div>
         <SegmentedControl aria-label="Time range" items={RANGES} value={range} onChange={setRange} />
       </div>
 
       {/* hero band: the three numbers a miner acts on */}
+      {trends.loading && !trends.data ? (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <TileSkeleton /><TileSkeleton /><TileSkeleton /><TileSkeleton />
+        </div>
+      ) : (
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatTile label="Mining EV now"
           value={
@@ -171,43 +199,45 @@ function TrendsTab() {
           hint={`expected pop 125 · past avg ${ml?.avg_pop_ore != null ? formatNum(ml.avg_pop_ore, 0) : "·"}`} />
         <StatTile label="Miners today" value={tp.length && tp[tp.length - 1].unique_miners != null ? formatNum(tp[tp.length - 1].unique_miners!) : "···"} hint="unique wallets that deployed" />
       </div>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* (2) the money chart — full width */}
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="tr" title="Production cost vs market (+EV)"
             subtitle="SOL cost to mine 1 ORE (measured: admin + vaulted, ÷ expected ORE incl. motherlode) vs buying at market. Green = mining is +EV.">
-            <CostEvChart market={mkT((p) => p.market_ratio_sol)} cost={mkT((p) => p.prod_cost_sol)} ev={mkT((p) => p.ev_pct)} height={250} />
+            <CostEvChart market={mkT((p) => p.market_ratio_sol)} cost={mkT((p) => p.prod_cost_sol)} ev={mkT((p) => p.ev_pct)} height={250} loading={trends.loading} />
           </ChartCard>
         </div>
         {/* (1) prices */}
         <ChartCard variant="dispersion" cutCorner="bl" title="ORE & SOL price" subtitle="Market prices (USD). A cheap ORE or a ratio discount is a call to action.">
           <DualLine a={mkT((p) => p.ore_usd)} b={mkT((p) => p.sol_usd)} aName="ORE $" bName="SOL $" height={205}
-            aFmt={(v) => "$" + formatNum(v, 1)} bFmt={(v) => "$" + formatNum(v, 0)} />
+            aFmt={(v) => "$" + formatNum(v, 1)} bFmt={(v) => "$" + formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
         {/* (3) activity */}
         <ChartCard variant="dispersion" cutCorner="tr" title="Mining activity" subtitle="Avg SOL deployed per round (bars) and unique miners per day (line, exact on-chain count).">
           <BarsLine bars={mkT((p) => p.avg_deployed_sol)} line={mkT((p) => p.unique_miners)} barName="SOL / round" lineName="unique miners" height={205}
-            barFmt={(v) => formatNum(v, 1)} lineFmt={(v) => formatNum(v, 0)} />
+            barFmt={(v) => formatNum(v, 1)} lineFmt={(v) => formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
         {/* (4) motherlode — full width */}
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="bl" title="Motherlode pop value"
             subtitle={`Past pop sizes vs the 125 ORE long-run expectation (dashed) — last bar is the live pool, still accruing 0.2/round.${ml?.avg_pop_ore != null ? ` Historical average pop: ${formatNum(ml.avg_pop_ore, 1)} ORE over ${formatNum(ml.pops.length)} pops.` : ""}`}>
             <Bars bars={popBars} height={205} expected={125} fmt={(v) => formatNum(v, 1) + " ORE"}
-              highlight={(i) => i === popBars.length - 1} color="#5B6CFF" />
+              highlight={(i) => i === popBars.length - 1} color="#5B6CFF" loading={trends.loading} />
           </ChartCard>
         </div>
       </div>
 
       <details className="group">
-        <summary className="cursor-pointer select-none font-mono text-[12px] uppercase tracking-[0.16em] text-fog-muted transition-colors hover:text-white">
-          Protocol internals (rake · vaulted · winners) ▸
+        <summary className="flex cursor-pointer select-none items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.16em] text-fog-muted transition-colors hover:text-white [&::-webkit-details-marker]:hidden" style={{ listStyle: "none" }}>
+          <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+          Protocol internals (rake · vaulted · winners)
         </summary>
         <div className="mt-4"><ProtocolCharts range={range} /></div>
       </details>
 
-      <Caveats provenance={trends.provenance} error={trends.error} />
+      <Caveats provenance={trends.provenance} error={trends.error} onRetry={trends.refresh} />
     </div>
   );
 }
@@ -287,6 +317,7 @@ function MotherlodeTab() {
               </tr>
             </thead>
             <tbody>
+              {ml.loading && !ml.data && <SkeletonRows cols={4} />}
               {(d?.recent_hits ?? []).map((h) => (
                 <tr key={h.round_id} className={bodyRow}>
                   <td className={`${td} text-white`}>#{formatNum(Number(h.round_id))}</td>
@@ -297,9 +328,9 @@ function MotherlodeTab() {
             </tbody>
           </table>
         </div>
-        <Pager offset={offset} total={total} onPage={setOffset} unit="hits" />
+        <Pager offset={offset} total={total} onPage={setOffset} unit="hits" loading={ml.loading && !ml.data} />
       </ChartCard>
-      <Caveats provenance={ml.provenance} error={ml.error} />
+      <Caveats provenance={ml.provenance} error={ml.error} onRetry={ml.refresh} />
     </div>
   );
 }
@@ -313,7 +344,7 @@ function RoundAnalysisTab() {
   const c = usePolled(() => fetchOreCompetition(rounds), 20_000, [rounds]);
   const d = c.data;
   const thr = d?.thresholds.find((t) => t.rank === rank);
-  const n = d?.window.rounds_analyzed ?? 0;
+  const n = d?.window.rounds_analyzed ?? rounds; // fall back to the REQUESTED window while loading (never "last 0 rounds")
 
   return (
     <div className="space-y-5">
@@ -333,7 +364,7 @@ function RoundAnalysisTab() {
       </div>
 
       {/* headline + tier pricing — side by side on large screens */}
-      <div className="grid gap-5 lg:grid-cols-3 lg:items-start">
+      <div className="grid gap-5 lg:grid-cols-3">
         <div className="lg:col-span-1">
           <ChartCard
             title="To be top-N next round"
@@ -365,7 +396,11 @@ function RoundAnalysisTab() {
                 </div>
               </>
             ) : (
-              <div className="font-mono text-sm text-fog-muted">Not enough deploy data for top {rank} over the last {n} rounds.</div>
+              c.loading && !d ? (
+                <RowsSkeleton rows={3} />
+              ) : (
+                <div className="font-mono text-sm text-fog-muted">Not enough deploy data for top {rank} over the last {n} rounds.</div>
+              )
             )}
           </ChartCard>
         </div>
@@ -384,6 +419,7 @@ function RoundAnalysisTab() {
                   <th className={`${th} hidden text-right sm:table-cell`}>Avg</th>
                 </tr></thead>
                 <tbody>
+                  {c.loading && !c.data && <SkeletonRows cols={4} rows={6} />}
                   {(d?.thresholds ?? []).filter((t) => t.median_sol != null).map((t) => (
                     <tr key={t.rank} className={t.rank === rank ? oursRow : bodyRow}>
                       <td className={`${td} text-white`}>Top {t.rank}</td>
@@ -410,6 +446,7 @@ function RoundAnalysisTab() {
               <th className={`${th} hidden text-right sm:table-cell`}>Biggest</th>
             </tr></thead>
             <tbody>
+              {c.loading && !c.data && <SkeletonRows cols={5} />}
               {(d?.regulars ?? []).map((r, i) => (
                 <tr key={r.authority} className={r.is_ours ? oursRow : bodyRow}>
                   <td className={`${td} text-fog-muted`}>{i + 1}</td>
@@ -433,7 +470,7 @@ function RoundAnalysisTab() {
           </table>
         </div>
       </ChartCard>
-      <Caveats provenance={c.provenance} error={c.error} />
+      <Caveats provenance={c.provenance} error={c.error} onRetry={c.refresh} />
     </div>
   );
 }
@@ -611,6 +648,7 @@ function MinersTab() {
               </tr>
             </thead>
             <tbody>
+              {polled.loading && !polled.data && <SkeletonRows cols={8} />}
               {rows.map((m, i) => {
                 const net = lamportsToSol(m.net_sol);
                 return (
@@ -637,7 +675,7 @@ function MinersTab() {
             </tbody>
           </table>
         </div>
-        <Pager offset={offset} total={total} onPage={setOffset} unit="miners" />
+        <Pager offset={offset} total={total} onPage={setOffset} unit="miners" loading={polled.loading && !polled.data} />
         {useLeaderboard && (
           <p className="mt-3 max-w-3xl font-mono text-[13px] leading-snug text-fog-muted">
             <span className="text-gray-300">Net SOL</span> = lifetime returned SOL − deployed (real profit, can be negative).
@@ -651,7 +689,7 @@ function MinersTab() {
           {b ? <div className="max-w-3xl"><HBars rows={bandRows} /></div> : <p className="font-mono text-xs text-fog-muted">No census yet.</p>}
         </ChartCard>
       )}
-      <Caveats provenance={polled.provenance} error={polled.error} />
+      <Caveats provenance={polled.provenance} error={polled.error} onRetry={polled.refresh} />
     </div>
   );
 }
@@ -711,6 +749,7 @@ function RoundsTab() {
               </tr>
             </thead>
             <tbody>
+              {rounds.loading && !rounds.data && <SkeletonRows cols={7} />}
               {rs.map((r) => (
                 <tr key={r.round_id} className={bodyRow}>
                   <td className={`${td} text-white`}>#{formatNum(Number(r.round_id))}</td>
@@ -738,20 +777,25 @@ function RoundsTab() {
             </tbody>
           </table>
         </div>
-        <Pager offset={offset} total={total} onPage={setOffset} unit="rounds" />
+        <Pager offset={offset} total={total} onPage={setOffset} unit="rounds" loading={rounds.loading && !rounds.data} />
       </ChartCard>
-      <Caveats provenance={rounds.provenance} error={rounds.error} />
+      <Caveats provenance={rounds.provenance} error={rounds.error} onRetry={rounds.refresh} />
     </div>
   );
 }
 
 // ── caveats / provenance footer ──────────────────────────────────────────────
-function Caveats({ provenance, error }: { provenance: any; error: string | null }) {
+function Caveats({ provenance, error, onRetry }: { provenance: any; error: string | null; onRetry?: () => void }) {
   if (error) {
     return (
-      <div className="card border-amber/30 px-4 py-3 font-mono text-[13px] text-amber">
-        {error}
-        {" "}The ORE ingest may be disabled or the free-tier host may be waking up.
+      <div className="card flex flex-wrap items-center gap-x-3 gap-y-2 border-amber/30 px-4 py-3 font-mono text-[13px] text-amber">
+        <span>{error} The ORE ingest may be disabled or the free-tier host may be waking up.</span>
+        {onRetry && (
+          <button onClick={onRetry}
+            className="rounded border border-amber/40 px-2.5 py-1 text-[12px] text-amber transition-colors hover:border-amber hover:text-white">
+            retry
+          </button>
+        )}
       </div>
     );
   }

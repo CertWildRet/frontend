@@ -37,7 +37,6 @@
   [tabindex="0"]:focus-visible {
     outline: 2px solid #ffc061;
     outline-offset: 2px;
-    border-radius: inherit;
   }
 }
 
@@ -437,4 +436,9 @@
 }
 .wallet-adapter-button {
   font-family: "Sora Variable", sans-serif !important;
+}
+
+/* skeleton shimmer sweep (Skeleton.tsx buffer states) */
+@keyframes shimmer {
+  100% { transform: translateX(200%); }
 }

@@ -86,7 +86,7 @@ function TimerTile({
         </div>
         {active ? (
           <span className={`num shrink-0 whitespace-nowrap text-2xl font-medium ${text} text-glow-gold`}>
-            {remaining !== null ? fmtCountdown(remaining) : "··"}
+            {remaining !== null ? fmtCountdown(remaining) : "···"}
           </span>
         ) : (
           <span className="shrink-0 font-mono text-[12px] uppercase tracking-widest text-fog-muted">idle</span>

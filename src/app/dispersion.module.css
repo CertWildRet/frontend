@@ -68,10 +68,28 @@
 
 /* ONE sharp cut corner per card - crystal character */
 .cutTR {
-  clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
+  clip-path: polygon(0 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 0 100%);
 }
 .cutBL {
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 22px 100%, 0 calc(100% - 22px));
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 26px 100%, 0 calc(100% - 26px));
+}
+/* The clip-path slices the spectral border ring (.spectralEdge::before) dead at
+   the cut, leaving the diagonal edge borderless — the "cropped border" artifact.
+   Re-draw the missing 1px segment as a corner-anchored gradient band folded into
+   the glass rim layer (::before belongs to spectralEdge, ::after to .glass — the
+   hairline rides the SAME ::after via a higher-specificity re-declaration). The
+   26px cut edge sits 26/√2 ≈ 18.4px from the corner along the gradient axis. */
+.glass.cutTR::after {
+  background:
+    linear-gradient(225deg, transparent 17.6px, rgba(154, 107, 255, 0.32) 17.9px, rgba(154, 107, 255, 0.32) 19.1px, transparent 19.4px)
+      top right / 52px 52px no-repeat,
+    linear-gradient(140deg, rgba(34, 224, 230, 0.05), transparent 30%, transparent 70%, rgba(255, 90, 200, 0.05));
+}
+.glass.cutBL::after {
+  background:
+    linear-gradient(45deg, transparent 17.6px, rgba(91, 108, 255, 0.32) 17.9px, rgba(91, 108, 255, 0.32) 19.1px, transparent 19.4px)
+      bottom left / 52px 52px no-repeat,
+    linear-gradient(140deg, rgba(34, 224, 230, 0.05), transparent 30%, transparent 70%, rgba(255, 90, 200, 0.05));
 }
 
 /* ── Holographic pointer tilt ───────────────────────────────────────── */

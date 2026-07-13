@@ -13,7 +13,11 @@ export type Polled<T> = {
   data: T | null;
   provenance: OreEnvelope<T>["provenance"] | null;
   error: string | null;
+  /** TRUE only until the FIRST successful load — drive skeletons off this.
+   *  Background polls / deps refetches keep it false (stale data stays up). */
   loading: boolean;
+  /** TRUE while ANY fetch is in flight — drive "refreshing…" hints off this. */
+  fetching: boolean;
   refresh: () => void;
 };
 
@@ -26,6 +30,8 @@ export function usePolled<T>(
   const [provenance, setProvenance] = useState<OreEnvelope<T>["provenance"] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(true);
+  const hasData = useRef(false);
   const fetchRef = useRef(fetcher);
   fetchRef.current = fetcher;
 
@@ -33,16 +39,19 @@ export function usePolled<T>(
   // re-triggers the effect below and re-fetches. Empty deps = mount + interval only.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const run = useCallback(async () => {
-    setLoading(true);
+    setFetching(true);
+    if (!hasData.current) setLoading(true);
     try {
       const env = await fetchRef.current();
       setData(env.data);
       setProvenance(env.provenance);
       setError(null);
+      hasData.current = true;
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
+      setFetching(false);
     }
   }, deps);
 
@@ -57,5 +66,5 @@ export function usePolled<T>(
     return () => { alive = false; };
   }, [run, intervalMs]);
 
-  return { data, provenance, error, loading, refresh: run };
+  return { data, provenance, error, loading, fetching, refresh: run };
 }

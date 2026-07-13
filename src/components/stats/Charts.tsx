@@ -12,6 +12,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import styles from "@/app/dispersion.module.css";
 import { SPECTRAL_CHART, spectralChartAreaUrl, spectralChartLineUrl } from "@/lib/spectral";
 import { SpectralChartDefs } from "@/lib/SpectralChartDefs";
+import { ChartSkeleton } from "@/components/primitives/Skeleton";
 
 const STEEL = "#9DB7D8";
 const GRID = "rgba(255,255,255,0.06)";
@@ -41,8 +42,8 @@ export function ChartCard({
   const cutClass = cutCorner === "bl" ? styles.cutBL : styles.cutTR;
   const wrapperClass =
     variant === "dispersion"
-      ? `${styles.glass} ${styles.spectralEdge} ${cutClass} overflow-hidden rounded-3xl px-5 py-5 sm:px-6 sm:py-6`
-      : `${styles.glass} ${styles.spectralEdge} ${cutClass} overflow-hidden rounded-2xl px-5 py-5 sm:px-6 sm:py-6`;
+      ? `${styles.glass} ${styles.spectralEdge} ${cutClass} h-full overflow-hidden rounded-3xl px-5 py-5 sm:px-6 sm:py-6`
+      : `${styles.glass} ${styles.spectralEdge} ${cutClass} h-full overflow-hidden rounded-2xl px-5 py-5 sm:px-6 sm:py-6`;
 
   return (
     <div className={wrapperClass}>
@@ -101,6 +102,7 @@ export function AreaLine({
   yLabel,
   zeroBaseline = true,
   spectral = false,
+  loading = false,
 }: {
   points: Pt[];
   color?: string;
@@ -111,6 +113,8 @@ export function AreaLine({
   zeroBaseline?: boolean;
   /** Home-page APY chart look: cyan→blue→pink stroke + purple gradient fill. */
   spectral?: boolean;
+  /** First fetch still in flight — renders a skeleton instead of "no data yet". */
+  loading?: boolean;
 }) {
   const uid = useId().replace(/:/g, "");
   const [hover, setHover] = useState<number | null>(null);
@@ -138,7 +142,7 @@ export function AreaLine({
   const n = points.length;
   const yl = yFmt ?? fmt;
 
-  if (n === 0) return <div ref={wrapRef} className="w-full"><Empty h={H} /></div>;
+  if (n === 0) return <div ref={wrapRef} className="w-full"><Empty h={H} loading={loading} /></div>;
 
   const ys = points.map((p) => p.value);
   // zeroBaseline anchors the fill at 0 (magnitude charts); false zooms to the data
@@ -170,7 +174,7 @@ export function AreaLine({
   const markGlow = spectral ? SPECTRAL_CHART.markGlow : undefined;
   const lineGlow = spectral ? SPECTRAL_CHART.lineGlow : undefined;
 
-  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+  const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     const px = ((e.clientX - r.left) / r.width) * W;
     const i = Math.round(((px - padL) / Math.max(1, plotR - padL)) * (n - 1));
@@ -189,9 +193,10 @@ export function AreaLine({
         viewBox={`0 0 ${W} ${H}`}
         role="img"
         aria-label={yLabel ?? "line chart"}
-        style={{ display: "block", maxWidth: "100%", overflow: "visible" }}
-        onMouseMove={onMove}
-        onMouseLeave={() => setHover(null)}
+        style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }}
+        onPointerMove={onMove}
+        onPointerDown={onMove}
+        onPointerLeave={() => setHover(null)}
       >
         <defs>
           {spectral ? (
@@ -256,6 +261,7 @@ export function Bars({
   fmt = (v) => v.toLocaleString(),
   expected,
   highlight,
+  loading = false,
 }: {
   bars: Pt[];
   color?: string;
@@ -263,22 +269,37 @@ export function Bars({
   fmt?: (v: number) => string;
   expected?: number; // draws a dashed reference line (e.g. uniform expectation)
   highlight?: (i: number) => boolean;
+  loading?: boolean;
 }) {
   const [hover, setHover] = useState<number | null>(null);
-  const W = 680;
+  // Measured width (viewBox == px) so fonts render at constant size — a fixed
+  // 680 viewBox scaled bar-chart text ~1.5x against sibling line charts.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [W, setW] = useState(680);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((es) => {
+      const cw = es[0]?.contentRect.width;
+      if (cw && cw > 60) setW(Math.round(cw));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const H = height;
   const padT = 12;
   const padB = 22;
   const n = bars.length;
-  if (n === 0) return <Empty h={H} />;
+  if (n === 0) return <div ref={wrapRef} className="w-full"><Empty h={H} loading={loading} /></div>;
   const vMax = niceMax(Math.max(...bars.map((b) => b.value), expected ?? 0));
   const bw = W / n;
   const gap = Math.min(6, bw * 0.28);
   const y = (v: number) => padT + (1 - v / vMax) * (H - padT - padB);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="bar chart"
-      style={{ display: "block", overflow: "visible" }} onMouseLeave={() => setHover(null)}>
+    <div ref={wrapRef} className="w-full">
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="bar chart"
+      style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }} onPointerLeave={() => setHover(null)}>
       <line x1={0} y1={H - padB} x2={W} y2={H - padB} stroke={GRID} strokeWidth={1} />
       {expected != null && (
         <line x1={0} y1={y(expected)} x2={W} y2={y(expected)} stroke={AXIS} strokeWidth={1} strokeDasharray="4 3" />
@@ -289,18 +310,19 @@ export function Bars({
         const h = Math.max(0, H - padB - top);
         const hot = highlight?.(i) || hover === i;
         return (
-          <g key={i} onMouseEnter={() => setHover(i)}>
+          <g key={i} onPointerEnter={() => setHover(i)}>
             <rect x={bx} y={top} width={bw - gap} height={h} rx={3} fill={color} opacity={hot ? 1 : 0.62} />
             {/* generous invisible hit target */}
             <rect x={i * bw} y={padT} width={bw} height={H - padT - padB} fill="transparent" />
           </g>
         );
       })}
-      <text x={2} y={padT - 2} fontSize={13} fill={AXIS} fontFamily="monospace">{fmt(vMax)}</text>
+      <text x={2} y={padT - 2} fontSize={11} fill={AXIS} fontFamily="monospace">{fmt(vMax)}</text>
       {hover != null && (
         <Tooltip x={hover * bw + bw / 2} y={y(bars[hover].value)} W={W} lines={[bars[hover].label, fmt(bars[hover].value)]} />
       )}
     </svg>
+    </div>
   );
 }
 
@@ -354,7 +376,8 @@ function Tooltip({ x, y, W, lines }: { x: number; y: number; W: number; lines: s
   );
 }
 
-function Empty({ h }: { h: number }) {
+function Empty({ h, loading }: { h: number; loading?: boolean }) {
+  if (loading) return <ChartSkeleton height={h} />;
   return (
     <div className="flex items-center justify-center rounded-lg border border-line bg-ink-800/40 font-mono text-xs text-fog-muted"
       style={{ height: h }}>
