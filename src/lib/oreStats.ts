@@ -315,6 +315,8 @@ export type OreMinerDetail = {
     longest_hit_streak: number; longest_miss_streak: number; current_streak: number;
     ev_sol: number; ev_ore: number; ore_won_expected: number; ore_cost_sol: number | null;
   } | null;
+  /** Latest spot prices — lets the P/L trend re-mark the ORE leg at today's value. */
+  prices_now: { sol_usd: number; ore_usd: number } | null;
   /** Global event-history floor (how far back the backfill currently reaches). */
   coverage: { min_round: string | null; min_ts: number | null } | null;
 };
