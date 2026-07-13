@@ -1259,6 +1259,7 @@ function FavoriteSquares({ tiles }: { tiles: number[] }) {
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <div className="flex flex-col gap-2">
           <span className="label">Favorite tiles</span>
+          {/* hot-tile pills removed per request; the in-grid flames carry it
           {hot.length > 0 && (
             <span className="flex items-center gap-1.5">
               {hot.map((h) => (
@@ -1269,6 +1270,7 @@ function FavoriteSquares({ tiles }: { tiles: number[] }) {
               ))}
             </span>
           )}
+          */}
         </div>
         <div className="grid grid-cols-5 gap-1" aria-label="tile preference heatmap">
           {tiles.map((n, i) => {
