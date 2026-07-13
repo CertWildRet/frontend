@@ -18,7 +18,7 @@ import { usePolled } from "@/hooks/useOreStats";
 import {
   fetchOreRounds, fetchOreRound, fetchOreMotherlode, fetchOreLeaderboard,
   fetchOreMiners, fetchOreSeries, fetchOreCompetition, fetchOreTrends,
-  fetchOreEcosystem, fetchOreMiner, fetchOreYields,
+  fetchOreEcosystem, fetchOreMiner, fetchOreYields, fetchOreDominance,
   lamportsToSol, oreGramsToOre, roundTileDeployRange, roundMaxSpreadFrac,
   type TileDeployRange,
   type OreSeriesPoint,
@@ -154,12 +154,56 @@ export default function StatsPage() {
 const RANGES: { id: string; label: string }[] = [
   { id: "24h", label: "24H" }, { id: "7d", label: "7D" }, { id: "30d", label: "30D" }, { id: "90d", label: "90D" }, { id: "all", label: "All" },
 ];
+/** Pearson correlation of per-bucket simple returns between two aligned price
+ *  series. Returns (not levels) so trending prices don't fake a high number.
+ *  Consecutive buckets where BOTH prices are bit-identical are forward-fill
+ *  artifacts (the 24h range joins hourly prices onto 5-min buckets); counting
+ *  those (0,0) pairs drags both means to ~0 and re-injects the drift term the
+ *  returns transform exists to remove, so each constant run collapses to one
+ *  observation. */
+function returnsCorrelation(a: (number | null)[], b: (number | null)[]): number | null {
+  const ra: number[] = [];
+  const rb: number[] = [];
+  for (let i = 1; i < a.length; i++) {
+    const a0 = a[i - 1], a1 = a[i], b0 = b[i - 1], b1 = b[i];
+    if (a0 == null || a1 == null || b0 == null || b1 == null || a0 <= 0 || b0 <= 0) continue;
+    if (a1 === a0 && b1 === b0) continue;
+    ra.push(a1 / a0 - 1);
+    rb.push(b1 / b0 - 1);
+  }
+  const n = ra.length;
+  if (n < 8) return null;
+  const ma = ra.reduce((s, v) => s + v, 0) / n;
+  const mb = rb.reduce((s, v) => s + v, 0) / n;
+  let cov = 0, va = 0, vb = 0;
+  for (let i = 0; i < n; i++) {
+    const da = ra[i] - ma, db = rb[i] - mb;
+    cov += da * db; va += da * da; vb += db * db;
+  }
+  if (va <= 0 || vb <= 0) return null;
+  return cov / Math.sqrt(va * vb);
+}
+
+const avgOf = (xs: (number | null)[]): number | null => {
+  const v = xs.filter((x): x is number => x != null && Number.isFinite(x));
+  return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null;
+};
+
 function TrendsTab() {
   const [range, setRange] = useState("30d");
   const trends = usePolled(() => fetchOreTrends(range), 60_000, [range]);
   const yields = usePolled(() => fetchOreYields(), 120_000, []);
+  const dominance = usePolled(() => fetchOreDominance(), 300_000, []);
   const tp = trends.data?.points ?? [];
   const ml = trends.data?.motherlode;
+  const corr = returnsCorrelation(tp.map((p) => p.ore_usd), tp.map((p) => p.sol_usd));
+  const yPts = yields.data?.points ?? [];
+  const avgRefin = avgOf(yPts.map((p) => p.refining_apr));
+  const avgStake = avgOf(yPts.map((p) => p.staking_apr));
+  const hLbl = (ts: number) => {
+    const dt = new Date(ts * 1000);
+    return `${dt.getMonth() + 1}/${dt.getDate()} ${dt.getHours()}:00`;
+  };
 
   const dayLbl = (ts: number) => {
     const dt = new Date(ts * 1000);
@@ -216,7 +260,13 @@ function TrendsTab() {
           </ChartCard>
         </div>
         {/* (1) prices */}
-        <ChartCard variant="dispersion" cutCorner="bl" title="ORE & SOL price" subtitle="Market prices (USD). A cheap ORE or a ratio discount is a call to action.">
+        <ChartCard variant="dispersion" cutCorner="bl" title="ORE & SOL price" subtitle="Market prices (USD). A cheap ORE or a ratio discount is a call to action."
+          right={corr != null ? (
+            <span className="rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold text-[#B7BDD2]"
+              title="Pearson correlation of ORE and SOL per-bucket returns over the visible range (+1 moves together, 0 independent, -1 opposite)">
+              corr {corr >= 0 ? "+" : ""}{corr.toFixed(2)}
+            </span>
+          ) : undefined}>
           <DualLine a={mkT((p) => p.ore_usd)} b={mkT((p) => p.sol_usd)} aName="ORE $" bName="SOL $" height={205}
             aFmt={(v) => "$" + formatNum(v, 1)} bFmt={(v) => "$" + formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
@@ -228,15 +278,41 @@ function TrendsTab() {
         {/* (5) yields — refining vs staking APR (quant spec: APR %, 7d rolling) */}
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="tr" title="Yields · hold unclaimed vs claim & stake"
-            subtitle={`Refining APR (what your unclaimed ORE earns from others' claim fees) vs stORE staking APR. Annualized, rolling window up to 7d${yields.data?.latest?.window_days != null && yields.data.latest.window_days < 6.5 ? ` (currently ${formatNum(yields.data.latest.window_days, 1)}d, precise history began Jul 13)` : ""}.`}>
+            subtitle={`Refining APR (what your unclaimed ORE earns from others' claim fees) vs stORE staking APR. Annualized, rolling window up to 7d${yields.data?.latest?.window_days != null && yields.data.latest.window_days < 6.5 ? ` (currently ${formatNum(yields.data.latest.window_days, 1)}d, precise history began Jul 13)` : ""}.`}
+            right={(avgRefin != null || avgStake != null) ? (
+              <span className="flex items-center gap-2.5 rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold"
+                title="Simple average of the plotted rolling-window points">
+                {avgRefin != null && <span style={{ color: "#22E0E6" }}>refining avg {formatNum(avgRefin, 1)}%</span>}
+                {avgStake != null && <span style={{ color: "#E8881A" }}>staking avg {formatNum(avgStake, 1)}%</span>}
+              </span>
+            ) : undefined}>
             <DualLine shared
-              a={(yields.data?.points ?? []).map((p) => ({ label: new Date(p.hour_ts * 1000).getMonth() + 1 + "/" + new Date(p.hour_ts * 1000).getDate() + " " + new Date(p.hour_ts * 1000).getHours() + ":00", value: p.refining_apr }))}
-              b={(yields.data?.points ?? []).map((p) => ({ label: new Date(p.hour_ts * 1000).getMonth() + 1 + "/" + new Date(p.hour_ts * 1000).getDate() + " " + new Date(p.hour_ts * 1000).getHours() + ":00", value: p.staking_apr }))}
+              a={yPts.map((p) => ({ label: hLbl(p.hour_ts), value: p.refining_apr }))}
+              b={yPts.map((p) => ({ label: hLbl(p.hour_ts), value: p.staking_apr }))}
               aName="refining APR (unclaimed)" bName="stORE staking APR"
               aColor="#22E0E6" bColor="#E8881A" height={210}
               aFmt={(v) => formatNum(v, 1) + "%"} bFmt={(v) => formatNum(v, 1) + "%"}
               loading={yields.loading}
               emptyText="collecting on-chain snapshots. First points appear within ~2 hours; the full 7-day view completes by Jul 20." />
+          </ChartCard>
+        </div>
+        {/* (6) miner dominance — unrefined treasury ORE vs total supply */}
+        <div className="lg:col-span-2">
+          <ChartCard variant="dispersion" cutCorner="bl" title="Miner dominance"
+            subtitle="Unrefined (unclaimed) ORE held by the mine treasury as a share of total supply. Rising = miners sitting on winnings; falling = claims outpacing emission. Snapshot history began Jul 13 and deepens daily."
+            right={dominance.data?.latest?.dominance_pct != null ? (
+              <span className="rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold text-[#22E0E6]"
+                title={dominance.data.latest.unclaimed_ore != null && dominance.data.latest.supply_ore != null
+                  ? `${formatNum(dominance.data.latest.unclaimed_ore, 0)} of ${formatNum(dominance.data.latest.supply_ore, 0)} ORE`
+                  : undefined}>
+                now {formatNum(dominance.data.latest.dominance_pct, 2)}%
+              </span>
+            ) : undefined}>
+            <AreaLine
+              points={(dominance.data?.points ?? []).filter((p) => p.dominance_pct != null).map((p) => ({ label: hLbl(p.hour_ts), value: p.dominance_pct as number }))}
+              height={200} zeroBaseline={false} color="#22E0E6"
+              fmt={(v) => formatNum(v, 2) + "%"} yFmt={(v) => formatNum(v, 1) + "%"}
+              loading={dominance.loading} />
           </ChartCard>
         </div>
         {/* (4) motherlode — full width */}
@@ -1150,29 +1226,64 @@ function EcosystemSection() {
 /** 5x5 heatmap of the wallet's tile preferences + its top-3 hottest tiles. */
 function FavoriteSquares({ tiles }: { tiles: number[] }) {
   const max = Math.max(...tiles, 1);
+  const total = tiles.reduce((a, b) => a + b, 0);
+  const played = tiles.filter((n) => n > 0).length;
   const hot = tiles
     .map((n, i) => ({ n, i }))
     .sort((a, b) => b.n - a.n)
     .slice(0, 3)
     .filter((t) => t.n > 0);
+  const top = hot[0] ?? null;
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-4">
-      <span className="label">Favorite tiles</span>
-      <div className="grid grid-cols-5 gap-1" aria-label="tile preference heatmap">
-        {tiles.map((n, i) => (
-          <span key={i} title={`tile ${i + 1}: ${formatNum(n)} deploys`}
-            className="h-3.5 w-3.5 rounded-[3px]"
-            style={{
-              background: n > 0 ? `rgba(91, 108, 255, ${0.15 + 0.85 * (n / max)})` : "rgba(255,255,255,0.05)",
-              boxShadow: hot.some((h) => h.i === i) ? "0 0 6px rgba(34,224,230,0.8), inset 0 0 0 1px rgba(34,224,230,0.9)" : "inset 0 0 0 1px rgba(255,255,255,0.07)",
-            }} />
-        ))}
+    <div className="mt-3 rounded-xl border border-line bg-white/[0.02] px-4 py-3.5">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <div className="flex flex-col gap-2">
+          <span className="label">Favorite tiles</span>
+          {hot.length > 0 && (
+            <span className="flex items-center gap-1.5">
+              {hot.map((h) => (
+                <span key={h.i} title={`tile ${h.i + 1}: ${formatNum(h.n)} deploys`}
+                  className="rounded-md border border-[#E8881A]/40 bg-[#E8881A]/10 px-1.5 py-0.5 font-mono text-[12px] font-bold text-[#E8881A]">
+                  🔥 #{h.i + 1}
+                </span>
+              ))}
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-5 gap-1" aria-label="tile preference heatmap">
+          {tiles.map((n, i) => {
+            const isHot = hot.some((h) => h.i === i);
+            return (
+              <span key={i} title={`tile ${i + 1}: ${formatNum(n)} deploys`}
+                className="flex h-5 w-5 items-center justify-center rounded-[4px] text-[11px] leading-none"
+                style={{
+                  background: n > 0 ? `rgba(91, 108, 255, ${0.15 + 0.85 * (n / max)})` : "rgba(255,255,255,0.05)",
+                  boxShadow: isHot ? "0 0 6px rgba(34,224,230,0.8), inset 0 0 0 1px rgba(34,224,230,0.9)" : "inset 0 0 0 1px rgba(255,255,255,0.07)",
+                }}>
+                {isHot ? "🔥" : ""}
+              </span>
+            );
+          })}
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-x-8 gap-y-2 text-right">
+          {top && (
+            <span className="flex flex-col gap-0.5">
+              <span className="label">Top tile</span>
+              <span className="font-mono text-[15px] font-bold text-white">
+                #{top.i + 1} <span className="text-[12.5px] font-semibold text-fog-muted">{total > 0 ? formatPct(top.n / total) : ""}</span>
+              </span>
+            </span>
+          )}
+          <span className="flex flex-col gap-0.5">
+            <span className="label">Tiles played</span>
+            <span className="font-mono text-[15px] font-bold text-white">{played} <span className="text-[12.5px] font-semibold text-fog-muted">of 25</span></span>
+          </span>
+          <span className="flex flex-col gap-0.5">
+            <span className="label">Deploys</span>
+            <span className="font-mono text-[15px] font-bold text-white">{formatNum(total)}</span>
+          </span>
+        </div>
       </div>
-      {hot.length > 0 && (
-        <span className="font-mono text-[12.5px] font-semibold text-[#E8881A]">
-          hot {hot.map((h) => `#${h.i + 1}`).join(" ")}
-        </span>
-      )}
     </div>
   );
 }
