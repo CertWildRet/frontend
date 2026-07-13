@@ -177,7 +177,7 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    padding: 1px;
+    padding: 2px;
     background: linear-gradient(
       135deg,
       rgba(34, 224, 230, 0.45),

@@ -13,7 +13,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1px;
+  padding: 2px;
   /* palindromic tile — repeat edges are cyan|cyan (no amber->cyan wall) */
   background: linear-gradient(
     135deg,
@@ -87,13 +87,13 @@
    26px cut edge sits 26/√2 ≈ 18.4px from the corner along the gradient axis. */
 .glass.cutTR::after {
   background:
-    linear-gradient(225deg, transparent 17.6px, rgba(154, 107, 255, 0.32) 17.9px, rgba(154, 107, 255, 0.32) 19.1px, transparent 19.4px)
+    linear-gradient(225deg, transparent 17.1px, rgba(154, 107, 255, 0.32) 17.4px, rgba(154, 107, 255, 0.32) 19.6px, transparent 19.9px)
       top right / 52px 52px no-repeat,
     linear-gradient(140deg, rgba(34, 224, 230, 0.05), transparent 30%, transparent 70%, rgba(255, 90, 200, 0.05));
 }
 .glass.cutBL::after {
   background:
-    linear-gradient(45deg, transparent 17.6px, rgba(91, 108, 255, 0.32) 17.9px, rgba(91, 108, 255, 0.32) 19.1px, transparent 19.4px)
+    linear-gradient(45deg, transparent 17.1px, rgba(91, 108, 255, 0.32) 17.4px, rgba(91, 108, 255, 0.32) 19.6px, transparent 19.9px)
       bottom left / 52px 52px no-repeat,
     linear-gradient(140deg, rgba(34, 224, 230, 0.05), transparent 30%, transparent 70%, rgba(255, 90, 200, 0.05));
 }
@@ -178,7 +178,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1.5px;
+  padding: 3px;
   background: linear-gradient(110deg, #22e0e6, #5b6cff 15%, #9a6bff 30%, #ff5ac8 42%, #ffc061 50%, #ff5ac8 58%, #9a6bff 70%, #5b6cff 85%, #22e0e6);
   background-size: 400% 100%;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
