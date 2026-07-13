@@ -252,8 +252,6 @@ function TrendsTab() {
         </div>
       </div>
 
-      <EcosystemSection />
-
       <details className="group">
         <summary className="flex cursor-pointer select-none items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.16em] text-fog-muted transition-colors hover:text-white [&::-webkit-details-marker]:hidden" style={{ listStyle: "none" }}>
           <span className="inline-block transition-transform group-open:rotate-90">▸</span>
@@ -261,6 +259,8 @@ function TrendsTab() {
         </summary>
         <div className="mt-4"><ProtocolCharts range={range} /></div>
       </details>
+
+      <EcosystemSection />
 
       <Caveats provenance={trends.provenance} error={trends.error} onRetry={trends.refresh} />
     </div>
