@@ -312,8 +312,15 @@ export type OreMinerDetail = {
   derived: {
     rounds: number; avg_bet_sol: number;
     best_win_sol: number | null; worst_loss_sol: number | null;
+    /** Best/worst by BOTH legs (SOL net + realized ORE at round-time ratio). */
+    best_round: { round_id: number; ts: number; net_sol: number; ore_won: number } | null;
+    worst_round: { round_id: number; ts: number; net_sol: number; ore_won: number } | null;
     longest_hit_streak: number; longest_miss_streak: number; current_streak: number;
-    ev_sol: number; ev_ore: number; ore_won_expected: number; ore_cost_sol: number | null;
+    ev_sol: number; ev_ore: number;
+    ore_won_expected: number;
+    /** Realized: solo wins counted in full to the sampled winner. */
+    ore_won_realized: number;
+    ore_cost_sol: number | null;
   } | null;
   /** Latest spot prices — lets the P/L trend re-mark the ORE leg at today's value. */
   prices_now: { sol_usd: number; ore_usd: number } | null;

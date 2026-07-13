@@ -1075,19 +1075,35 @@ function MinerDetail({ pubkey }: { pubkey: string }) {
         <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
           <StatTile variant="inset" label="Avg bet" value={formatSol(dv.avg_bet_sol, 3)} unit="SOL" hint="per round" />
           <StatTile variant="inset" label="Best round"
-            value={<span className="text-pos">{dv.best_win_sol != null ? `+${formatSol(dv.best_win_sol, 3)}` : "···"}</span>} unit="SOL" />
+            value={dv.best_round ? (
+              <span className={netTone(dv.best_round.net_sol)}>
+                {dv.best_round.net_sol >= 0 ? "+" : ""}{formatSol(dv.best_round.net_sol, 3)}
+                {dv.best_round.ore_won > 0.005 && <span className="text-gold"> +{formatNum(dv.best_round.ore_won, 2)} ORE</span>}
+              </span>
+            ) : <span className="text-pos">{dv.best_win_sol != null ? `+${formatSol(dv.best_win_sol, 3)}` : "···"}</span>}
+            unit={dv.best_round && dv.best_round.ore_won > 0.005 ? undefined : "SOL"}
+            hint={dv.best_round ? `#${formatNum(dv.best_round.round_id)} · both legs` : undefined} />
           <StatTile variant="inset" label="Worst round"
-            value={<span className="text-red">{dv.worst_loss_sol != null ? formatSol(dv.worst_loss_sol, 3) : "···"}</span>} unit="SOL" />
+            value={dv.worst_round ? (
+              <span className={netTone(dv.worst_round.net_sol)}>
+                {formatSol(dv.worst_round.net_sol, 3)}
+                {dv.worst_round.ore_won > 0.005 && <span className="text-gold"> +{formatNum(dv.worst_round.ore_won, 2)} ORE</span>}
+              </span>
+            ) : <span className="text-red">{dv.worst_loss_sol != null ? formatSol(dv.worst_loss_sol, 3) : "···"}</span>}
+            unit={dv.worst_round && dv.worst_round.ore_won > 0.005 ? undefined : "SOL"}
+            hint={dv.worst_round ? `#${formatNum(dv.worst_round.round_id)} · both legs` : undefined} />
           <StatTile variant="inset" label="Streaks"
             value={<span><span className="text-pos">{dv.longest_hit_streak}</span> / <span className="text-red">{dv.longest_miss_streak}</span></span>}
             hint={`longest hit / miss · now ${dv.current_streak > 0 ? "+" : ""}${dv.current_streak}`} />
-          <StatTile variant="inset" label="ORE won (window)" value={formatNum(dv.ore_won_expected, 3)} unit="ORE" hint={`last ${formatNum(dv.rounds)} rounds`} />
+          <StatTile variant="inset" label="ORE won (window)"
+            value={formatNum(dv.ore_won_realized ?? dv.ore_won_expected, 3)} unit="ORE"
+            hint={`realized, solo wins in full · last ${formatNum(dv.rounds)} rounds`} />
           <StatTile variant="inset" label="ORE cost"
             value={dv.ore_cost_sol != null && dv.ore_cost_sol > 0
               ? formatNum(dv.ore_cost_sol, 3)
-              : dv.ore_won_expected > 0 ? <span className="text-pos">free</span> : "·"}
+              : (dv.ore_won_realized ?? dv.ore_won_expected) > 0 ? <span className="text-pos">free</span> : "·"}
             unit={dv.ore_cost_sol != null && dv.ore_cost_sol > 0 ? "SOL/ORE" : undefined}
-            hint={dv.ore_cost_sol != null && dv.ore_cost_sol > 0 ? "net SOL spent per ORE won" : dv.ore_won_expected > 0 ? "mined at a net SOL profit" : "no ORE won in window"} />
+            hint={dv.ore_cost_sol != null && dv.ore_cost_sol > 0 ? "net SOL spent per ORE won" : (dv.ore_won_realized ?? dv.ore_won_expected) > 0 ? "mined at a net SOL profit" : "no ORE won in window"} />
         </div>
       )}
 
