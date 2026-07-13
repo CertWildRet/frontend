@@ -978,7 +978,7 @@ function timeAgo(d: Date): string {
 
 function MinerDetail({ pubkey }: { pubkey: string }) {
   const [roundsWin, setRoundsWin] = useState("1000");
-  const det = usePolled(() => fetchOreMiner(pubkey, Math.max(1000, Number(roundsWin))), 30_000, [pubkey, roundsWin]);
+  const det = usePolled(() => fetchOreMiner(pubkey, roundsWin === "all" ? "all" : Math.max(1000, Number(roundsWin))), 30_000, [pubkey, roundsWin]);
   const d = det.data;
   if (det.loading && !d) {
     return <div className="grid grid-cols-2 gap-3 md:grid-cols-4"><TileSkeleton /><TileSkeleton /><TileSkeleton /><TileSkeleton /></div>;
@@ -1334,27 +1334,25 @@ function MinerTrend({ series, pricesNow, roundsWin, setRoundsWin }: {
   const win = roundsWin;
   const setWin = setRoundsWin;
   const [cur, setCur] = useState<"sol" | "usd">("usd");
-  // "hist" values each round at that round's prices; "now" re-marks both legs at today's spot
-  const [priceMode, setPriceMode] = useState<"hist" | "now">("hist");
-  const n = Math.min(Number(win), series.length);
-  const slice = series.slice(-n);
+  // "all" -> the whole (possibly bucketed) series; each point may sum n rounds
+  const slice = win === "all" ? series : series.slice(-Math.min(Number(win), series.length));
   const hasUsd = slice.some((p) => p.net_usd != null);
   const solNow = pricesNow ? Number(pricesNow.sol_usd) : null;
   const oreNow = pricesNow ? Number(pricesNow.ore_usd) : null;
   const markNow = solNow != null && oreNow != null && solNow > 0;
-  // cumulative recomputed over the visible window so it starts at 0
+  // cumulative recomputed over the visible window so it starts at 0.
+  // Prices are round-time (realized); today's-prices equivalent is the tile hint.
   let cum = 0;
   const pts: TPt[] = slice.map((p) => {
-    const usd = priceMode === "now" && markNow
-      ? p.net_sol * (solNow as number) + p.ore_won * (oreNow as number)
-      : p.net_usd;
-    cum += cur === "usd" && usd != null ? usd : p.net_sol;
+    cum += cur === "usd" && p.net_usd != null ? p.net_usd : p.net_sol;
     return { label: `#${formatNum(p.round_id)}`, value: cum };
   });
-  const wins = slice.filter((p) => p.hit).length;
+  const nRounds = slice.reduce((a, p) => a + (p.n ?? 1), 0);
+  const wins = slice.reduce((a, p) => a + (p.hits ?? (p.hit ? 1 : 0)), 0);
   const oreWonWin = slice.reduce((a, p) => a + p.ore_won, 0);
   const netSolWin = slice.reduce((a, p) => a + p.net_sol, 0);
   const oreCostWin = oreWonWin > 0 && netSolWin < 0 ? -netSolWin / oreWonWin : null;
+  const nowUsd = markNow ? netSolWin * (solNow as number) + oreWonWin * (oreNow as number) : null;
   return (
     <div className="mt-5 space-y-3 border-t border-line pt-4">
       <div className="flex flex-wrap items-center justify-between gap-y-2">
@@ -1365,24 +1363,20 @@ function MinerTrend({ series, pricesNow, roundsWin, setRoundsWin }: {
               items={[{ id: "sol", label: "SOL only" }, { id: "usd", label: "USD (SOL+ORE)" }]}
               value={cur} onChange={(id) => setCur(id as "sol" | "usd")} />
           )}
-          {hasUsd && cur === "usd" && markNow && (
-            <SegmentedControl aria-label="Price basis" variant="loose"
-              items={[{ id: "hist", label: "Historical" }, { id: "now", label: "Current" }]}
-              value={priceMode} onChange={(id) => setPriceMode(id as "hist" | "now")} />
-          )}
           <SegmentedControl aria-label="Rounds window" variant="loose"
-            items={[{ id: "100", label: "100" }, { id: "500", label: "500" }, { id: "1000", label: "1000" }, { id: "2500", label: "2500" }, { id: "5000", label: "5000" }]}
+            items={[{ id: "100", label: "100" }, { id: "500", label: "500" }, { id: "1000", label: "1000" }, { id: "2500", label: "2500" }, { id: "5000", label: "5000" }, { id: "all", label: "All" }]}
             value={win} onChange={setWin} />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <StatTile variant="inset" label="Rounds" value={formatNum(slice.length)} />
-        <StatTile variant="inset" label="Win rate" value={slice.length ? formatPct(wins / slice.length) : "···"} />
+        <StatTile variant="inset" label="Rounds" value={formatNum(nRounds)} hint={win === "all" ? "entire covered history" : undefined} />
+        <StatTile variant="inset" label="Win rate" value={nRounds ? formatPct(wins / nRounds) : "···"} />
         <StatTile variant="inset" label="Avg / round"
-          value={<span className={netTone(cum / Math.max(1, slice.length))}>{cur === "usd" ? "$" : ""}{formatNum(cum / Math.max(1, slice.length), cur === "usd" ? 2 : 4)}</span>} />
+          value={<span className={netTone(cum / Math.max(1, nRounds))}>{cur === "usd" ? "$" : ""}{formatNum(cum / Math.max(1, nRounds), cur === "usd" ? 2 : 4)}</span>} />
         <StatTile variant="inset" label="Total net"
           value={<span className={netTone(cum)}>{cum >= 0 ? "+" : ""}{cur === "usd" ? "$" : ""}{formatNum(cum, cur === "usd" ? 2 : 3)}</span>}
-          unit={cur === "sol" ? "SOL" : undefined} />
+          unit={cur === "sol" ? "SOL" : undefined}
+          hint={nowUsd != null ? `at today's prices ${nowUsd >= 0 ? "+" : "-"}$${formatNum(Math.abs(nowUsd), 2)}` : undefined} />
         <StatTile variant="inset" label="ORE cost"
           value={oreCostWin != null ? formatNum(oreCostWin, 3)
             : oreWonWin > 0 ? <span className="text-pos">free</span> : "·"}
