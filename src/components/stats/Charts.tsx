@@ -262,6 +262,7 @@ export function Bars({
   expected,
   expectedLabel,
   highlight,
+  highlightColor,
   loading = false,
 }: {
   bars: Pt[];
@@ -272,6 +273,8 @@ export function Bars({
   /** Small caption rendered on the expected line so it explains itself. */
   expectedLabel?: string;
   highlight?: (i: number) => boolean;
+  /** Fill for highlighted bars (defaults to `color`; pass a contrasting hue). */
+  highlightColor?: string;
   loading?: boolean;
 }) {
   const [hover, setHover] = useState<number | null>(null);
@@ -316,10 +319,12 @@ export function Bars({
         const bx = i * bw + gap / 2;
         const top = y(b.value);
         const h = Math.max(0, H - padB - top);
-        const hot = highlight?.(i) || hover === i;
+        const marked = highlight?.(i) ?? false;
+        const hot = marked || hover === i;
         return (
           <g key={i} onPointerEnter={() => setHover(i)}>
-            <rect x={bx} y={top} width={bw - gap} height={h} rx={3} fill={color} opacity={hot ? 1 : 0.62} />
+            <rect x={bx} y={top} width={bw - gap} height={h} rx={3}
+              fill={marked && highlightColor ? highlightColor : color} opacity={hot ? 1 : 0.62} />
             {/* generous invisible hit target */}
             <rect x={i * bw} y={padT} width={bw} height={H - padT - padB} fill="transparent" />
           </g>

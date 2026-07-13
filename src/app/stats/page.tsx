@@ -203,7 +203,7 @@ function TrendsTab() {
         <StatTile label="Production cost" value={nowLive ? formatNum(nowLive.prod_cost_sol, 3) : tp.length && tp[tp.length - 1].prod_cost_sol != null ? formatNum(tp[tp.length - 1].prod_cost_sol!, 3) : "···"} unit="SOL/ORE" hint={nowLive ? "live · trailing ~35 min" : "measured on-chain, today"} />
         <StatTile label="Motherlode pool" value={ml?.current_pool_ore != null ? formatNum(ml.current_pool_ore, 1) : "···"} unit="ORE" tone="gold"
           hint={`expected pop 125 · past avg ${ml?.avg_pop_ore != null ? formatNum(ml.avg_pop_ore, 0) : "·"}`} />
-        <StatTile label="Miners today" value={tp.length && tp[tp.length - 1].unique_miners != null ? formatNum(tp[tp.length - 1].unique_miners!) : "···"} hint="unique wallets that deployed" />
+        <StatTile label="Miners today" value={nowLive?.miners_today != null ? formatNum(nowLive.miners_today) : "···"} hint="unique wallets that deployed (UTC day)" />
       </div>
       )}
 
@@ -245,19 +245,16 @@ function TrendsTab() {
             subtitle={`Past pop sizes vs the 125 ORE long-run expectation (dashed) — last bar is the live pool, still accruing 0.2/round.${ml?.avg_pop_ore != null ? ` Historical average pop: ${formatNum(ml.avg_pop_ore, 1)} ORE over ${formatNum(ml.pops.length)} pops.` : ""}`}>
             <div className="mb-1.5 flex flex-wrap gap-4 font-mono text-[11px] text-fog-muted">
               <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#5B6CFF] opacity-70" /> past pop payout</span>
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#5B6CFF]" /> live pool (not popped yet)</span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#22E0E6]" /> live pool (not popped yet)</span>
               <span className="flex items-center gap-1.5"><span className="inline-block h-0 w-4 border-t border-dashed border-fog-muted" /> 125 ORE = what a pop pays on average if it hits on schedule (0.2/round × 1-in-625)</span>
             </div>
             <Bars bars={popBars} height={205} expected={125} expectedLabel="expected: 125 ORE" fmt={(v) => formatNum(v, 1) + " ORE"}
-              highlight={(i) => i === popBars.length - 1} color="#5B6CFF" loading={trends.loading} />
+              highlight={(i) => i === popBars.length - 1} highlightColor="#22E0E6" color="#5B6CFF" loading={trends.loading} />
           </ChartCard>
         </div>
       </div>
 
-      <div className="space-y-5 border-t border-line pt-6">
-        <div className="section-label">Protocol internals — rake · vaulted · winners</div>
-        <ProtocolCharts range={range} />
-      </div>
+      <ProtocolCharts />
 
       <EcosystemSection />
 
@@ -266,11 +263,15 @@ function TrendsTab() {
   );
 }
 
-/** The old protocol-operator charts, demoted out of the miner path (rendered only
- *  when the details section is opened — the hook only mounts then). */
-function ProtocolCharts({ range }: { range: string }) {
-  const seriesRange = range === "all" ? "all" : range; // /ore/series shares range ids
-  const series = usePolled(() => fetchOreSeries(seriesRange), 60_000, [seriesRange]);
+/** Protocol-operator charts — a self-governed section with its own time control
+ *  (the top-level picker includes 24h, which /ore/series doesn't serve; mixed
+ *  scopes read as broken, so each section owns its range). */
+const PROTOCOL_RANGES: { id: string; label: string }[] = [
+  { id: "7d", label: "7D" }, { id: "30d", label: "30D" }, { id: "90d", label: "90D" }, { id: "1y", label: "1Y" }, { id: "all", label: "All" },
+];
+function ProtocolCharts() {
+  const [range, setRange] = useState("30d");
+  const series = usePolled(() => fetchOreSeries(range), 60_000, [range]);
   const pts = series.data?.points ?? [];
   const lbl = (p: OreSeriesPoint) => {
     const dt = new Date(Number(p.bucket_ts) * 1000);
@@ -279,7 +280,15 @@ function ProtocolCharts({ range }: { range: string }) {
   const mk = (pick: (p: OreSeriesPoint) => number): Pt[] => pts.map((p) => ({ label: lbl(p), value: pick(p) }));
 
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
+    <div className="space-y-5 border-t border-line pt-6">
+      <div className="flex flex-wrap items-center justify-between gap-y-2">
+        <div className="section-label">
+          Protocol internals — rake · vaulted · winners
+          <Refreshing active={series.fetching && !!series.data} />
+        </div>
+        <SegmentedControl aria-label="Protocol time range" items={PROTOCOL_RANGES} value={range} onChange={setRange} />
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
       <ChartCard variant="dispersion" cutCorner="tr" title="SOL deployed" subtitle="Total SOL staked per bucket.">
         <AreaLine spectral points={mk((p) => lamportsToSol(p.deployed))} height={195} fmt={(v) => formatSol(v, 0) + " SOL"} yFmt={compactNum} />
       </ChartCard>
@@ -295,6 +304,7 @@ function ProtocolCharts({ range }: { range: string }) {
           points={pts.filter((p) => p.avg_winners != null).map((p) => ({ label: lbl(p), value: Number(p.avg_winners) }))}
           height={195} zeroBaseline={false} fmt={(v) => formatNum(v, 0)} />
       </ChartCard>
+      </div>
     </div>
   );
 }
