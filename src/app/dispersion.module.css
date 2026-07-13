@@ -28,7 +28,8 @@
   mask-composite: exclude;
   pointer-events: none;
   opacity: 0.55;
-  animation: hueShift 12s linear infinite;
+  /* alternate: the spectral tile is not cyclical — a one-way loop seams pink→cyan */
+  animation: hueShift 12s ease-in-out infinite alternate;
 }
 
 @keyframes hueShift {
@@ -134,7 +135,7 @@
 .ignite:hover {
   transform: translateY(-1px);
   box-shadow: 0 0 0 1px rgba(154, 107, 255, 0.5), 0 14px 40px -10px rgba(91, 108, 255, 0.7);
-  animation: igniteHue 2.4s linear infinite;
+  animation: igniteHue 2.4s ease-in-out infinite alternate;
 }
 .ignite:active {
   transform: translateY(0) scale(0.985);
@@ -178,7 +179,7 @@
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  animation: hueShift 5s linear infinite;
+  animation: hueShift 5s ease-in-out infinite alternate;
 }
 .prismPill:hover {
   transform: translateY(-2px);

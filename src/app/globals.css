@@ -192,7 +192,7 @@
     mask-composite: exclude;
     pointer-events: none;
     opacity: 0.45;
-    animation: hueShift 12s linear infinite;
+    animation: hueShift 12s ease-in-out infinite alternate;
   }
 
   .btn {
