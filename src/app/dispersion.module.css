@@ -192,6 +192,20 @@
 }
 .prismPill:active { transform: translateY(0) scale(0.985); }
 
+/* Disabled/inactive pill: the same prism shell masked to monochrome. Grayscale
+   filters the spectral ring + fill to B/W; the paused animation + no hover lift
+   keep it clearly non-interactive next to the live CTA. */
+.prismPillMono {
+  filter: grayscale(1) brightness(1.08);
+}
+.prismPillMono::before {
+  animation: none;
+}
+.prismPillMono:hover {
+  transform: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 12px 36px -12px rgba(120, 120, 130, 0.4);
+}
+
 /* ── Hero prism: white beam fanning into spectrum ───────────────────── */
 .heroBeam {
   position: absolute;

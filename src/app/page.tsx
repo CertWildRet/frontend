@@ -247,7 +247,7 @@ export default function DispersionLanding() {
 
           <div className="mt-9 flex flex-wrap items-center gap-3.5">
             <span
-              className={`${styles.prismPill} inline-flex cursor-default items-center rounded-full px-7 py-3.5 text-[15px] font-medium text-[#EAECF6] opacity-70`}
+              className={`${styles.prismPill} ${styles.prismPillMono} inline-flex cursor-default items-center rounded-full px-7 py-3.5 text-[15px] font-medium text-[#EAECF6] opacity-70`}
               aria-disabled="true"
             >
               Coming soon
@@ -490,7 +490,7 @@ export default function DispersionLanding() {
           </p>
           <div className="relative mt-8 flex flex-wrap items-center justify-center gap-3.5">
             <span
-              className={`${styles.prismPill} inline-flex cursor-default items-center rounded-full px-8 py-4 text-[16px] font-medium text-[#EAECF6] opacity-70`}
+              className={`${styles.prismPill} ${styles.prismPillMono} inline-flex cursor-default items-center rounded-full px-8 py-4 text-[16px] font-medium text-[#EAECF6] opacity-70`}
               aria-disabled="true"
             >
               Coming soon
