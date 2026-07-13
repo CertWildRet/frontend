@@ -252,13 +252,10 @@ function TrendsTab() {
         </div>
       </div>
 
-      <details className="group">
-        <summary className="flex cursor-pointer select-none items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.16em] text-fog-muted transition-colors hover:text-white [&::-webkit-details-marker]:hidden" style={{ listStyle: "none" }}>
-          <span className="inline-block transition-transform group-open:rotate-90">▸</span>
-          Protocol internals (rake · vaulted · winners)
-        </summary>
-        <div className="mt-4"><ProtocolCharts range={range} /></div>
-      </details>
+      <div className="space-y-5 border-t border-line pt-6">
+        <div className="section-label">Protocol internals — rake · vaulted · winners</div>
+        <ProtocolCharts range={range} />
+      </div>
 
       <EcosystemSection />
 
