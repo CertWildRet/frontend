@@ -358,3 +358,83 @@ export function BarsLine({
     </div>
   );
 }
+
+
+// ── PnlChart: cumulative P/L line with signed green/red fill + end badge ─────
+export function PnlChart({
+  points, height = 220, fmt = (v: number) => v.toFixed(2),
+  loading = false, emptyText,
+}: {
+  points: TPt[]; height?: number; fmt?: (v: number) => string;
+  loading?: boolean; emptyText?: string;
+}) {
+  const [ref, W] = useMeasuredWidth();
+  const [hover, setHover] = useState<number | null>(null);
+  const H = height, padL = 14, padR = 64, padT = 14, padB = 26;
+  const POS = "#4ADE80", NEG = "#F87171";
+  const n = points.length;
+  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} text={emptyText} /></div>;
+
+  const vs = points.map((p) => p.value ?? 0);
+  const lo = Math.min(...vs, 0), hi = Math.max(...vs, 0);
+  const pad = (hi - lo) * 0.1 || 1;
+  const min = lo - pad, max = hi + pad;
+  const plotR = W - padR, plotB = H - padB;
+  const x = (i: number) => padL + (i / Math.max(1, n - 1)) * (plotR - padL);
+  const y = (v: number) => padT + (1 - (v - min) / (max - min || 1)) * (plotB - padT);
+  const zeroY = y(0);
+  const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(p.value ?? 0).toFixed(1)}`).join(" ");
+  const area = `${line} L${x(n - 1).toFixed(1)},${zeroY.toFixed(1)} L${x(0).toFixed(1)},${zeroY.toFixed(1)} Z`;
+  const last = points[n - 1].value ?? 0;
+
+  const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * W;
+    setHover(Math.max(0, Math.min(n - 1, Math.round(((px - padL) / Math.max(1, plotR - padL)) * (n - 1)))));
+  };
+  const gy = [0, 0.25, 0.5, 0.75, 1];
+  const nTicks = Math.min(5, n);
+  const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
+
+  return (
+    <div ref={ref} className="w-full">
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="cumulative profit and loss"
+        style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }}
+        onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)}>
+        <defs>
+          <clipPath id="pnl-above"><rect x={0} y={0} width={W} height={zeroY} /></clipPath>
+          <clipPath id="pnl-below"><rect x={0} y={zeroY} width={W} height={H - zeroY} /></clipPath>
+        </defs>
+        {gy.map((g, gi) => {
+          const yy = padT + g * (plotB - padT);
+          return (
+            <g key={gi}>
+              <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
+              <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={AXIS} textAnchor="start" fontFamily="monospace">{fmt(max - g * (max - min))}</text>
+            </g>
+          );
+        })}
+        <path d={area} fill={POS} opacity={0.22} clipPath="url(#pnl-above)" />
+        <path d={area} fill={NEG} opacity={0.22} clipPath="url(#pnl-below)" />
+        <line x1={padL} y1={zeroY} x2={plotR} y2={zeroY} stroke={AXIS} strokeWidth={1} strokeDasharray="4 3" opacity={0.7} />
+        <path d={line} fill="none" stroke={last >= 0 ? POS : NEG} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" clipPath="url(#pnl-above)" />
+        <path d={line} fill="none" stroke={NEG} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" clipPath="url(#pnl-below)" />
+        <g>
+          <rect x={plotR + 4} y={y(last) - 10} width={padR - 8} height={20} rx={4} fill={last >= 0 ? POS : NEG} />
+          <text x={plotR + padR / 2} y={y(last) + 4} fontSize={12} fontWeight={700} fill="#070912" textAnchor="middle" fontFamily="monospace">{fmt(last)}</text>
+        </g>
+        {xt.map((idx, ti) => (
+          <text key={ti} x={x(idx)} y={H - 8} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily="monospace"
+            textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{points[idx].label}</text>
+        ))}
+        {hover != null && (
+          <g>
+            <line x1={x(hover)} y1={padT} x2={x(hover)} y2={plotB} stroke={AXIS} strokeWidth={1} strokeDasharray="3 3" />
+            <circle cx={x(hover)} cy={y(points[hover].value ?? 0)} r={3.5} fill={(points[hover].value ?? 0) >= 0 ? POS : NEG} stroke={SURFACE} strokeWidth={1.5} />
+            <TrendTooltip x={x(hover)} y={padT + 10} W={W} lines={[points[hover].label, `cumulative: ${fmt(points[hover].value ?? 0)}`]} />
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+}

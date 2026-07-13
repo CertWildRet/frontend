@@ -7,13 +7,13 @@
  * miner ranking, production cost). Financial-analyst tabs. ZINC is a placeholder
  * for v1. Native units; USD is a labelled off-chain overlay.
  */
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
 import { TabBar, SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { TileSkeleton, RowsSkeleton, Refreshing } from "@/components/primitives/Skeleton";
 import { AreaLine, Bars, HBars, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
-import { DualLine, CostEvChart, BarsLine, type TPt } from "@/components/stats/TrendCharts";
+import { DualLine, CostEvChart, BarsLine, PnlChart, type TPt } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
 import {
   fetchOreRounds, fetchOreRound, fetchOreMotherlode, fetchOreLeaderboard,
@@ -560,6 +560,7 @@ function MinersTab() {
   const [qInput, setQInput] = useState("");
   const [q, setQ] = useState("");
   const [offset, setOffset] = useState(0);
+  const [expanded, setExpanded] = useState<string | null>(null);
   useEffect(() => {
     const t = setTimeout(() => { setQ(qInput.trim()); setOffset(0); }, 350);
     return () => clearTimeout(t);
@@ -696,11 +697,16 @@ function MinersTab() {
               {polled.loading && !polled.data && <SkeletonRows cols={8} />}
               {rows.map((m, i) => {
                 const net = lamportsToSol(m.net_sol);
+                const isOpen = expanded === m.authority;
                 return (
-                  <tr key={m.authority} className={`${m.is_ours ? oursRow : bodyRow} cursor-pointer`}
-                    title="Click to inspect this wallet"
-                    onClick={() => { setQInput(m.authority); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); }}>
-                    <td className={`${td} text-fog-muted`}>{offset + i + 1}</td>
+                  <Fragment key={m.authority}>
+                  <tr className={`${m.is_ours ? oursRow : bodyRow} cursor-pointer`}
+                    title="Click to expand this wallet"
+                    onClick={() => setExpanded(isOpen ? null : m.authority)}>
+                    <td className={`${td} text-fog-muted`}>
+                      <span className={`mr-1 inline-block transition-transform ${isOpen ? "rotate-90" : ""}`}>▸</span>
+                      {offset + i + 1}
+                    </td>
                     <td className={`${td} ${m.is_ours ? "text-steel" : "text-white"}`}>
                       <CopyAddress address={m.authority} />{m.is_ours ? " ◆ ours" : ""}
                     </td>
@@ -717,6 +723,14 @@ function MinersTab() {
                       </>
                     )}
                   </tr>
+                  {isOpen && (
+                    <tr>
+                      <td colSpan={8} className="bg-white/[0.015] px-2 py-3 sm:px-4">
+                        <MinerDetail pubkey={m.authority} />
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })}
             </tbody>
@@ -887,23 +901,37 @@ function MinerDetail({ pubkey }: { pubkey: string }) {
   const hs = d.hit_stats;
   const hitRate = hs && hs.rounds > 0 ? hs.hits / hs.rounds : null;
   const firstTs = d.events?.first_ts ? new Date(Number(d.events.first_ts) * 1000) : null;
+  const lastTs = d.events?.last_ts ? new Date(Number(d.events.last_ts) * 1000) : null;
+  const dv = d.derived;
 
   return (
     <ChartCard
       title={`Miner ${short(pubkey)}`}
       subtitle={`Wallet P&L: lifetime on-chain census + event-exact round history${d.managed_by.length ? "" : ""}`}
-      right={<CopyAddress address={pubkey} className="font-mono text-[13px] text-fog-muted" />}
+      right={
+        <span className="flex items-center gap-2">
+          <CopyAddress address={pubkey} className="font-mono text-[13px] text-fog-muted" />
+          <a href={`https://solscan.io/account/${pubkey}`} target="_blank" rel="noreferrer"
+            className="rounded border border-line px-2 py-1 font-mono text-[12px] text-fog-muted transition-colors hover:border-steel hover:text-white">
+            solscan ↗
+          </a>
+        </span>
+      }
     >
-      {d.managed_by.length > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-2 font-mono text-[12px] text-fog-muted">
-          managed by
-          {d.managed_by.map((m) => (
-            <span key={m.pubkey} className="rounded border border-line px-1.5 py-0.5" title={m.pubkey}>
-              pool {short(m.pubkey)}
-            </span>
-          ))}
-        </div>
-      )}
+      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[12.5px] text-[#B7BDD2]">
+        {firstTs && <span>first seen {firstTs.toLocaleDateString()}</span>}
+        {lastTs && <span>last active {lastTs.toLocaleDateString()} {lastTs.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>}
+        {d.managed_by.length > 0 && (
+          <span className="flex flex-wrap items-center gap-2">
+            managed by
+            {d.managed_by.map((m) => (
+              <span key={m.pubkey} className="rounded border border-line px-1.5 py-0.5" title={m.pubkey}>
+                pool {short(m.pubkey)}
+              </span>
+            ))}
+          </span>
+        )}
+      </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <StatTile variant="inset" label="Deployed (lifetime)" value={formatSol(deployed, 2)} unit="SOL" />
         <StatTile variant="inset" label="Returned (lifetime)" value={formatSol(returned, 2)} unit="SOL" />
@@ -918,6 +946,25 @@ function MinerDetail({ pubkey }: { pubkey: string }) {
           value={firstTs ? `${firstTs.getMonth() + 1}/${firstTs.getDate()}` : "···"}
           hint={d.events ? `${formatNum(d.events.rounds)} rounds · ${formatNum(d.events.deploys)} deploys` : undefined} />
       </div>
+
+      {dv && (
+        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+          <StatTile variant="inset" label="Avg bet" value={formatSol(dv.avg_bet_sol, 3)} unit="SOL" hint="per round" />
+          <StatTile variant="inset" label="Best round"
+            value={<span className="text-pos">{dv.best_win_sol != null ? `+${formatSol(dv.best_win_sol, 3)}` : "···"}</span>} unit="SOL" />
+          <StatTile variant="inset" label="Worst round"
+            value={<span className="text-red">{dv.worst_loss_sol != null ? formatSol(dv.worst_loss_sol, 3) : "···"}</span>} unit="SOL" />
+          <StatTile variant="inset" label="Streaks"
+            value={<span><span className="text-pos">{dv.longest_hit_streak}</span> / <span className="text-red">{dv.longest_miss_streak}</span></span>}
+            hint={`longest hit / miss · now ${dv.current_streak > 0 ? "+" : ""}${dv.current_streak}`} />
+          <StatTile variant="inset" label="ORE won (window)" value={formatNum(dv.ore_won_expected, 3)} unit="ORE" hint={`last ${formatNum(dv.rounds)} rounds`} />
+          <StatTile variant="inset" label="ORE cost" value={dv.ore_cost_sol != null && dv.ore_cost_sol > 0 ? formatNum(dv.ore_cost_sol, 3) : "·"} unit="SOL/ORE" hint="net SOL spent per ORE won" />
+        </div>
+      )}
+
+      {d.tiles && d.tiles.some((t) => t > 0) && <FavoriteSquares tiles={d.tiles} />}
+
+      {d.series.length > 1 && <MinerTrend series={d.series} />}
 
       <div className={`${tableWrap} mt-4`}>
         <table className="w-full font-mono text-[13px] sm:min-w-[560px]">
@@ -1041,6 +1088,81 @@ function EcosystemSection() {
         </div>
       </div>
       <Caveats provenance={null} error={eco.error} onRetry={eco.refresh} />
+    </div>
+  );
+}
+
+/** 5x5 heatmap of the wallet's tile preferences + its top-3 hottest tiles. */
+function FavoriteSquares({ tiles }: { tiles: number[] }) {
+  const max = Math.max(...tiles, 1);
+  const hot = tiles
+    .map((n, i) => ({ n, i }))
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 3)
+    .filter((t) => t.n > 0);
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-4">
+      <span className="label">Favorite tiles</span>
+      <div className="grid grid-cols-5 gap-1" aria-label="tile preference heatmap">
+        {tiles.map((n, i) => (
+          <span key={i} title={`tile ${i + 1}: ${formatNum(n)} deploys`}
+            className="h-3.5 w-3.5 rounded-[3px]"
+            style={{
+              background: n > 0 ? `rgba(91, 108, 255, ${0.15 + 0.85 * (n / max)})` : "rgba(255,255,255,0.05)",
+              boxShadow: hot.some((h) => h.i === i) ? "0 0 6px rgba(34,224,230,0.8), inset 0 0 0 1px rgba(34,224,230,0.9)" : "inset 0 0 0 1px rgba(255,255,255,0.07)",
+            }} />
+        ))}
+      </div>
+      {hot.length > 0 && (
+        <span className="font-mono text-[12.5px] font-semibold text-[#E8881A]">
+          hot {hot.map((h) => `#${h.i + 1}`).join(" ")}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** Cumulative P/L trend with window + currency controls (event-exact rounds). */
+function MinerTrend({ series }: { series: OreMinerDetail["series"] }) {
+  const [win, setWin] = useState("500");
+  const [cur, setCur] = useState<"sol" | "usd">("sol");
+  const n = Math.min(Number(win), series.length);
+  const slice = series.slice(-n);
+  const hasUsd = slice.some((p) => p.net_usd != null);
+  // cumulative recomputed over the visible window so it starts at 0
+  let cum = 0;
+  const pts: TPt[] = slice.map((p) => {
+    cum += cur === "usd" && p.net_usd != null ? p.net_usd : p.net_sol;
+    return { label: `#${formatNum(p.round_id)}`, value: cum };
+  });
+  const wins = slice.filter((p) => p.hit).length;
+  return (
+    <div className="mt-5 space-y-3 border-t border-line pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-y-2">
+        <div className="section-label" style={{ fontSize: 13 }}>Performance trend</div>
+        <div className="flex flex-wrap items-center gap-2">
+          {hasUsd && (
+            <SegmentedControl aria-label="Currency" variant="loose"
+              items={[{ id: "sol", label: "SOL" }, { id: "usd", label: "USD" }]}
+              value={cur} onChange={(id) => setCur(id as "sol" | "usd")} />
+          )}
+          <SegmentedControl aria-label="Rounds window" variant="loose"
+            items={[{ id: "100", label: "100" }, { id: "500", label: "500" }, { id: "1000", label: "1000" }]}
+            value={win} onChange={setWin} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatTile variant="inset" label="Rounds" value={formatNum(slice.length)} />
+        <StatTile variant="inset" label="Win rate" value={slice.length ? formatPct(wins / slice.length) : "···"} />
+        <StatTile variant="inset" label="Avg / round"
+          value={<span className={netTone(cum / Math.max(1, slice.length))}>{cur === "usd" ? "$" : ""}{formatNum(cum / Math.max(1, slice.length), cur === "usd" ? 2 : 4)}</span>} />
+        <StatTile variant="inset" label="Total net"
+          value={<span className={netTone(cum)}>{cum >= 0 ? "+" : ""}{cur === "usd" ? "$" : ""}{formatNum(cum, cur === "usd" ? 2 : 3)}</span>}
+          unit={cur === "sol" ? "SOL" : undefined} />
+      </div>
+      <PnlChart points={pts} height={220}
+        fmt={(v) => (cur === "usd" ? `$${formatNum(v, 2)}` : `${formatNum(v, 3)}`)}
+        emptyText="not enough round history yet" />
     </div>
   );
 }

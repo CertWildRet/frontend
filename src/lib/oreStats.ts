@@ -305,6 +305,16 @@ export type OreMinerDetail = {
     winning_tile: number | null; total_winnings: string | null; deployed_winning_square: string | null;
     total_minted: string | null; is_split: number | null;
   }[];
+  /** Per-tile deploy counts (25) across every deploy in the event window. */
+  tiles: number[] | null;
+  /** Per-round P/L, oldest -> newest (up to 1000 rounds). */
+  series: { round_id: number; ts: number; net_sol: number; cum_sol: number; hit: boolean; net_usd: number | null }[];
+  derived: {
+    rounds: number; avg_bet_sol: number;
+    best_win_sol: number | null; worst_loss_sol: number | null;
+    longest_hit_streak: number; longest_miss_streak: number; current_streak: number;
+    ev_sol: number; ev_ore: number; ore_won_expected: number; ore_cost_sol: number | null;
+  } | null;
 };
 
 export type OreYields = {
