@@ -31,7 +31,11 @@
   overflow: hidden;
   border-radius: 28px;
   padding: 34px;
+  /* first layer: the diagonal border segment along the 30px corner cut — the
+     clip-path slices the ::before ring dead there (30/√2 ≈ 21.2px from the
+     corner along the gradient axis, 2px band matching the ring width) */
   background:
+    linear-gradient(225deg, transparent 19.9px, rgba(154, 107, 255, 0.55) 20.2px, rgba(154, 107, 255, 0.55) 22.4px, transparent 22.7px) top right / 64px 64px no-repeat,
     linear-gradient(120deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.012) 42%, rgba(7, 9, 18, 0.28)),
     rgba(14, 18, 34, 0.62);
   box-shadow:
