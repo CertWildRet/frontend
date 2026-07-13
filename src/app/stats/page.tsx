@@ -189,6 +189,18 @@ const avgOf = (xs: (number | null)[]): number | null => {
   return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null;
 };
 
+/** Exponential moving average; nulls carry the previous EMA forward so the
+ *  trend line stays continuous across data holes. */
+const emaOf = (xs: (number | null)[], n: number): (number | null)[] => {
+  const k = 2 / (n + 1);
+  let e: number | null = null;
+  return xs.map((v) => {
+    if (v == null || !Number.isFinite(v)) return e;
+    e = e == null ? v : v * k + e * (1 - k);
+    return e;
+  });
+};
+
 function TrendsTab() {
   const [range, setRange] = useState("30d");
   const trends = usePolled(() => fetchOreTrends(range), 60_000, [range]);
@@ -273,9 +285,14 @@ function TrendsTab() {
           <DualLine a={mkT((p) => p.ore_usd)} b={mkT((p) => p.sol_usd)} aName="ORE $" bName="SOL $" height={205}
             aFmt={(v) => "$" + formatNum(v, 1)} bFmt={(v) => "$" + formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
-        {/* (3) activity — deploys vs the motherlode pool filling up */}
-        <ChartCard variant="dispersion" cutCorner="tr" title="Mining activity" subtitle="Avg SOL deployed per round (bars) vs the motherlode pool (line). The pool fills 0.2 ORE per round and pays out when it pops. Watch deploys chase a fat pool.">
+        {/* (3) activity — deploys (EMA-smoothed trend) vs the motherlode pool */}
+        <ChartCard variant="dispersion" cutCorner="tr" title="Mining activity" subtitle="Avg SOL deployed per round (bars) with a smoothed trend, vs the motherlode pool (line). The pool fills 0.2 ORE per round and pays out when it pops. Watch deploys chase a fat pool.">
           <BarsLine bars={mkT((p) => p.avg_deployed_sol)} line={mkT((p) => p.ml_pool_ore)} barName="SOL / round" lineName="motherlode pool (ORE)" height={205}
+            line2={(() => {
+              const ema = emaOf(tp.map((p) => p.avg_deployed_sol), Math.max(6, Math.floor(tp.length / 8)));
+              return tp.map((p, i) => ({ label: dayLbl(p.day_ts), value: ema[i] }));
+            })()}
+            line2Name="deploy trend (EMA)"
             barFmt={(v) => formatNum(v, 1)} lineFmt={(v) => formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
         {/* (5) yields — refining vs staking APR (quant spec: APR %, 7d rolling) */}
@@ -283,7 +300,7 @@ function TrendsTab() {
           <ChartCard variant="dispersion" cutCorner="tr" title="Yields · hold unclaimed vs claim & stake"
             subtitle={`Refining APR (what your unclaimed ORE earns from others' claim fees) vs stORE staking APR. The shaded gap between them is the unclaimed carry: the extra APR you keep by NOT claiming. Annualized, rolling window up to 7d${yields.data?.latest?.window_days != null && yields.data.latest.window_days < 6.5 ? ` (currently ${formatNum(yields.data.latest.window_days, 1)}d, precise history began Jul 13)` : ""}.`}
             right={(avgRefin != null || avgStake != null || carryNow != null) ? (
-              <span className="flex items-center gap-2.5 rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold"
+              <span className="flex max-w-full flex-wrap items-center gap-x-2.5 gap-y-1 rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold"
                 title="Averages are over the plotted points; carry = refining APR minus staking APR right now">
                 {avgRefin != null && <span style={{ color: "#22E0E6" }}>refining avg {formatNum(avgRefin, 1)}%</span>}
                 {avgStake != null && <span style={{ color: "#E8881A" }}>staking avg {formatNum(avgStake, 1)}%</span>}

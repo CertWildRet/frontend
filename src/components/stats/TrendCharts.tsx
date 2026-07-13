@@ -321,6 +321,7 @@ export function BarsLine({
   barFmt = (v: number) => v.toFixed(1),
   lineFmt = (v: number) => v.toFixed(0),
   lineBreakOnDrop = false,
+  line2, line2Name, line2Color = "#A8C4FF",
   loading = false,
 }: {
   bars: TPt[]; line: TPt[]; barName: string; lineName: string;
@@ -328,6 +329,9 @@ export function BarsLine({
   barFmt?: (v: number) => string; lineFmt?: (v: number) => string;
   /** Sawtooth series (motherlode pool): break the line where it resets down. */
   lineBreakOnDrop?: boolean;
+  /** Optional second line plotted on the LEFT (bar) axis — e.g. a smoothed
+   *  trend of the bars themselves. */
+  line2?: TPt[]; line2Name?: string; line2Color?: string;
   loading?: boolean;
 }) {
   const [ref, W] = useMeasuredWidth();
@@ -357,8 +361,11 @@ export function BarsLine({
 
   return (
     <div ref={ref} className="w-full">
-      <div className="mb-1.5 flex gap-4 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
+      <div className="mb-1.5 flex flex-wrap gap-4 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: barColor, opacity: 0.7 }} /> {barName}</span>
+        {line2 && line2Name && (
+          <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: line2Color }} /> {line2Name}</span>
+        )}
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: lineColor }} /> {lineName}</span>
       </div>
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${barName} and ${lineName}`}
@@ -379,6 +386,9 @@ export function BarsLine({
               height={Math.max(0, plotB - yB(b.value))} rx={2} fill={barColor} opacity={hover === i ? 0.95 : 0.55} />
           ) : null,
         )}
+        {line2 && (
+          <path d={gapPath(line2.map((p) => p.value), xC, yB)} fill="none" stroke={line2Color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.9} />
+        )}
         <path d={(lineBreakOnDrop ? dropPath : gapPath)(line.map((p) => p.value), xC, yL)} fill="none" stroke={lineColor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
         {xt.map((idx, ti) => (
           <text key={ti} x={xC(idx)} y={H - 8} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily="monospace"
@@ -389,6 +399,7 @@ export function BarsLine({
             <TrendTooltip x={xC(hover)} y={padT + 10} W={W} lines={[
               bars[hover].label,
               `${barName}: ${bars[hover].value != null ? barFmt(bars[hover].value!) : "·"}`,
+              ...(line2 && line2Name ? [`${line2Name}: ${line2[hover]?.value != null ? barFmt(line2[hover].value!) : "·"}`] : []),
               `${lineName}: ${line[hover].value != null ? lineFmt(line[hover].value!) : "·"}`,
             ]} />
           </g>

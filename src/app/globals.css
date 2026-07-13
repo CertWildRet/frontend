@@ -11,6 +11,9 @@
   body {
     @apply bg-[#070912] text-[#EAECF6] font-sans antialiased;
     font-feature-settings: "ss01", "cv01";
+    /* nothing may widen the page past the viewport (clip: no scroll container,
+       unlike hidden) — wide content scrolls inside its own overflow-x-auto wrap */
+    overflow-x: clip;
   }
   ::selection {
     background: rgba(157, 183, 216, 0.3);
