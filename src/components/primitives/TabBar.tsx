@@ -99,7 +99,8 @@ export function TabBar<T extends string>({
 /**
  * Compact filter / range / sort control.
  * - `track`: bordered ink well (ORE/ZINC, 7D/30D)
- * - `loose`: free-wrapping chips (sort, min-deploy, rank)
+ * - `loose`: compact wrapping chips in their own bordered well, so adjacent
+ *   sibling controls read as separate groups instead of one long option row
  */
 export function SegmentedControl<T extends string>({
   items,
@@ -114,7 +115,7 @@ export function SegmentedControl<T extends string>({
       <div
         role="group"
         aria-label={ariaLabel}
-        className={`flex flex-wrap items-center gap-1.5 ${className}`}
+        className={`inline-flex flex-wrap items-center gap-1 rounded-lg border border-line bg-ink-800 p-0.5 ${className}`}
       >
         {items.map((item) => (
           <TabButton
