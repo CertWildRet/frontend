@@ -196,10 +196,11 @@
 .tabDock {
   position: sticky;
   z-index: 20;
-  /* sit FLUSH under the sticky site header: 28px padding + 40px logo row +
-     1px border = 69px (the old 118px assumed a taller two-row header and
-     left a floating gap when stuck) */
-  top: 69px;
+  /* pin the dock's top border exactly to the header's bottom border: the
+     header publishes its REAL rendered height as --site-header-h (measured
+     via ResizeObserver in SiteHeader), so this can never drift out of sync
+     with header composition changes. 69px = the current computed fallback. */
+  top: var(--site-header-h, 69px);
   margin-top: 22px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
