@@ -212,10 +212,14 @@ export function DualLine({
 // ── CostEvChart: market vs production cost (left) + signed EV% area (right) ──
 export function CostEvChart({
   market, cost, ev,
+  evNow,
   height = 240,
   loading = false,
 }: {
   market: TPt[]; cost: TPt[]; ev: TPt[];
+  /** LIVE EV (trailing rounds × spot) for the pill — the chart's last bucket is
+   *  a partial period and diverges from "now", so don't label it as now. */
+  evNow?: number | null;
   height?: number;
   loading?: boolean;
 }) {
@@ -257,7 +261,9 @@ export function CostEvChart({
   const gy = [0, 0.25, 0.5, 0.75, 1];
   const nTicks = Math.min(5, n);
   const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
-  const evNow = ev[n - 1]?.value;
+  // Pill = the LIVE number (same source as the hero tile) when provided; the
+  // series' last bucket is a partial period and would contradict it.
+  const evPill = evNow ?? ev[n - 1]?.value;
 
   return (
     <div ref={ref} className="w-full">
@@ -265,9 +271,10 @@ export function CostEvChart({
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: MARKET }} /> market (ORE/SOL)</span>
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: COST }} /> production cost</span>
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: POS, opacity: 0.55 }} /> EV+ <span className="h-2.5 w-2.5 rounded-sm" style={{ background: NEG, opacity: 0.55 }} /> EV−</span>
-        {evNow != null && (
-          <span className="ml-auto rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold" style={{ color: evNow >= 0 ? POS : NEG }}>
-            EV now {evNow >= 0 ? "+" : ""}{evNow.toFixed(1)}%
+        {evPill != null && (
+          <span className="ml-auto rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold" style={{ color: evPill >= 0 ? POS : NEG }}
+            title="Live: trailing ~30 settled rounds valued at the latest spot price (same figure as the hero tile). The chart's rightmost point is the current period so far, which can differ.">
+            EV now {evPill >= 0 ? "+" : ""}{evPill.toFixed(1)}%
           </span>
         )}
       </div>

@@ -259,7 +259,7 @@ function TrendsTab() {
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="tr" title="Production cost vs market (+EV)"
             subtitle="SOL cost to mine 1 ORE (measured: admin + vaulted, ÷ expected ORE incl. motherlode) vs buying at market. Green = mining is +EV.">
-            <CostEvChart market={mkT((p) => p.market_ratio_sol)} cost={mkT((p) => p.prod_cost_sol)} ev={mkT((p) => p.ev_pct)} height={250} loading={trends.loading} />
+            <CostEvChart market={mkT((p) => p.market_ratio_sol)} cost={mkT((p) => p.prod_cost_sol)} ev={mkT((p) => p.ev_pct)} evNow={evNow} height={250} loading={trends.loading} />
           </ChartCard>
         </div>
         {/* (1) prices */}
