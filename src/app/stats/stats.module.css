@@ -194,13 +194,10 @@
 }
 
 .tabDock {
-  position: sticky;
-  z-index: 20;
-  /* pin the dock's top border exactly to the header's bottom border: the
-     header publishes its REAL rendered height as --site-header-h (measured
-     via ResizeObserver in SiteHeader), so this can never drift out of sync
-     with header composition changes. 69px = the current computed fallback. */
-  top: var(--site-header-h, 69px);
+  /* UNSTICKY by decision (2026-07-15): three attempts at pinning it flush
+     under the sticky header cropped or floated on real devices; it now
+     scrolls with the page. */
+  position: relative;
   margin-top: 22px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;

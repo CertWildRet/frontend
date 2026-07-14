@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -26,25 +25,9 @@ const activeStyle = { ...tabDisplayFont, ...tabActiveGlow } as const;
  */
 export function SiteHeader() {
   const pathname = usePathname();
-  const ref = useRef<HTMLElement | null>(null);
-
-  // Publish the REAL rendered header height as --site-header-h so sticky
-  // elements (the stats tab dock) can pin their top border exactly to the
-  // header's bottom border - no hardcoded height drifting out of sync.
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const publish = () =>
-      document.documentElement.style.setProperty("--site-header-h", `${el.offsetHeight}px`);
-    publish();
-    const ro = new ResizeObserver(publish);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   return (
     <header
-      ref={ref}
       className="sticky top-0 z-30"
       style={{
         background: "linear-gradient(180deg, rgba(14,18,34,0.85), rgba(7,9,18,0.75))",
