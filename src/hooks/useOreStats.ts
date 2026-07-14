@@ -6,8 +6,18 @@
  * existing poll hooks: fetch on mount, re-fetch on an interval, expose a manual
  * refresh, and never leave a stale error masking fresh data.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { OreEnvelope } from "@/lib/oreStats";
+
+/**
+ * Visibility gate for pollers. The stats page keeps visited tabs MOUNTED (so
+ * switching back is instant), which used to leave every tab's pollers firing
+ * behind the hidden div — a dozen concurrent fetch+render cycles that made
+ * mobile unusable. Each hidden tab provides `false`; every usePolled inside
+ * pauses (no interval, no deps refetch) and resumes with a fresh fetch when
+ * the tab is shown again.
+ */
+export const PolledActiveContext = createContext(true);
 
 export type Polled<T> = {
   data: T | null;
@@ -55,16 +65,30 @@ export function usePolled<T>(
     }
   }, deps);
 
+  const active = useContext(PolledActiveContext);
+  const lastRunAt = useRef(0);
+  const lastRunFn = useRef<unknown>(null);
+
   useEffect(() => {
+    if (!active) return; // paused: hidden tab. Data stays; resume refetches.
     let alive = true;
-    const tick = () => { if (alive) run(); };
-    tick();
+    const tick = () => {
+      if (!alive) return;
+      lastRunAt.current = Date.now();
+      lastRunFn.current = run;
+      run();
+    };
+    // Fetch now unless THIS run identity (same deps) fired recently enough
+    // that the interval wouldn't have — deps changes always refetch, resuming
+    // a tab only refetches when the data is actually stale.
+    const fresh = lastRunFn.current === run && intervalMs > 0 && Date.now() - lastRunAt.current < intervalMs;
+    if (!fresh) tick();
     if (intervalMs > 0) {
       const id = setInterval(tick, intervalMs);
       return () => { alive = false; clearInterval(id); };
     }
     return () => { alive = false; };
-  }, [run, intervalMs]);
+  }, [run, intervalMs, active]);
 
   return { data, provenance, error, loading, fetching, refresh: run };
 }

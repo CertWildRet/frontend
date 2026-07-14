@@ -452,3 +452,30 @@
 @keyframes shimmer {
   100% { transform: translateX(200%); }
 }
+
+/* ── Mobile compositing diet ─────────────────────────────────────────────
+   Continuously animated gradients + stacked backdrop-filter blur are the #1
+   scroll-jank source on phone GPUs. Below 768px: freeze the ambient loops and
+   swap glass blur for a solid tint (same look, none of the per-frame cost).
+   Also honored for prefers-reduced-motion at any size. */
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
+  .atmosphere::before,
+  .atmosphere-beam,
+  .atmosphere-foil,
+  .frame-brand::before,
+  .ore-hero-tile::after {
+    animation: none !important;
+  }
+  .atmosphere-foil,
+  .atmosphere-beam {
+    display: none;
+  }
+}
+@media (max-width: 768px) {
+  .card, .panel, .chip, .btn-outline {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .card { background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01) 30%, rgba(7,9,18,0.2)), rgba(14, 18, 34, 0.94); }
+  .panel { background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.008) 30%, rgba(7,9,18,0.18)), rgba(14, 18, 34, 0.92); }
+}

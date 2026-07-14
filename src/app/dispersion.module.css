@@ -750,3 +750,26 @@
 .offscreenPaused * {
   animation-play-state: paused !important;
 }
+
+/* ── Mobile compositing diet (see globals.css note) ── */
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
+  .spectralEdge, .spectralEdge::before,
+  .ignite, .prismPill, .prismShard, .prismHalo,
+  .chroma, .chroma::before, .chroma::after,
+  .spectralBar, .flare, .flareCross, .chromaTrail, .spectralText,
+  .howOrbit, .howToken svg, .howTokenPulse, .howFeed, .howRing,
+  .howOrbiter, .howShard, .howWarmLeft, .howWarmRight, .howTile, .howEv {
+    animation: none !important;
+  }
+}
+@media (max-width: 768px) {
+  .glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-color: rgba(12, 16, 30, 0.94);
+  }
+  .prismPill, .frosted {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

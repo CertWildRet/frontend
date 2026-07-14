@@ -14,7 +14,7 @@ import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { TileSkeleton, RowsSkeleton, Refreshing } from "@/components/primitives/Skeleton";
 import { AreaLine, HBars, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
 import { DualLine, CostEvChart, BarsLine, PnlChart, PopBars, type TPt } from "@/components/stats/TrendCharts";
-import { usePolled } from "@/hooks/useOreStats";
+import { usePolled, PolledActiveContext } from "@/hooks/useOreStats";
 import {
   fetchOreRounds, fetchOreRound, fetchOreMotherlode, fetchOreLeaderboard,
   fetchOreMiners, fetchOreSeries, fetchOreCompetition, fetchOreTrends,
@@ -136,11 +136,20 @@ export default function StatsPage() {
         <TabBar aria-label="Ore Data sections" items={TABS} value={tab} onChange={openTab} />
       </div>
       <div className={styles.content}>
-        {visited.has("trends") && <div hidden={tab !== "trends"}><TrendsTab /></div>}
-        {visited.has("round_analysis") && <div hidden={tab !== "round_analysis"}><RoundAnalysisTab /></div>}
-        {visited.has("miners") && <div hidden={tab !== "miners"}><MinersTab /></div>}
-        {visited.has("motherlode") && <div hidden={tab !== "motherlode"}><MotherlodeTab /></div>}
-        {visited.has("rounds") && <div hidden={tab !== "rounds"}><RoundsTab /></div>}
+        {/* visited tabs stay mounted (instant switching, state kept) but their
+            pollers PAUSE while hidden — see PolledActiveContext */}
+        {TABS.map((t) =>
+          visited.has(t.id) ? (
+            <PolledActiveContext.Provider key={t.id} value={tab === t.id}>
+              <div hidden={tab !== t.id}>
+                {t.id === "trends" ? <TrendsTab /> :
+                 t.id === "round_analysis" ? <RoundAnalysisTab /> :
+                 t.id === "miners" ? <MinersTab /> :
+                 t.id === "motherlode" ? <MotherlodeTab /> : <RoundsTab />}
+              </div>
+            </PolledActiveContext.Provider>
+          ) : null,
+        )}
       </div>
     </div>
   );
@@ -200,9 +209,10 @@ function TrendsTab() {
   const yPts = yields.data?.points ?? [];
   const avgRefin = avgOf(yPts.map((p) => p.refining_apr));
   const avgStake = avgOf(yPts.map((p) => p.staking_apr));
-  const latestY = yields.data?.latest;
-  const carryNow = latestY?.refining_apr != null && latestY?.staking_apr != null
-    ? latestY.refining_apr - latestY.staking_apr : null;
+  // Carry in the pill is AVG minus AVG — the two numbers beside it are window
+  // averages, and mixing a latest-point carry with them reads as broken math
+  // whenever the newest point spikes (per-point carry lives in the tooltip).
+  const carryAvg = avgRefin != null && avgStake != null ? avgRefin - avgStake : null;
   const hLbl = (ts: number) => {
     const dt = new Date(ts * 1000);
     return `${dt.getMonth() + 1}/${dt.getDate()} ${dt.getHours()}:00`;
@@ -282,12 +292,12 @@ function TrendsTab() {
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="tr" title="Yields · hold unclaimed vs claim & stake"
             subtitle={`Refining APR (what your unclaimed ORE earns from others' claim fees) vs stORE staking APR. The shaded gap between them is the unclaimed carry: the extra APR you keep by NOT claiming. Annualized, rolling window up to 7d${yields.data?.latest?.window_days != null && yields.data.latest.window_days < 6.5 ? ` (currently ${formatNum(yields.data.latest.window_days, 1)}d, precise history began Jul 13)` : ""}.`}
-            right={(avgRefin != null || avgStake != null || carryNow != null) ? (
+            right={(avgRefin != null || avgStake != null || carryAvg != null) ? (
               <span className="flex max-w-full flex-wrap items-center gap-x-2.5 gap-y-1 rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold"
-                title="Averages are over the plotted points; carry = refining APR minus staking APR right now">
+                title="All three are averages over the plotted points; hover the chart for the per-hour carry">
                 {avgRefin != null && <span style={{ color: "#22E0E6" }}>refining avg {formatNum(avgRefin, 1)}%</span>}
                 {avgStake != null && <span style={{ color: "#E8881A" }}>staking avg {formatNum(avgStake, 1)}%</span>}
-                {carryNow != null && <span className={carryNow >= 0 ? "text-pos" : "text-red"}>carry now {carryNow >= 0 ? "+" : ""}{formatNum(carryNow, 1)}%</span>}
+                {carryAvg != null && <span className={carryAvg >= 0 ? "text-pos" : "text-red"}>carry avg {carryAvg >= 0 ? "+" : ""}{formatNum(carryAvg, 1)}%</span>}
               </span>
             ) : undefined}>
             <DualLine shared band={{ name: "unclaimed carry (refining minus staking)" }}
