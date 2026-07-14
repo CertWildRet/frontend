@@ -347,6 +347,7 @@ function TrendsTab() {
               <span className="flex items-center gap-1.5"><span className="inline-block h-0 w-4 border-t border-dashed border-fog-muted" /> 125 ORE = long-run average pop (0.2/round × 1-in-625)</span>
             </div>
             <PopBars bars={popBars} height={205} expected={125} fmt={(v) => formatNum(v, 1) + " ORE"}
+              axisFmt={(v) => formatNum(v, 0) + " ORE"}
               liveLast={ml?.current_pool_ore != null} loading={trends.loading} />
           </ChartCard>
         </div>

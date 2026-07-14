@@ -424,11 +424,16 @@ export function BarsLine({
 export function PopBars({
   bars, expected, height = 210,
   fmt = (v: number) => v.toFixed(1),
+  axisFmt,
   liveLast = false,
   loading = false,
 }: {
   bars: TPt[]; expected: number; height?: number;
+  /** Tooltip formatting (decimals welcome). */
   fmt?: (v: number) => string;
+  /** Axis-tick formatting — keep it short (no decimals) so labels stay inside
+   *  the gutter; defaults to `fmt`. */
+  axisFmt?: (v: number) => string;
   /** The final bar is the live pool (not a settled pop). */
   liveLast?: boolean;
   loading?: boolean;
@@ -437,6 +442,7 @@ export function PopBars({
   const [hover, setHover] = useState<number | null>(null);
   const H = height, padL = 52, padR = 14, padT = 14, padB = 26;
   const POS = "#4ADE80", NEG = "#F87171", BASE = "#5B6CFF", LIVE = "#22E0E6";
+  const aFmt = axisFmt ?? fmt;
   const n = bars.length;
   if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} /></div>;
 
@@ -463,10 +469,15 @@ export function PopBars({
         style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }} onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)}>
         {gy.map((g, gi) => {
           const yy = padT + g * (plotB - padT);
+          // the 125 line carries its own always-on axis label — mute any grid
+          // tick that would collide with it
+          const nearExpected = Math.abs(yy - yExp) < 14;
           return (
             <g key={gi}>
               <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
-              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={AXIS} textAnchor="end" fontFamily="monospace">{fmt(hi - g * hi)}</text>
+              {!nearExpected && (
+                <text x={padL - 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={AXIS} textAnchor="end" fontFamily="monospace">{aFmt(hi - g * hi)}</text>
+              )}
             </g>
           );
         })}
@@ -491,7 +502,8 @@ export function PopBars({
           return <rect key={i} x={bx} y={y(v)} width={bwid} height={Math.max(0, plotB - y(v))} rx={2} fill={NEG} opacity={hot ? 0.9 : 0.6} />;
         })}
         <line x1={padL} y1={yExp} x2={plotR} y2={yExp} stroke={AXIS} strokeWidth={1} strokeDasharray="4 3" opacity={0.8} />
-        <text x={plotR - 4} y={yExp - 5} fontSize={FS} fontWeight={700} fill={AXIS} textAnchor="end" fontFamily="monospace">{fmt(expected)}</text>
+        {/* the expectation line owns a permanent tick on the LEFT axis */}
+        <text x={padL - 6} y={yExp + 3.5} fontSize={FS} fontWeight={700} fill="#EDEDF0" textAnchor="end" fontFamily="monospace">{aFmt(expected)}</text>
         {xt.map((idx, ti) => (
           <text key={ti} x={xC(idx)} y={H - 8} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily="monospace"
             textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{bars[idx].label}</text>
