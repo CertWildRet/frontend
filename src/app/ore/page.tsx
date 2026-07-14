@@ -9,6 +9,7 @@ import { PhaseTimers } from "@/components/PhaseTimers";
 import { MintCwrCard } from "@/components/MintCwrCard";
 import { ParkCard } from "@/components/ParkCard";
 import { ClaimCard } from "@/components/ClaimCard";
+import { QueueExitCard } from "@/components/QueueExitCard";
 import { SettlePrompt } from "@/components/SettlePrompt";
 import { PositionCard } from "@/components/PositionCard";
 import { LiveCrankPanel } from "@/components/LiveCrankPanel";
@@ -52,6 +53,7 @@ export default function OrePage() {
           <MintCwrCard data={data} onDone={onDone} />
         )}
         <ClaimCard data={data} pos={pos} onDone={onDone} />
+        <QueueExitCard onDone={onDone} />
         <PositionCard pos={pos} data={data} stats={stats} />
       </div>
 

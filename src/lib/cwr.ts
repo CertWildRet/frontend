@@ -39,6 +39,10 @@ import {
   findPendingState,
   findPendingTreasury,
   findPendingDeposit,
+  findPendingWithdrawZinc,
+  findPendingWithdrawOre,
+  findShareEscrow,
+  findPendingWithdrawState,
   findMiningAuthority,
   oreMinerPda,
   oreBoardPda,
@@ -776,4 +780,133 @@ async function pollConfirm(
 
 export function explorerTx(sig: string): string {
   return `https://solscan.io/tx/${sig}`;
+}
+
+// ── Queued exits (v1.5.0): queue any phase, keeper finalizes next OPEN window ──
+
+export type QueuedTicket = {
+  shares: BN;
+  queuedAt: number;
+};
+
+async function readQueuedTicket(
+  connection: Connection,
+  owner: PublicKey,
+  zinc: boolean,
+): Promise<QueuedTicket | null> {
+  const vault = makeVault(connection);
+  const [pda] = zinc
+    ? findPendingWithdrawZinc(PROGRAM_ID, SIMPLE, owner)
+    : findPendingWithdrawOre(PROGRAM_ID, SIMPLE, owner);
+  const t = await vault.client.program.account.pendingWithdraw.fetchNullable(pda);
+  if (!t || !(t as any).shares || (t as any).shares.isZero?.() === true) return null;
+  return { shares: (t as any).shares as BN, queuedAt: Number((t as any).queuedAt ?? 0) };
+}
+
+export const readQueuedTicketOre = (c: Connection, o: PublicKey) => readQueuedTicket(c, o, false);
+export const readQueuedTicketZinc = (c: Connection, o: PublicKey) => readQueuedTicket(c, o, true);
+
+/** Queue an ORE-bucket exit (any phase; payout ATA is created in-program, payer = user). */
+export async function buildQueueWithdrawIxs(
+  connection: Connection,
+  owner: PublicKey,
+  shares: BN,
+): Promise<TransactionInstruction[]> {
+  const vault = makeVault(connection);
+  const addrs = deriveBucketAddresses(PROGRAM_ID, SIMPLE);
+  const [pendingWithdrawState] = findPendingWithdrawState(PROGRAM_ID, SIMPLE);
+  const [shareEscrow] = findShareEscrow(PROGRAM_ID, SIMPLE);
+  const [pendingWithdraw] = findPendingWithdrawOre(PROGRAM_ID, SIMPLE, owner);
+  const [position] = findPosition(PROGRAM_ID, SIMPLE, owner);
+  const userShareAta = getAssociatedTokenAddressSync(addrs.shareMint, owner);
+  const userStoreAta = getAssociatedTokenAddressSync(STORE_MINT, owner);
+  const ix = await vault.client.program.methods
+    .queueWithdraw(shares)
+    .accountsPartial({
+      config: vault.client.configPda,
+      bucket: addrs.bucket,
+      pendingWithdrawState,
+      shareEscrow,
+      shareMint: addrs.shareMint,
+      userShareAta,
+      user: owner,
+      position,
+      pendingWithdraw,
+      userStoreAta,
+      storeMint: STORE_MINT,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+    })
+    .instruction();
+  return [ix];
+}
+
+/** Queue a dZINC exit (any phase). */
+export async function buildQueueWithdrawZincIxs(
+  connection: Connection,
+  owner: PublicKey,
+  shares: BN,
+): Promise<TransactionInstruction[]> {
+  const vault = makeVault(connection);
+  const addrs = deriveBucketAddresses(PROGRAM_ID, SIMPLE);
+  const [zincPool] = zincPoolPda(PROGRAM_ID, SIMPLE);
+  const [zincPosition] = zincPositionPda(PROGRAM_ID, SIMPLE, owner);
+  const [pendingWithdrawState] = findPendingWithdrawState(PROGRAM_ID, SIMPLE);
+  const [shareEscrow] = findShareEscrow(PROGRAM_ID, SIMPLE);
+  const [pendingWithdraw] = findPendingWithdrawZinc(PROGRAM_ID, SIMPLE, owner);
+  const userShareAta = getAssociatedTokenAddressSync(addrs.shareMint, owner);
+  const userZincAta = zincUserAta(owner);
+  const ix = await vault.client.program.methods
+    .queueWithdrawZinc(shares)
+    .accountsPartial({
+      config: vault.client.configPda,
+      bucket: addrs.bucket,
+      zincPool,
+      pendingWithdrawState,
+      shareEscrow,
+      shareMint: addrs.shareMint,
+      userShareAta,
+      user: owner,
+      zincPosition,
+      pendingWithdraw,
+      userZincAta,
+      zincMint: ZINC_MINT,
+      tokenProgram: ZINC_TOKEN_PROGRAM,
+      systemProgram: SystemProgram.programId,
+    })
+    .instruction();
+  return [ix];
+}
+
+/** Cancel a queued exit (either flavor). Any phase, even paused. */
+export async function buildCancelQueuedWithdrawIxs(
+  connection: Connection,
+  owner: PublicKey,
+  zinc: boolean,
+): Promise<TransactionInstruction[]> {
+  const vault = makeVault(connection);
+  const addrs = deriveBucketAddresses(PROGRAM_ID, SIMPLE);
+  const [pendingWithdrawState] = findPendingWithdrawState(PROGRAM_ID, SIMPLE);
+  const [shareEscrow] = findShareEscrow(PROGRAM_ID, SIMPLE);
+  const [pendingWithdraw] = zinc
+    ? findPendingWithdrawZinc(PROGRAM_ID, SIMPLE, owner)
+    : findPendingWithdrawOre(PROGRAM_ID, SIMPLE, owner);
+  const ownerShareAta = getAssociatedTokenAddressSync(addrs.shareMint, owner);
+  const method = zinc
+    ? vault.client.program.methods.cancelQueuedWithdrawZinc()
+    : vault.client.program.methods.cancelQueuedWithdraw();
+  const ix = await method
+    .accountsPartial({
+      bucket: addrs.bucket,
+      pendingWithdrawState,
+      shareEscrow,
+      shareMint: addrs.shareMint,
+      owner,
+      ownerShareAta,
+      pendingWithdraw,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+    })
+    .instruction();
+  return [ix];
 }

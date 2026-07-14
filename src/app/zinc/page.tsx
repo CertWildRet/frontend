@@ -9,6 +9,7 @@ import { SettleZincPrompt } from "@/components/zinc/SettleZincPrompt";
 import { MintZincCard } from "@/components/zinc/MintZincCard";
 import { ParkZincCard } from "@/components/zinc/ParkZincCard";
 import { ClaimZincCard } from "@/components/zinc/ClaimZincCard";
+import { QueueExitCard } from "@/components/QueueExitCard";
 import { ZincPositionCard } from "@/components/zinc/ZincPositionCard";
 import { ZincRouletteHero } from "@/components/zinc/ZincRouletteHero";
 import { ZincLiveCrankPanel } from "@/components/zinc/ZincLiveCrankPanel";
@@ -76,6 +77,7 @@ export default function ZincPage() {
               <MintZincCard data={data} onDone={onDone} />
             )}
             <ClaimZincCard data={data} pos={pos} onDone={onDone} />
+            <QueueExitCard zinc onDone={onDone} />
             <ZincPositionCard pos={pos} data={data} />
           </div>
         </>
