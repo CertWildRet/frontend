@@ -28,7 +28,11 @@
   overflow: hidden;
   border-radius: 28px;
   padding: 34px;
+  /* first layer: the diagonal border segment along the 30px corner cut — the
+     clip-path slices the ::before ring dead there (30/√2 ≈ 21.2px from the
+     corner along the gradient axis, 2px band matching the ring width) */
   background:
+    linear-gradient(225deg, transparent 19.9px, rgba(154, 107, 255, 0.55) 20.2px, rgba(154, 107, 255, 0.55) 22.4px, transparent 22.7px) top right / 64px 64px no-repeat,
     linear-gradient(120deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.012) 42%, rgba(7, 9, 18, 0.28)),
     rgba(14, 18, 34, 0.62);
   box-shadow:
@@ -42,7 +46,12 @@
   content: "";
   position: absolute;
   inset: 0;
-  padding: 1px;
+  /* border-radius: inherit is load-bearing: without it the mask ring is a
+     sharp rectangle and the gradient border vanishes at the 28px corners.
+     2px whole-pixel width kills the ragged rounded-corner aliasing (the
+     established stats/ fix); the cut-corner hairline above is matched to it. */
+  border-radius: inherit;
+  padding: 2px;
   pointer-events: none;
   background: linear-gradient(
     125deg,
@@ -54,6 +63,19 @@
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  right: -8%;
+  bottom: -85%;
+  width: 55%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(from 30deg, rgba(34, 224, 230, 0.16), rgba(91, 108, 255, 0.04), rgba(255, 90, 200, 0.18), transparent 68%);
+  filter: blur(28px);
 }
 
 .eyebrow {
@@ -89,12 +111,15 @@
 
 .titleAccent {
   display: inline-block;
-  background: linear-gradient(110deg, #22e0e6, #7d88ff 42%, #d988ff 72%, #ff86d9);
+  /* palindromic tile: every repeat edge is cyan|cyan, so the sweep can never
+     show a pink->cyan wall no matter the phase (established stats/ fix; the
+     alternate direction makes the loop seam-free in time as well) */
+  background: linear-gradient(110deg, #22e0e6, #7d88ff 22%, #d988ff 38%, #ff86d9 50%, #d988ff 62%, #7d88ff 78%, #22e0e6);
   background-size: 180% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: spectrumFlow 8s linear infinite;
+  animation: spectrumFlow 8s ease-in-out infinite alternate;
 }
 
 .subtitle {
@@ -213,5 +238,35 @@
   50% {
     opacity: 0.5;
     transform: scale(0.78);
+  }
+}
+
+/* ── Mobile layout (mirror of stats/) ── */
+@media (max-width: 760px) {
+  .hero {
+    padding: 28px 24px 30px;
+  }
+
+  .title,
+  .subtitle,
+  .walletStrip {
+    position: relative;
+    z-index: 2;
+    max-width: calc(100% - 26px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liveDot,
+  .titleAccent {
+    animation: none;
+  }
+}
+
+/* ── Mobile compositing diet (see globals.css note; established stats/ fix:
+   ambient gradient loops freeze under 768px) ── */
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
+  .titleAccent {
+    animation: none !important;
   }
 }
