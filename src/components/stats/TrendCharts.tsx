@@ -504,10 +504,16 @@ export function PopBars({
         <line x1={padL} y1={yExp} x2={plotR} y2={yExp} stroke={AXIS} strokeWidth={1} strokeDasharray="4 3" opacity={0.8} />
         {/* the expectation line owns a permanent tick on the LEFT axis */}
         <text x={padL - 6} y={yExp + 3.5} fontSize={FS} fontWeight={700} fill="#EDEDF0" textAnchor="end" fontFamily="monospace">{aFmt(expected)}</text>
-        {xt.map((idx, ti) => (
-          <text key={ti} x={xC(idx)} y={H - 8} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily="monospace"
-            textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{bars[idx].label}</text>
-        ))}
+        {xt.map((idx, ti) => {
+          // On narrow plots the end-anchored live label ("now (accruing)")
+          // collides with the neighboring round-id tick - shorten the AXIS
+          // tick to "now" there; the tooltip keeps the full label.
+          const lbl = liveLast && idx === n - 1 && W < 640 ? "now" : bars[idx].label;
+          return (
+            <text key={ti} x={xC(idx)} y={H - 8} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily="monospace"
+              textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{lbl}</text>
+          );
+        })}
         {hover != null && bars[hover].value != null && (
           <TrendTooltip x={xC(hover)} y={padT + 10} W={W} lines={
             liveLast && hover === n - 1
