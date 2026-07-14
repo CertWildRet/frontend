@@ -196,8 +196,10 @@
 .tabDock {
   position: sticky;
   z-index: 20;
-  /* must clear the sticky site header (~104px) or the dock hides behind it */
-  top: 118px;
+  /* sit FLUSH under the sticky site header: 28px padding + 40px logo row +
+     1px border = 69px (the old 118px assumed a taller two-row header and
+     left a floating gap when stuck) */
+  top: 69px;
   margin-top: 22px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
