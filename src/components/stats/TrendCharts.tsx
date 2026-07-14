@@ -129,7 +129,8 @@ export function DualLine({
 }) {
   const [ref, W] = useMeasuredWidth();
   const [hover, setHover] = useState<number | null>(null);
-  const H = height, padL = 52, padR = 52, padT = 14, padB = 26;
+  // shared mode has no right axis — reclaim its gutter for the plot
+  const H = height, padL = 52, padR = shared ? 14 : 52, padT = 14, padB = 26;
   const n = a.length;
   if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} text={emptyText} /></div>;
 
@@ -148,7 +149,7 @@ export function DualLine({
     setHover(Math.max(0, Math.min(n - 1, Math.round(((px - padL) / Math.max(1, plotR - padL)) * (n - 1)))));
   };
   const gy = [0, 0.25, 0.5, 0.75, 1];
-  const nTicks = Math.min(5, n);
+  const nTicks = Math.min(W < 460 ? 3 : W < 640 ? 4 : 5, n);
   const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
 
   return (
@@ -259,7 +260,7 @@ export function CostEvChart({
     setHover(Math.max(0, Math.min(n - 1, Math.round(((px - padL) / Math.max(1, plotR - padL)) * (n - 1)))));
   };
   const gy = [0, 0.25, 0.5, 0.75, 1];
-  const nTicks = Math.min(5, n);
+  const nTicks = Math.min(W < 460 ? 3 : W < 640 ? 4 : 5, n);
   const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
   // Pill = the LIVE number (same source as the hero tile) when provided; the
   // series' last bucket is a partial period and would contradict it.
@@ -363,7 +364,7 @@ export function BarsLine({
     setHover(Math.max(0, Math.min(n - 1, Math.floor((px - padL) / bw))));
   };
   const gy = [0, 0.25, 0.5, 0.75, 1];
-  const nTicks = Math.min(5, n);
+  const nTicks = Math.min(W < 460 ? 3 : W < 640 ? 4 : 5, n);
   const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
 
   return (
@@ -453,7 +454,7 @@ export function PopBars({
     setHover(Math.max(0, Math.min(n - 1, Math.floor((px - padL) / bw))));
   };
   const gy = [0, 0.25, 0.5, 0.75, 1];
-  const nTicks = Math.min(5, n);
+  const nTicks = Math.min(W < 460 ? 3 : W < 640 ? 4 : 5, n);
   const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
 
   return (
@@ -540,7 +541,7 @@ export function PnlChart({
     setHover(Math.max(0, Math.min(n - 1, Math.round(((px - padL) / Math.max(1, plotR - padL)) * (n - 1)))));
   };
   const gy = [0, 0.25, 0.5, 0.75, 1];
-  const nTicks = Math.min(5, n);
+  const nTicks = Math.min(W < 460 ? 3 : W < 640 ? 4 : 5, n);
   const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
 
   return (

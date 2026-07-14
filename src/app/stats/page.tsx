@@ -315,7 +315,7 @@ function TrendsTab() {
             <AreaLine
               points={(dominance.data?.points ?? []).filter((p) => p.dominance_pct != null).map((p) => ({ label: hLbl(p.hour_ts), value: p.dominance_pct as number }))}
               height={200} zeroBaseline={false} color="#22E0E6"
-              fmt={(v) => formatNum(v, 2) + "%"} yFmt={(v) => formatNum(v, 1) + "%"}
+              fmt={(v) => formatNum(v, 2) + "%"} yFmt={(v) => formatNum(v, 2) + "%"}
               loading={dominance.loading} />
           </ChartCard>
         </div>

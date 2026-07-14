@@ -182,7 +182,7 @@ export function AreaLine({
   };
 
   const gy = [0, 0.25, 0.5, 0.75, 1];
-  const nTicks = Math.min(5, n);
+  const nTicks = Math.min(W < 460 ? 3 : W < 640 ? 4 : 5, n);
   const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
 
   return (
