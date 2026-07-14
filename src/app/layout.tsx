@@ -42,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <div className="max-w-xs">
                   <div className="flex items-center gap-1.5">
                     <Image
-                      src="/logo.png"
+                      src="/logo.webp"
                       alt="Diamond Pools"
                       width={32}
                       height={32}
@@ -63,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <span className="flex items-center gap-2 font-mono text-[12px] text-[#9AA3C8]">
                     Built on
                     <Image
-                      src="/solana-logo.png"
+                      src="/solana-logo.webp"
                       alt="Solana"
                       width={80}
                       height={20}
