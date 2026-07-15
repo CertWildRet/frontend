@@ -33,7 +33,7 @@ export function HeroLiveStrip() {
       <PoolBlock
         href="/ore"
         label="dORE"
-        tagline="Mines cheap rounds only"
+        tagline="Digging live, priced every round"
         dot="#22E0E6"
         border="#5B6CFF"
         metrics={oreMetrics}

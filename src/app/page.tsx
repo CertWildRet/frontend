@@ -14,20 +14,20 @@ import { SpectralChartDefs } from "@/lib/SpectralChartDefs";
 const STEPS = [
   {
     n: "01",
-    t: "Get dORE tokens",
-    d: "Your pro-rata share of the Diamond Pool. dORE tracks ORE.",
+    t: "Deposit SOL, hold dORE",
+    d: "One token, your exact slice of the vault. As the engine earns, it appreciates.",
     Graphic: StepTokenGraphic,
   },
   {
     n: "02",
-    t: "Let our algorithms do the work",
-    d: "It mines the full ORE board (25 tiles), only on rounds that are EV-positive.",
+    t: "The engine prices every round",
+    d: "It covers the full 25-tile board only when the math clears, and sits out when it doesn't.",
     Graphic: StepBoardGraphic,
   },
   {
     n: "03",
-    t: "Claim or let it keep working",
-    d: "Pull out to SOL during any open claim window, or hold on. dORE compounds into stORE.",
+    t: "Cash out or compound",
+    d: "Redeem to SOL in any open window, or stay in while yield compounds through stORE.",
     Graphic: StepYieldGraphic,
   },
 ];
@@ -35,21 +35,21 @@ const STEPS = [
 const EDGE = [
   {
     grade: "VVS1",
-    t: "Mine as one.",
-    d: "Pooled capital behaves like a whale: smoother outcomes, less variance, and a faster path to the exposure that matters.",
-    metric: "less variance",
+    t: "Size without the swings.",
+    d: "Pooled capital turns a coin-flip grind into a steady curve: the same exposure, far less variance per SOL.",
+    metric: "lower variance",
   },
   {
     grade: "VVS2",
-    t: "Hit more wins.",
-    d: "On every round it mines, the pool covers the whole board, so it catches winning tiles a lone miner deploys too little to reach.",
-    metric: "better odds",
+    t: "No tile left dark.",
+    d: "When the pool plays a round it covers all 25 tiles, so the winning square is always one of ours. Solo stacks have to guess.",
+    metric: "full coverage",
   },
   {
     grade: "VS1",
-    t: "Claim on your terms.",
-    d: "Take profit any open window without unwinding your whole position. What you leave keeps working.",
-    metric: "exit anytime",
+    t: "Take profit, keep the seat.",
+    d: "Redeem any open window without unwinding the rest. Whatever you leave in never stops digging.",
+    metric: "flexible exits",
   },
 ];
 
@@ -58,30 +58,30 @@ const TEAM = [
     name: "br0wnD3v",
     role: "Infrastructure",
     avatar: "/brown.png",
-    d: "Contracts, miner, and the rails. Builds the machine that runs the board nonstop. Also devs for Adrena DEX.",
+    d: "Contracts, miner, and the rails underneath. Builds the machine that works the board without blinking. Also ships for Adrena DEX.",
     x: "https://x.com/anuj_tnr",
   },
   {
     name: "Willd",
     role: "Product",
     avatar: "/will.png",
-    d: "Product, brand, and direction. Makes pooled mining read clean and feel serious. Ex-Minemore.",
+    d: "Product, brand, and direction. Turns a mining engine into something you can actually read. Ex-Minemore.",
     x: "https://x.com/willdxyz",
   },
   {
     name: "ZeDef_Koala",
     role: "Quant",
     avatar: "/koala.png",
-    d: "Thats our quant. Our quantitative, our math specialist! Also maths for Adrena DEX.",
+    d: "The math. Pricing models, EV gates, and the backtests behind every parameter. Also quants for Adrena DEX.",
     x: "https://x.com/ZeDef_Koala",
   },
 ];
 
 const HERO_SPECS = [
-  "Non-custodial",
-  "Transparent",
-  "Lowest fees",
-  "Built by miners for miners",
+  "Non-custodial vault",
+  "Every move readable on-chain",
+  "Fee-lean by design",
+  "Run by people who mine it themselves",
 ];
 
 const display = { fontFamily: "'Chakra Petch', sans-serif" } as const;
@@ -231,18 +231,19 @@ export default function DispersionLanding() {
             className="text-[clamp(2.6rem,7vw,5.2rem)] font-bold leading-[0.98] tracking-[-0.01em] text-[#EAECF6]"
             style={display}
           >
-            Pool SOL,
+            Pressure Makes
             <br />
-            Mine Like a{" "}
             <span
               className={styles.chroma}
-              data-text="Whale"
+              data-text="Diamonds"
             >
-              Whale
+              Diamonds
             </span>
           </h1>
           <p className="mt-7 max-w-[560px] text-[17px] leading-relaxed text-[#A8B0D4]">
-            Join the Diamond Pool and mine ORE as one whale.
+            Deposit SOL into one disciplined vault. A quant engine prices every
+            ORE round, digs only when the numbers clear, and settles everything
+            on chain.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3.5">
@@ -256,7 +257,7 @@ export default function DispersionLanding() {
               href="/stats"
               className={`${styles.prismPill} group inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[15px] font-medium text-[#EAECF6]`}
             >
-              Browse Ore Data
+              See the numbers
               <ArrowIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
@@ -287,7 +288,7 @@ export default function DispersionLanding() {
 
       {/* ══ HOW IT WORKS ═══════════════════════════════════════════ */}
       <section className="mt-20">
-        <SectionLabel t="How it works" />
+        <SectionLabel t="Three steps, then it runs itself." />
         <PauseWhenOffscreen className="mt-12 grid gap-6 md:grid-cols-3 sm:gap-7">
           {STEPS.map((step, i) => (
             <HowRow key={step.n} step={step} flip={i % 2 === 1} />
@@ -297,7 +298,7 @@ export default function DispersionLanding() {
 
       {/* ══ THE EDGE - graded comparison table ═════════════════════ */}
       <section className="mt-28">
-        <SectionLabel k="the edge" t="Whale-like performance." />
+        <SectionLabel k="the edge" t="What the cut buys you." />
         <div
           className={`${styles.glass} ${styles.spectralEdge} ${styles.cutTR} mt-9 overflow-hidden rounded-3xl`}
         >
@@ -368,22 +369,23 @@ export default function DispersionLanding() {
             className="mt-5 max-w-[720px] text-[clamp(1.7rem,3.6vw,2.6rem)] font-bold leading-[1.06] text-[#EAECF6]"
             style={display}
           >
-            A real edge, not a bet on the room staying{" "}
-            <span className={styles.chroma} data-text="dumb">
-              dumb
-            </span>
-            .
+            An edge that survives everyone{" "}
+            <span className={styles.chroma} data-text="knowing">
+              knowing
+            </span>{" "}
+            about it.
           </h2>
           <div className="mt-7 grid gap-6 md:grid-cols-2">
             <p className="text-[15px] leading-relaxed text-[#A8B0D4]">
-              Plenty of products sell a single number and call it an edge. The
-              trouble with a number everyone can hit is simple: the market
-              reprices and the edge quietly disappears.
+              Most products sell you a headline number and call it an edge.
+              The problem with an edge anyone can copy is that the market
+              copies it, reprices it, and quietly deletes it.
             </p>
             <p className="text-[15px] leading-relaxed text-[#A8B0D4]">
-              We build on advantages that don&apos;t depend on someone else
-              playing badly. Pooling lowers your variance. Holding dORE
-              compounds yield via stORE. Flexible claims let you take profit without giving up your position.
+              Ours are structural. Pooling cuts variance no matter who else
+              shows up. dORE compounds through stORE whether the room is smart
+              or not. And flexible claims mean taking profit never costs you
+              the position.
             </p>
           </div>
           <div className="mt-8 inline-flex items-center gap-3">
@@ -395,7 +397,7 @@ export default function DispersionLanding() {
               className={`${styles.spectralText} text-[15px] font-semibold tracking-wide`}
               style={display}
             >
-              Structure over hopium.
+              Discipline compounds. Hype doesn&apos;t.
             </span>
           </div>
 
@@ -405,12 +407,12 @@ export default function DispersionLanding() {
               className="max-w-[720px] text-[clamp(1.5rem,3vw,2.1rem)] font-bold leading-[1.08] text-[#EAECF6]"
               style={display}
             >
-              Fully transparent, not a red box.
+              Glass, not a black box.
             </h2>
             <p className="mt-5 max-w-[680px] text-[15px] leading-relaxed text-[#A8B0D4]">
-              Every deposit, balance, and flow lives on Solana, readable by any
-              explorer at any time. The vault holds the SOL, the program mines it,
-              and funds only ever move{" "}
+              Every deposit, every balance, every flow sits on Solana where any
+              explorer can read it. The vault holds the SOL, the program mines
+              it, and funds only ever travel one route:{" "}
               <span className="text-[#EAECF6]" style={mono}>
                 vault → ORE → back
               </span>
@@ -422,7 +424,7 @@ export default function DispersionLanding() {
 
       {/* ══ TEAM ═══════════════════════════════════════════════════ */}
       <section className="mt-28">
-        <SectionLabel k="the team" t="Built by Solana natives." />
+        <SectionLabel k="the team" t="The hands on the machine." />
         <div className="mt-9 grid gap-5 sm:grid-cols-3">
           {TEAM.map((m) => (
             <div
@@ -482,11 +484,11 @@ export default function DispersionLanding() {
             className="relative text-[clamp(1.8rem,4vw,3rem)] font-bold leading-[1.05] text-[#EAECF6]"
             style={display}
           >
-            Pool your SOL. Mine ORE like a whale.
+            Pressure in. Diamonds out.
           </h2>
           <p className="relative mx-auto mt-4 max-w-[500px] text-[15px] text-[#A8B0D4]">
-            One disciplined pool, a miner that never sleeps, and a claim window
-            that opens on your terms.
+            One vault, an engine that never sleeps, and exits that open on your
+            schedule. The rest is math.
           </p>
           <div className="relative mt-8 flex flex-wrap items-center justify-center gap-3.5">
             <span
@@ -499,7 +501,7 @@ export default function DispersionLanding() {
               href="/stats"
               className={`${styles.prismPill} group inline-flex items-center gap-2 rounded-full px-8 py-4 text-[16px] font-medium text-[#EAECF6]`}
             >
-              Browse Ore Data
+              See the numbers
               <ArrowIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
