@@ -261,10 +261,15 @@ export type OreTrends = {
   now: { prod_cost_sol: number; market_ratio_sol: number; ev_pct: number; rounds_window: number; miners_today: number | null } | null;
   points: OreTrendPoint[];
   motherlode: {
-    pops: { round_id: string; ts: number; pop_ore: number }[];
+    pops: { round_id: string; ts: number; pop_ore: number; expected_pop_ore?: number }[];
     current_pool_ore: number | null;
     as_of_round: string | null;
+    /** The CURRENT era's expected pop (0.2 x odds): 125 pre-335k, 100 after. */
     expected_pop_ore: number;
+    /** Motherlode odds for the live round: 625 pre-335k, 500 after. */
+    odds_per_round?: number;
+    /** Round at which the on-chain odds changed (335,000). */
+    odds_change_round?: number;
     avg_pop_ore: number | null;
   };
 };
@@ -397,6 +402,17 @@ export const fetchOreMiners = (opts: { sort?: string; offset?: number; limit?: n
 export const fetchOreSeries = (range = "30d") => get<OreSeries>(`/ore/series?range=${range}`);
 export const fetchOreTrends = (range = "30d") => get<OreTrends>(`/ore/trends?range=${range}`);
 export const fetchOreEcosystem = (range = "90d") => get<OreEcosystem>(`/ore/ecosystem?range=${range}`);
+/**
+ * Motherlode odds are ROUND-GATED on-chain (ore/api/src/state/round.rs
+ * did_hit_motherlode): 1-in-625 below round 335,000, 1-in-500 from 335,000 on.
+ * Accrual stays 0.2 ORE/round, so the long-run average pop moves 125 -> 100 ORE.
+ * Never apply the new odds retroactively — every pre-335k pop really was a
+ * 1-in-625 draw against a 125 ORE expectation.
+ */
+export const MTL_ODDS_CHANGE_ROUND = 335_000;
+export const motherlodeOdds = (roundId: number): number => (roundId >= MTL_ODDS_CHANGE_ROUND ? 500 : 625);
+export const expectedPopOre = (roundId: number): number => 0.2 * motherlodeOdds(roundId);
+
 export const fetchOreYields = () => get<OreYields>(`/ore/yields`);
 export const fetchOreDominance = () => get<OreDominance>(`/ore/dominance`);
 export const fetchOreMiner = (pubkey: string, rounds: number | "all" = 1000) => get<OreMinerDetail>(`/ore/miner/${pubkey}?rounds=${rounds}`);

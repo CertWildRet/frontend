@@ -20,6 +20,7 @@ import {
   fetchOreRounds, fetchOreRound, fetchOreMotherlode, fetchOreLeaderboard,
   fetchOreMiners, fetchOreSeries, fetchOreCompetition, fetchOreTrends,
   fetchOreEcosystem, fetchOreMiner, fetchOreYields, fetchOreDominance,
+  motherlodeOdds, expectedPopOre,
   lamportsToSol, oreGramsToOre, roundTileDeployRange, roundMaxSpreadFrac,
   type TileDeployRange,
   type OreSeriesPoint,
@@ -206,6 +207,10 @@ function TrendsTab() {
   const dominance = usePolled(() => fetchOreDominance(), 300_000, []);
   const tp = trends.data?.points ?? [];
   const ml = trends.data?.motherlode;
+  // Motherlode odds are round-gated on-chain (1-in-625 -> 1-in-500 at round
+  // 335,000), so the API hands us the CURRENT era's expectation + each pop's own.
+  const mlExpected = ml?.expected_pop_ore ?? 125;
+  const mlOdds = ml?.odds_per_round ?? 625;
   const corr = returnsCorrelation(tp.map((p) => p.ore_usd), tp.map((p) => p.sol_usd));
   const yPts = yields.data?.points ?? [];
   const avgRefin = avgOf(yPts.map((p) => p.refining_apr));
@@ -231,6 +236,11 @@ function TrendsTab() {
   const POPS_SHOWN = 48;
   const popBars: Pt[] = (ml?.pops ?? []).slice(-POPS_SHOWN).map((h) => ({ label: `#${formatNum(Number(h.round_id))}`, value: h.pop_ore }));
   if (ml?.current_pool_ore != null) popBars.push({ label: "now (accruing)", value: ml.current_pool_ore });
+  // each pop is judged against the expectation of the era it settled in; the live
+  // pool bar uses the current era's
+  const popExpected: number[] = (ml?.pops ?? []).slice(-POPS_SHOWN).map((h) =>
+    h.expected_pop_ore ?? expectedPopOre(Number(h.round_id)));
+  if (ml?.current_pool_ore != null) popExpected.push(mlExpected);
   const nowLive = trends.data?.now ?? null;
   const evNow = nowLive?.ev_pct ?? [...tp].reverse().find((p) => p.ev_pct != null)?.ev_pct ?? null;
 
@@ -260,7 +270,7 @@ function TrendsTab() {
           hint={nowLive ? `live · last ${nowLive.rounds_window} rounds × spot` : "vs buying ORE at market (today)"} />
         <StatTile label="Production cost" value={nowLive ? formatNum(nowLive.prod_cost_sol, 3) : tp.length && tp[tp.length - 1].prod_cost_sol != null ? formatNum(tp[tp.length - 1].prod_cost_sol!, 3) : "···"} unit="SOL/ORE" hint={nowLive ? "live · trailing ~35 min" : "measured on-chain, today"} />
         <StatTile label="Motherlode pool" value={ml?.current_pool_ore != null ? formatNum(ml.current_pool_ore, 1) : "···"} unit="ORE" tone="gold"
-          hint={`expected pop 125 · past avg ${ml?.avg_pop_ore != null ? formatNum(ml.avg_pop_ore, 0) : "·"}`} />
+          hint={`expected pop ${formatNum(mlExpected, 0)} (1-in-${formatNum(mlOdds)}) · past avg ${ml?.avg_pop_ore != null ? formatNum(ml.avg_pop_ore, 0) : "·"}`} />
         <StatTile label="Miners today" value={nowLive?.miners_today != null ? formatNum(nowLive.miners_today) : "···"} hint="unique wallets that deployed (UTC day)" />
       </div>
       )}
@@ -333,21 +343,21 @@ function TrendsTab() {
         {/* (4) motherlode — full width */}
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="bl" title="Motherlode pop value"
-            subtitle={`Every pop vs the 125 ORE long-run average (dashed). Green slice = the part above 125, red bars fell short. Last bar is the live pool, still filling 0.2/round.${ml?.avg_pop_ore != null ? ` Historical average pop: ${formatNum(ml.avg_pop_ore, 1)} ORE over ${formatNum(ml.pops.length)} pops.` : ""}`}
+            subtitle={`Every pop vs the long-run average it ran under (dashed, now ${formatNum(mlExpected, 0)} ORE at 1-in-${formatNum(mlOdds)}). Green slice = the part above the line, red bars fell short. Last bar is the live pool, still filling 0.2/round. The odds tightened from 1-in-625 to 1-in-500 at round 335,000, so the line steps down from 125 to 100 there.${ml?.avg_pop_ore != null ? ` Average pop across all eras: ${formatNum(ml.avg_pop_ore, 1)} ORE over ${formatNum(ml.pops.length)} pops.` : ""}`}
             right={ml?.current_pool_ore != null ? (
               <span className="rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold"
-                style={{ color: ml.current_pool_ore - 125 >= 0 ? "#4ADE80" : "#F87171" }}
-                title="Pop premium = the live motherlode pool minus the 125 ORE long-run average pop. Positive = the pool is already fatter than an average pop pays.">
-                pop premium {ml.current_pool_ore - 125 >= 0 ? "+" : ""}{formatNum(ml.current_pool_ore - 125, 1)} ORE
+                style={{ color: ml.current_pool_ore - mlExpected >= 0 ? "#4ADE80" : "#F87171" }}
+                title={`Pop premium = the live motherlode pool minus the ${formatNum(mlExpected, 0)} ORE long-run average pop (0.2/round x 1-in-${formatNum(mlOdds)}). Positive = the pool is already fatter than an average pop pays.`}>
+                pop premium {ml.current_pool_ore - mlExpected >= 0 ? "+" : ""}{formatNum(ml.current_pool_ore - mlExpected, 1)} ORE
               </span>
             ) : undefined}>
             <div className="mb-1.5 flex flex-wrap gap-4 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#4ADE80] opacity-80" /> pop above 125 (surplus slice)</span>
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#F87171] opacity-70" /> pop below 125</span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#4ADE80] opacity-80" /> pop above its era average (surplus slice)</span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#F87171] opacity-70" /> pop below its era average</span>
               <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#22E0E6]" /> live pool (not popped yet)</span>
-              <span className="flex items-center gap-1.5"><span className="inline-block h-0 w-4 border-t border-dashed border-fog-muted" /> 125 ORE = long-run average pop (0.2/round × 1-in-625)</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block h-0 w-4 border-t border-dashed border-fog-muted" /> long-run average pop (0.2/round × odds); steps 125 → 100 at round 335,000</span>
             </div>
-            <PopBars bars={popBars} height={205} expected={125} fmt={(v) => formatNum(v, 1) + " ORE"}
+            <PopBars bars={popBars} height={205} expected={popExpected} fmt={(v) => formatNum(v, 1) + " ORE"}
               axisFmt={(v) => formatNum(v, 0) + " ORE"}
               liveLast={ml?.current_pool_ore != null} loading={trends.loading} />
           </ChartCard>
@@ -420,6 +430,8 @@ function MotherlodeTab() {
   const total = d?.total ?? 0;
   const pool = oreGramsToOre(d?.current?.pool_grams);
   const sinceHit = d?.current ? d.current.current_round - (d.current.last_hit_round ?? d.current.current_round) : 0;
+  // odds are round-gated on-chain: 1-in-625 below round 335,000, 1-in-500 from there
+  const mtlOdds = motherlodeOdds(d?.current?.current_round ?? 0);
   const mlChartPts: Pt[] = [...(mlChart.data?.recent_hits ?? [])]
     .reverse()
     .map((h) => ({ label: `#${formatNum(Number(h.round_id))}`, value: solOf(h.motherlode_paid) }));
@@ -427,7 +439,7 @@ function MotherlodeTab() {
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatTile label="Current pool" value={pool ? formatNum(pool, 1) : "···"} unit="ORE" tone="gold" hint={`+0.2 ORE/round · ${formatNum(sinceHit)} since last hit`} />
-        <StatTile label="Odds per round" value="1 : 625" hint="by protocol design" />
+        <StatTile label="Odds per round" value={`1 : ${formatNum(mtlOdds)}`} hint={mtlOdds === 500 ? "tightened from 1:625 at round 335,000" : "by protocol design"} />
         <StatTile label="Last hit" value={d?.current?.last_hit_round ? `#${formatNum(d.current.last_hit_round)}` : "···"} hint="most recent drop" />
         <StatTile label="Total hits" value={formatNum(total)} hint="all-time (≥ 0.2 ORE)" />
       </div>

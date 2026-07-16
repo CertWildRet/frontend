@@ -428,7 +428,13 @@ export function PopBars({
   liveLast = false,
   loading = false,
 }: {
-  bars: TPt[]; expected: number; height?: number;
+  bars: TPt[];
+  /** The break-even line. Pass an array (one per bar) when the expectation
+   *  changes mid-chart — e.g. the motherlode odds change at round 335,000 moves
+   *  the long-run average pop from 125 to 100 ORE — and the baseline is drawn as
+   *  a step so every bar is judged against the rule it actually ran under. */
+  expected: number | (number | null)[];
+  height?: number;
   /** Tooltip formatting (decimals welcome). */
   fmt?: (v: number) => string;
   /** Axis-tick formatting — keep it short (no decimals) so labels stay inside
@@ -446,13 +452,20 @@ export function PopBars({
   const n = bars.length;
   if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} /></div>;
 
-  const hi = Math.max(...bars.map((p) => p.value ?? 0), expected) * 1.12;
+  // per-bar expectation (scalar broadcasts); expNow = the current era's line
+  const expAt = (i: number): number => {
+    if (typeof expected === "number") return expected;
+    return expected[i] ?? expected.filter((v): v is number => v != null).slice(-1)[0] ?? 0;
+  };
+  const expAll = bars.map((_, i) => expAt(i));
+  const expNow = expAll[n - 1] ?? 0;
+  const hi = Math.max(...bars.map((p) => p.value ?? 0), ...expAll) * 1.12;
   const plotR = W - padR, plotB = H - padB;
   const bw = (plotR - padL) / n;
   const gap = Math.min(4, bw * 0.25);
   const xC = (i: number) => padL + i * bw + bw / 2;
   const y = (v: number) => padT + (1 - v / (hi || 1)) * (plotB - padT);
-  const yExp = y(expected);
+  const yExpNow = y(expNow);
 
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -469,9 +482,9 @@ export function PopBars({
         style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }} onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)}>
         {gy.map((g, gi) => {
           const yy = padT + g * (plotB - padT);
-          // the 125 line carries its own always-on axis label — mute any grid
-          // tick that would collide with it
-          const nearExpected = Math.abs(yy - yExp) < 14;
+          // the expectation line carries its own always-on axis label — mute any
+          // grid tick that would collide with it
+          const nearExpected = Math.abs(yy - yExpNow) < 14;
           return (
             <g key={gi}>
               <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
@@ -491,19 +504,26 @@ export function PopBars({
           if (isLive) {
             return <rect key={i} x={bx} y={y(v)} width={bwid} height={Math.max(0, plotB - y(v))} rx={2} fill={LIVE} opacity={hot ? 1 : 0.9} />;
           }
-          if (v >= expected) {
+          const yExpI = y(expAt(i));
+          if (v >= expAt(i)) {
             return (
               <g key={i}>
-                <rect x={bx} y={yExp} width={bwid} height={Math.max(0, plotB - yExp)} rx={2} fill={BASE} opacity={hot ? 0.85 : 0.55} />
-                <rect x={bx} y={y(v)} width={bwid} height={Math.max(0, yExp - y(v))} rx={2} fill={POS} opacity={hot ? 0.95 : 0.7} />
+                <rect x={bx} y={yExpI} width={bwid} height={Math.max(0, plotB - yExpI)} rx={2} fill={BASE} opacity={hot ? 0.85 : 0.55} />
+                <rect x={bx} y={y(v)} width={bwid} height={Math.max(0, yExpI - y(v))} rx={2} fill={POS} opacity={hot ? 0.95 : 0.7} />
               </g>
             );
           }
           return <rect key={i} x={bx} y={y(v)} width={bwid} height={Math.max(0, plotB - y(v))} rx={2} fill={NEG} opacity={hot ? 0.9 : 0.6} />;
         })}
-        <line x1={padL} y1={yExp} x2={plotR} y2={yExp} stroke={AXIS} strokeWidth={1} strokeDasharray="4 3" opacity={0.8} />
-        {/* the expectation line owns a permanent tick on the LEFT axis */}
-        <text x={padL - 6} y={yExp + 3.5} fontSize={FS} fontWeight={700} fill="#EDEDF0" textAnchor="end" fontFamily="monospace">{aFmt(expected)}</text>
+        <path
+          d={bars.map((_, i) => {
+            const yy = y(expAt(i)).toFixed(1);
+            const x0 = (padL + i * bw).toFixed(1), x1 = (padL + (i + 1) * bw).toFixed(1);
+            return `${i === 0 ? "M" : "L"}${x0},${yy} L${x1},${yy}`;
+          }).join(" ")}
+          fill="none" stroke={AXIS} strokeWidth={1} strokeDasharray="4 3" opacity={0.8} />
+        {/* the CURRENT era's expectation owns a permanent tick on the LEFT axis */}
+        <text x={padL - 6} y={yExpNow + 3.5} fontSize={FS} fontWeight={700} fill="#EDEDF0" textAnchor="end" fontFamily="monospace">{aFmt(expNow)}</text>
         {xt.map((idx, ti) => {
           // On narrow plots the end-anchored live label ("now (accruing)")
           // collides with the neighboring round-id tick - shorten the AXIS
@@ -517,8 +537,8 @@ export function PopBars({
         {hover != null && bars[hover].value != null && (
           <TrendTooltip x={xC(hover)} y={padT + 10} W={W} lines={
             liveLast && hover === n - 1
-              ? [bars[hover].label, `live pool: ${fmt(bars[hover].value!)}`, `vs avg: ${bars[hover].value! - expected >= 0 ? "+" : ""}${fmt(bars[hover].value! - expected)}`]
-              : [bars[hover].label, `pop: ${fmt(bars[hover].value!)}`, `vs avg: ${bars[hover].value! - expected >= 0 ? "+" : ""}${fmt(bars[hover].value! - expected)}`]
+              ? [bars[hover].label, `live pool: ${fmt(bars[hover].value!)}`, `vs avg: ${bars[hover].value! - expAt(hover) >= 0 ? "+" : ""}${fmt(bars[hover].value! - expAt(hover))}`]
+              : [bars[hover].label, `pop: ${fmt(bars[hover].value!)}`, `vs avg: ${bars[hover].value! - expAt(hover) >= 0 ? "+" : ""}${fmt(bars[hover].value! - expAt(hover))}`]
           } />
         )}
       </svg>
