@@ -95,7 +95,7 @@
   border-radius: 999px;
   background: var(--profile-cyan);
   box-shadow: 0 0 12px rgba(34, 224, 230, 0.9);
-  animation: livePulse 2s ease-in-out infinite;
+  animation: livePulse 2s ease-in-out 3 forwards;
 }
 
 .title {
@@ -119,7 +119,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: spectrumFlow 8s ease-in-out infinite alternate;
+  animation: spectrumFlow 8s ease-in-out 3 alternate forwards;
 }
 
 .subtitle {

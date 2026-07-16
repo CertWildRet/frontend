@@ -83,7 +83,7 @@ function SkeletonRows({ cols, rows = 8 }: { cols: number; rows?: number }) {
       {Array.from({ length: rows }).map((_, i) => (
         <tr key={`sk-${i}`}>
           <td colSpan={cols} className="px-2 py-2 sm:px-3">
-            <div className="h-4 animate-pulse rounded bg-white/[0.05]" style={{ opacity: 1 - i * 0.09 }} />
+            <div className="h-4 animate-pulse-thrice rounded bg-white/[0.05]" style={{ opacity: 1 - i * 0.09 }} />
           </td>
         </tr>
       ))}

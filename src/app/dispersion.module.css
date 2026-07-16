@@ -34,7 +34,7 @@
   pointer-events: none;
   opacity: 0.55;
   /* alternate: the spectral tile is not cyclical — a one-way loop seams pink→cyan */
-  animation: hueShift 12s ease-in-out infinite alternate;
+  animation: hueShift 12s ease-in-out 3 alternate forwards;
 }
 
 @keyframes hueShift {
@@ -140,7 +140,7 @@
 .ignite:hover {
   transform: translateY(-1px);
   box-shadow: 0 0 0 1px rgba(154, 107, 255, 0.5), 0 14px 40px -10px rgba(91, 108, 255, 0.7);
-  animation: igniteHue 2.4s ease-in-out infinite alternate;
+  animation: igniteHue 2.4s ease-in-out 3 alternate forwards;
 }
 .ignite:active {
   transform: translateY(0) scale(0.985);
@@ -184,7 +184,7 @@
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  animation: hueShift 5s ease-in-out infinite alternate;
+  animation: hueShift 5s ease-in-out 3 alternate forwards;
 }
 .prismPill:hover {
   transform: translateY(-2px);
@@ -258,7 +258,7 @@
 
 /* the diamond/prism shard itself */
 .prismShard {
-  animation: prismFloat 9s ease-in-out infinite;
+  animation: prismFloat 9s ease-in-out 3 forwards;
   transform-origin: 50% 90%;
   /* static glow (was an animated drop-shadow blur - expensive per-frame on a
      ~480px element). The bloom "swell" is now carried by the sibling
@@ -274,7 +274,7 @@
 /* the hero's spectral halo gently swells via opacity to fake the old
    prismGlow blur-radius pulse without re-blurring each frame. */
 .prismHalo {
-  animation: prismHaloPulse 6s ease-in-out infinite;
+  animation: prismHaloPulse 6s ease-in-out 3 forwards;
   will-change: opacity;
 }
 @keyframes prismHaloPulse {
@@ -303,14 +303,14 @@
   transform: translate(-1.5px, 0);
   mix-blend-mode: screen;
   opacity: 0.7;
-  animation: chromaA 5s ease-in-out infinite;
+  animation: chromaA 5s ease-in-out 3 forwards;
 }
 .chroma::after {
   color: #ff5ac8;
   transform: translate(1.5px, 0);
   mix-blend-mode: screen;
   opacity: 0.7;
-  animation: chromaB 5s ease-in-out infinite;
+  animation: chromaB 5s ease-in-out 3 forwards;
 }
 @keyframes chromaA {
   0%, 100% { transform: translate(-1.5px, 0); }
@@ -325,7 +325,7 @@
 .spectralBar {
   background: linear-gradient(90deg, #22e0e6, #5b6cff, #9a6bff, #ff5ac8, #ffc061);
   background-size: 200% 100%;
-  animation: barFlow 4s linear infinite;
+  animation: barFlow 4s linear 3 forwards;
   box-shadow: 0 0 14px -2px rgba(91, 108, 255, 0.8);
 }
 @keyframes barFlow {
@@ -358,7 +358,7 @@
   filter: blur(6px);
   opacity: 0.55;
   mix-blend-mode: screen;
-  animation: flareSpin 7s linear infinite, flarePulse 2.4s ease-in-out infinite;
+  animation: flareSpin 7s linear 3 forwards, flarePulse 2.4s ease-in-out 3 forwards;
 }
 @keyframes flareSpin { to { transform: rotate(360deg); } }
 @keyframes flarePulse {
@@ -375,12 +375,12 @@
     linear-gradient(0deg, transparent 46%, rgba(234, 236, 246, 0.9) 50%, transparent 54%);
   filter: blur(0.4px);
   opacity: 0.8;
-  animation: flarePulse 2.4s ease-in-out infinite;
+  animation: flarePulse 2.4s ease-in-out 3 forwards;
 }
 
 /* ── Live status dot ────────────────────────────────────────────────── */
 .liveDot {
-  animation: livePulse 1.8s ease-in-out infinite;
+  animation: livePulse 1.8s ease-in-out 3 forwards;
 }
 @keyframes livePulse {
   0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34, 224, 230, 0.6); }
@@ -400,7 +400,7 @@
   width: 100%;
   background: linear-gradient(90deg, transparent, #22e0e6, #9a6bff, #ff5ac8, transparent);
   background-size: 200% 100%;
-  animation: barFlow 3s linear infinite;
+  animation: barFlow 3s linear 3 forwards;
   opacity: 0.7;
 }
 
@@ -451,7 +451,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: barFlow 8s linear infinite;
+  animation: barFlow 8s linear 3 forwards;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -471,7 +471,7 @@
   inset: 10%;
   border-radius: 50%;
   border: 1px dashed rgba(122, 160, 224, 0.28);
-  animation: howSpin 18s linear infinite;
+  animation: howSpin 18s linear 3 forwards;
 }
 .howOrbit::before {
   content: "";
@@ -492,14 +492,14 @@
   display: grid;
   place-items: center;
 }
-.howToken svg { animation: howPulse 3.4s ease-in-out infinite; }
+.howToken svg { animation: howPulse 3.4s ease-in-out 3 forwards; }
 @keyframes howPulse {
   0%, 100% { transform: scale(1); filter: drop-shadow(0 0 18px rgba(91, 108, 255, 0.45)); }
   50% { transform: scale(1.07); filter: drop-shadow(0 0 38px rgba(154, 107, 255, 0.72)); }
 }
 /* gentle scale pulse for the paired dORE/dZINC token marks (keeps each svg's
    own inline drop-shadow glow color). */
-.howTokenPulse { animation: howTokenPulse 3.6s ease-in-out infinite; }
+.howTokenPulse { animation: howTokenPulse 3.6s ease-in-out 3 forwards; }
 @keyframes howTokenPulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.06); }
@@ -515,7 +515,7 @@
   background: radial-gradient(circle, #eafdff, #22e0e6 55%, transparent 75%);
   box-shadow: 0 0 9px rgba(34, 224, 230, 0.9);
   opacity: 0;
-  animation: howFeed 3s ease-in infinite;
+  animation: howFeed 3s ease-in 3 forwards;
 }
 @keyframes howFeed {
   0% { opacity: 0; transform: translate(var(--fx), var(--fy)) scale(0.7); }
@@ -549,7 +549,7 @@
   border-radius: 50%;
   border: 1px dashed rgba(122, 160, 224, 0.30);
   box-shadow: 0 0 22px rgba(91, 108, 255, 0.18), inset 0 0 18px rgba(154, 107, 255, 0.10);
-  animation: howRingDrift 22s linear infinite;
+  animation: howRingDrift 22s linear 3 forwards;
   will-change: transform;
 }
 @keyframes howRingDrift { to { transform: rotate(360deg); } }
@@ -584,7 +584,7 @@
   width: 196px;
   height: 196px;
   margin: -98px 0 0 -98px;
-  animation: howOrbit 7.2s linear infinite;
+  animation: howOrbit 7.2s linear 3 forwards;
   will-change: transform;
 }
 .howOrbiterDot {
@@ -605,7 +605,7 @@
   z-index: 1;
   display: grid;
   place-items: center;
-  animation: howDuoBreath 3.6s ease-in-out infinite;
+  animation: howDuoBreath 3.6s ease-in-out 3 forwards;
   will-change: transform;
 }
 @keyframes howDuoBreath {
@@ -628,12 +628,12 @@
   opacity: 0.04;
   will-change: opacity;
 }
-.howWarmLeft { animation: howWarmLeft 7.2s ease-in-out infinite; }
+.howWarmLeft { animation: howWarmLeft 7.2s ease-in-out 3 forwards; }
 @keyframes howWarmLeft {
   0%, 50%, 100% { opacity: 0.04; }
   75% { opacity: 0.85; }
 }
-.howWarmRight { animation: howWarmRight 7.2s ease-in-out infinite; }
+.howWarmRight { animation: howWarmRight 7.2s ease-in-out 3 forwards; }
 @keyframes howWarmRight {
   0%, 50%, 100% { opacity: 0.04; }
   25% { opacity: 0.85; }
@@ -656,7 +656,7 @@
   /* ONLY transform animates here (compositor-safe). The lit gradient + glow
      live on ::after and cross-fade via opacity, so the 50 board tiles no
      longer repaint background+box-shadow every frame. */
-  animation: howMine 3.4s ease-in-out infinite;
+  animation: howMine 3.4s ease-in-out 3 forwards;
 }
 .howTile::after {
   content: "";
@@ -666,7 +666,7 @@
   opacity: 0;
   background: linear-gradient(135deg, #22e0e6, #9a6bff);
   box-shadow: 0 0 14px rgba(91, 108, 255, 0.85), inset 0 0 0 1px rgba(255, 255, 255, 0.45);
-  animation: howMineLit 3.4s ease-in-out infinite;
+  animation: howMineLit 3.4s ease-in-out 3 forwards;
   animation-delay: inherit; /* inherit the per-tile diagonal-wave delay */
 }
 @keyframes howMine {
@@ -684,7 +684,7 @@
   position: absolute;
   right: 0;
   top: -4%;
-  animation: howEvPulse 3.4s ease-in-out infinite;
+  animation: howEvPulse 3.4s ease-in-out 3 forwards;
 }
 /* Synced to the board's diagonal wave: tiles light from 20%+delay (first tile
    0.68s) through 44%+max-delay (last tile dims ~2.54s = 75%). The badge ignites
