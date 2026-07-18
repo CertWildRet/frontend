@@ -46,7 +46,9 @@ function timeAgo(d: Date): string {
 
 export function MinerDetail({ pubkey }: { pubkey: string }) {
   const [roundsWin, setRoundsWin] = useState("1000");
-  const det = usePolled(() => fetchOreMiner(pubkey, roundsWin === "all" ? "all" : Math.max(1000, Number(roundsWin))), 30_000, [pubkey, roundsWin]);
+  // 60s (not 30): lifetime P&L barely moves round-to-round, and the in-flight
+  // guard in usePolled already prevents a slow request from stacking.
+  const det = usePolled(() => fetchOreMiner(pubkey, roundsWin === "all" ? "all" : Math.max(1000, Number(roundsWin))), 60_000, [pubkey, roundsWin]);
   const d = det.data;
   if (det.loading && !d) {
     return <div className="grid grid-cols-2 gap-3 md:grid-cols-4"><TileSkeleton /><TileSkeleton /><TileSkeleton /><TileSkeleton /></div>;

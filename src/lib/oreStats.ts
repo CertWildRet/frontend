@@ -199,12 +199,59 @@ export type OreRng = {
   dof: number;
 };
 
+export type OreMotherlodeHit = {
+  round_id: number;
+  ts: number | null;
+  motherlode_paid: string;
+  gap: number | null;
+  total_deployed: string | null;
+  total_winnings: string | null;
+  winning_tile: number | null;
+  is_split: number | null;
+  top_miner: string | null;
+  sol_usd: number | null;
+  ore_usd: number | null;
+};
+
 export type OreMotherlode = {
-  recent_hits: { round_id: number; ts: number | null; motherlode_paid: string; gap: number | null }[];
+  recent_hits: OreMotherlodeHit[];
   current: MotherlodePool | null;
   total: number;
+  biggest_paid: string | null;
+  avg_paid: string | null;
+  underwater: number;
+  priced: number;
   limit: number;
   offset: number;
+};
+
+export type OreMotherlodeSharer = {
+  pubkey: string;
+  tile_stake: string;
+  deploys: number;
+  share: number; // fraction of the pool 0..1
+  is_solo_winner: boolean;
+  cost_sol: number; // full round spend, all tiles
+  tiles_covered: number; // distinct tiles they deployed on
+  ml_ore: number; // ORE taken from the pool
+  sol_return: number; // SOL from the winners' pot
+  roi: number | null; // gross return / cost (USD), null if unpriced
+};
+
+export type OreMotherlodePop = {
+  round: {
+    round_id: number; ts: number; winning_tile: number | null; is_split: number | null;
+    top_miner: string | null; motherlode_paid: string; total_deployed: string;
+    total_winnings?: string; sol_usd: number | null; ore_usd: number | null;
+  };
+  has_distribution: boolean;
+  reason?: string;
+  sort?: "stake" | "roi";
+  sharers_total?: number;
+  avg_roi?: number | null;
+  solo_winner_share?: number | null;
+  solo_winner_roi?: number | null;
+  sharers: OreMotherlodeSharer[];
 };
 
 export type OreParticipant = {
@@ -419,6 +466,8 @@ export const fetchOreMiner = (pubkey: string, rounds: number | "all" = 1000) => 
 export const fetchOreRng = () => get<OreRng>("/ore/rng");
 export const fetchOreMotherlode = (limit = 50, offset = 0) =>
   get<OreMotherlode>(`/ore/motherlode?limit=${limit}&offset=${offset}`);
+export const fetchOreMotherlodePop = (roundId: number, sort: "stake" | "roi" = "stake", top = 20) =>
+  get<OreMotherlodePop>(`/ore/motherlode/${roundId}?sort=${sort}&top=${top}`);
 export const fetchOreParticipants = (roundId: number) => get<OreParticipants>(`/ore/participants/${roundId}`);
 export const fetchOreCompetition = (rounds = 10) => get<OreCompetition>(`/ore/competition?rounds=${rounds}`);
 export const fetchStatsOverview = () => get<StatsOverview>("/stats/overview");

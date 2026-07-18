@@ -17,10 +17,11 @@ import { DualLine, CostEvChart, BarsLine, PopBars, type TPt } from "@/components
 import { MinerDetail } from "@/components/stats/MinerDetail";
 import { usePolled, PolledActiveContext } from "@/hooks/useOreStats";
 import {
-  fetchOreRounds, fetchOreRound, fetchOreMotherlode, fetchOreLeaderboard,
+  fetchOreRounds, fetchOreRound, fetchOreMotherlode, fetchOreMotherlodePop, fetchOreLeaderboard,
   fetchOreMiners, fetchOreSeries, fetchOreCompetition, fetchOreTrends,
   fetchOreEcosystem, fetchOreMiner, fetchOreYields, fetchOreDominance,
   motherlodeOdds, expectedPopOre,
+  type OreMotherlodeHit,
   lamportsToSol, oreGramsToOre, roundTileDeployRange, roundMaxSpreadFrac,
   type TileDeployRange,
   type OreSeriesPoint,
@@ -422,8 +423,102 @@ function ProtocolCharts() {
 }
 
 // ── Motherlode ────────────────────────────────────────────────────────────────
+// $ compact, e.g. $82k / $1,240 / $0. USD legs are null before price history.
+const fmtUsd = (n?: number | null) => (n == null ? "·" : n >= 1000 ? `$${compactNum(n)}` : `$${formatNum(n, 0)}`);
+const fmtWhen = (ts?: number | null) =>
+  ts == null ? "·" : new Date(ts * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+// derive the USD + profitability view of one pop hit
+function popEcon(h: OreMotherlodeHit) {
+  const mlOre = solOf(h.motherlode_paid);
+  const depSol = h.total_deployed ? lamportsToSol(h.total_deployed) : null;
+  const mlUsd = h.ore_usd != null ? mlOre * h.ore_usd : null;
+  const depUsd = depSol != null && h.sol_usd != null ? depSol * h.sol_usd : null;
+  const underwater = mlUsd != null && depUsd != null ? mlUsd < depUsd : false;
+  return { mlOre, mlUsd, depSol, depUsd, underwater };
+}
+
+// Per-pop drill-down: who ACTUALLY shared the pool (pro-rata to winning-tile
+// stakes) + each sharer's ROI. Lazy: only fetches when a row is expanded. This is
+// the detail hawg.win can't show — winning the solo ORE says nothing about how
+// much of the motherlode you took.
+function PopDrilldown({ roundId }: { roundId: number }) {
+  const [sort, setSort] = useState<"stake" | "roi">("stake");
+  const dd = usePolled(() => fetchOreMotherlodePop(roundId, sort, 20), 300_000, [roundId, sort]);
+  const d = dd.data;
+  if (dd.loading && !d) return <div className="px-3 py-4 text-[12px] text-gray-400">Loading the split…</div>;
+  if (d && !d.has_distribution)
+    return (
+      <div className="px-3 py-4 text-[12px] text-gray-400">
+        Per-miner split isn&apos;t recoverable for this pop — {d.reason ?? "no deploy history"}.
+      </div>
+    );
+  const oreUsd = d?.round.ore_usd ?? null;
+  return (
+    <div className="space-y-3 px-1 py-3 sm:px-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="text-[12px] text-gray-300">
+          <span className="text-white">{formatNum(d?.sharers_total ?? 0)}</span> miners shared this pop
+          {d?.avg_roi != null && <> · avg <span className="text-pos">{formatNum(d.avg_roi, 1)}×</span> ROI</>}
+          {d?.solo_winner_share != null && (
+            <> · solo-ORE winner took <span className="text-white">{formatPct(d.solo_winner_share * 100)}</span>
+              {d?.solo_winner_roi != null && <> (<span className={netTone(d.solo_winner_roi - 1)}>{formatNum(d.solo_winner_roi, 1)}×</span>)</>}
+            </>
+          )}
+        </div>
+        <SegmentedControl
+          aria-label="sort sharers"
+          items={[{ id: "stake", label: "By ML share" }, { id: "roi", label: "By ROI" }]}
+          value={sort}
+          onChange={setSort}
+        />
+      </div>
+      <div className={tableWrap}>
+        <table className="w-full font-mono text-[12px]">
+          <thead>
+            <tr className={theadRow}>
+              <th className={th}>Miner</th>
+              <th className={`${th} text-right`}>Tiles</th>
+              <th className={`${th} text-right`}>Cost</th>
+              <th className={`${th} text-right`}>ML share</th>
+              <th className={`${th} text-right`}>ML got</th>
+              <th className={`${th} text-right`}>ROI</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(d?.sharers ?? []).map((s) => (
+              <tr key={s.pubkey} className={s.is_solo_winner ? oursRow : bodyRow}>
+                <td className={`${td} text-white`}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <CopyAddress address={s.pubkey} />
+                    {s.is_solo_winner && <span className="rounded bg-gold/15 px-1 text-[10px] text-gold">solo ORE</span>}
+                  </span>
+                </td>
+                <td className={`${td} num text-right text-gray-300`}>{s.tiles_covered}</td>
+                <td className={`${td} num text-right text-gray-300`}>{formatNum(s.cost_sol, 2)}</td>
+                <td className={`${td} num text-right text-gray-300`}>{formatPct(s.share * 100)}</td>
+                <td className={`${td} num text-right text-gold`}>
+                  {formatNum(s.ml_ore, 1)}
+                  {oreUsd != null && <span className="text-gray-500"> · {fmtUsd(s.ml_ore * oreUsd)}</span>}
+                </td>
+                <td className={`${td} num text-right ${s.roi == null ? "text-gray-500" : netTone(s.roi - 1)}`}>
+                  {s.roi == null ? "·" : `${formatNum(s.roi, 1)}×`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="px-1 text-[11px] leading-relaxed text-gray-500">
+        A pop pays out pro-rata to stakes on the winning tile, not to the solo-ORE winner. ROI is the round&apos;s
+        gross return (winning SOL pot + ML) over total SOL deployed that round, at round-time prices. Top 20 by {sort === "roi" ? "ROI" : "ML share"}.
+      </p>
+    </div>
+  );
+}
+
 function MotherlodeTab() {
   const [offset, setOffset] = useState(0);
+  const [openRound, setOpenRound] = useState<number | null>(null);
   const ml = usePolled(() => fetchOreMotherlode(PAGE, offset), 20_000, [offset]);
   const mlChart = usePolled(() => fetchOreMotherlode(50, 0), 20_000, []);
   const d = ml.data;
@@ -432,16 +527,18 @@ function MotherlodeTab() {
   const sinceHit = d?.current ? d.current.current_round - (d.current.last_hit_round ?? d.current.current_round) : 0;
   // odds are round-gated on-chain: 1-in-625 below round 335,000, 1-in-500 from there
   const mtlOdds = motherlodeOdds(d?.current?.current_round ?? 0);
+  const biggestOre = solOf(d?.biggest_paid);
+  const avgOre = solOf(d?.avg_paid);
   const mlChartPts: Pt[] = [...(mlChart.data?.recent_hits ?? [])]
     .reverse()
     .map((h) => ({ label: `#${formatNum(Number(h.round_id))}`, value: solOf(h.motherlode_paid) }));
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatTile label="Current pool" value={pool ? formatNum(pool, 1) : "···"} unit="ORE" tone="gold" hint={`+0.2 ORE/round · ${formatNum(sinceHit)} since last hit`} />
-        <StatTile label="Odds per round" value={`1 : ${formatNum(mtlOdds)}`} hint={mtlOdds === 500 ? "tightened from 1:625 at round 335,000" : "by protocol design"} />
-        <StatTile label="Last hit" value={d?.current?.last_hit_round ? `#${formatNum(d.current.last_hit_round)}` : "···"} hint="most recent drop" />
-        <StatTile label="Total hits" value={formatNum(total)} hint="all-time (≥ 0.2 ORE)" />
+        <StatTile label="Current pool" value={pool ? formatNum(pool, 1) : "···"} unit="ORE" tone="gold" hint={`+0.2 ORE/round · ${formatNum(sinceHit)} since last hit · 1:${formatNum(mtlOdds)} odds`} />
+        <StatTile label="Biggest pop" value={biggestOre ? formatNum(biggestOre, 0) : "···"} unit="ORE" tone="gold" hint="all-time record payout" />
+        <StatTile label="Average pop" value={avgOre ? formatNum(avgOre, 0) : "···"} unit="ORE" hint={`over ${formatNum(total)} hits`} />
+        <StatTile label="Underwater pops" value={d ? `${formatNum(d.underwater)} / ${formatNum(d.priced)}` : "···"} hint="pool paid less than the SOL burned to win that round" />
       </div>
       <ChartCard variant="dispersion" cutCorner="tr" title="Motherlode payouts" subtitle="Last 50 hits: ORE paid per round.">
         <AreaLine
@@ -454,25 +551,57 @@ function MotherlodeTab() {
           yLabel="ORE paid by round"
         />
       </ChartCard>
-      <ChartCard title="Recent motherlode drops" subtitle="Each hit pays the whole pool out and resets it to 0; it rebuilds at +0.2 ORE/round.">
+      <ChartCard title="Every motherlode drop" subtitle="Tap a row to see who actually shared the pool and their ROI. Each hit pays the whole pool out; it rebuilds at +0.2 ORE/round.">
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px]">
             <thead>
               <tr className={theadRow}>
                 <th className={th}>Round</th>
+                <th className={`${th} hidden sm:table-cell`}>When</th>
                 <th className={`${th} text-right`}>ORE paid</th>
-                <th className={`${th} text-right`}>Since prev</th>
+                <th className={`${th} text-right`}>Value</th>
+                <th className={`${th} text-right`}>Deployed</th>
+                <th className={`${th}`}>Result</th>
               </tr>
             </thead>
             <tbody>
-              {ml.loading && !ml.data && <SkeletonRows cols={4} />}
-              {(d?.recent_hits ?? []).map((h) => (
-                <tr key={h.round_id} className={bodyRow}>
-                  <td className={`${td} text-white`}>#{formatNum(Number(h.round_id))}</td>
-                  <td className={`${td} num text-right text-gold`}>{formatNum(solOf(h.motherlode_paid), 1)}</td>
-                  <td className={`${td} text-right text-gray-400`}>{h.gap != null ? formatNum(h.gap) : "·"}</td>
-                </tr>
-              ))}
+              {ml.loading && !ml.data && <SkeletonRows cols={6} />}
+              {(d?.recent_hits ?? []).map((h) => {
+                const e = popEcon(h);
+                const rid = Number(h.round_id);
+                const open = openRound === rid;
+                const isSplit = h.is_split === 1 || (h.top_miner ?? "").startsWith("SpLiT");
+                return (
+                  <Fragment key={rid}>
+                    <tr className={`${bodyRow} cursor-pointer`} onClick={() => setOpenRound(open ? null : rid)}>
+                      <td className={`${td} text-white`}>
+                        <span className="inline-flex items-center gap-1">
+                          <span className="text-gray-500">{open ? "▾" : "▸"}</span>#{formatNum(rid)}
+                        </span>
+                      </td>
+                      <td className={`${td} hidden text-gray-400 sm:table-cell`}>{fmtWhen(h.ts)}</td>
+                      <td className={`${td} num text-right text-gold`}>{formatNum(e.mlOre, 1)}</td>
+                      <td className={`${td} num text-right text-gray-300`}>{fmtUsd(e.mlUsd)}</td>
+                      <td className={`${td} num text-right ${e.underwater ? "text-red" : "text-gray-300"}`}>
+                        {e.depSol != null ? `${formatNum(e.depSol, 1)}` : "·"}
+                        <span className="text-gray-500"> SOL</span>
+                      </td>
+                      <td className={td}>
+                        {isSplit
+                          ? <span className="rounded bg-white/5 px-1.5 py-0.5 text-[11px] text-gray-300">Split</span>
+                          : <span className="text-[11px] text-gray-400">Solo · {short(h.top_miner)}</span>}
+                      </td>
+                    </tr>
+                    {open && (
+                      <tr className="bg-black/20">
+                        <td colSpan={6} className="p-0">
+                          <PopDrilldown roundId={rid} />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -928,6 +1057,7 @@ function RoundsTab() {
             <thead>
               <tr className={theadRow}>
                 <th className={th}>Round</th>
+                <th className={`${th} text-right`}>ORE won</th>
                 <th className={`${th} text-right`}>Deployed</th>
                 <th className={`${th} text-right`}>Miners</th>
                 <th className={`${th} hidden text-right sm:table-cell`}>Tile</th>
@@ -937,10 +1067,17 @@ function RoundsTab() {
               </tr>
             </thead>
             <tbody>
-              {rounds.loading && !rounds.data && <SkeletonRows cols={7} />}
+              {rounds.loading && !rounds.data && <SkeletonRows cols={8} />}
               {rs.map((r) => (
                 <tr key={r.round_id} className={bodyRow}>
                   <td className={`${td} text-white`}>#{formatNum(Number(r.round_id))}</td>
+                  <td className={`${td} num text-right`}>
+                    {/* base emission (~1 ORE to the winner) + the accumulated pool on a pop round */}
+                    <span className="text-gray-300">{formatNum(solOf(r.total_minted), 1)}</span>
+                    {solOf(r.motherlode_paid) > 0 && (
+                      <span className="text-gold"> +{formatNum(solOf(r.motherlode_paid), 1)}</span>
+                    )}
+                  </td>
                   <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(r.total_deployed), 2)}</td>
                   <td className={`${td} text-right text-gray-300`}>{r.total_miners ? formatNum(Number(r.total_miners)) : "·"}</td>
                   <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{r.winning_tile != null ? `#${r.winning_tile + 1}` : "·"}</td>

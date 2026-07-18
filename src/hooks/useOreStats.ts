@@ -42,6 +42,7 @@ export function usePolled<T>(
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(true);
   const hasData = useRef(false);
+  const running = useRef(false); // in-flight guard: a slow request must not stack
   const fetchRef = useRef(fetcher);
   fetchRef.current = fetcher;
 
@@ -49,6 +50,7 @@ export function usePolled<T>(
   // re-triggers the effect below and re-fetches. Empty deps = mount + interval only.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const run = useCallback(async () => {
+    running.current = true;
     setFetching(true);
     if (!hasData.current) setLoading(true);
     try {
@@ -62,6 +64,7 @@ export function usePolled<T>(
     } finally {
       setLoading(false);
       setFetching(false);
+      running.current = false;
     }
   }, deps);
 
@@ -72,19 +75,24 @@ export function usePolled<T>(
   useEffect(() => {
     if (!active) return; // paused: hidden tab. Data stays; resume refetches.
     let alive = true;
-    const tick = () => {
+    const doRun = () => {
       if (!alive) return;
       lastRunAt.current = Date.now();
       lastRunFn.current = run;
       run();
     };
+    // Interval ticks skip while a request is still in flight. Without this a
+    // slow endpoint (e.g. a heavy miner's lifetime P&L) piles up one query per
+    // tick until the DB is saturated with duplicate in-flight copies — the
+    // measured cause of the /ore/miner hangs. Deps-change/mount runs bypass it.
+    const guardedTick = () => { if (!running.current) doRun(); };
     // Fetch now unless THIS run identity (same deps) fired recently enough
     // that the interval wouldn't have — deps changes always refetch, resuming
     // a tab only refetches when the data is actually stale.
     const fresh = lastRunFn.current === run && intervalMs > 0 && Date.now() - lastRunAt.current < intervalMs;
-    if (!fresh) tick();
+    if (!fresh) doRun();
     if (intervalMs > 0) {
-      const id = setInterval(tick, intervalMs);
+      const id = setInterval(guardedTick, intervalMs);
       return () => { alive = false; clearInterval(id); };
     }
     return () => { alive = false; };
