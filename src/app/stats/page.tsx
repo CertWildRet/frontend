@@ -460,7 +460,7 @@ function PopDrilldown({ roundId }: { roundId: number }) {
           <span className="text-white">{formatNum(d?.sharers_total ?? 0)}</span> miners shared this pop
           {d?.avg_roi != null && <> · avg <span className="text-pos">{formatNum(d.avg_roi, 1)}×</span> ROI</>}
           {d?.solo_winner_share != null && (
-            <> · solo-ORE winner took <span className="text-white">{formatPct(d.solo_winner_share * 100)}</span>
+            <> · solo-ORE winner took <span className="text-white">{formatPct(d.solo_winner_share)}</span>
               {d?.solo_winner_roi != null && <> (<span className={netTone(d.solo_winner_roi - 1)}>{formatNum(d.solo_winner_roi, 1)}×</span>)</>}
             </>
           )}
@@ -495,7 +495,7 @@ function PopDrilldown({ roundId }: { roundId: number }) {
                 </td>
                 <td className={`${td} num text-right text-gray-300`}>{s.tiles_covered}</td>
                 <td className={`${td} num text-right text-gray-300`}>{formatNum(s.cost_sol, 2)}</td>
-                <td className={`${td} num text-right text-gray-300`}>{formatPct(s.share * 100)}</td>
+                <td className={`${td} num text-right text-gray-300`}>{formatPct(s.share)}</td>
                 <td className={`${td} num text-right text-gold`}>
                   {formatNum(s.ml_ore, 1)}
                   {oreUsd != null && <span className="text-gray-500"> · {fmtUsd(s.ml_ore * oreUsd)}</span>}
