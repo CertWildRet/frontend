@@ -951,6 +951,7 @@ function MinersTab() {
             value={sort}
             onChange={(id) => { setSort(id); setOffset(0); }}
           />
+          <span className="ml-auto"><Refreshing active={polled.fetching && !!polled.data} /></span>
         </div>
         {useLeaderboard && (
           <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] text-fog-muted">
