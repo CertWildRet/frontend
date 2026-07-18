@@ -490,7 +490,7 @@ function PopDrilldown({ roundId }: { roundId: number }) {
                 <td className={`${td} text-white`}>
                   <span className="inline-flex items-center gap-1.5">
                     <CopyAddress address={s.pubkey} />
-                    {s.is_solo_winner && <span className="rounded bg-gold/15 px-1 text-[10px] text-gold">solo ORE</span>}
+                    {s.is_solo_winner && <span title="also won the round's separate ~1-ORE base prize (one winner per round)" className="rounded bg-gold/15 px-1 text-[10px] text-gold">solo ORE</span>}
                   </span>
                 </td>
                 <td className={`${td} num text-right text-gray-300`}>{s.tiles_covered}</td>
@@ -509,8 +509,11 @@ function PopDrilldown({ roundId }: { roundId: number }) {
         </table>
       </div>
       <p className="px-1 text-[11px] leading-relaxed text-gray-500">
-        A pop pays out pro-rata to stakes on the winning tile, not to the solo-ORE winner. ROI is the round&apos;s
-        gross return (winning SOL pot + ML) over total SOL deployed that round, at round-time prices. Top 20 by {sort === "roi" ? "ROI" : "ML share"}.
+        <span className="text-gray-400">ML got</span> is each miner&apos;s share of the motherlode pool, which pops
+        pro-rata to <em>everyone</em> staked on the winning tile — so every miner here got a slice. The
+        <span className="mx-1 rounded bg-gold/15 px-1 text-gold">solo ORE</span> badge is a <em>separate</em> reward:
+        the round&apos;s ~1-ORE base prize, won by a single miner (here, they also happened to top the pool). ROI is the
+        round&apos;s gross return (winning SOL pot + ML) over total SOL deployed that round, at round-time prices. Top 20 by {sort === "roi" ? "ROI" : "ML share"}.
       </p>
     </div>
   );
