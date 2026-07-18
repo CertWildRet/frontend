@@ -8,7 +8,7 @@
  * there's no px/DOM coordinate mapping. Palette matches the design tokens:
  * steel #9DB7D8 (primary), amber #E8881A (secondary), green #4ADE80.
  */
-import { useEffect, useId, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
 import styles from "@/app/dispersion.module.css";
 import { SPECTRAL_CHART, spectralChartAreaUrl, spectralChartLineUrl } from "@/lib/spectral";
 import { SpectralChartDefs } from "@/lib/SpectralChartDefs";
@@ -22,6 +22,11 @@ const SURFACE = "#0E1222"; // ink-800 (tooltip bg)
 export type Pt = { label: string; value: number };
 
 /** Frame: title + optional subtitle + the plot, in a card. */
+/** Turns the screenshot watermark on for every ChartCard beneath the provider.
+ *  Scoped to /stats so it never appears on the profile page (which also uses
+ *  ChartCard). Default off. */
+export const ChartWatermarkContext = createContext(false);
+
 export function ChartCard({
   title,
   subtitle,
@@ -39,6 +44,7 @@ export function ChartCard({
   /** Crystal cut corner when variant is dispersion. */
   cutCorner?: "tr" | "bl";
 }) {
+  const watermark = useContext(ChartWatermarkContext);
   const cutClass = cutCorner === "bl" ? styles.cutBL : styles.cutTR;
   const wrapperClass =
     variant === "dispersion"
@@ -47,7 +53,7 @@ export function ChartCard({
 
   return (
     <div className={wrapperClass}>
-      {(title || subtitle || right) && (
+      {(title || subtitle || right || watermark) && (
         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
           <div className="min-w-0">
             {title && (
@@ -60,7 +66,22 @@ export function ChartCard({
             )}
             {subtitle && <div className="mt-1 font-mono text-[13px] leading-relaxed text-[#A8B0CC]">{subtitle}</div>}
           </div>
-          {right}
+          {(watermark || right) && (
+            <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+              {watermark && (
+                // Branding watermark for shared screenshots: subtle enough not to
+                // distract, opaque enough to stay legible in a heading crop.
+                <div
+                  aria-hidden
+                  className="pointer-events-none select-none whitespace-nowrap font-mono text-[11px] leading-none tracking-tight text-[#C7D0EA]"
+                  style={{ opacity: 0.4 }}
+                >
+                  💎&nbsp;https://diamondpools.app/stats
+                </div>
+              )}
+              {right}
+            </div>
+          )}
         </div>
       )}
       {children}

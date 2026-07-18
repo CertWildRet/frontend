@@ -12,7 +12,7 @@ import { StatTile } from "@/components/primitives/Stat";
 import { TabBar, SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { TileSkeleton, RowsSkeleton, Refreshing } from "@/components/primitives/Skeleton";
-import { AreaLine, HBars, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
+import { AreaLine, HBars, ChartCard, ChartWatermarkContext, compactNum, type Pt } from "@/components/stats/Charts";
 import { DualLine, CostEvChart, BarsLine, PopBars, type TPt } from "@/components/stats/TrendCharts";
 import { MinerDetail } from "@/components/stats/MinerDetail";
 import { usePolled, PolledActiveContext } from "@/hooks/useOreStats";
@@ -101,6 +101,7 @@ export default function StatsPage() {
   const openTab = (t: Tab) => { setVisited((v) => (v.has(t) ? v : new Set(v).add(t))); setTab(t); };
 
   return (
+    <ChartWatermarkContext.Provider value={true}>
     <div className={styles.page}>
       <header className={styles.hero}>
         <div className={styles.eyebrow}>
@@ -155,6 +156,7 @@ export default function StatsPage() {
         )}
       </div>
     </div>
+    </ChartWatermarkContext.Provider>
   );
 }
 
@@ -424,7 +426,22 @@ function ProtocolCharts() {
 
 // ── Motherlode ────────────────────────────────────────────────────────────────
 // $ compact, e.g. $82k / $1,240 / $0. USD legs are null before price history.
-const fmtUsd = (n?: number | null) => (n == null ? "·" : n >= 1000 ? `$${compactNum(n)}` : `$${formatNum(n, 0)}`);
+// $ compact. Sub-$1 non-zero shows "<$1" so dust reads as tiny-but-real, not "$0".
+const fmtUsd = (n?: number | null) =>
+  n == null ? "·" : n === 0 ? "$0" : n < 1 ? "<$1" : n >= 1000 ? `$${compactNum(n)}` : `$${formatNum(n, 0)}`;
+// A non-zero value below the display precision shows "<0.01" (etc.) instead of a
+// misleading "0.00" — so a dust sharer's row reads honestly (tiny stake, tiny
+// take, big ROI ratio) rather than looking broken (all zeros, yet 97x).
+const fmtDust = (v: number, decimals: number): string => {
+  if (v === 0) return "0";
+  const floor = Math.pow(10, -decimals);
+  return v > 0 && v < floor ? `<${floor.toFixed(decimals)}` : formatNum(v, decimals);
+};
+const fmtPctDust = (frac: number): string => {
+  if (frac === 0) return "0%";
+  const pct = frac * 100;
+  return pct > 0 && pct < 0.01 ? "<0.01%" : formatPct(frac);
+};
 const fmtWhen = (ts?: number | null) =>
   ts == null ? "·" : new Date(ts * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 // derive the USD + profitability view of one pop hit
@@ -441,9 +458,14 @@ function popEcon(h: OreMotherlodeHit) {
 // stakes) + each sharer's ROI. Lazy: only fetches when a row is expanded. This is
 // the detail hawg.win can't show — winning the solo ORE says nothing about how
 // much of the motherlode you took.
+const POP_PAGE = 20; // sharers revealed per "Load More" (and the initial view)
 function PopDrilldown({ roundId }: { roundId: number }) {
   const [sort, setSort] = useState<"stake" | "roi">("stake");
-  const dd = usePolled(() => fetchOreMotherlodePop(roundId, sort, 20), 300_000, [roundId, sort]);
+  const [shown, setShown] = useState(POP_PAGE);
+  // Fetch the FULL sharer list (bounded ~few hundred/pop) and reveal it client-
+  // side, so Load More is instant and nobody is capped at a top-N.
+  const dd = usePolled(() => fetchOreMotherlodePop(roundId, sort, 2000), 300_000, [roundId, sort]);
+  useEffect(() => { setShown(POP_PAGE); }, [roundId, sort]); // reset the reveal when re-sorted
   const d = dd.data;
   if (dd.loading && !d) return <div className="px-3 py-4 text-[12px] text-gray-400">Loading the split…</div>;
   if (d && !d.has_distribution)
@@ -485,7 +507,7 @@ function PopDrilldown({ roundId }: { roundId: number }) {
             </tr>
           </thead>
           <tbody>
-            {(d?.sharers ?? []).map((s) => (
+            {(d?.sharers ?? []).slice(0, shown).map((s) => (
               <tr key={s.pubkey} className={s.is_solo_winner ? oursRow : bodyRow}>
                 <td className={`${td} text-white`}>
                   <span className="inline-flex items-center gap-1.5">
@@ -494,10 +516,10 @@ function PopDrilldown({ roundId }: { roundId: number }) {
                   </span>
                 </td>
                 <td className={`${td} num text-right text-gray-300`}>{s.tiles_covered}</td>
-                <td className={`${td} num text-right text-gray-300`}>{formatNum(s.cost_sol, 2)}</td>
-                <td className={`${td} num text-right text-gray-300`}>{formatPct(s.share)}</td>
+                <td className={`${td} num text-right text-gray-300`}>{fmtDust(s.cost_sol, 2)}</td>
+                <td className={`${td} num text-right text-gray-300`}>{fmtPctDust(s.share)}</td>
                 <td className={`${td} num text-right text-gold`}>
-                  {formatNum(s.ml_ore, 1)}
+                  {fmtDust(s.ml_ore, 1)}
                   {oreUsd != null && <span className="text-gray-500"> · {fmtUsd(s.ml_ore * oreUsd)}</span>}
                 </td>
                 <td className={`${td} num text-right ${s.roi == null ? "text-gray-500" : netTone(s.roi - 1)}`}>
@@ -508,12 +530,22 @@ function PopDrilldown({ roundId }: { roundId: number }) {
           </tbody>
         </table>
       </div>
+      {(d?.sharers?.length ?? 0) > shown && (
+        <div className="flex justify-center">
+          <button
+            onClick={() => setShown((n) => n + POP_PAGE)}
+            className="rounded-lg border border-line px-4 py-1.5 font-mono text-[12px] text-gray-300 transition-colors hover:border-steel hover:text-white"
+          >
+            Load {Math.min(POP_PAGE, (d?.sharers?.length ?? 0) - shown)} more · {formatNum(shown)} of {formatNum(d?.sharers?.length ?? 0)}
+          </button>
+        </div>
+      )}
       <p className="px-1 text-[11px] leading-relaxed text-gray-500">
         <span className="text-gray-400">ML got</span> is each miner&apos;s share of the motherlode pool, which pops
         pro-rata to <em>everyone</em> staked on the winning tile — so every miner here got a slice. The
         <span className="mx-1 rounded bg-gold/15 px-1 text-gold">solo ORE</span> badge is a <em>separate</em> reward:
         the round&apos;s ~1-ORE base prize, won by a single miner (here, they also happened to top the pool). ROI is the
-        round&apos;s gross return (winning SOL pot + ML) over total SOL deployed that round, at round-time prices. Top 20 by {sort === "roi" ? "ROI" : "ML share"}.
+        round&apos;s gross return (winning SOL pot + ML) over total SOL deployed that round, at round-time prices. Sorted by {sort === "roi" ? "ROI" : "ML share"}.
       </p>
     </div>
   );
