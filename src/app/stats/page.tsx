@@ -1123,9 +1123,10 @@ function RoundParticipants({ roundId }: { roundId: number }) {
             <tr className={theadRow}>
               <th className={th}>Miner</th>
               <th className={`${th} hidden text-right sm:table-cell`}>Tiles</th>
-              <th className={`${th} text-right`}>Deployed</th>
+              <th className={`${th} text-right`}>Cost (SOL)</th>
               <th className={`${th} text-right`}>Share</th>
               <th className={`${th} text-right`}>SOL back</th>
+              <th className={`${th} hidden text-right sm:table-cell`}>ORE won</th>
               <th className={`${th} text-right`}>ROI</th>
             </tr>
           </thead>
@@ -1156,7 +1157,9 @@ function RoundParticipants({ roundId }: { roundId: number }) {
                 <td className={`${td} num text-right text-gray-300`}>{fmtPctDust(p.share)}</td>
                 <td className={`${td} num text-right ${p.sol_return > 0 ? "text-gray-200" : "text-gray-600"}`}>
                   {p.sol_return > 0 ? fmtDust(p.sol_return, 3) : "·"}
-                  {p.ml_ore > 0.005 && <span className="text-gold"> +{formatNum(p.ml_ore, 1)} ORE</span>}
+                </td>
+                <td className={`${td} num hidden text-right sm:table-cell ${p.ore_won > 0.005 ? "text-gold" : "text-gray-600"}`}>
+                  {p.ore_won > 0.005 ? formatNum(p.ore_won, p.ore_won >= 10 ? 0 : 2) : "·"}
                 </td>
                 <td className={`${td} num text-right ${p.roi == null ? "text-gray-500" : netTone(p.roi - 1)}`}>
                   {p.roi == null ? "·" : `${formatNum(p.roi, 1)}×`}
@@ -1179,8 +1182,9 @@ function RoundParticipants({ roundId }: { roundId: number }) {
       <p className="px-1 text-[11px] leading-relaxed text-gray-500">
         Every miner that deployed this round, by SOL staked. <span className="text-pos">won</span> = staked on the winning
         tile{wt != null ? ` #${wt + 1}` : ""}; <span className="text-gray-400">SOL back</span> is their pro-rata slice of the
-        winners&apos; pot (a pop adds an ORE slice on top). ROI is the round&apos;s gross return over what they deployed, at
-        round-time prices. Sorted by {sort === "roi" ? "ROI" : sort === "won" ? "winners first" : "deploy size"}.
+        winners&apos; pot; <span className="text-gold">ORE won</span> is the ~1-ORE winner emission plus any motherlode-pool
+        slice on a pop. ROI is the round&apos;s gross return over what they deployed, at round-time prices. Sorted by{" "}
+        {sort === "roi" ? "ROI" : sort === "won" ? "winners first" : "deploy size"}.
       </p>
     </div>
   );

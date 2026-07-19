@@ -263,6 +263,7 @@ export type OreRoundParticipant = {
   won: boolean;         // staked on the winning tile
   sol_return: number;   // pro-rata SOL from the winners' pot
   ml_ore: number;       // pro-rata motherlode ORE (0 unless the round popped)
+  ore_won: number;      // total ORE won: ml_ore + the ~1 ORE base emission if solo winner
   roi: number | null;   // gross multiple (return / cost), USD-based; null if unpriced
   is_solo_winner: boolean;
 };
@@ -485,10 +486,58 @@ export const fetchOreMiner = (pubkey: string, rounds: number | "all" = 1000) => 
 export const fetchOreRng = () => get<OreRng>("/ore/rng");
 export const fetchOreMotherlode = (limit = 50, offset = 0) =>
   get<OreMotherlode>(`/ore/motherlode?limit=${limit}&offset=${offset}`);
-export const fetchOreMotherlodePop = (roundId: number, sort: "stake" | "roi" = "stake", top = 20) =>
-  get<OreMotherlodePop>(`/ore/motherlode/${roundId}?sort=${sort}&top=${top}`);
-export const fetchOreParticipants = (roundId: number, sort: "deployed" | "roi" | "won" = "deployed", top = 20) =>
-  get<OreParticipants>(`/ore/participants/${roundId}?sort=${sort}&top=${top}`);
+// ── Per-round drill-down cache ───────────────────────────────────────────────
+// A SETTLED, fully-ingested round's participant split / motherlode pop is
+// IMMUTABLE — it can never change once on-chain. So cache those responses in
+// localStorage and serve them without a network round-trip on re-open. Only the
+// FINAL form is cached (has_participants / has_distribution true); the transient
+// "still ingesting" state is never cached, so it keeps refetching until data
+// lands. Bump the version tag when a response shape changes to invalidate old
+// entries. Fails soft: quota / private-mode errors just skip the cache.
+const ROUND_CACHE_V = "ore:rd:v1:";
+function readRoundCache<T>(key: string): T | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const s = window.localStorage.getItem(ROUND_CACHE_V + key);
+    return s ? (JSON.parse(s) as T) : null;
+  } catch {
+    return null;
+  }
+}
+function writeRoundCache<T>(key: string, val: T): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(ROUND_CACHE_V + key, JSON.stringify(val));
+  } catch {
+    // Over quota: drop our own cached rounds and retry once, else give up.
+    try {
+      for (let i = window.localStorage.length - 1; i >= 0; i--) {
+        const k = window.localStorage.key(i);
+        if (k && k.startsWith(ROUND_CACHE_V)) window.localStorage.removeItem(k);
+      }
+      window.localStorage.setItem(ROUND_CACHE_V + key, JSON.stringify(val));
+    } catch {
+      /* private mode / still full — run uncached */
+    }
+  }
+}
+
+export const fetchOreMotherlodePop = async (roundId: number, sort: "stake" | "roi" = "stake", top = 20) => {
+  const key = `ml:${roundId}:${sort}`;
+  const cached = readRoundCache<OreEnvelope<OreMotherlodePop>>(key);
+  if (cached) return cached;
+  const env = await get<OreMotherlodePop>(`/ore/motherlode/${roundId}?sort=${sort}&top=${top}`);
+  if (env.data?.has_distribution) writeRoundCache(key, env); // only the immutable split
+  return env;
+};
+export const fetchOreParticipants = async (roundId: number, sort: "deployed" | "roi" | "won" = "deployed", top = 20) => {
+  const key = `pt:${roundId}:${sort}`;
+  const cached = readRoundCache<OreEnvelope<OreParticipants>>(key);
+  if (cached) return cached;
+  const env = await get<OreParticipants>(`/ore/participants/${roundId}?sort=${sort}&top=${top}`);
+  if (env.data?.has_participants) writeRoundCache(key, env); // only once fully ingested
+  return env;
+};
 export const fetchOreCompetition = (rounds = 10) => get<OreCompetition>(`/ore/competition?rounds=${rounds}`);
 export const fetchStatsOverview = () => get<StatsOverview>("/stats/overview");
 
