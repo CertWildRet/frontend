@@ -936,7 +936,7 @@ function MinersTab() {
       <ChartCard
         title="Miners"
         subtitle={d?.snapshot_ts
-          ? `Census ${new Date(d.snapshot_ts).toLocaleDateString()} · ${formatNum(total)} miners · ranked by ${sortLabel}`
+          ? `On-chain lifetime census ${new Date(d.snapshot_ts).toLocaleDateString()} · ${formatNum(total)} miners · ranked by ${sortLabel}`
           : "loading census…"}
         right={
           <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="search address…"
