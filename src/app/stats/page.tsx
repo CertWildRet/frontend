@@ -7,7 +7,7 @@
  * miner ranking, production cost). Financial-analyst tabs. ZINC is a placeholder
  * for v1. Native units; USD is a labelled off-chain overlay.
  */
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, createContext, useContext, useEffect, useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
 import { TabBar, SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
@@ -35,6 +35,12 @@ import { formatSol, formatNum, formatPct } from "@/lib/format";
 import styles from "./stats.module.css";
 
 type Tab = "trends" | "round_analysis" | "miners" | "motherlode" | "rounds";
+
+// Cross-tab jump: any row (e.g. a motherlode sharer) can send a pubkey to the
+// Search Miners tab and pre-fill its search bar. `n` bumps each call so re-clicking
+// the same wallet still re-triggers the seed effect.
+type MinerSeed = { pubkey: string; n: number };
+const MinerNavContext = createContext<(pubkey: string) => void>(() => {});
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "trends", label: "Trends" },
@@ -99,9 +105,13 @@ export default function StatsPage() {
   // survive tab switches — switching back is instant instead of a blank refetch.
   const [visited, setVisited] = useState<Set<Tab>>(() => new Set(["trends" as Tab]));
   const openTab = (t: Tab) => { setVisited((v) => (v.has(t) ? v : new Set(v).add(t))); setTab(t); };
+  // Jump-to-miner: open the Search Miners tab with the wallet pre-filled.
+  const [minerSeed, setMinerSeed] = useState<MinerSeed | null>(null);
+  const goToMiner = (pubkey: string) => { setMinerSeed((s) => ({ pubkey, n: (s?.n ?? 0) + 1 })); openTab("miners"); };
 
   return (
     <ChartWatermarkContext.Provider value={true}>
+    <MinerNavContext.Provider value={goToMiner}>
     <div className={styles.page}>
       <header className={styles.hero}>
         <div className={styles.eyebrow}>
@@ -148,7 +158,7 @@ export default function StatsPage() {
               <div hidden={tab !== t.id}>
                 {t.id === "trends" ? <TrendsTab /> :
                  t.id === "round_analysis" ? <RoundAnalysisTab /> :
-                 t.id === "miners" ? <MinersTab /> :
+                 t.id === "miners" ? <MinersTab seed={minerSeed} /> :
                  t.id === "motherlode" ? <MotherlodeTab /> : <RoundsTab />}
               </div>
             </PolledActiveContext.Provider>
@@ -156,6 +166,7 @@ export default function StatsPage() {
         )}
       </div>
     </div>
+    </MinerNavContext.Provider>
     </ChartWatermarkContext.Provider>
   );
 }
@@ -462,6 +473,7 @@ const POP_PAGE = 20; // sharers revealed per "Load More" (and the initial view)
 function PopDrilldown({ roundId }: { roundId: number }) {
   const [sort, setSort] = useState<"stake" | "roi">("stake");
   const [shown, setShown] = useState(POP_PAGE);
+  const goToMiner = useContext(MinerNavContext);
   // Fetch the FULL sharer list (bounded ~few hundred/pop) and reveal it client-
   // side, so Load More is instant and nobody is capped at a top-N.
   const dd = usePolled(() => fetchOreMotherlodePop(roundId, sort, 2000), 300_000, [roundId, sort]);
@@ -512,6 +524,18 @@ function PopDrilldown({ roundId }: { roundId: number }) {
                 <td className={`${td} text-white`}>
                   <span className="inline-flex items-center gap-1.5">
                     <CopyAddress address={s.pubkey} />
+                    <button
+                      type="button"
+                      onClick={() => goToMiner(s.pubkey)}
+                      title="Search this miner"
+                      aria-label={`Search miner ${s.pubkey}`}
+                      className="text-gray-500 transition-colors hover:text-[#22E0E6]"
+                    >
+                      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
+                        <path d="M4.25 7.75 L7.75 4.25" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                        <path d="M5.25 4.25 H7.75 V6.75" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
                     {s.is_solo_winner && <span title="also won the round's separate ~1-ORE base prize (one winner per round)" className="rounded bg-gold/15 px-1 text-[10px] text-gold">solo ORE</span>}
                   </span>
                 </td>
@@ -838,7 +862,7 @@ type MinersTabData = {
   rows: MinerRow[];
 };
 
-function MinersTab() {
+function MinersTab({ seed }: { seed?: MinerSeed | null }) {
   const [sort, setSort] = useState("net_sol");
   const [minDep, setMinDep] = useState(0);
   const [qInput, setQInput] = useState("");
@@ -849,6 +873,13 @@ function MinersTab() {
     const t = setTimeout(() => { setQ(qInput.trim()); setOffset(0); }, 350);
     return () => clearTimeout(t);
   }, [qInput]);
+  // Seeded from another tab (e.g. a motherlode sharer's jump arrow): fill the
+  // search bar AND set the query immediately (skip the debounce) so the jump lands
+  // on results at once. Keyed on seed.n so re-clicking the same wallet re-fires.
+  useEffect(() => {
+    if (seed) { setQInput(seed.pubkey); setQ(seed.pubkey); setOffset(0); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seed?.n]);
 
   const useLeaderboard = LB_SORT_IDS.has(sort) && !q;
   const polled = usePolled(async (): Promise<OreEnvelope<MinersTabData>> => {
