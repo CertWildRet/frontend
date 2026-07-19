@@ -624,3 +624,85 @@ export function PnlChart({
     </div>
   );
 }
+
+/**
+ * MotherlodeReachChart — "how far does a motherlode get?"
+ *
+ * The pool accrues +0.2 ORE/round and pops each round with a fixed 1-in-odds
+ * chance, INDEPENDENT of its size. So the chance of it ever REACHING a given size
+ * X (surviving X/0.2 rounds) is (1 - 1/odds)^(X/0.2). On a log-y axis that is a
+ * straight line. Counters the "the pool is huge, it's about to pop" folklore: the
+ * next round's pop chance is always 1/odds — but big pools are simply rare.
+ */
+export function MotherlodeReachChart({ currentPoolOre, height = 280 }: {
+  currentPoolOre?: number | null; height?: number;
+}) {
+  const [ref, W] = useMeasuredWidth(680);
+  const [hover, setHover] = useState<number | null>(null);
+  const ACCRUAL = 0.2, XMAX = 250, DECADES = 5; // 100% down to 0.001%
+  const ML = 52, MR = 54, MT = 16, MB = 46;
+  const pw = Math.max(10, W - ML - MR), ph = height - MT - MB;
+  const surv = (x: number, odds: number) => Math.pow(1 - 1 / odds, x / ACCRUAL);
+  const xPos = (x: number) => ML + (x / XMAX) * pw;
+  const xInv = (px: number) => ((px - ML) / pw) * XMAX;
+  const yPos = (frac: number) => {
+    const l = Math.log10(Math.max(frac, Math.pow(10, -DECADES)));
+    return MT + (-l / DECADES) * ph;
+  };
+  const linePts = (odds: number) => {
+    const p: string[] = [];
+    for (let x = 0; x <= XMAX; x += 2) p.push(`${xPos(x).toFixed(1)},${yPos(surv(x, odds)).toFixed(1)}`);
+    return p.join(" ");
+  };
+  const yTicks = Array.from({ length: DECADES + 1 }, (_, i) => Math.pow(10, -i));
+  const xTicks = [0, 50, 100, 150, 200, 250];
+  const fmtPct = (f: number) => f >= 1 ? "100%" : f >= 0.001 ? (f * 100 >= 1 ? (f * 100).toFixed(0) : (f * 100).toPrecision(1)) + "%" : (f * 100).toPrecision(1) + "%";
+  const hx = hover != null ? Math.max(0, Math.min(XMAX, xInv(hover))) : null;
+
+  return (
+    <div ref={ref} className="relative">
+      <svg viewBox={`0 0 ${W} ${height}`} width={W} height={height} className="block"
+        onMouseMove={(e) => { const r = (e.currentTarget as SVGSVGElement).getBoundingClientRect(); setHover(((e.clientX - r.left) / r.width) * W); }}
+        onMouseLeave={() => setHover(null)}>
+        {yTicks.map((f, i) => (
+          <g key={i}>
+            <line x1={ML} x2={ML + pw} y1={yPos(f)} y2={yPos(f)} stroke={GRID} />
+            <text x={ML - 6} y={yPos(f) + 4} textAnchor="end" fill={AXIS} fontSize={FS} fontFamily="monospace">{fmtPct(f)}</text>
+          </g>
+        ))}
+        {xTicks.map((x) => (
+          <text key={x} x={xPos(x)} y={MT + ph + 18} textAnchor="middle" fill={AXIS} fontSize={FS} fontFamily="monospace">{x}</text>
+        ))}
+        <text x={ML + pw / 2} y={height - 6} textAnchor="middle" fill={AXIS} fontSize={FS} fontFamily="monospace">motherlode size (ORE)</text>
+        {/* historical 1:625, dimmed dashed */}
+        <polyline points={linePts(625)} fill="none" stroke="#9DB7D8" strokeWidth={1.5} strokeDasharray="4 3" opacity={0.55} />
+        {/* current 1:500 */}
+        <polyline points={linePts(500)} fill="none" stroke="#22E0E6" strokeWidth={2.2} />
+        {/* current pool marker */}
+        {currentPoolOre != null && currentPoolOre > 0 && currentPoolOre <= XMAX && (
+          <g>
+            <line x1={xPos(currentPoolOre)} x2={xPos(currentPoolOre)} y1={MT} y2={MT + ph} stroke="#E8881A" strokeWidth={1.2} strokeDasharray="3 3" opacity={0.75} />
+            <text x={xPos(currentPoolOre)} y={MT - 3} textAnchor="middle" fill="#E8881A" fontSize={FS} fontFamily="monospace">now {currentPoolOre.toFixed(0)}</text>
+          </g>
+        )}
+        {/* end labels */}
+        <text x={ML + pw + 6} y={yPos(surv(XMAX, 500)) + 4} fill="#22E0E6" fontSize={FS} fontFamily="monospace" fontWeight={600}>1:500</text>
+        <text x={ML + pw + 6} y={yPos(surv(XMAX, 625)) + 4} fill="#9DB7D8" fontSize={FS} fontFamily="monospace" opacity={0.7}>1:625</text>
+        {/* hover crosshair */}
+        {hx != null && (
+          <g>
+            <line x1={xPos(hx)} x2={xPos(hx)} y1={MT} y2={MT + ph} stroke="rgba(255,255,255,0.18)" />
+            <circle cx={xPos(hx)} cy={yPos(surv(hx, 500))} r={3.5} fill="#22E0E6" />
+          </g>
+        )}
+      </svg>
+      {hx != null && (
+        <div className="pointer-events-none absolute top-1 rounded-md border border-line bg-ink-800 px-2 py-1 font-mono text-[11px] text-white shadow-lg"
+          style={{ left: `${Math.min(88, Math.max(2, (xPos(hx) / W) * 100))}%` }}>
+          <div className="text-gray-400">at {hx.toFixed(0)} ORE ({(hx / 0.2).toFixed(0)} rounds)</div>
+          <div><span className="text-[#22E0E6]">1:500</span> reach {fmtPct(surv(hx, 500))} · <span className="text-[#9DB7D8]">1:625</span> {fmtPct(surv(hx, 625))}</div>
+        </div>
+      )}
+    </div>
+  );
+}

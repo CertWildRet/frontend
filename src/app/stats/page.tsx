@@ -13,7 +13,7 @@ import { TabBar, SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { TileSkeleton, RowsSkeleton, Refreshing } from "@/components/primitives/Skeleton";
 import { AreaLine, HBars, ChartCard, ChartWatermarkContext, compactNum, type Pt } from "@/components/stats/Charts";
-import { DualLine, CostEvChart, BarsLine, PopBars, type TPt } from "@/components/stats/TrendCharts";
+import { DualLine, CostEvChart, BarsLine, PopBars, MotherlodeReachChart, type TPt } from "@/components/stats/TrendCharts";
 import { MinerDetail } from "@/components/stats/MinerDetail";
 import { usePolled, PolledActiveContext } from "@/hooks/useOreStats";
 import {
@@ -500,7 +500,7 @@ function PopDrilldown({ roundId }: { roundId: number }) {
             <tr className={theadRow}>
               <th className={th}>Miner</th>
               <th className={`${th} hidden text-right sm:table-cell`}>Tiles</th>
-              <th className={`${th} hidden text-right sm:table-cell`}>Cost</th>
+              <th className={`${th} hidden text-right sm:table-cell`}>Cost (SOL)</th>
               <th className={`${th} text-right`}>ML share</th>
               <th className={`${th} text-right`}>ML got</th>
               <th className={`${th} text-right`}>ROI</th>
@@ -585,6 +585,10 @@ function MotherlodeTab() {
           yFmt={(v) => formatNum(v, 0)}
           yLabel="ORE paid by round"
         />
+      </ChartCard>
+      <ChartCard variant="dispersion" cutCorner="bl" title="Odds of reaching a size"
+        subtitle="The pool pops with a fixed 1-in-500 chance every round no matter how big it is, so the chance it ever REACHES a given size is (1−1/500)^(size÷0.2). Big pools aren't 'due' — they're just rare.">
+        <MotherlodeReachChart currentPoolOre={pool ?? undefined} height={280} />
       </ChartCard>
       <ChartCard title="Every motherlode drop" subtitle="Tap a row to see who actually shared the pool and their ROI. Each hit pays the whole pool out; it rebuilds at +0.2 ORE/round.">
         <div className={tableWrap}>
