@@ -575,21 +575,23 @@ function MotherlodeTab() {
         <StatTile label="Average pop" value={avgOre ? formatNum(avgOre, 0) : "···"} unit="ORE" hint={`over ${formatNum(total)} hits`} />
         <StatTile label="Underwater pops" value={d ? `${formatNum(d.underwater)} / ${formatNum(d.priced)}` : "···"} hint="pool paid less than the SOL burned to win that round" />
       </div>
-      <ChartCard variant="dispersion" cutCorner="tr" title="Motherlode payouts" subtitle="Last 50 hits: ORE paid per round.">
-        <AreaLine
-          spectral
-          points={mlChartPts}
-          height={210}
-          zeroBaseline={false}
-          fmt={(v) => formatNum(v, 1) + " ORE"}
-          yFmt={(v) => formatNum(v, 0)}
-          yLabel="ORE paid by round"
-        />
-      </ChartCard>
-      <ChartCard variant="dispersion" cutCorner="bl" title="Odds of reaching a size"
-        subtitle="The pool pops with a fixed 1-in-500 chance every round no matter how big it is, so the chance it ever REACHES a given size is (1−1/500)^(size÷0.2). Big pools aren't 'due' — they're just rare.">
-        <MotherlodeReachChart currentPoolOre={pool ?? undefined} height={280} />
-      </ChartCard>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <ChartCard variant="dispersion" cutCorner="tr" title="Motherlode payouts" subtitle="Last 50 hits: ORE paid per round.">
+          <AreaLine
+            spectral
+            points={mlChartPts}
+            height={240}
+            zeroBaseline={false}
+            fmt={(v) => formatNum(v, 1) + " ORE"}
+            yFmt={(v) => formatNum(v, 0)}
+            yLabel="ORE paid by round"
+          />
+        </ChartCard>
+        <ChartCard variant="dispersion" cutCorner="bl" title="Odds of reaching a size"
+          subtitle="Chance the pool ever REACHES a given size: (1−1/500)^(size÷0.2). It pops with the same 1-in-500 chance every round no matter how big, so big pools aren't 'due' — just rare. Dashed line is the old 1-in-625 odds, retired at round 335,000.">
+          <MotherlodeReachChart currentPoolOre={pool ?? undefined} height={240} />
+        </ChartCard>
+      </div>
       <ChartCard title="Every motherlode drop" subtitle="Tap a row to see who actually shared the pool and their ROI. Each hit pays the whole pool out; it rebuilds at +0.2 ORE/round.">
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px]">
