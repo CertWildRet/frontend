@@ -13,7 +13,7 @@ import { useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
-import { TileSkeleton } from "@/components/primitives/Skeleton";
+import { TileSkeleton, Refreshing } from "@/components/primitives/Skeleton";
 import { ChartCard } from "@/components/stats/Charts";
 import { PnlChart, type TPt } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
@@ -77,6 +77,13 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const dv = d.derived;
   const hasEvents = !!d.events && d.series.length > 0;
   const covTs = d.coverage?.min_ts ? new Date(d.coverage.min_ts * 1000) : null;
+  // Pool-cranked wallets: the on-chain census (lifetime tiles) and the event
+  // reconstruction (round history) are computed from different sources and can
+  // diverge hugely (e.g. census 1,127 SOL deployed vs 1.8 SOL of captured deploys
+  // for a pool-managed miner). Flag it so the two aren't read as one number.
+  const eventDepSol = hs?.dep_sol != null ? Number(hs.dep_sol) / 1e9 : null;
+  const censusEventDiverge = !censusMissing && d.managed_by.length > 0
+    && eventDepSol != null && deployed > 1 && eventDepSol < deployed * 0.5;
 
   return (
     <ChartCard
@@ -115,6 +122,14 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           </span>
         )}
       </div>
+      {censusEventDiverge && (
+        <div className="mb-3 rounded-lg border border-amber/30 bg-amber/[0.06] px-3 py-2 font-mono text-[12px] leading-relaxed text-amber">
+          Pool-managed wallet — its deploys are cranked by a pool. The
+          <span className="text-white"> lifetime (on-chain census)</span> tiles and the
+          <span className="text-white"> event-reconstructed</span> round history below come from different
+          sources and diverge sharply here; read them as two separate lenses, not one figure.
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <StatTile variant="inset" label={censusMissing ? "Deployed (window)" : "Deployed (lifetime)"} value={formatSol(deployed, 2)} unit="SOL" />
         <StatTile variant="inset" label={censusMissing ? "Won (window)" : "Returned (lifetime)"} value={formatSol(returned, 2)} unit="SOL" />
@@ -199,7 +214,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
       {d.tiles && d.tiles.some((t) => t > 0) && <FavoriteSquares tiles={d.tiles} />}
       */}
 
-      {d.series.length > 1 && <MinerTrend series={d.series} pricesNow={d.prices_now} roundsWin={roundsWin} setRoundsWin={setRoundsWin} />}
+      {d.series.length > 1 && <MinerTrend series={d.series} pricesNow={d.prices_now} roundsWin={roundsWin} setRoundsWin={setRoundsWin} refreshing={det.fetching && !!det.data} />}
 
       {d.history.length > 0 && (<>
       <div className={`${tableWrap} mt-4`}>
@@ -250,9 +265,9 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   );
 }
 
-function MinerTrend({ series, pricesNow, roundsWin, setRoundsWin }: {
+function MinerTrend({ series, pricesNow, roundsWin, setRoundsWin, refreshing }: {
   series: OreMinerDetail["series"]; pricesNow: OreMinerDetail["prices_now"];
-  roundsWin: string; setRoundsWin: (v: string) => void;
+  roundsWin: string; setRoundsWin: (v: string) => void; refreshing?: boolean;
 }) {
   const win = roundsWin;
   const setWin = setRoundsWin;
@@ -279,7 +294,10 @@ function MinerTrend({ series, pricesNow, roundsWin, setRoundsWin }: {
   return (
     <div className="mt-5 space-y-3 border-t border-line pt-4">
       <div className="flex flex-wrap items-center justify-between gap-y-2">
-        <div className="section-label" style={{ fontSize: 13 }}>Performance trend</div>
+        <div className="flex items-center gap-2">
+          <span className="section-label" style={{ fontSize: 13 }}>Performance trend</span>
+          <span className="section-label"><Refreshing active={!!refreshing} /></span>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           {hasUsd && (
             <SegmentedControl aria-label="Currency" variant="loose"
