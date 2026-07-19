@@ -77,18 +77,23 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const dv = d.derived;
   const hasEvents = !!d.events && d.series.length > 0;
   const covTs = d.coverage?.min_ts ? new Date(d.coverage.min_ts * 1000) : null;
-  // Pool-cranked wallets: the on-chain census (lifetime tiles) and the event
-  // reconstruction (round history) are computed from different sources and can
-  // diverge hugely (e.g. census 1,127 SOL deployed vs 1.8 SOL of captured deploys
-  // for a pool-managed miner). Flag it so the two aren't read as one number.
+  // Lifetime (on-chain census) vs the event-reconstructed round history: the census
+  // is the AUTHORITATIVE on-chain total; the round history is only as complete as the
+  // event backfill, which walks newest→oldest and hasn't reached genesis. A wallet
+  // whose deploys mostly predate our event floor shows census ≫ Σ(captured rounds)
+  // (e.g. 1,127 SOL lifetime vs 1.8 SOL captured). This is TEMPORAL coverage, not a
+  // pool thing — old self-cranked miners diverge too, and fully-covered pool miners
+  // don't. Detect it generically from the coverage ratio, not from managed_by.
   const eventDepSol = hs?.dep_sol != null ? Number(hs.dep_sol) / 1e9 : null;
-  const censusEventDiverge = !censusMissing && d.managed_by.length > 0
-    && eventDepSol != null && deployed > 1 && eventDepSol < deployed * 0.5;
+  const coverageRatio = !censusMissing && deployed > 0 && eventDepSol != null ? eventDepSol / deployed : null;
+  const partialHistory = coverageRatio != null && deployed > 1
+    && coverageRatio < 0.9 && (deployed - (eventDepSol ?? 0)) > 0.5;
+  const capturedPct = coverageRatio != null ? formatPct(Math.max(0, Math.min(1, coverageRatio))) : null;
 
   return (
     <ChartCard
       title={`Miner ${short(pubkey)}`}
-      subtitle={`Wallet P&L: lifetime on-chain census + event-exact round history${d.managed_by.length ? "" : ""}`}
+      subtitle="Wallet P&L: lifetime on-chain census + event-exact round history"
       right={
         <span className="flex items-center gap-2">
           <CopyAddress address={pubkey} className="font-mono text-[13px] text-fog-muted" />
@@ -122,12 +127,12 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           </span>
         )}
       </div>
-      {censusEventDiverge && (
+      {partialHistory && (
         <div className="mb-3 rounded-lg border border-amber/30 bg-amber/[0.06] px-3 py-2 font-mono text-[12px] leading-relaxed text-amber">
-          Pool-managed wallet — its deploys are cranked by a pool. The
-          <span className="text-white"> lifetime (on-chain census)</span> tiles and the
-          <span className="text-white"> event-reconstructed</span> round history below come from different
-          sources and diverge sharply here; read them as two separate lenses, not one figure.
+          <span className="text-white">Lifetime tiles are the authoritative on-chain totals.</span> The
+          per-round history below only covers captured rounds{covTs ? ` (event data reaches back to ${covTs.toLocaleDateString()} so far)` : ""} —
+          this wallet deployed most of its {formatSol(deployed, 0)} SOL earlier, so captured rounds sum to just {formatSol(eventDepSol ?? 0, 2)} SOL
+          {capturedPct ? ` (${capturedPct} of lifetime)` : ""}. Coverage deepens daily as the backfill digs toward genesis.
         </div>
       )}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
@@ -214,7 +219,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
       {d.tiles && d.tiles.some((t) => t > 0) && <FavoriteSquares tiles={d.tiles} />}
       */}
 
-      {d.series.length > 1 && <MinerTrend series={d.series} pricesNow={d.prices_now} roundsWin={roundsWin} setRoundsWin={setRoundsWin} refreshing={det.fetching && !!det.data} />}
+      {d.series.length > 1 && <MinerTrend series={d.series} pricesNow={d.prices_now} roundsWin={roundsWin} setRoundsWin={setRoundsWin} refreshing={det.fetching && !!det.data} partial={partialHistory} />}
 
       {d.history.length > 0 && (<>
       <div className={`${tableWrap} mt-4`}>
@@ -265,9 +270,9 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   );
 }
 
-function MinerTrend({ series, pricesNow, roundsWin, setRoundsWin, refreshing }: {
+function MinerTrend({ series, pricesNow, roundsWin, setRoundsWin, refreshing, partial }: {
   series: OreMinerDetail["series"]; pricesNow: OreMinerDetail["prices_now"];
-  roundsWin: string; setRoundsWin: (v: string) => void; refreshing?: boolean;
+  roundsWin: string; setRoundsWin: (v: string) => void; refreshing?: boolean; partial?: boolean;
 }) {
   const win = roundsWin;
   const setWin = setRoundsWin;
@@ -310,7 +315,7 @@ function MinerTrend({ series, pricesNow, roundsWin, setRoundsWin, refreshing }: 
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <StatTile variant="inset" label="Rounds" value={formatNum(nRounds)} hint={win === "all" ? "entire covered history" : undefined} />
+        <StatTile variant="inset" label="Rounds" value={formatNum(nRounds)} hint={win === "all" ? (partial ? "all captured rounds — see note" : "all captured rounds") : undefined} />
         <StatTile variant="inset" label="Win rate" value={nRounds ? formatPct(wins / nRounds) : "···"} />
         <StatTile variant="inset" label="Avg / round"
           value={<span className={netTone(cum / Math.max(1, nRounds))}>{cur === "usd" ? "$" : ""}{formatNum(cum / Math.max(1, nRounds), cur === "usd" ? 2 : 4)}</span>} />
