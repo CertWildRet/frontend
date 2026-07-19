@@ -17,7 +17,7 @@ import { DualLine, CostEvChart, BarsLine, PopBars, MotherlodeReachChart, type TP
 import { MinerDetail } from "@/components/stats/MinerDetail";
 import { usePolled, PolledActiveContext } from "@/hooks/useOreStats";
 import {
-  fetchOreRounds, fetchOreMotherlode, fetchOreMotherlodePop, fetchOreLeaderboard,
+  fetchOreRounds, fetchOreParticipants, fetchOreMotherlode, fetchOreMotherlodePop, fetchOreLeaderboard,
   fetchOreMiners, fetchOreSeries, fetchOreCompetition, fetchOreTrends,
   fetchOreEcosystem, fetchOreMiner, fetchOreYields, fetchOreDominance,
   motherlodeOdds, expectedPopOre,
@@ -1083,9 +1083,113 @@ function MinersTab({ seed }: { seed?: MinerSeed | null }) {
   );
 }
 
+// Per-round participant drill-down (the Rounds-tab chevron): every deployer in a
+// settled round + their P&L. Fed by /ore/participants — DeployEvent-derived, so it
+// gracefully reports "still ingesting" for rounds the forward tip hasn't reached.
+function RoundParticipants({ roundId }: { roundId: number }) {
+  const [sort, setSort] = useState<"deployed" | "roi" | "won">("deployed");
+  const [shown, setShown] = useState(POP_PAGE);
+  const goToMiner = useContext(MinerNavContext);
+  const dd = usePolled(() => fetchOreParticipants(roundId, sort, 4000), 300_000, [roundId, sort]);
+  useEffect(() => { setShown(POP_PAGE); }, [roundId, sort]);
+  const d = dd.data;
+  if (dd.loading && !d) return <div className="px-3 py-4 text-[12px] text-gray-400">Loading participants…</div>;
+  if (d && !d.has_participants)
+    return (
+      <div className="px-3 py-4 text-[12px] text-gray-400">
+        Participant breakdown isn&apos;t available yet — {d.reason ?? "no deploy history"}.
+      </div>
+    );
+  const wt = d?.round.winning_tile ?? null;
+  return (
+    <div className="space-y-3 px-1 py-3 sm:px-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="text-[12px] text-gray-300">
+          <span className="text-white">{formatNum(d?.participants_total ?? 0)}</span> miners deployed this round
+          {d?.winners_count != null && wt != null && (
+            <> · <span className="text-pos">{formatNum(d.winners_count)}</span> hit the winning tile #{wt + 1}</>
+          )}
+        </div>
+        <SegmentedControl
+          aria-label="sort participants"
+          items={[{ id: "deployed", label: "By deploy" }, { id: "roi", label: "By ROI" }, { id: "won", label: "Winners" }]}
+          value={sort}
+          onChange={setSort}
+        />
+      </div>
+      <div className={tableWrap}>
+        <table className="w-full font-mono text-[12px]">
+          <thead>
+            <tr className={theadRow}>
+              <th className={th}>Miner</th>
+              <th className={`${th} hidden text-right sm:table-cell`}>Tiles</th>
+              <th className={`${th} text-right`}>Deployed</th>
+              <th className={`${th} text-right`}>Share</th>
+              <th className={`${th} text-right`}>SOL back</th>
+              <th className={`${th} text-right`}>ROI</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(d?.participants ?? []).slice(0, shown).map((p) => (
+              <tr key={p.pubkey} className={p.is_solo_winner ? oursRow : bodyRow}>
+                <td className={`${td} text-white`}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <CopyAddress address={p.pubkey} />
+                    <button
+                      type="button"
+                      onClick={() => goToMiner(p.pubkey)}
+                      title="Search this miner"
+                      aria-label={`Search miner ${p.pubkey}`}
+                      className="text-gray-500 transition-colors hover:text-[#22E0E6]"
+                    >
+                      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
+                        <path d="M4.25 7.75 L7.75 4.25" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                        <path d="M5.25 4.25 H7.75 V6.75" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                    {p.won && <span title="staked on the winning tile" className="rounded bg-pos/15 px-1 text-[10px] text-pos">won</span>}
+                    {p.is_solo_winner && <span title="also won the round's separate ~1-ORE base prize" className="rounded bg-gold/15 px-1 text-[10px] text-gold">solo ORE</span>}
+                  </span>
+                </td>
+                <td className={`${td} num hidden text-right text-gray-300 sm:table-cell`}>{p.tiles_covered}</td>
+                <td className={`${td} num text-right text-gray-300`}>{fmtDust(p.deployed_sol, 2)}</td>
+                <td className={`${td} num text-right text-gray-300`}>{fmtPctDust(p.share)}</td>
+                <td className={`${td} num text-right ${p.sol_return > 0 ? "text-gray-200" : "text-gray-600"}`}>
+                  {p.sol_return > 0 ? fmtDust(p.sol_return, 3) : "·"}
+                  {p.ml_ore > 0.005 && <span className="text-gold"> +{formatNum(p.ml_ore, 1)} ORE</span>}
+                </td>
+                <td className={`${td} num text-right ${p.roi == null ? "text-gray-500" : netTone(p.roi - 1)}`}>
+                  {p.roi == null ? "·" : `${formatNum(p.roi, 1)}×`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {(d?.participants?.length ?? 0) > shown && (
+        <div className="flex justify-center">
+          <button
+            onClick={() => setShown((n) => n + POP_PAGE)}
+            className="rounded-lg border border-line px-4 py-1.5 font-mono text-[12px] text-gray-300 transition-colors hover:border-steel hover:text-white"
+          >
+            Load {Math.min(POP_PAGE, (d?.participants?.length ?? 0) - shown)} more · {formatNum(shown)} of {formatNum(d?.participants?.length ?? 0)}
+          </button>
+        </div>
+      )}
+      <p className="px-1 text-[11px] leading-relaxed text-gray-500">
+        Every miner that deployed this round, by SOL staked. <span className="text-pos">won</span> = staked on the winning
+        tile{wt != null ? ` #${wt + 1}` : ""}; <span className="text-gray-400">SOL back</span> is their pro-rata slice of the
+        winners&apos; pot (a pop adds an ORE slice on top). ROI is the round&apos;s gross return over what they deployed, at
+        round-time prices. Sorted by {sort === "roi" ? "ROI" : sort === "won" ? "winners first" : "deploy size"}.
+      </p>
+    </div>
+  );
+}
+
 // ── Rounds: recent spine table ───────────────────────────────────────────────
 function RoundsTab() {
   const [offset, setOffset] = useState(0);
+  const [openRound, setOpenRound] = useState<number | null>(null);
   // Miners + tile spread are computed server-side by /ore/rounds (deploy events,
   // falling back to the round's live-PDA tile columns), so the row already carries
   // total_miners + tile_max/tile_min — no per-round detail fetch needed.
@@ -1095,7 +1199,7 @@ function RoundsTab() {
 
   return (
     <div className="space-y-5">
-      <ChartCard subtitle="Split = jackpot shared across winners. Max spread = hottest minus coldest tile; % = spread ÷ coldest."
+      <ChartCard subtitle="Tap a settled round to see every participant and their P&L. Split = jackpot shared across winners. Max spread = hottest minus coldest tile; % = spread ÷ coldest."
         right={<Refreshing active={rounds.fetching && !!rounds.data} label="loading" />}>
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px] sm:min-w-[560px]">
@@ -1113,9 +1217,24 @@ function RoundsTab() {
             </thead>
             <tbody>
               {rounds.loading && !rounds.data && <SkeletonRows cols={8} />}
-              {rs.map((r) => (
-                <tr key={r.round_id} className={bodyRow}>
-                  <td className={`${td} text-white`}>#{formatNum(Number(r.round_id))}</td>
+              {rs.map((r) => {
+                const rid = Number(r.round_id);
+                // Only settled rounds (winning tile recorded) are drillable — the
+                // live in-flight round is skipped, exactly as asked.
+                const drillable = r.winning_tile != null;
+                const open = drillable && openRound === rid;
+                return (
+                <Fragment key={r.round_id}>
+                <tr
+                  className={`${bodyRow} ${drillable ? "cursor-pointer" : ""}`}
+                  onClick={drillable ? () => setOpenRound(open ? null : rid) : undefined}
+                >
+                  <td className={`${td} text-white`}>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="inline-block w-[9px] text-gray-500">{drillable ? (open ? "▾" : "▸") : ""}</span>
+                      #{formatNum(rid)}
+                    </span>
+                  </td>
                   <td className={`${td} num text-right`}>
                     {/* base emission (~1 ORE to the winner) + the accumulated pool on a pop round */}
                     <span className="text-gray-300">{formatNum(solOf(r.total_minted), 1)}</span>
@@ -1143,7 +1262,14 @@ function RoundsTab() {
                     })()}
                   </td>
                 </tr>
-              ))}
+                {open && (
+                  <tr className="bg-black/20">
+                    <td colSpan={8} className="p-0"><RoundParticipants roundId={rid} /></td>
+                  </tr>
+                )}
+                </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>

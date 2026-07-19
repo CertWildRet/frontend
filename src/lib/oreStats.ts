@@ -254,14 +254,33 @@ export type OreMotherlodePop = {
   sharers: OreMotherlodeSharer[];
 };
 
-export type OreParticipant = {
-  authority: string;
+export type OreRoundParticipant = {
+  pubkey: string;
+  deployed_sol: number;
+  tiles_covered: number;
   deploys: number;
-  total_sol: string;
-  max_single: string;
-  squares: number;
+  share: number;        // fraction of the round's total deployed SOL
+  won: boolean;         // staked on the winning tile
+  sol_return: number;   // pro-rata SOL from the winners' pot
+  ml_ore: number;       // pro-rata motherlode ORE (0 unless the round popped)
+  roi: number | null;   // gross multiple (return / cost), USD-based; null if unpriced
+  is_solo_winner: boolean;
 };
-export type OreParticipants = { round_id: number; miner_count: number; miners: OreParticipant[] };
+
+export type OreParticipants = {
+  round: {
+    round_id: number; ts: number; winning_tile: number | null; is_split: number | null;
+    top_miner: string | null; total_deployed: string; total_winnings: string;
+    motherlode_paid: string; total_miners: string | null; sol_usd: number | null; ore_usd: number | null;
+  };
+  has_participants: boolean;
+  reason?: string;
+  sort?: "deployed" | "roi" | "won";
+  participants_total: number;
+  winners_count?: number;
+  deploy_frontier: number;
+  participants: OreRoundParticipant[];
+};
 
 export type OreCompetition = {
   window: { rounds_analyzed: number; from_round?: number; to_round?: number };
@@ -468,7 +487,8 @@ export const fetchOreMotherlode = (limit = 50, offset = 0) =>
   get<OreMotherlode>(`/ore/motherlode?limit=${limit}&offset=${offset}`);
 export const fetchOreMotherlodePop = (roundId: number, sort: "stake" | "roi" = "stake", top = 20) =>
   get<OreMotherlodePop>(`/ore/motherlode/${roundId}?sort=${sort}&top=${top}`);
-export const fetchOreParticipants = (roundId: number) => get<OreParticipants>(`/ore/participants/${roundId}`);
+export const fetchOreParticipants = (roundId: number, sort: "deployed" | "roi" | "won" = "deployed", top = 20) =>
+  get<OreParticipants>(`/ore/participants/${roundId}?sort=${sort}&top=${top}`);
 export const fetchOreCompetition = (rounds = 10) => get<OreCompetition>(`/ore/competition?rounds=${rounds}`);
 export const fetchStatsOverview = () => get<StatsOverview>("/stats/overview");
 
