@@ -309,7 +309,7 @@ function TrendsTab() {
             aFmt={(v) => "$" + formatNum(v, 1)} bFmt={(v) => "$" + formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
         {/* (3) activity — deploys vs the motherlode pool */}
-        <ChartCard variant="dispersion" cutCorner="tr" title="Mining activity" subtitle="Avg SOL deployed per round (bars) vs the motherlode pool (line). The pool fills 0.2 ORE per round and pays out when it pops. Watch deploys chase a fat pool.">
+        <ChartCard variant="dispersion" cutCorner="tr" title="Mining activity" subtitle="Avg SOL/round (bars) vs the motherlode pool (line). Deploys chase a fat pool.">
           <BarsLine bars={mkT((p) => p.avg_deployed_sol)} line={mkT((p) => p.ml_pool_ore)} barName="SOL / round" lineName="motherlode pool (ORE)" height={205}
             barFmt={(v) => formatNum(v, 1)} lineFmt={(v) => formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
