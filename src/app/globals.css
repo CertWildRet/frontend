@@ -64,7 +64,7 @@
     radial-gradient(46% 40% at 60% 86%, rgba(91, 108, 255, 0.10), transparent 64%),
     radial-gradient(30% 28% at 14% 78%, rgba(255, 90, 200, 0.07), transparent 60%);
   filter: blur(8px) saturate(115%);
-  animation: auroraDrift 34s ease-in-out infinite alternate;
+  animation: auroraDrift 34s ease-in-out 3 alternate forwards;
 }
 .atmosphere::after {
   content: "";
@@ -123,7 +123,7 @@
   );
   filter: blur(22px);
   opacity: 0;
-  animation: beamSweep 16s ease-in-out infinite;
+  animation: beamSweep 16s ease-in-out 3 forwards;
 }
 @keyframes beamSweep {
   0%, 70%, 100% { opacity: 0; transform: translateX(-50%) rotate(-14deg); }
@@ -199,7 +199,7 @@
     mask-composite: exclude;
     pointer-events: none;
     opacity: 0.45;
-    animation: hueShift 12s ease-in-out infinite alternate;
+    animation: hueShift 12s ease-in-out 3 alternate forwards;
   }
 
   .btn {
@@ -293,7 +293,7 @@
   .live-dot {
     @apply inline-block h-1.5 w-1.5 rounded-full bg-current;
     box-shadow: 0 0 8px 1px currentColor;
-    animation: pulseDot 1.8s ease-in-out infinite;
+    animation: pulseDot 1.8s ease-in-out 3 forwards;
   }
 
   .tile {
@@ -346,7 +346,7 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    animation: sheen 5.5s linear infinite;
+    animation: sheen 5.5s linear 3 forwards;
   }
   .stagger > * {
     animation: fadeUp 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -399,7 +399,7 @@
   100% { background-position: 300% 50%; }
 }
 .animate-float {
-  animation: float 7s ease-in-out infinite;
+  animation: float 7s ease-in-out 3 forwards;
 }
 
 /* ── ORE hero board: white glare sweeping tile-by-tile, row-major (each row
@@ -418,7 +418,7 @@
   background: linear-gradient(135deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.92) 50%, rgba(255, 255, 255, 0) 70%);
   opacity: 0;
   pointer-events: none;
-  animation: oreHeroGlare 4s ease-in-out infinite;
+  animation: oreHeroGlare 4s ease-in-out 3 forwards;
   animation-delay: calc(var(--gi, 0) * 0.13s);
 }
 @keyframes oreHeroGlare {

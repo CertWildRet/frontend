@@ -88,7 +88,7 @@
   border-radius: 999px;
   background: var(--stats-cyan);
   box-shadow: 0 0 12px rgba(34, 224, 230, 0.9);
-  animation: livePulse 2s ease-in-out infinite;
+  animation: livePulse 2s ease-in-out 3 forwards;
 }
 
 .title {
@@ -111,7 +111,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: spectrumFlow 8s ease-in-out infinite alternate;
+  animation: spectrumFlow 8s ease-in-out 3 alternate forwards;
 }
 
 .subtitle {
@@ -171,7 +171,7 @@
   inset: 12px;
   border-style: dashed;
   border-color: rgba(34, 224, 230, 0.3);
-  animation: lensSpin 22s linear infinite;
+  animation: lensSpin 22s linear 3 forwards;
 }
 
 .board {
@@ -189,7 +189,7 @@
   background: linear-gradient(135deg, rgba(34, 224, 230, 0.7), rgba(91, 108, 255, 0.5) 48%, rgba(154, 107, 255, 0.75));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38), 0 0 12px rgba(91, 108, 255, 0.2);
   opacity: 0.34;
-  animation: tileScan 3.8s ease-in-out infinite;
+  animation: tileScan 3.8s ease-in-out 3 forwards;
   animation-delay: calc(var(--tile-index) * 80ms);
 }
 

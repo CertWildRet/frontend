@@ -17,7 +17,7 @@ function Shimmer({ className = "", style }: { className?: string; style?: React.
       aria-hidden
     >
       <div
-        className="absolute inset-0 -translate-x-full animate-[shimmer_1.6s_infinite]"
+        className="absolute inset-0 -translate-x-full animate-shimmer-thrice"
         style={{
           background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.055), transparent)",
         }}
@@ -71,7 +71,7 @@ export function Refreshing({ active }: { active: boolean }) {
   if (!active) return null;
   return (
     <span className="ml-2 inline-flex items-center gap-1.5 font-mono text-[12px] font-semibold text-[#9fe8ec]" role="status">
-      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#22E0E6]" />
+      <span className="h-1.5 w-1.5 animate-pulse-thrice rounded-full bg-[#22E0E6]" />
       refreshing
     </span>
   );

@@ -65,13 +65,13 @@
 /* ---- Helpers ---- */
 .ignite        { animation: ignite 1.5s cubic-bezier(.2,.7,.2,1) both; }
 .rise          { animation: rise .9s cubic-bezier(.2,.7,.2,1) both; }
-.stoneSpin     { animation: stone-spin 9s ease-in-out infinite; transform-origin: 50% 90%; }
-.stoneBreathe  { animation: stone-breathe 7s ease-in-out infinite; }
-.causticDrift  { animation: caustic-drift 14s ease-in-out infinite; }
+.stoneSpin     { animation: stone-spin 9s ease-in-out 3 forwards; transform-origin: 50% 90%; }
+.stoneBreathe  { animation: stone-breathe 7s ease-in-out 3 forwards; }
+.causticDrift  { animation: caustic-drift 14s ease-in-out 3 forwards; }
 .causticSweep  { animation: caustic-sweep 2.2s cubic-bezier(.2,.7,.2,1) .3s both; }
-.sparkle       { animation: sparkle 9s ease-in-out infinite; }
-.gaugePulse    { animation: gauge-pulse 2.4s ease-in-out infinite; }
-.tileFlare     { animation: tile-flare 3.2s ease-in-out infinite; }
+.sparkle       { animation: sparkle 9s ease-in-out 3 forwards; }
+.gaugePulse    { animation: gauge-pulse 2.4s ease-in-out 3 forwards; }
+.tileFlare     { animation: tile-flare 3.2s ease-in-out 3 forwards; }
 
 /* Bevel/facet button - chamfered corners + glossy top edge */
 .facet {

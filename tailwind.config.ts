@@ -69,7 +69,9 @@ const config: Config = {
       },
       animation: {
         "fade-up": "fadeUp .6s cubic-bezier(.2,.7,.2,1) both",
-        "pulse-dot": "pulseDot 1.8s ease-in-out infinite",
+        "pulse-dot": "pulseDot 1.8s ease-in-out 3 forwards",
+        "pulse-thrice": "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) 3 forwards",
+        "shimmer-thrice": "shimmer 1.6s linear 3 forwards",
       },
     },
   },

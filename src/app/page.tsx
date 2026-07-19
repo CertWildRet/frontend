@@ -672,7 +672,7 @@ function StepYieldGraphic() {
         <animate
           attributeName="opacity"
           dur={DUR}
-          repeatCount="indefinite"
+          repeatCount="3"
           calcMode="spline"
           keyTimes={KEYTIMES}
           keySplines={KEYSPLINES}
@@ -698,7 +698,7 @@ function StepYieldGraphic() {
         <animate
           attributeName="stroke-dashoffset"
           dur={DUR}
-          repeatCount="indefinite"
+          repeatCount="3"
           calcMode="spline"
           keyTimes={KEYTIMES}
           keySplines={KEYSPLINES}
@@ -722,7 +722,7 @@ function StepYieldGraphic() {
         <animate
           attributeName="opacity"
           dur={DUR}
-          repeatCount="indefinite"
+          repeatCount="3"
           calcMode="spline"
           keyTimes="0;0.03;1"
           keySplines="0.42 0 0.58 1;0 0 0 0"
@@ -731,7 +731,7 @@ function StepYieldGraphic() {
         />
         <animateMotion
           dur={DUR}
-          repeatCount="indefinite"
+          repeatCount="3"
           calcMode="spline"
           keyTimes={KEYTIMES}
           keyPoints="0;1;1"
