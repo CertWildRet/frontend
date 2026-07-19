@@ -73,10 +73,10 @@ export function ChartCard({
                 // distract, opaque enough to stay legible in a heading crop.
                 <div
                   aria-hidden
-                  className="pointer-events-none select-none whitespace-nowrap font-mono text-[11px] leading-none tracking-tight text-[#C7D0EA]"
-                  style={{ opacity: 0.4 }}
+                  className="pointer-events-none select-none whitespace-nowrap font-mono text-[12px] leading-none tracking-tight text-[#C7D0EA]"
+                  style={{ opacity: 0.75 }}
                 >
-                  💎&nbsp;https://diamondpools.app/stats
+                  diamondpools.app/stats
                 </div>
               )}
               {right}
