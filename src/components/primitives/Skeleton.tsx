@@ -67,12 +67,12 @@ export function TileSkeleton() {
 
 /** Tiny "background refresh in progress" hint — sits beside a section label so
  *  a range/tab switch visibly does something while stale data stays up. */
-export function Refreshing({ active }: { active: boolean }) {
+export function Refreshing({ active, label = "refreshing" }: { active: boolean; label?: string }) {
   if (!active) return null;
   return (
     <span className="ml-2 inline-flex items-center gap-1.5 font-mono text-[12px] font-semibold text-[#9fe8ec]" role="status">
       <span className="h-1.5 w-1.5 animate-pulse-thrice rounded-full bg-[#22E0E6]" />
-      refreshing
+      {label}
     </span>
   );
 }

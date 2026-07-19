@@ -17,13 +17,12 @@ import { DualLine, CostEvChart, BarsLine, PopBars, MotherlodeReachChart, type TP
 import { MinerDetail } from "@/components/stats/MinerDetail";
 import { usePolled, PolledActiveContext } from "@/hooks/useOreStats";
 import {
-  fetchOreRounds, fetchOreRound, fetchOreMotherlode, fetchOreMotherlodePop, fetchOreLeaderboard,
+  fetchOreRounds, fetchOreMotherlode, fetchOreMotherlodePop, fetchOreLeaderboard,
   fetchOreMiners, fetchOreSeries, fetchOreCompetition, fetchOreTrends,
   fetchOreEcosystem, fetchOreMiner, fetchOreYields, fetchOreDominance,
   motherlodeOdds, expectedPopOre,
   type OreMotherlodeHit,
   lamportsToSol, oreGramsToOre, roundTileDeployRange, roundMaxSpreadFrac,
-  type TileDeployRange,
   type OreSeriesPoint,
   type OreTrendPoint,
   type OreEcoPoint,
@@ -1087,44 +1086,17 @@ function MinersTab({ seed }: { seed?: MinerSeed | null }) {
 // ── Rounds: recent spine table ───────────────────────────────────────────────
 function RoundsTab() {
   const [offset, setOffset] = useState(0);
-  const [ranges, setRanges] = useState<Record<number, TileDeployRange | null>>({});
+  // Miners + tile spread are computed server-side by /ore/rounds (deploy events,
+  // falling back to the round's live-PDA tile columns), so the row already carries
+  // total_miners + tile_max/tile_min — no per-round detail fetch needed.
   const rounds = usePolled(() => fetchOreRounds(PAGE, offset), 20_000, [offset]);
   const rs = rounds.data?.rounds ?? [];
   const total = rounds.data?.total ?? 0;
-  const roundIds = rs.map((r) => r.round_id).join(",");
-
-  useEffect(() => {
-    const pending = rs.filter((r) => r.source === "EVENT" && roundTileDeployRange(r) === null);
-    if (!pending.length) return;
-    let cancelled = false;
-    setRanges({});
-    (async () => {
-      const next: Record<number, TileDeployRange | null> = {};
-      const BATCH = 6;
-      for (let i = 0; i < pending.length; i += BATCH) {
-        if (cancelled) return;
-        const batch = pending.slice(i, i + BATCH);
-        await Promise.all(
-          batch.map(async (r) => {
-            try {
-              const { data } = await fetchOreRound(r.round_id);
-              next[r.round_id] = roundTileDeployRange(data.round);
-            } catch {
-              next[r.round_id] = null;
-            }
-          }),
-        );
-      }
-      if (!cancelled) setRanges(next);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [roundIds]);
 
   return (
     <div className="space-y-5">
-      <ChartCard subtitle="Split = jackpot shared across winners. Max spread = hottest minus coldest tile; % = spread ÷ coldest.">
+      <ChartCard subtitle="Split = jackpot shared across winners. Max spread = hottest minus coldest tile; % = spread ÷ coldest."
+        right={<Refreshing active={rounds.fetching} label="loading" />}>
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px] sm:min-w-[560px]">
             <thead>
@@ -1159,13 +1131,13 @@ function RoundsTab() {
                   </td>
                   <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>
                     {(() => {
-                      const range = roundTileDeployRange(r) ?? ranges[r.round_id];
+                      const range = roundTileDeployRange(r);
                       return range != null ? `${formatSol(lamportsToSol(range.spread.toString()), 3)} SOL` : "·";
                     })()}
                   </td>
                   <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>
                     {(() => {
-                      const range = roundTileDeployRange(r) ?? ranges[r.round_id];
+                      const range = roundTileDeployRange(r);
                       const frac = range ? roundMaxSpreadFrac(range) : null;
                       return frac != null ? formatPct(frac, 2) : "·";
                     })()}
