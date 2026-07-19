@@ -494,7 +494,7 @@ export const fetchOreMotherlode = (limit = 50, offset = 0) =>
 // "still ingesting" state is never cached, so it keeps refetching until data
 // lands. Bump the version tag when a response shape changes to invalidate old
 // entries. Fails soft: quota / private-mode errors just skip the cache.
-const ROUND_CACHE_V = "ore:rd:v1:";
+const ROUND_CACHE_V = "ore:rd:v2:";
 function readRoundCache<T>(key: string): T | null {
   if (typeof window === "undefined") return null;
   try {

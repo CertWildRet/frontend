@@ -1182,8 +1182,9 @@ function RoundParticipants({ roundId }: { roundId: number }) {
       <p className="px-1 text-[11px] leading-relaxed text-gray-500">
         Every miner that deployed this round, by SOL staked. <span className="text-pos">won</span> = staked on the winning
         tile{wt != null ? ` #${wt + 1}` : ""}; <span className="text-gray-400">SOL back</span> is their pro-rata slice of the
-        winners&apos; pot; <span className="text-gold">ORE won</span> is the ~1-ORE winner emission plus any motherlode-pool
-        slice on a pop. ROI is the round&apos;s gross return over what they deployed, at round-time prices. Sorted by{" "}
+        winners&apos; pot; <span className="text-gold">ORE won</span> is their cut of the ~1-ORE winner emission (all to the
+        solo winner, or shared pro-rata on a split round) plus any motherlode slice on a pop. ROI is the round&apos;s gross
+        return over what they deployed, at round-time prices. Sorted by{" "}
         {sort === "roi" ? "ROI" : sort === "won" ? "winners first" : "deploy size"}.
       </p>
     </div>
