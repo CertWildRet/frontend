@@ -588,7 +588,7 @@ function MotherlodeTab() {
           />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="bl" title="Odds of reaching a size"
-          subtitle="Chance the pool ever REACHES a given size: (1−1/500)^(size÷0.2). It pops with the same 1-in-500 chance every round no matter how big, so big pools aren't 'due' — just rare. Dashed line is the old 1-in-625 odds, retired at round 335,000.">
+          subtitle="Chance the pool ever REACHES a given size.">
           <MotherlodeReachChart currentPoolOre={pool ?? undefined} height={240} />
         </ChartCard>
       </div>

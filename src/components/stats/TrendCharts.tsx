@@ -678,9 +678,8 @@ export function MotherlodeReachChart({ currentPoolOre, height = 280 }: {
           <text key={x} x={xPos(x)} y={MT + ph + 18} textAnchor="middle" fill={AXIS} fontSize={FS} fontFamily="monospace">{x}</text>
         ))}
         <text x={ML + pw / 2} y={height - 6} textAnchor="middle" fill={AXIS} fontSize={FS} fontFamily="monospace">motherlode size (ORE)</text>
-        {/* odds-change boundary (round 335,000, pool was 263 ORE) */}
-        <line x1={xPos(CHANGEOVER)} x2={xPos(CHANGEOVER)} y1={MT} y2={MT + ph} stroke="#9DB7D8" strokeWidth={1} strokeDasharray="2 4" opacity={0.35} />
-        <text x={xPos(CHANGEOVER)} y={MT + ph + 32} textAnchor="middle" fill="#9DB7D8" fontSize={FS} fontFamily="monospace" opacity={0.7}>odds cut · r335k</text>
+        {/* odds-change boundary (round 335,000, pool was 263 ORE) — where the dashed 1:625 line stops */}
+        <line x1={xPos(CHANGEOVER)} x2={xPos(CHANGEOVER)} y1={MT} y2={MT + ph} stroke="#9DB7D8" strokeWidth={1} strokeDasharray="2 4" opacity={0.3} />
         {/* historical 1:625, dimmed dashed — retired at the 263-ORE changeover */}
         <polyline points={linePts(625, CHANGEOVER)} fill="none" stroke="#9DB7D8" strokeWidth={1.5} strokeDasharray="4 3" opacity={0.6} />
         <circle cx={xPos(CHANGEOVER)} cy={yPos(surv(CHANGEOVER, 625))} r={3} fill="#9DB7D8" opacity={0.7} />
