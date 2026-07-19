@@ -103,7 +103,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           </a>
           <button type="button" onClick={det.refresh} disabled={det.fetching}
             className="rounded border border-line px-2 py-1 font-mono text-[12px] text-fog-muted transition-colors hover:border-steel hover:text-white disabled:cursor-default disabled:opacity-50">
-            {det.fetching ? "refreshing…" : "refresh"}
+            refresh
           </button>
         </span>
       }

@@ -69,8 +69,10 @@ export function TileSkeleton() {
  *  a range/tab switch visibly does something while stale data stays up. */
 export function Refreshing({ active, label = "refreshing" }: { active: boolean; label?: string }) {
   if (!active) return null;
+  // Self-styled uppercase + letter-spaced so every use reads "R E F R E S H I N G"
+  // regardless of whether the caller wraps it in a .section-label.
   return (
-    <span className="ml-2 inline-flex items-center gap-1.5 font-mono text-[12px] font-semibold text-[#9fe8ec]" role="status">
+    <span className="ml-2 inline-flex items-center gap-1.5 font-mono text-[12px] font-semibold uppercase tracking-[0.16em] text-[#9fe8ec]" role="status">
       <span className="h-1.5 w-1.5 animate-pulse-thrice rounded-full bg-[#22E0E6]" />
       {label}
     </span>

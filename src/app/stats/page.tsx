@@ -1096,7 +1096,7 @@ function RoundsTab() {
   return (
     <div className="space-y-5">
       <ChartCard subtitle="Split = jackpot shared across winners. Max spread = hottest minus coldest tile; % = spread ÷ coldest."
-        right={<Refreshing active={rounds.fetching} label="loading" />}>
+        right={<Refreshing active={rounds.fetching && !!rounds.data} label="loading" />}>
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px] sm:min-w-[560px]">
             <thead>
