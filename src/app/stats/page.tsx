@@ -499,8 +499,8 @@ function PopDrilldown({ roundId }: { roundId: number }) {
           <thead>
             <tr className={theadRow}>
               <th className={th}>Miner</th>
-              <th className={`${th} text-right`}>Tiles</th>
-              <th className={`${th} text-right`}>Cost</th>
+              <th className={`${th} hidden text-right sm:table-cell`}>Tiles</th>
+              <th className={`${th} hidden text-right sm:table-cell`}>Cost</th>
               <th className={`${th} text-right`}>ML share</th>
               <th className={`${th} text-right`}>ML got</th>
               <th className={`${th} text-right`}>ROI</th>
@@ -515,8 +515,8 @@ function PopDrilldown({ roundId }: { roundId: number }) {
                     {s.is_solo_winner && <span title="also won the round's separate ~1-ORE base prize (one winner per round)" className="rounded bg-gold/15 px-1 text-[10px] text-gold">solo ORE</span>}
                   </span>
                 </td>
-                <td className={`${td} num text-right text-gray-300`}>{s.tiles_covered}</td>
-                <td className={`${td} num text-right text-gray-300`}>{fmtDust(s.cost_sol, 2)}</td>
+                <td className={`${td} num hidden text-right text-gray-300 sm:table-cell`}>{s.tiles_covered}</td>
+                <td className={`${td} num hidden text-right text-gray-300 sm:table-cell`}>{fmtDust(s.cost_sol, 2)}</td>
                 <td className={`${td} num text-right text-gray-300`}>{fmtPctDust(s.share)}</td>
                 <td className={`${td} num text-right text-gold`}>
                   {fmtDust(s.ml_ore, 1)}
@@ -595,7 +595,7 @@ function MotherlodeTab() {
                 <th className={`${th} hidden sm:table-cell`}>When</th>
                 <th className={`${th} text-right`}>ORE paid</th>
                 <th className={`${th} text-right`}>Value</th>
-                <th className={`${th} text-right`}>Deployed</th>
+                <th className={`${th} hidden text-right sm:table-cell`}>Deployed</th>
                 <th className={`${th}`}>Result</th>
               </tr>
             </thead>
@@ -617,14 +617,14 @@ function MotherlodeTab() {
                       <td className={`${td} hidden text-gray-400 sm:table-cell`}>{fmtWhen(h.ts)}</td>
                       <td className={`${td} num text-right text-gold`}>{formatNum(e.mlOre, 1)}</td>
                       <td className={`${td} num text-right text-gray-300`}>{fmtUsd(e.mlUsd)}</td>
-                      <td className={`${td} num text-right ${e.underwater ? "text-red" : "text-gray-300"}`}>
+                      <td className={`${td} num hidden text-right sm:table-cell ${e.underwater ? "text-red" : "text-gray-300"}`}>
                         {e.depSol != null ? `${formatNum(e.depSol, 1)}` : "·"}
                         <span className="text-gray-500"> SOL</span>
                       </td>
                       <td className={td}>
                         {isSplit
                           ? <span className="rounded bg-white/5 px-1.5 py-0.5 text-[11px] text-gray-300">Split</span>
-                          : <span className="text-[11px] text-gray-400">Solo · {short(h.top_miner)}</span>}
+                          : <span className="text-[11px] text-gray-400">Solo<span className="hidden sm:inline"> · {short(h.top_miner)}</span></span>}
                       </td>
                     </tr>
                     {open && (
