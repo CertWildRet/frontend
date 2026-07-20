@@ -13,7 +13,7 @@ import { TabBar, SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { TileSkeleton, RowsSkeleton, Refreshing } from "@/components/primitives/Skeleton";
 import { AreaLine, HBars, ChartCard, ChartWatermarkContext, compactNum, type Pt } from "@/components/stats/Charts";
-import { DualLine, CostEvChart, BarsLine, PopBars, MotherlodeReachChart, type TPt } from "@/components/stats/TrendCharts";
+import { DualLine, CostEvChart, BarsLine, PopBars, MotherlodeReachChart, SOL_COLOR, ORE_COLOR, type TPt } from "@/components/stats/TrendCharts";
 import { MinerDetail } from "@/components/stats/MinerDetail";
 import { usePolled, PolledActiveContext } from "@/hooks/useOreStats";
 import {
@@ -305,11 +305,13 @@ function TrendsTab() {
             </span>
           ) : undefined}>
           <DualLine a={mkT((p) => p.ore_usd)} b={mkT((p) => p.sol_usd)} aName="ORE $" bName="SOL $" height={205}
+            aColor={ORE_COLOR} bColor={SOL_COLOR}
             aFmt={(v) => "$" + formatNum(v, 1)} bFmt={(v) => "$" + formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
         {/* (3) activity — deploys vs the motherlode pool */}
         <ChartCard variant="dispersion" cutCorner="tr" title="Mining activity" subtitle="Avg SOL/round (bars) vs the motherlode pool (line). Deploys chase a fat pool.">
           <BarsLine bars={mkT((p) => p.avg_deployed_sol)} line={mkT((p) => p.ml_pool_ore)} barName="SOL / round" lineName="motherlode pool (ORE)" height={205}
+            barColor={SOL_COLOR} lineColor={ORE_COLOR}
             barFmt={(v) => formatNum(v, 1)} lineFmt={(v) => formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
         {/* (5) yields — refining vs staking APR (quant spec: APR %, 7d rolling) */}
@@ -1386,7 +1388,7 @@ function EcosystemSection() {
           <ChartCard variant="dispersion" cutCorner="bl" title="Claims flow"
             subtitle="What miners cash out per day: SOL winnings vs ORE claims. Falling ORE claims = holders letting the pile refine.">
             <DualLine a={mkN((p) => p.claims_sol)} b={mkN((p) => p.claims_ore)} aName="SOL claimed" bName="ORE claimed"
-              aColor="#9DB7D8" bColor="#22E0E6" height={210}
+              aColor={SOL_COLOR} bColor={ORE_COLOR} height={210}
               aFmt={(v) => formatNum(v, 0)} bFmt={(v) => formatNum(v, 0)} loading={eco.loading} />
           </ChartCard>
         </div>

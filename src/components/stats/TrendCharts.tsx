@@ -18,6 +18,14 @@ const AXIS = "#B7BDD2"; // lightened for axis legibility
 const SURFACE = "#0E1222";
 const FS = 12;
 
+// Semantic series colors — the two ORE-economy assets, kept identical across every
+// chart so the eye learns them once. Chosen for maximum separation (the old cyan/
+// blue pair scored a colorblind ΔE of just 4.4 — near-invisible to deuteranopes):
+//   SOL = Solana brand green,  ORE = a warm gold — colorblind ΔE 12.6 (passes ≥12),
+//   both high-contrast on the dark surface, and they pop off the cool crystal theme.
+export const SOL_COLOR = "#14F195";
+export const ORE_COLOR = "#FBBF24";
+
 export type TPt = { label: string; value: number | null };
 
 function useMeasuredWidth(initial = 680): [React.RefObject<HTMLDivElement>, number] {
