@@ -86,12 +86,20 @@ export function Donut({
   const cx = W / 2, cy = H / 2;
   const rO = Math.min(W, H) / 2 - 6;
   const rI = rO * 0.6;
-  const pad = 0.018; // radian gap between slices (the 2px surface gap)
+  const pad = 0.006; // tiny angular gap; the 2px SURFACE stroke does most of the separating
+  // Give every non-empty cohort a minimum arc so tiny slices (Whale at 0.4% of
+  // holders, Plankton at 0.5% of ORE) still read as a colored SECTOR, not a
+  // hairline the gap swallows. The floor is borrowed proportionally from the rest;
+  // the tooltip/label still shows the TRUE share (frac).
+  const MIN_A = 0.1; // ~5.7° floor per slice
+  const nnz = slices.filter((s) => s.value > 0).length;
+  const free = Math.max(0, 2 * Math.PI - MIN_A * nnz);
   let a = -Math.PI / 2; // start at 12 o'clock
   const segs = slices.map((s, i) => {
-    const frac = Math.max(0, s.value) / total;
-    const a0 = a + pad / 2, a1 = a + frac * 2 * Math.PI - pad / 2;
-    a += frac * 2 * Math.PI;
+    const frac = Math.max(0, s.value) / total; // TRUE share (label/tooltip)
+    const ang = s.value > 0 ? MIN_A + frac * free : 0; // arc angle, floored so it's visible
+    const a0 = a + pad / 2, a1 = a + ang - pad / 2;
+    a += ang;
     return { s, i, a0: Math.min(a0, a1), a1: Math.max(a0, a1), mid: (a0 + a1) / 2, frac };
   });
 
