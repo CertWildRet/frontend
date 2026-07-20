@@ -314,8 +314,8 @@ function TrendsTab() {
             barColor={SOL_COLOR} lineColor={ORE_COLOR}
             barFmt={(v) => formatNum(v, 1)} lineFmt={(v) => formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
-        {/* (5) yields — refining vs staking APR (quant spec: APR %, 7d rolling) */}
-        <div className="lg:col-span-2">
+        {/* (5) yields — refining vs staking APR. Half-width, paired in a row with miner dominance. */}
+        <div>
           <ChartCard variant="dispersion" cutCorner="tr" title="Yields · hold unclaimed vs claim & stake"
             subtitle={`Refining APR (what your unclaimed ORE earns from others' claim fees) vs stORE staking APR. The shaded gap between them is the unclaimed carry: the extra APR you keep by NOT claiming. Annualized, rolling window up to 7d${yields.data?.latest?.window_days != null && yields.data.latest.window_days < 6.5 ? ` (currently ${formatNum(yields.data.latest.window_days, 1)}d, precise history began Jul 13)` : ""}.`}
             right={(avgRefin != null || avgStake != null || carryAvg != null) ? (
@@ -336,8 +336,8 @@ function TrendsTab() {
               emptyText="collecting on-chain snapshots. First points appear within ~2 hours; the full 7-day view completes by Jul 20." />
           </ChartCard>
         </div>
-        {/* (6) miner dominance — unrefined treasury ORE vs total supply */}
-        <div className="lg:col-span-2">
+        {/* (6) miner dominance — unrefined treasury ORE vs total supply. Half-width, paired with yields. */}
+        <div>
           <ChartCard variant="dispersion" cutCorner="bl" title="Miner dominance"
             subtitle="Unrefined (unclaimed) ORE held by the mine treasury as a share of total supply. Rising = miners sitting on winnings; falling = claims outpacing emission. Snapshot history began Jul 13 and deepens daily."
             right={dominance.data?.latest?.dominance_pct != null ? (
@@ -350,7 +350,7 @@ function TrendsTab() {
             ) : undefined}>
             <AreaLine
               points={(dominance.data?.points ?? []).filter((p) => p.dominance_pct != null).map((p) => ({ label: hLbl(p.hour_ts), value: p.dominance_pct as number }))}
-              height={200} zeroBaseline={false} color="#22E0E6"
+              height={210} zeroBaseline={false} color="#22E0E6"
               fmt={(v) => formatNum(v, 2) + "%"} yFmt={(v) => formatNum(v, 2) + "%"}
               loading={dominance.loading} />
           </ChartCard>
