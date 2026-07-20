@@ -2,12 +2,13 @@
 
 /**
  * Cohort tab — ORE holder-size distribution + cohort balance changes, with a
- * source toggle:
- *   All holders (default) — true SPL token-holder distribution (per owner across
- *                           every ORE token account, ~100% of circulating). Protocol
- *                           vaults (mine treasury + stORE stake vault) are shown as a
- *                           separate "vaulted" figure, not as holder whales.
- *   Miners                — miner-side ORE only (unclaimed + live refined, ~23%).
+ * source toggle (spelled out in full by the (?) CohortInfoModal):
+ *   Wallet Holders (default) — liquid ORE in wallets, per owner across every ORE
+ *                              token account (~70% of circulating). Protocol vaults
+ *                              (mine treasury + stORE stake vault) are a separate
+ *                              "vaulted" figure, not holder whales. stORE is not counted.
+ *   Unclaimed Rewards        — miner-side ORE only: unclaimed rewards + live refined
+ *                              (~23%), still on the mine, not yet claimed to a wallet.
  */
 import { useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
@@ -15,6 +16,7 @@ import { SegmentedControl } from "@/components/primitives/TabBar";
 import { Refreshing } from "@/components/primitives/Skeleton";
 import { ChartCard } from "@/components/stats/Charts";
 import { Donut, CohortBalanceBars, COHORTS } from "@/components/stats/CohortCharts";
+import { CohortInfoModal } from "@/components/stats/CohortInfoModal";
 import { usePolled } from "@/hooks/useOreStats";
 import { fetchOreCohorts, type OreCohortSource } from "@/lib/oreStats";
 import { formatNum, formatPct } from "@/lib/format";
@@ -31,6 +33,7 @@ const timeAgo = (iso: string | null) => {
 export function CohortTab() {
   const [source, setSource] = useState<OreCohortSource>("holder");
   const [metric, setMetric] = useState<"holders" | "ore">("holders");
+  const [infoOpen, setInfoOpen] = useState(false);
   const polled = usePolled(() => fetchOreCohorts(source, 30), 300_000, [source]);
   const d = polled.data;
   // Only use data whose source matches the current toggle — during a switch `d`
@@ -81,9 +84,16 @@ export function CohortTab() {
     <div className="space-y-5">
       {/* source toggle */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <SegmentedControl aria-label="Cohort source"
-          items={[{ id: "holder", label: "All holders" }, { id: "miner", label: "Miners" }]}
-          value={source} onChange={(id) => setSource(id as OreCohortSource)} />
+        <div className="flex items-center gap-2">
+          <SegmentedControl aria-label="Cohort source"
+            items={[{ id: "holder", label: "Wallet Holders" }, { id: "miner", label: "Unclaimed Rewards" }]}
+            value={source} onChange={(id) => setSource(id as OreCohortSource)} />
+          <button type="button" onClick={() => setInfoOpen(true)}
+            aria-label="What's the difference between Wallet Holders and Unclaimed Rewards?"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-line text-[12px] font-bold text-fog-muted transition-colors hover:border-steel hover:text-fog focus:outline-none focus-visible:ring-1 focus-visible:ring-white/30">
+            ?
+          </button>
+        </div>
         <span className="section-label"><Refreshing active={polled.fetching && !!d} /></span>
       </div>
 
@@ -99,7 +109,7 @@ export function CohortTab() {
         <div className="rounded-lg border border-white/[0.07] bg-amber/[0.05] px-3 py-2 font-mono text-[12px] leading-relaxed text-amber">
           <span className="text-white">Miner-held ORE only.</span> ORE miners hold on the mine (unclaimed rewards + live refined)
           {supplyShare != null ? <> — about <span className="text-white">{formatPct(supplyShare, 0)}</span> of circulating supply</> : ""}.
-          Switch to <span className="text-white">All holders</span> for the full token-holder picture.
+          Switch to <span className="text-white">Wallet Holders</span> for the full token-holder picture.
         </div>
       )}
 
@@ -249,6 +259,8 @@ export function CohortTab() {
           </button>
         )}
       </div>
+
+      <CohortInfoModal open={infoOpen} onClose={() => setInfoOpen(false)} />
     </div>
   );
 }
