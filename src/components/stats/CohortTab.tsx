@@ -90,7 +90,7 @@ export function CohortTab() {
             value={source} onChange={(id) => setSource(id as OreCohortSource)} />
           <button type="button" onClick={() => setInfoOpen(true)}
             aria-label="What's the difference between Wallet Holders and Unclaimed Rewards?"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-line text-[12px] font-bold text-fog-muted transition-colors hover:border-steel hover:text-fog focus:outline-none focus-visible:ring-1 focus-visible:ring-white/30">
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-line text-[12px] font-bold text-fog-muted transition-colors hover:border-steel hover:text-fog focus:outline-none focus-visible:ring-1 focus-visible:ring-white/30">
             ?
           </button>
         </div>
