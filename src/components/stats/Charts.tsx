@@ -9,6 +9,7 @@
  * steel #9DB7D8 (primary), amber #E8881A (secondary), green #4ADE80.
  */
 import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
+import { useFillHeight } from "@/hooks/useFillHeight";
 import styles from "@/app/dispersion.module.css";
 import { SPECTRAL_CHART, spectralChartAreaUrl, spectralChartLineUrl } from "@/lib/spectral";
 import { SpectralChartDefs } from "@/lib/SpectralChartDefs";
@@ -90,7 +91,7 @@ export function ChartCard({
   };
 
   return (
-    <div ref={cardRef} className={wrapperClass}>
+    <div ref={cardRef} data-fillcard className={wrapperClass}>
       {(title || subtitle || right || watermark) && (
         <div className="mb-3">
           {/* row 1: heading + branding/share ALWAYS share a line, so the mark stays
@@ -206,6 +207,7 @@ export function AreaLine({
   zeroBaseline = true,
   spectral = false,
   loading = false,
+  fill = false,
 }: {
   points: Pt[];
   color?: string;
@@ -218,6 +220,9 @@ export function AreaLine({
   spectral?: boolean;
   /** First fetch still in flight — renders a skeleton instead of "no data yet". */
   loading?: boolean;
+  /** Grow to fill a grid-stretched card's leftover height (paired rows). `height`
+   *  is the floor. See useFillHeight. */
+  fill?: boolean;
 }) {
   const uid = useId().replace(/:/g, "");
   const [hover, setHover] = useState<number | null>(null);
@@ -236,7 +241,7 @@ export function AreaLine({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const H = height;
+  const [svgFillRef, H] = useFillHeight(height, fill);
   const padL = 50;
   const padR = 14;
   const padT = 14;
@@ -291,6 +296,7 @@ export function AreaLine({
   return (
     <div ref={wrapRef} className="w-full">
       <svg
+        ref={svgFillRef}
         width={W}
         height={H}
         viewBox={`0 0 ${W} ${H}`}

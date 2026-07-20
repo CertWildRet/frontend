@@ -11,6 +11,7 @@
  * Dual axes are deliberate here — the quant's layout spec pins each pairing.
  */
 import { useEffect, useRef, useState } from "react";
+import { useFillHeight } from "@/hooks/useFillHeight";
 import { ChartSkeleton } from "@/components/primitives/Skeleton";
 
 const GRID = "rgba(255,255,255,0.06)";
@@ -122,6 +123,7 @@ export function DualLine({
   shared = false,
   band,
   emptyText,
+  fill = false,
 }: {
   a: TPt[]; b: TPt[]; aName: string; bName: string;
   aColor?: string; bColor?: string; height?: number;
@@ -134,11 +136,15 @@ export function DualLine({
   band?: { name: string };
   /** Copy shown when there are no points yet (and not loading). */
   emptyText?: string;
+  /** Grow to fill a grid-stretched card's leftover height (paired rows). `height`
+   *  is the floor. See useFillHeight. */
+  fill?: boolean;
 }) {
   const [ref, W] = useMeasuredWidth();
+  const [svgFillRef, H] = useFillHeight(height, fill);
   const [hover, setHover] = useState<number | null>(null);
   // shared mode has no right axis — reclaim its gutter for the plot
-  const H = height, padL = 52, padR = shared ? 14 : 52, padT = 14, padB = 26;
+  const padL = 52, padR = shared ? 14 : 52, padT = 14, padB = 26;
   const n = a.length;
   if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} text={emptyText} /></div>;
 
@@ -169,7 +175,7 @@ export function DualLine({
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: "#4ADE80", opacity: 0.5 }} /> {band.name}</span>
         )}
       </div>
-      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${aName} and ${bName}`}
+      <svg ref={svgFillRef} width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${aName} and ${bName}`}
         style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }} onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)}>
         {gy.map((g, gi) => {
           const yy = padT + g * (plotB - padT);
@@ -339,6 +345,7 @@ export function BarsLine({
   lineBreakOnDrop = false,
   line2, line2Name, line2Color = "#A8C4FF",
   loading = false,
+  fill = false,
 }: {
   bars: TPt[]; line: TPt[]; barName: string; lineName: string;
   barColor?: string; lineColor?: string; height?: number;
@@ -349,10 +356,14 @@ export function BarsLine({
    *  trend of the bars themselves. */
   line2?: TPt[]; line2Name?: string; line2Color?: string;
   loading?: boolean;
+  /** Grow to fill a grid-stretched card's leftover height (paired rows). `height`
+   *  is the floor. See useFillHeight. */
+  fill?: boolean;
 }) {
   const [ref, W] = useMeasuredWidth();
+  const [svgFillRef, H] = useFillHeight(height, fill);
   const [hover, setHover] = useState<number | null>(null);
-  const H = height, padL = 52, padR = 52, padT = 14, padB = 26;
+  const padL = 52, padR = 52, padT = 14, padB = 26;
   const n = bars.length;
   if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} /></div>;
 
@@ -384,7 +395,7 @@ export function BarsLine({
         )}
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: lineColor }} /> {lineName}</span>
       </div>
-      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${barName} and ${lineName}`}
+      <svg ref={svgFillRef} width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${barName} and ${lineName}`}
         style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }} onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)}>
         {gy.map((g, gi) => {
           const yy = padT + g * (plotB - padT);
