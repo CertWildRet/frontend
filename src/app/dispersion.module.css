@@ -8,45 +8,49 @@
 .spectralEdge {
   position: relative;
 }
+/* Registered so the conic's start angle can actually interpolate (a plain custom
+   property can't animate). Where @property is unsupported the border just renders
+   static — a graceful fallback. */
+@property --spectralAngle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
 .spectralEdge::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  /* 3px ring — a 2px hairline read as too slim on the glass cards. */
-  padding: 3px;
-  /* PALINDROME (cyan → … → amber center → … → cyan): symmetric, so the sweep never
-     shows a hard cyan↔pink/amber wall — the same trick that makes the "Find the
-     Alpha" hero title smooth. Alphas bumped so the thicker ring reads solid. */
-  background: linear-gradient(
-    135deg,
-    rgba(34, 224, 230, 0.75),
-    rgba(91, 108, 255, 0.6) 15%,
-    rgba(154, 107, 255, 0.66) 30%,
-    rgba(255, 90, 200, 0.6) 42%,
-    rgba(255, 192, 97, 0.72) 50%,
-    rgba(255, 90, 200, 0.6) 58%,
-    rgba(154, 107, 255, 0.66) 70%,
-    rgba(91, 108, 255, 0.6) 85%,
-    rgba(34, 224, 230, 0.75)
+  /* back to a 2px ring (3px read too wide). */
+  padding: 2px;
+  /* CONIC, not linear. A border is a 2-D RING; a linear gradient painted across it
+     always breaks at the corners / tile seams (the cyan→purple "jump") regardless
+     of palindrome or timing. A conic sweeps the spectrum AROUND the ring: cyan at
+     0° AND 360° so its single seam is cyan|cyan (invisible), and every neighbour
+     step is small (no cyan↔purple wall anywhere). Spinning --spectralAngle rotates
+     it with zero discontinuity — 360°≡0°, so even `linear` never resets. */
+  background: conic-gradient(
+    from var(--spectralAngle),
+    rgba(34, 224, 230, 0.78) 0deg,
+    rgba(91, 108, 255, 0.62) 45deg,
+    rgba(154, 107, 255, 0.68) 90deg,
+    rgba(255, 90, 200, 0.62) 135deg,
+    rgba(255, 192, 97, 0.74) 180deg,
+    rgba(255, 90, 200, 0.62) 225deg,
+    rgba(154, 107, 255, 0.68) 270deg,
+    rgba(91, 108, 255, 0.62) 315deg,
+    rgba(34, 224, 230, 0.78) 360deg
   );
-  background-size: 200% 100%;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
   opacity: 0.72;
-  /* Match the "Find the Alpha" recipe exactly: ease-in-out ALTERNATE sweeps the
-     palindrome back and forth — it eases to a stop and reverses at each end (no
-     hard position reset, no direction "step"), and the symmetric gradient means
-     no color wall at any phase. Own keyframes so the shared `hueShift` (CTA pills)
-     stays put. */
-  animation: spectralDrift 16s ease-in-out 3 alternate forwards;
+  animation: spectralSpin 22s linear 3 forwards;
 }
 
-@keyframes spectralDrift {
-  from { background-position: 0% 0%; }
-  to { background-position: 200% 0%; }
+@keyframes spectralSpin {
+  to { --spectralAngle: 360deg; }
 }
 
 /* brighter refractive top edge for glass surfaces */
@@ -93,14 +97,16 @@
    hairline rides the SAME ::after via a higher-specificity re-declaration). The
    26px cut edge sits 26/√2 ≈ 18.4px from the corner along the gradient axis. */
 .glass.cutTR::after {
+  /* match the 2px spectral ring's weight on the cut edge: a ~2.5px band at 0.6
+     (the old 0.32 hairline read far thinner than the now-brighter ring). */
   background:
-    linear-gradient(225deg, transparent 17.1px, rgba(154, 107, 255, 0.32) 17.4px, rgba(154, 107, 255, 0.32) 19.6px, transparent 19.9px)
+    linear-gradient(225deg, transparent 17.0px, rgba(154, 107, 255, 0.6) 17.3px, rgba(154, 107, 255, 0.6) 19.9px, transparent 20.2px)
       top right / 52px 52px no-repeat,
     linear-gradient(140deg, rgba(34, 224, 230, 0.05), transparent 30%, transparent 70%, rgba(255, 90, 200, 0.05));
 }
 .glass.cutBL::after {
   background:
-    linear-gradient(45deg, transparent 17.1px, rgba(91, 108, 255, 0.32) 17.4px, rgba(91, 108, 255, 0.32) 19.6px, transparent 19.9px)
+    linear-gradient(45deg, transparent 17.0px, rgba(91, 108, 255, 0.6) 17.3px, rgba(91, 108, 255, 0.6) 19.9px, transparent 20.2px)
       bottom left / 52px 52px no-repeat,
     linear-gradient(140deg, rgba(34, 224, 230, 0.05), transparent 30%, transparent 70%, rgba(255, 90, 200, 0.05));
 }
