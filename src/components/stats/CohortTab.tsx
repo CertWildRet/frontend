@@ -85,14 +85,14 @@ export function CohortTab() {
 
       {/* honesty banner per source */}
       {isHolder ? (
-        <div className="rounded-lg border border-cyan/25 bg-cyan/[0.05] px-3 py-2 font-mono text-[12px] leading-relaxed text-[#7fe9ee]">
+        <div className="rounded-lg border border-white/[0.07] bg-cyan/[0.05] px-3 py-2 font-mono text-[12px] leading-relaxed text-[#7fe9ee]">
           <span className="text-white">On-chain ORE holders.</span> Every wallet holding ORE, aggregated per owner across all token accounts
           {supplyShare != null ? <> — <span className="text-white">{formatPct(supplyShare, 0)}</span> of circulating supply</> : ""}.
           Protocol vaults (the mine treasury + stORE stake vault) are shown separately below, not as holder whales; exchange custodial
           wallets can&apos;t be labeled and may appear as whales.
         </div>
       ) : (
-        <div className="rounded-lg border border-amber/25 bg-amber/[0.05] px-3 py-2 font-mono text-[12px] leading-relaxed text-amber">
+        <div className="rounded-lg border border-white/[0.07] bg-amber/[0.05] px-3 py-2 font-mono text-[12px] leading-relaxed text-amber">
           <span className="text-white">Miner-held ORE only.</span> ORE miners hold on the mine (unclaimed rewards + live refined)
           {supplyShare != null ? <> — about <span className="text-white">{formatPct(supplyShare, 0)}</span> of circulating supply</> : ""}.
           Switch to <span className="text-white">All holders</span> for the full token-holder picture.
