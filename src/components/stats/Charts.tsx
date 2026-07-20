@@ -51,8 +51,46 @@ export function ChartCard({
       ? `${styles.glass} ${styles.spectralEdge} ${cutClass} h-full overflow-hidden rounded-3xl px-5 py-5 sm:px-6 sm:py-6`
       : `${styles.glass} ${styles.spectralEdge} ${cutClass} h-full overflow-hidden rounded-2xl px-5 py-5 sm:px-6 sm:py-6`;
 
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [share, setShare] = useState<"idle" | "working" | "done" | "error">("idle");
+  // Copy THIS card (as rendered, watermark included) to the clipboard as a PNG.
+  // html-to-image is lazy-imported so it never touches the initial bundle; the
+  // share button carries data-no-capture so it excludes itself from the shot.
+  // Clipboard-image write isn't universal (older Firefox/Safari) → fall back to a
+  // download so the share always yields a file.
+  const onShare = async () => {
+    const node = cardRef.current;
+    if (!node || share === "working") return;
+    setShare("working");
+    try {
+      const { toBlob } = await import("html-to-image");
+      const blob = await toBlob(node, {
+        pixelRatio: 2,
+        backgroundColor: "#070912",
+        cacheBust: true,
+        filter: (el) => !(el instanceof HTMLElement && el.dataset.noCapture === "true"),
+      });
+      if (!blob) throw new Error("capture produced no image");
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      } catch {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${(title ?? "chart").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-diamondpools.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      setShare("done");
+    } catch {
+      setShare("error");
+    } finally {
+      window.setTimeout(() => setShare("idle"), 1900);
+    }
+  };
+
   return (
-    <div className={wrapperClass}>
+    <div ref={cardRef} className={wrapperClass}>
       {(title || subtitle || right || watermark) && (
         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
           <div className="min-w-0">
@@ -69,14 +107,44 @@ export function ChartCard({
           {(watermark || right) && (
             <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
               {watermark && (
-                // Branding watermark for shared screenshots: subtle enough not to
-                // distract, opaque enough to stay legible in a heading crop.
-                <div
-                  aria-hidden
-                  className="pointer-events-none select-none whitespace-nowrap font-mono text-[12px] leading-none tracking-tight text-[#C7D0EA]"
-                  style={{ opacity: 0.75 }}
-                >
-                  diamondpools.app/stats
+                <div className="flex items-center gap-2">
+                  {/* copy-chart-as-image — beside the branding watermark */}
+                  <button
+                    type="button"
+                    onClick={onShare}
+                    data-no-capture="true"
+                    disabled={share === "working"}
+                    title="Copy this chart as an image"
+                    aria-label="Copy this chart to the clipboard as an image"
+                    className="inline-flex items-center gap-1 rounded-md border border-line px-1.5 py-1 font-mono text-[11px] leading-none text-[#C7D0EA] transition-colors hover:border-steel hover:text-white disabled:opacity-60"
+                  >
+                    {share === "done" ? (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden>
+                          <path d="M2.5 7.5 L5.5 10.5 L11.5 3.5" stroke="#4ADE80" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span className="text-pos">copied</span>
+                      </>
+                    ) : share === "error" ? (
+                      <span className="text-amber">retry</span>
+                    ) : share === "working" ? (
+                      <span className="opacity-70">saving…</span>
+                    ) : (
+                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden>
+                        <rect x="1.6" y="4.2" width="12.8" height="9.4" rx="2" stroke="currentColor" strokeWidth="1.3" />
+                        <circle cx="8" cy="8.9" r="2.4" stroke="currentColor" strokeWidth="1.3" />
+                        <path d="M5.4 4.2 L6.1 2.9 A1 1 0 0 1 7 2.4 H9 A1 1 0 0 1 9.9 2.9 L10.6 4.2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </button>
+                  {/* Branding watermark for shared screenshots — kept IN the capture. */}
+                  <div
+                    aria-hidden
+                    className="pointer-events-none select-none whitespace-nowrap font-mono text-[12px] leading-none tracking-tight text-[#C7D0EA]"
+                    style={{ opacity: 0.75 }}
+                  >
+                    diamondpools.app/stats
+                  </div>
                 </div>
               )}
               {right}
