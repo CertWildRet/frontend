@@ -10,7 +10,7 @@
  *   BarsLine    bars on the left scale + a line on the right (activity)
  * Dual axes are deliberate here — the quant's layout spec pins each pairing.
  */
-import { useCallback, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChartSkeleton } from "@/components/primitives/Skeleton";
 
 const GRID = "rgba(255,255,255,0.06)";
@@ -28,33 +28,20 @@ export const ORE_COLOR = "#FBBF24";
 
 export type TPt = { label: string; value: number | null };
 
-// Measures the ref'd element's width AND height. Height is only consumed by
-// `fill` charts (the ref sits on their flex-1 plot box, so its height is the
-// remaining card space); width-only callers just destructure [ref, W].
-//
-// Callback ref (not useRef + useEffect[]): a `fill` chart moves the ref from the
-// loading-state wrapper to the inner plot box once data arrives, so the observed
-// node CHANGES mid-life. A one-shot effect would keep watching the stale node and
-// report the wrong height; a callback ref re-observes whenever the node swaps.
-function useMeasuredWidth(initial = 680): [(el: HTMLDivElement | null) => void, number, number] {
-  const [size, setSize] = useState<{ w: number; h: number }>({ w: initial, h: 0 });
-  const roRef = useRef<ResizeObserver | null>(null);
-  const ref = useCallback((el: HTMLDivElement | null) => {
-    roRef.current?.disconnect();
-    if (!el) { roRef.current = null; return; }
+function useMeasuredWidth(initial = 680): [React.RefObject<HTMLDivElement>, number] {
+  const ref = useRef<HTMLDivElement>(null);
+  const [w, setW] = useState(initial);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
     const ro = new ResizeObserver((es) => {
-      const cr = es[0]?.contentRect;
-      if (!cr) return;
-      setSize((s) => {
-        const w = cr.width > 60 ? Math.round(cr.width) : s.w;
-        const h = cr.height > 20 ? Math.round(cr.height) : s.h;
-        return w === s.w && h === s.h ? s : { w, h };
-      });
+      const cw = es[0]?.contentRect.width;
+      if (cw && cw > 60) setW(Math.round(cw));
     });
     ro.observe(el);
-    roRef.current = ro;
+    return () => ro.disconnect();
   }, []);
-  return [ref, size.w, size.h];
+  return [ref, w];
 }
 
 function TrendTooltip({ x, y, W, lines }: { x: number; y: number; W: number; lines: string[] }) {
@@ -135,7 +122,6 @@ export function DualLine({
   shared = false,
   band,
   emptyText,
-  fill = false,
 }: {
   a: TPt[]; b: TPt[]; aName: string; bName: string;
   aColor?: string; bColor?: string; height?: number;
@@ -148,17 +134,13 @@ export function DualLine({
   band?: { name: string };
   /** Copy shown when there are no points yet (and not loading). */
   emptyText?: string;
-  /** Grow to fill the card's height (for paired grid cards that stretch to equal
-   *  height); `height` becomes the minimum. See ChartCard. */
-  fill?: boolean;
 }) {
-  const [ref, W, Hm] = useMeasuredWidth();
+  const [ref, W] = useMeasuredWidth();
   const [hover, setHover] = useState<number | null>(null);
   // shared mode has no right axis — reclaim its gutter for the plot
-  const H = fill ? Math.max(120, Hm || height) : height;
-  const padL = 52, padR = shared ? 14 : 52, padT = 14, padB = 26;
+  const H = height, padL = 52, padR = shared ? 14 : 52, padT = 14, padB = 26;
   const n = a.length;
-  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={height} loading={loading} text={emptyText} /></div>;
+  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} text={emptyText} /></div>;
 
   const sa = shared
     ? scaleOf([...a.map((p) => p.value), ...b.map((p) => p.value)])
@@ -179,7 +161,7 @@ export function DualLine({
   const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
 
   return (
-    <div className={fill ? "flex min-h-0 flex-1 flex-col" : "w-full"}>
+    <div ref={ref} className="w-full">
       <div className="mb-1.5 flex flex-wrap gap-4 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: aColor }} /> {aName}</span>
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: bColor }} /> {bName}</span>
@@ -187,7 +169,6 @@ export function DualLine({
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: "#4ADE80", opacity: 0.5 }} /> {band.name}</span>
         )}
       </div>
-      <div ref={ref} className={fill ? "min-h-0 flex-1" : "w-full"} style={fill ? { minHeight: height } : undefined}>
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${aName} and ${bName}`}
         style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }} onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)}>
         {gy.map((g, gi) => {
@@ -233,7 +214,6 @@ export function DualLine({
           </g>
         )}
       </svg>
-      </div>
     </div>
   );
 }
@@ -359,7 +339,6 @@ export function BarsLine({
   lineBreakOnDrop = false,
   line2, line2Name, line2Color = "#A8C4FF",
   loading = false,
-  fill = false,
 }: {
   bars: TPt[]; line: TPt[]; barName: string; lineName: string;
   barColor?: string; lineColor?: string; height?: number;
@@ -370,15 +349,12 @@ export function BarsLine({
    *  trend of the bars themselves. */
   line2?: TPt[]; line2Name?: string; line2Color?: string;
   loading?: boolean;
-  /** Grow to fill the card's height (paired grid cards); `height` is the floor. */
-  fill?: boolean;
 }) {
-  const [ref, W, Hm] = useMeasuredWidth();
+  const [ref, W] = useMeasuredWidth();
   const [hover, setHover] = useState<number | null>(null);
-  const H = fill ? Math.max(120, Hm || height) : height;
-  const padL = 52, padR = 52, padT = 14, padB = 26;
+  const H = height, padL = 52, padR = 52, padT = 14, padB = 26;
   const n = bars.length;
-  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={height} loading={loading} /></div>;
+  if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} /></div>;
 
   const sb = scaleOf(bars.map((p) => p.value), true);
   sb.min = 0;
@@ -400,7 +376,7 @@ export function BarsLine({
   const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
 
   return (
-    <div className={fill ? "flex min-h-0 flex-1 flex-col" : "w-full"}>
+    <div ref={ref} className="w-full">
       <div className="mb-1.5 flex flex-wrap gap-4 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: barColor, opacity: 0.7 }} /> {barName}</span>
         {line2 && line2Name && (
@@ -408,7 +384,6 @@ export function BarsLine({
         )}
         <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: lineColor }} /> {lineName}</span>
       </div>
-      <div ref={ref} className={fill ? "min-h-0 flex-1" : "w-full"} style={fill ? { minHeight: height } : undefined}>
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${barName} and ${lineName}`}
         style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }} onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)}>
         {gy.map((g, gi) => {
@@ -446,7 +421,6 @@ export function BarsLine({
           </g>
         )}
       </svg>
-      </div>
     </div>
   );
 }

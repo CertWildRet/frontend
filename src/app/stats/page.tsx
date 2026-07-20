@@ -304,13 +304,13 @@ function TrendsTab() {
               corr {corr >= 0 ? "+" : ""}{corr.toFixed(2)}
             </span>
           ) : undefined}>
-          <DualLine a={mkT((p) => p.ore_usd)} b={mkT((p) => p.sol_usd)} aName="ORE $" bName="SOL $" height={205} fill
+          <DualLine a={mkT((p) => p.ore_usd)} b={mkT((p) => p.sol_usd)} aName="ORE $" bName="SOL $" height={205}
             aColor={ORE_COLOR} bColor={SOL_COLOR}
             aFmt={(v) => "$" + formatNum(v, 1)} bFmt={(v) => "$" + formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
         {/* (3) activity — deploys vs the motherlode pool */}
         <ChartCard variant="dispersion" cutCorner="tr" title="Mining activity" subtitle="Avg SOL/round (bars) vs the motherlode pool (line). Deploys chase a fat pool.">
-          <BarsLine bars={mkT((p) => p.avg_deployed_sol)} line={mkT((p) => p.ml_pool_ore)} barName="SOL / round" lineName="motherlode pool (ORE)" height={205} fill
+          <BarsLine bars={mkT((p) => p.avg_deployed_sol)} line={mkT((p) => p.ml_pool_ore)} barName="SOL / round" lineName="motherlode pool (ORE)" height={205}
             barColor={SOL_COLOR} lineColor={ORE_COLOR}
             barFmt={(v) => formatNum(v, 1)} lineFmt={(v) => formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
@@ -332,7 +332,7 @@ function TrendsTab() {
               a={yPts.map((p) => ({ label: hLbl(p.hour_ts), value: p.refining_apr }))}
               b={yPts.map((p) => ({ label: hLbl(p.hour_ts), value: p.staking_apr }))}
               aName="refining APR (unclaimed)" bName="stORE staking APR"
-              aColor="#22E0E6" bColor="#E8881A" height={210} fill
+              aColor="#22E0E6" bColor="#E8881A" height={210}
               aFmt={(v) => formatNum(v, 1) + "%"} bFmt={(v) => formatNum(v, 1) + "%"}
               loading={yields.loading}
               emptyText="collecting on-chain snapshots. First points appear within ~2 hours; the full 7-day view completes by Jul 20." />
@@ -352,10 +352,9 @@ function TrendsTab() {
             ) : undefined}>
             <AreaLine
               points={(dominance.data?.points ?? []).filter((p) => p.dominance_pct != null).map((p) => ({ label: hLbl(p.hour_ts), value: p.dominance_pct as number }))}
-              /* fill: grow to match the paired Yields card's height automatically
-                 (it carries an extra stats row + 2-line legend), so no hand-tuned
-                 height is needed — the two cards end flush. */
-              height={210} fill zeroBaseline={false} color="#22E0E6"
+              /* taller than the yields plot to make up for the yields card's extra
+                 stats row + 2-line legend, so the two cards end at ~the same height */
+              height={285} zeroBaseline={false} color="#22E0E6"
               fmt={(v) => formatNum(v, 2) + "%"} yFmt={(v) => formatNum(v, 2) + "%"}
               loading={dominance.loading} />
           </ChartCard>
@@ -422,18 +421,17 @@ function ProtocolCharts() {
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
       <ChartCard variant="dispersion" cutCorner="tr" title="SOL deployed" subtitle={`Total SOL deployed to play the rounds, per ${seriesPer}.`}>
-        <AreaLine spectral fill points={mk((p) => lamportsToSol(p.deployed))} height={195} fmt={(v) => formatSol(v, 0) + " SOL"} yFmt={compactNum} />
+        <AreaLine spectral points={mk((p) => lamportsToSol(p.deployed))} height={195} fmt={(v) => formatSol(v, 0) + " SOL"} yFmt={compactNum} />
       </ChartCard>
       <ChartCard variant="dispersion" cutCorner="bl" title="Effective rake" subtitle={`What the protocol keeps of the SOL played, per ${seriesPer} (1% admin + ~9.9% buyback). Zoomed way in; it barely moves.`}>
-        <AreaLine spectral fill points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} height={195} zeroBaseline={false} fmt={(v) => v.toFixed(4) + "%"} yFmt={(v) => v.toFixed(2) + "%"} />
+        <AreaLine spectral points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} height={195} zeroBaseline={false} fmt={(v) => v.toFixed(4) + "%"} yFmt={(v) => v.toFixed(2) + "%"} />
       </ChartCard>
       <ChartCard variant="dispersion" cutCorner="tr" title="SOL vaulted (protocol take)" subtitle={`Total SOL the protocol kept (buyback + admin fee), per ${seriesPer}.`}>
-        <AreaLine spectral fill points={mk((p) => lamportsToSol(p.vaulted))} height={195} fmt={(v) => formatSol(v, 1) + " SOL"} yFmt={compactNum} />
+        <AreaLine spectral points={mk((p) => lamportsToSol(p.vaulted))} height={195} fmt={(v) => formatSol(v, 1) + " SOL"} yFmt={compactNum} />
       </ChartCard>
       <ChartCard variant="dispersion" cutCorner="bl" title="Winners / round" subtitle="Avg miners rewarded per round (reset-event count).">
         <AreaLine
           spectral
-          fill
           points={pts.filter((p) => p.avg_winners != null).map((p) => ({ label: lbl(p), value: Number(p.avg_winners) }))}
           height={195} zeroBaseline={false} fmt={(v) => formatNum(v, 0)} />
       </ChartCard>
@@ -1385,22 +1383,22 @@ function EcosystemSection() {
         </div>
         <ChartCard variant="dispersion" cutCorner="bl" title="Cumulative net issuance"
           subtitle="Running minted − burned over the window. Falling = deflationary stretch.">
-          <AreaLine spectral fill points={mkP((p) => p.cum_net_ore)} height={200} zeroBaseline={false}
+          <AreaLine spectral points={mkP((p) => p.cum_net_ore)} height={200} zeroBaseline={false}
             fmt={(v) => formatNum(v, 0) + " ORE"} yFmt={compactNum} loading={eco.loading} />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="tr" title="Buyback pressure"
           subtitle="SOL spent buying ORE per day (10% of losing tiles flows here).">
-          <AreaLine spectral fill points={mkP((p) => p.buyback_sol)} height={200}
+          <AreaLine spectral points={mkP((p) => p.buyback_sol)} height={200}
             fmt={(v) => formatSol(v, 1) + " SOL"} yFmt={compactNum} loading={eco.loading} />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="bl" title="Pooled-mining share"
           subtitle="% of deployed SOL flowing through managed cranks (a signer driving ≥3 miners that day).">
-          <AreaLine fill points={mkP((p) => p.pool_share_pct)} height={200} zeroBaseline={false} color="#9A6BFF"
+          <AreaLine points={mkP((p) => p.pool_share_pct)} height={200} zeroBaseline={false} color="#9A6BFF"
             fmt={(v) => formatNum(v, 1) + "%"} yFmt={(v) => formatNum(v, 0) + "%"} loading={eco.loading} />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="tr" title="Whale concentration"
           subtitle="Top-10 miner authorities' share of deployed SOL per day.">
-          <AreaLine fill points={mkP((p) => p.top10_share_pct)} height={200} zeroBaseline={false} color="#E8881A"
+          <AreaLine points={mkP((p) => p.top10_share_pct)} height={200} zeroBaseline={false} color="#E8881A"
             fmt={(v) => formatNum(v, 1) + "%"} yFmt={(v) => formatNum(v, 0) + "%"} loading={eco.loading} />
         </ChartCard>
         <div className="lg:col-span-2">

@@ -46,14 +46,10 @@ export function ChartCard({
 }) {
   const watermark = useContext(ChartWatermarkContext);
   const cutClass = cutCorner === "bl" ? styles.cutBL : styles.cutTR;
-  // flex-col so a `fill` chart child (flex-1) can grow into the card's remaining
-  // height — that's how paired grid cards that stretch to equal height get their
-  // plots to span the full card instead of leaving dead space. Non-fill children
-  // keep their natural height, so every other card is unaffected.
   const wrapperClass =
     variant === "dispersion"
-      ? `${styles.glass} ${styles.spectralEdge} ${cutClass} flex h-full flex-col overflow-hidden rounded-3xl px-5 py-5 sm:px-6 sm:py-6`
-      : `${styles.glass} ${styles.spectralEdge} ${cutClass} flex h-full flex-col overflow-hidden rounded-2xl px-5 py-5 sm:px-6 sm:py-6`;
+      ? `${styles.glass} ${styles.spectralEdge} ${cutClass} h-full overflow-hidden rounded-3xl px-5 py-5 sm:px-6 sm:py-6`
+      : `${styles.glass} ${styles.spectralEdge} ${cutClass} h-full overflow-hidden rounded-2xl px-5 py-5 sm:px-6 sm:py-6`;
 
   const cardRef = useRef<HTMLDivElement>(null);
   const [share, setShare] = useState<"idle" | "working" | "done" | "error">("idle");
@@ -210,7 +206,6 @@ export function AreaLine({
   zeroBaseline = true,
   spectral = false,
   loading = false,
-  fill = false,
 }: {
   points: Pt[];
   color?: string;
@@ -223,9 +218,6 @@ export function AreaLine({
   spectral?: boolean;
   /** First fetch still in flight — renders a skeleton instead of "no data yet". */
   loading?: boolean;
-  /** Grow to fill the card's height (paired grid cards that stretch to equal
-   *  height); `height` becomes the minimum. See ChartCard. */
-  fill?: boolean;
 }) {
   const uid = useId().replace(/:/g, "");
   const [hover, setHover] = useState<number | null>(null);
@@ -233,25 +225,18 @@ export function AreaLine({
   // a constant size regardless of chart width — a shared viewBox otherwise scales
   // fonts up ~2x on a full-width chart and down on a half-width one.
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [sz, setSz] = useState<{ w: number; h: number }>({ w: 680, h: 0 });
+  const [W, setW] = useState(680);
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
     const ro = new ResizeObserver((es) => {
-      const cr = es[0]?.contentRect;
-      if (!cr) return;
-      setSz((s) => {
-        const w = cr.width > 60 ? Math.round(cr.width) : s.w;
-        const h = cr.height > 20 ? Math.round(cr.height) : s.h;
-        return w === s.w && h === s.h ? s : { w, h };
-      });
+      const cw = es[0]?.contentRect.width;
+      if (cw && cw > 60) setW(Math.round(cw));
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const W = sz.w;
-  // fill: the plot grows to the card's remaining height (height is the floor).
-  const H = fill ? Math.max(120, sz.h || height) : height;
+  const H = height;
   const padL = 50;
   const padR = 14;
   const padT = 14;
@@ -304,7 +289,7 @@ export function AreaLine({
   const xt = Array.from({ length: nTicks }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, nTicks - 1)));
 
   return (
-    <div ref={wrapRef} className={fill ? "flex min-h-0 flex-1 flex-col" : "w-full"} style={fill ? { minHeight: height } : undefined}>
+    <div ref={wrapRef} className="w-full">
       <svg
         width={W}
         height={H}
