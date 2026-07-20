@@ -21,8 +21,8 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  /* back to a 2px ring (3px read too wide). */
-  padding: 2px;
+  /* 1px ring. */
+  padding: 1px;
   /* CONIC, not linear. A border is a 2-D RING; a linear gradient painted across it
      always breaks at the corners / tile seams (the cyan→purple "jump") regardless
      of palindrome or timing. A conic sweeps the spectrum AROUND the ring: cyan at
@@ -63,7 +63,7 @@
   -webkit-backdrop-filter: blur(22px) saturate(120%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 0 0 2px rgba(255, 255, 255, 0.09),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
     0 24px 60px -28px rgba(0, 0, 0, 0.85),
     0 0 40px -16px rgba(91, 108, 255, 0.35);
 }
@@ -97,16 +97,15 @@
    hairline rides the SAME ::after via a higher-specificity re-declaration). The
    26px cut edge sits 26/√2 ≈ 18.4px from the corner along the gradient axis. */
 .glass.cutTR::after {
-  /* match the 2px spectral ring's weight on the cut edge: a ~2.5px band at 0.6
-     (the old 0.32 hairline read far thinner than the now-brighter ring). */
+  /* ~1px band on the cut edge to match the 1px spectral ring's weight. */
   background:
-    linear-gradient(225deg, transparent 17.0px, rgba(154, 107, 255, 0.6) 17.3px, rgba(154, 107, 255, 0.6) 19.9px, transparent 20.2px)
+    linear-gradient(225deg, transparent 17.8px, rgba(154, 107, 255, 0.5) 18.0px, rgba(154, 107, 255, 0.5) 19.0px, transparent 19.2px)
       top right / 52px 52px no-repeat,
     linear-gradient(140deg, rgba(34, 224, 230, 0.05), transparent 30%, transparent 70%, rgba(255, 90, 200, 0.05));
 }
 .glass.cutBL::after {
   background:
-    linear-gradient(45deg, transparent 17.0px, rgba(91, 108, 255, 0.6) 17.3px, rgba(91, 108, 255, 0.6) 19.9px, transparent 20.2px)
+    linear-gradient(45deg, transparent 17.8px, rgba(91, 108, 255, 0.5) 18.0px, rgba(91, 108, 255, 0.5) 19.0px, transparent 19.2px)
       bottom left / 52px 52px no-repeat,
     linear-gradient(140deg, rgba(34, 224, 230, 0.05), transparent 30%, transparent 70%, rgba(255, 90, 200, 0.05));
 }
