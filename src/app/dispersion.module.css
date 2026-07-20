@@ -21,8 +21,8 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  /* 1px ring. */
-  padding: 1px;
+  /* 1.5px ring — the middle ground between a 1px hairline and a 2px band. */
+  padding: 1.5px;
   /* CONIC, not linear. A border is a 2-D RING; a linear gradient painted across it
      always breaks at the corners / tile seams (the cyan→purple "jump") regardless
      of palindrome or timing. A conic sweeps the spectrum AROUND the ring: cyan at
@@ -63,7 +63,7 @@
   -webkit-backdrop-filter: blur(22px) saturate(120%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.055),
     0 24px 60px -28px rgba(0, 0, 0, 0.85),
     0 0 40px -16px rgba(91, 108, 255, 0.35);
 }
@@ -97,15 +97,15 @@
    hairline rides the SAME ::after via a higher-specificity re-declaration). The
    26px cut edge sits 26/√2 ≈ 18.4px from the corner along the gradient axis. */
 .glass.cutTR::after {
-  /* ~1px band on the cut edge to match the 1px spectral ring's weight. */
+  /* ~1.5px band on the cut edge to match the 1.5px spectral ring's weight. */
   background:
-    linear-gradient(225deg, transparent 17.8px, rgba(154, 107, 255, 0.5) 18.0px, rgba(154, 107, 255, 0.5) 19.0px, transparent 19.2px)
+    linear-gradient(225deg, transparent 17.5px, rgba(154, 107, 255, 0.5) 17.7px, rgba(154, 107, 255, 0.5) 19.2px, transparent 19.4px)
       top right / 52px 52px no-repeat,
     linear-gradient(140deg, rgba(34, 224, 230, 0.05), transparent 30%, transparent 70%, rgba(255, 90, 200, 0.05));
 }
 .glass.cutBL::after {
   background:
-    linear-gradient(45deg, transparent 17.8px, rgba(91, 108, 255, 0.5) 18.0px, rgba(91, 108, 255, 0.5) 19.0px, transparent 19.2px)
+    linear-gradient(45deg, transparent 17.5px, rgba(91, 108, 255, 0.5) 17.7px, rgba(91, 108, 255, 0.5) 19.2px, transparent 19.4px)
       bottom left / 52px 52px no-repeat,
     linear-gradient(140deg, rgba(34, 224, 230, 0.05), transparent 30%, transparent 70%, rgba(255, 90, 200, 0.05));
 }
