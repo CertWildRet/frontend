@@ -13,6 +13,7 @@ import { TabBar, SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { TileSkeleton, RowsSkeleton, Refreshing } from "@/components/primitives/Skeleton";
 import { AreaLine, HBars, ChartCard, ChartWatermarkContext, compactNum, type Pt } from "@/components/stats/Charts";
+import { CohortTab } from "@/components/stats/CohortTab";
 import { DualLine, CostEvChart, BarsLine, PopBars, MotherlodeReachChart, SOL_COLOR, ORE_COLOR, type TPt } from "@/components/stats/TrendCharts";
 import { MinerDetail } from "@/components/stats/MinerDetail";
 import { usePolled, PolledActiveContext } from "@/hooks/useOreStats";
@@ -33,7 +34,7 @@ import {
 import { formatSol, formatNum, formatPct } from "@/lib/format";
 import styles from "./stats.module.css";
 
-type Tab = "trends" | "round_analysis" | "miners" | "motherlode" | "rounds";
+type Tab = "trends" | "round_analysis" | "miners" | "motherlode" | "rounds" | "cohort";
 
 // Cross-tab jump: any row (e.g. a motherlode sharer) can send a pubkey to the
 // Search Miners tab and pre-fill its search bar. `n` bumps each call so re-clicking
@@ -47,6 +48,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "miners", label: "Search Miners" },
   { id: "motherlode", label: "Motherlode" },
   { id: "rounds", label: "Rounds" },
+  { id: "cohort", label: "Cohort" },
 ];
 
 const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "·");
@@ -158,7 +160,8 @@ export default function StatsPage() {
                 {t.id === "trends" ? <TrendsTab /> :
                  t.id === "round_analysis" ? <RoundAnalysisTab /> :
                  t.id === "miners" ? <MinersTab seed={minerSeed} /> :
-                 t.id === "motherlode" ? <MotherlodeTab /> : <RoundsTab />}
+                 t.id === "motherlode" ? <MotherlodeTab /> :
+                 t.id === "rounds" ? <RoundsTab /> : <CohortTab />}
               </div>
             </PolledActiveContext.Provider>
           ) : null,

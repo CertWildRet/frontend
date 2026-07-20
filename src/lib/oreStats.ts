@@ -482,6 +482,23 @@ export const expectedPopOre = (roundId: number): number => 0.2 * motherlodeOdds(
 
 export const fetchOreYields = () => get<OreYields>(`/ore/yields`);
 export const fetchOreDominance = () => get<OreDominance>(`/ore/dominance`);
+
+// ── /ore/cohorts : ORE holder-size distribution + cohort balance changes ──────
+// v1 is MINER-SIDE ORE only (unclaimed + live refined) — not a true token-holder
+// distribution. cohort 1..5 = Plankton/Shrimp/Fish/Shark/Whale.
+export type OreCohortRow = { cohort: number; holders: number; ore: number; supply_ore: number | null };
+export type OreCohortChange = { snapshot_ts: string; cohort: number; delta_ore: number; ore: number; holders: number };
+export type OreCohorts = {
+  updated_at: string | null;
+  distribution: OreCohortRow[];
+  changes: OreCohortChange[];
+  supply_ore: number | null;
+  miner_held_ore: number;
+  total_holders: number;
+  miner_side: boolean;
+  note?: string;
+};
+export const fetchOreCohorts = (days = 30) => get<OreCohorts>(`/ore/cohorts?days=${days}`);
 export const fetchOreMiner = (pubkey: string, rounds: number | "all" = 1000) => get<OreMinerDetail>(`/ore/miner/${pubkey}?rounds=${rounds}`);
 export const fetchOreRng = () => get<OreRng>("/ore/rng");
 export const fetchOreMotherlode = (limit = 50, offset = 0) =>
