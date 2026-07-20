@@ -136,7 +136,7 @@ export function CohortTab() {
               items={[{ id: "holders", label: "Holders" }, { id: "ore", label: "ORE held" }]}
               value={metric} onChange={(id) => setMetric(id as "holders" | "ore")} />
           }>
-          <Donut slices={slices} loading={loading} height={300}
+          <Donut slices={slices} loading={loading} height={340}
             centerLabel={formatNum(donutTotal, 0)}
             centerSub={metric === "holders" ? "holders" : "ORE held"}
             fmt={(v) => formatNum(v, 0)} />
@@ -188,17 +188,17 @@ export function CohortTab() {
           </div>
           {/* concentration visual — fills the card and shows the inversion at a
               glance: the crowd is Plankton by count, but the ORE is nearly all Whale. */}
-          <div className="mt-4 space-y-2.5 border-t border-white/[0.05] pt-3">
+          <div className="mt-5 space-y-4 border-t border-white/[0.05] pt-5">
             {[
               { key: "wallets", label: isHolder ? "by wallets" : "by miners", total: totalHolders, get: (c: (typeof COHORTS)[number]) => byId(c.id)?.holders ?? 0 },
               { key: "ore", label: "by ORE held", total: held, get: (c: (typeof COHORTS)[number]) => byId(c.id)?.ore ?? 0 },
             ].map((row) => (
               <div key={row.key}>
-                <div className="mb-1 flex justify-between font-mono text-[11px] text-fog-muted">
+                <div className="mb-1.5 flex justify-between font-mono text-[13px] text-fog-muted">
                   <span>{row.label}</span>
                   <span>{row.key === "ore" ? `${formatNum(row.total, 0)} ORE` : formatNum(row.total)}</span>
                 </div>
-                <div className="flex h-3 overflow-hidden rounded-[3px] bg-white/[0.03]">
+                <div className="flex h-6 overflow-hidden rounded bg-white/[0.03]">
                   {COHORTS.map((c) => {
                     const w = row.total ? (row.get(c) / row.total) * 100 : 0;
                     return w > 0 ? <div key={c.id} style={{ width: `${w}%`, background: c.color }} title={`${c.name}: ${w.toFixed(1)}%`} /> : null;
@@ -206,7 +206,7 @@ export function CohortTab() {
                 </div>
               </div>
             ))}
-            <p className="font-mono text-[11px] leading-relaxed text-fog-muted">
+            <p className="font-mono text-[13px] leading-relaxed text-fog-muted">
               {(() => {
                 const pk = byId(1), wh = byId(5);
                 const pkH = totalHolders ? (pk?.holders ?? 0) / totalHolders : 0;
