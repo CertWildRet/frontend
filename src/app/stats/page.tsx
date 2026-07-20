@@ -665,7 +665,11 @@ function MotherlodeTab() {
                     {open && (
                       <tr className="bg-black/20">
                         <td colSpan={6} className="p-0">
-                          <PopDrilldown roundId={rid} />
+                          {/* w-0 min-w-full: keeps the nested drill-down table from forcing
+                              the outer table wider than its container on mobile (see Miners). */}
+                          <div className="w-0 min-w-full">
+                            <PopDrilldown roundId={rid} />
+                          </div>
                         </td>
                       </tr>
                     )}
@@ -1013,8 +1017,8 @@ function MinersTab({ seed }: { seed?: MinerSeed | null }) {
               <tr className={theadRow}>
                 <th className={th}>#</th>
                 <th className={th}>Miner</th>
-                <th className={`${th} text-right`}>Deployed</th>
-                <th className={`${th} text-right`}>Earned</th>
+                <th className={`${th} hidden text-right sm:table-cell`}>Deployed</th>
+                <th className={`${th} hidden text-right sm:table-cell`}>Earned</th>
                 <th className={`${th} text-right`}>Net SOL</th>
                 <th className={`${th} hidden text-right sm:table-cell`}>ORE</th>
                 {useLeaderboard ? (
@@ -1044,8 +1048,8 @@ function MinersTab({ seed }: { seed?: MinerSeed | null }) {
                     <td className={`${td} ${m.is_ours ? "text-steel" : "text-white"}`}>
                       <CopyAddress address={m.authority} />{m.is_ours ? " ◆ ours" : ""}
                     </td>
-                    <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(m.deployed), 1)}</td>
-                    <td className={`${td} text-right text-gray-300`}>{formatSol(lamportsToSol(m.earned), 1)}</td>
+                    <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatSol(lamportsToSol(m.deployed), 1)}</td>
+                    <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatSol(lamportsToSol(m.earned), 1)}</td>
                     <td className={`${td} num text-right ${netTone(net)}`}>{net >= 0 ? "+" : ""}{formatSol(net, 2)}</td>
                     <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatNum(oreGramsToOre(m.ore), useLeaderboard ? 0 : 1)}</td>
                     {useLeaderboard ? (
@@ -1059,8 +1063,15 @@ function MinersTab({ seed }: { seed?: MinerSeed | null }) {
                   </tr>
                   {isOpen && (
                     <tr>
+                      {/* w-0 min-w-full: the wrapper collapses to 0 during the table's
+                          intrinsic-width pass (percentage min-width can't resolve against
+                          an indefinite basis), so a full-width nested panel can't force the
+                          leaderboard wider than its container on mobile; it fills the cell at
+                          layout time. The panel's own scrollers handle their overflow. */}
                       <td colSpan={8} className="bg-white/[0.015] px-2 py-3 sm:px-4">
-                        <MinerDetail pubkey={m.authority} />
+                        <div className="w-0 min-w-full">
+                          <MinerDetail pubkey={m.authority} />
+                        </div>
                       </td>
                     </tr>
                   )}
@@ -1275,7 +1286,9 @@ function RoundsTab() {
                 </tr>
                 {open && (
                   <tr className="bg-black/20">
-                    <td colSpan={8} className="p-0"><RoundParticipants roundId={rid} /></td>
+                    {/* w-0 min-w-full: keeps the nested participant table from forcing the
+                        outer rounds table wider than its container on mobile (see Miners). */}
+                    <td colSpan={8} className="p-0"><div className="w-0 min-w-full"><RoundParticipants roundId={rid} /></div></td>
                   </tr>
                 )}
                 </Fragment>

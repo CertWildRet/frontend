@@ -92,68 +92,68 @@ export function ChartCard({
   return (
     <div ref={cardRef} className={wrapperClass}>
       {(title || subtitle || right || watermark) && (
-        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-          <div className="min-w-0">
-            {title && (
+        <div className="mb-3">
+          {/* row 1: heading + branding/share ALWAYS share a line, so the mark stays
+              top-right aligned with the title on mobile too (it just shrinks). Only
+              rendered when there's a title or watermark to carry it. */}
+          {(title || watermark) && (
+          <div className="flex items-start justify-between gap-2">
+            {title ? (
               <h2
-                className="text-[19px] font-semibold tracking-tight text-[#EAECF6]"
+                className="min-w-0 flex-1 text-[19px] font-semibold tracking-tight text-[#EAECF6]"
                 style={{ fontFamily: "'Chakra Petch', sans-serif" }}
               >
                 {title}
               </h2>
+            ) : (
+              <span className="flex-1" />
             )}
-            {subtitle && <div className="mt-1 font-mono text-[13px] leading-relaxed text-[#A8B0CC]">{subtitle}</div>}
-          </div>
-          {(watermark || right) && (
-            <div className="flex shrink-0 flex-col items-end gap-2">
-              {watermark && (
-                // The watermark is the only in-flow element, so it stays pinned to
-                // the same right edge whether or not the share button is present —
-                // the button is absolute (out of flow), so excluding it from the
-                // capture no longer lets the watermark reflow leftward.
-                <div className="relative flex items-center">
-                  {/* copy-chart-as-image — sits just LEFT of the watermark, absolutely */}
-                  <button
-                    type="button"
-                    onClick={onShare}
-                    data-no-capture="true"
-                    disabled={share === "working"}
-                    title="Copy this chart as an image"
-                    aria-label="Copy this chart to the clipboard as an image"
-                    className="absolute right-full top-1/2 mr-2 -translate-y-1/2 inline-flex items-center gap-1 rounded-md border border-line px-1.5 py-1 font-mono text-[11px] leading-none text-[#C7D0EA] transition-colors hover:border-steel hover:text-white disabled:opacity-60"
-                  >
-                    {share === "done" ? (
-                      <>
-                        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden>
-                          <path d="M2.5 7.5 L5.5 10.5 L11.5 3.5" stroke="#4ADE80" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        <span className="text-pos">copied</span>
-                      </>
-                    ) : share === "error" ? (
-                      <span className="text-amber">retry</span>
-                    ) : share === "working" ? (
-                      <span className="opacity-70">saving…</span>
-                    ) : (
-                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden>
-                        <rect x="1.6" y="4.2" width="12.8" height="9.4" rx="2" stroke="currentColor" strokeWidth="1.3" />
-                        <circle cx="8" cy="8.9" r="2.4" stroke="currentColor" strokeWidth="1.3" />
-                        <path d="M5.4 4.2 L6.1 2.9 A1 1 0 0 1 7 2.4 H9 A1 1 0 0 1 9.9 2.9 L10.6 4.2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+            {watermark && (
+              // The watermark is the only in-flow element here, so it holds the same
+              // right edge with or without the share button (button is absolute).
+              <div className="relative flex shrink-0 items-center pt-0.5">
+                <button
+                  type="button"
+                  onClick={onShare}
+                  data-no-capture="true"
+                  disabled={share === "working"}
+                  title="Copy this chart as an image"
+                  aria-label="Copy this chart to the clipboard as an image"
+                  className="absolute right-full top-1/2 mr-1.5 -translate-y-1/2 inline-flex items-center gap-1 rounded-md border border-line px-1 py-0.5 font-mono text-[10px] leading-none text-[#C7D0EA] transition-colors hover:border-steel hover:text-white disabled:opacity-60 sm:mr-2 sm:px-1.5 sm:py-1 sm:text-[11px]"
+                >
+                  {share === "done" ? (
+                    <>
+                      <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden>
+                        <path d="M2.5 7.5 L5.5 10.5 L11.5 3.5" stroke="#4ADE80" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
-                    )}
-                  </button>
-                  {/* Branding watermark for shared screenshots — kept IN the capture. */}
-                  <div
-                    aria-hidden
-                    className="pointer-events-none select-none whitespace-nowrap font-mono text-[12px] leading-none tracking-tight text-[#C7D0EA]"
-                    style={{ opacity: 0.75 }}
-                  >
-                    diamondpools.app/stats
-                  </div>
+                      <span className="text-pos">copied</span>
+                    </>
+                  ) : share === "error" ? (
+                    <span className="text-amber">retry</span>
+                  ) : share === "working" ? (
+                    <span className="opacity-70">…</span>
+                  ) : (
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden>
+                      <rect x="1.6" y="4.2" width="12.8" height="9.4" rx="2" stroke="currentColor" strokeWidth="1.3" />
+                      <circle cx="8" cy="8.9" r="2.4" stroke="currentColor" strokeWidth="1.3" />
+                      <path d="M5.4 4.2 L6.1 2.9 A1 1 0 0 1 7 2.4 H9 A1 1 0 0 1 9.9 2.9 L10.6 4.2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+                {/* Branding watermark — kept IN the capture; smaller on mobile. */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none select-none whitespace-nowrap font-mono text-[10px] leading-none tracking-tight text-[#C7D0EA] sm:text-[12px]"
+                  style={{ opacity: 0.75 }}
+                >
+                  diamondpools.app/stats
                 </div>
-              )}
-              {right}
-            </div>
+              </div>
+            )}
+          </div>
           )}
+          {subtitle && <div className="mt-1 font-mono text-[13px] leading-relaxed text-[#A8B0CC]">{subtitle}</div>}
+          {right && <div className="mt-2 flex flex-wrap items-center gap-2 sm:justify-end">{right}</div>}
         </div>
       )}
       {children}
