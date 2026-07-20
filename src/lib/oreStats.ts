@@ -488,17 +488,28 @@ export const fetchOreDominance = () => get<OreDominance>(`/ore/dominance`);
 // distribution. cohort 1..5 = Plankton/Shrimp/Fish/Shark/Whale.
 export type OreCohortRow = { cohort: number; holders: number; ore: number; supply_ore: number | null };
 export type OreCohortChange = { snapshot_ts: string; cohort: number; delta_ore: number; ore: number; holders: number };
+export type OreCohortSource = "miner" | "holder";
+export type OreCohortVaulted = { owners: number; ore: number };
+export type OreCohortStats = {
+  real_holders: number; real_ore: number; vaulted_ore: number; vaulted_owners: number;
+  largest_ore: number | null; top10_ore: number | null; top100_ore: number | null;
+};
 export type OreCohorts = {
+  source: OreCohortSource;
   updated_at: string | null;
   distribution: OreCohortRow[];
   changes: OreCohortChange[];
   supply_ore: number | null;
-  miner_held_ore: number;
+  held_ore: number;
+  miner_held_ore: number; // alias of held_ore (backward compat)
   total_holders: number;
   miner_side: boolean;
+  vaulted: OreCohortVaulted | null; // holder source only: excluded protocol/vault ORE
+  stats: OreCohortStats | null; // holder source only: concentration metrics
   note?: string;
 };
-export const fetchOreCohorts = (days = 30) => get<OreCohorts>(`/ore/cohorts?days=${days}`);
+export const fetchOreCohorts = (source: OreCohortSource = "holder", days = 30) =>
+  get<OreCohorts>(`/ore/cohorts?source=${source}&days=${days}`);
 export const fetchOreMiner = (pubkey: string, rounds: number | "all" = 1000) => get<OreMinerDetail>(`/ore/miner/${pubkey}?rounds=${rounds}`);
 export const fetchOreRng = () => get<OreRng>("/ore/rng");
 export const fetchOreMotherlode = (limit = 50, offset = 0) =>

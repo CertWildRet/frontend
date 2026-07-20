@@ -1,21 +1,22 @@
 "use client";
 
 /**
- * Cohort tab — ORE holder-size distribution + cohort balance changes.
- *
- * v1 is MINER-SIDE ORE only (unclaimed rewards + live refined from the miner
- * census). It is NOT a full token-holder distribution — it misses claimed/wallet
- * ORE, staked stORE, and pure buyers (~3/4 of circulating supply). The page says
- * so plainly; true SPL token-holder cohorts are the planned v2.
+ * Cohort tab — ORE holder-size distribution + cohort balance changes, with a
+ * source toggle:
+ *   All holders (default) — true SPL token-holder distribution (per owner across
+ *                           every ORE token account, ~100% of circulating). Protocol
+ *                           vaults (mine treasury + stORE stake vault) are shown as a
+ *                           separate "vaulted" figure, not as holder whales.
+ *   Miners                — miner-side ORE only (unclaimed + live refined, ~23%).
  */
 import { useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { Refreshing } from "@/components/primitives/Skeleton";
 import { ChartCard } from "@/components/stats/Charts";
-import { Donut, CohortBalanceBars, COHORTS, cohortOf } from "@/components/stats/CohortCharts";
+import { Donut, CohortBalanceBars, COHORTS } from "@/components/stats/CohortCharts";
 import { usePolled } from "@/hooks/useOreStats";
-import { fetchOreCohorts } from "@/lib/oreStats";
+import { fetchOreCohorts, type OreCohortSource } from "@/lib/oreStats";
 import { formatNum, formatPct } from "@/lib/format";
 
 const timeAgo = (iso: string | null) => {
@@ -28,30 +29,40 @@ const timeAgo = (iso: string | null) => {
 };
 
 export function CohortTab() {
+  const [source, setSource] = useState<OreCohortSource>("holder");
   const [metric, setMetric] = useState<"holders" | "ore">("holders");
-  const polled = usePolled(() => fetchOreCohorts(30), 300_000, []);
+  const polled = usePolled(() => fetchOreCohorts(source, 30), 300_000, [source]);
   const d = polled.data;
+  // Only use data whose source matches the current toggle — during a switch `d`
+  // still holds the OLD source's payload for a render or two, and reading scalars
+  // from it would show e.g. holder counts under "Miner-held" labels. Treat
+  // mismatched data as absent so the loading state shows instead.
+  const md = d && d.source === source ? d : null;
+  const isHolder = source === "holder";
+  const loading = !md && !polled.error;
 
-  const dist = d?.distribution ?? [];
+  const dist = md?.distribution ?? [];
   const byId = (id: number) => dist.find((r) => r.cohort === id);
-  const totalHolders = d?.total_holders ?? 0;
-  const minerHeld = d?.miner_held_ore ?? 0;
-  const supply = d?.supply_ore ?? null;
-  const supplyShare = supply && supply > 0 ? minerHeld / supply : null;
+  const totalHolders = md?.total_holders ?? 0;
+  const held = md?.held_ore ?? 0;
+  const supply = md?.supply_ore ?? null;
+  const vaulted = md?.vaulted ?? null;
+  const stats = md?.stats ?? null;
+  const supplyShare = supply && supply > 0 ? held / supply : null;
   const whales = byId(5)?.holders ?? 0;
   const whaleOre = byId(5)?.ore ?? 0;
+  const pctSupply = (ore: number | null | undefined) => (supply && ore != null ? formatPct(ore / supply, ore / supply >= 0.1 ? 0 : 1) : "···");
 
-  // donut slices — relative composition of the 5 cohorts (no vault/CEX slice)
+  // donut slices — relative composition of the 5 size cohorts
   const slices = COHORTS.map((c) => {
     const row = byId(c.id);
     return { label: c.name, sub: `${c.range} ORE`, value: metric === "holders" ? row?.holders ?? 0 : row?.ore ?? 0, color: c.color };
   }).filter((s) => s.value > 0);
   const donutTotal = slices.reduce((a, s) => a + s.value, 0);
 
-  // balance-change buckets: group changes by snapshot, one stacked bar each
-  const changes = d?.changes ?? [];
+  // balance-change buckets: one diverging stacked bar per snapshot
   const bucketMap = new Map<string, number[]>();
-  for (const ch of changes) {
+  for (const ch of md?.changes ?? []) {
     if (!bucketMap.has(ch.snapshot_ts)) bucketMap.set(ch.snapshot_ts, [0, 0, 0, 0, 0]);
     bucketMap.get(ch.snapshot_ts)![ch.cohort - 1] = ch.delta_ore;
   }
@@ -62,48 +73,87 @@ export function CohortTab() {
   });
   const series = COHORTS.map((c) => ({ name: c.name, color: c.color }));
 
-  const loading = polled.loading && !d;
-
   return (
     <div className="space-y-5">
-      {/* honesty banner — this is miner-side ORE, not full token holders (v1) */}
-      <div className="rounded-lg border border-amber/25 bg-amber/[0.05] px-3 py-2 font-mono text-[12px] leading-relaxed text-amber">
-        <span className="text-white">Miner-held ORE only (v1).</span> Cohorts bucket the ORE miners hold on the mine
-        (unclaimed rewards + live refined){supplyShare != null ? <> — about <span className="text-white">{formatPct(supplyShare, 0)}</span> of circulating supply</> : ""}.
-        Claimed/wallet ORE, staked stORE, exchange balances and pure buyers aren&apos;t captured by the census; a true
-        token-holder breakdown is the planned v2.
+      {/* source toggle */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SegmentedControl aria-label="Cohort source"
+          items={[{ id: "holder", label: "All holders" }, { id: "miner", label: "Miners" }]}
+          value={source} onChange={(id) => setSource(id as OreCohortSource)} />
+        <span className="section-label"><Refreshing active={polled.fetching && !!d} /></span>
       </div>
+
+      {/* honesty banner per source */}
+      {isHolder ? (
+        <div className="rounded-lg border border-cyan/25 bg-cyan/[0.05] px-3 py-2 font-mono text-[12px] leading-relaxed text-[#7fe9ee]">
+          <span className="text-white">On-chain ORE holders.</span> Every wallet holding ORE, aggregated per owner across all token accounts
+          {supplyShare != null ? <> — <span className="text-white">{formatPct(supplyShare, 0)}</span> of circulating supply</> : ""}.
+          Protocol vaults (the mine treasury + stORE stake vault) are shown separately below, not as holder whales; exchange custodial
+          wallets can&apos;t be labeled and may appear as whales.
+        </div>
+      ) : (
+        <div className="rounded-lg border border-amber/25 bg-amber/[0.05] px-3 py-2 font-mono text-[12px] leading-relaxed text-amber">
+          <span className="text-white">Miner-held ORE only.</span> ORE miners hold on the mine (unclaimed rewards + live refined)
+          {supplyShare != null ? <> — about <span className="text-white">{formatPct(supplyShare, 0)}</span> of circulating supply</> : ""}.
+          Switch to <span className="text-white">All holders</span> for the full token-holder picture.
+        </div>
+      )}
 
       {/* hero tiles */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatTile variant="inset" label="Holders (miner-side)" value={loading ? "···" : formatNum(totalHolders)} hint="miners holding >0 ORE" />
-        <StatTile variant="inset" label="Miner-held ORE" value={loading ? "···" : formatNum(minerHeld, 0)} unit="ORE" tone="gold"
+        <StatTile variant="inset" label={isHolder ? "Holders" : "Holders (miner-side)"} value={loading ? "···" : formatNum(totalHolders)}
+          hint={isHolder ? "wallets holding ORE" : "miners holding >0 ORE"} />
+        <StatTile variant="inset" label={isHolder ? "Held by holders" : "Miner-held ORE"} value={loading ? "···" : formatNum(held, 0)} unit="ORE" tone="gold"
           hint={supply ? `of ${formatNum(supply, 0)} circulating` : undefined} />
-        <StatTile variant="inset" label="Share of supply" value={supplyShare != null ? formatPct(supplyShare, 1) : "···"} hint="miner-held ÷ circulating" />
+        <StatTile variant="inset" label="Share of supply" value={supplyShare != null ? formatPct(supplyShare, 1) : "···"}
+          hint={isHolder ? "holders ÷ circulating" : "miner-held ÷ circulating"} />
         <StatTile variant="inset" label="Whales (>500)" value={loading ? "···" : formatNum(whales)}
           hint={whaleOre ? `hold ${formatNum(whaleOre, 0)} ORE` : "the biggest cohort"} />
       </div>
 
+      {/* concentration tiles (holder source only) */}
+      {isHolder && stats && (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <StatTile variant="inset" label="Largest holder" value={formatNum(stats.largest_ore ?? 0, 0)} unit="ORE"
+            hint={supply ? `${pctSupply(stats.largest_ore)} of supply` : undefined} />
+          <StatTile variant="inset" label="Top 10 hold" value={pctSupply(stats.top10_ore)}
+            hint={`${formatNum(stats.top10_ore ?? 0, 0)} ORE of supply`} />
+          <StatTile variant="inset" label="Top 100 hold" value={pctSupply(stats.top100_ore)}
+            hint={`${formatNum(stats.top100_ore ?? 0, 0)} ORE of supply`} />
+          <StatTile variant="inset" label="Whales' grip" value={held ? formatPct(whaleOre / held, 0) : "···"}
+            hint={`${formatNum(whales)} wallets · of all holder ORE`} />
+        </div>
+      )}
+
       <div className="grid gap-5 lg:grid-cols-2">
         {/* distribution donut */}
         <ChartCard variant="dispersion" cutCorner="tr" title="Holder distribution"
-          subtitle="ORE miners bucketed by how much ORE they hold on the mine. Whale = the bright-gold sliver; Plankton = the teal majority."
+          subtitle={isHolder
+            ? "Every ORE wallet by size. Whale = the bright-gold sliver; Plankton = the teal majority by count."
+            : "ORE miners bucketed by how much ORE they hold on the mine."}
           right={
             <SegmentedControl aria-label="Distribution metric" variant="loose"
               items={[{ id: "holders", label: "Holders" }, { id: "ore", label: "ORE held" }]}
               value={metric} onChange={(id) => setMetric(id as "holders" | "ore")} />
           }>
           <Donut slices={slices} loading={loading} height={300}
-            centerLabel={formatNum(donutTotal, metric === "ore" ? 0 : 0)}
+            centerLabel={formatNum(donutTotal, 0)}
             centerSub={metric === "holders" ? "holders" : "ORE held"}
-            fmt={(v) => formatNum(v, metric === "ore" ? 0 : 0)} />
+            fmt={(v) => formatNum(v, 0)} />
+          {/* vaulted readout UNDER the donut — excluded from cohorts but still shown */}
+          {isHolder && vaulted && vaulted.ore > 0 && (
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 rounded-lg border border-line bg-white/[0.02] px-3 py-2 text-center font-mono text-[12px] leading-relaxed text-fog-muted">
+              <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: "#6b7280" }} />
+              <span className="text-gray-200">{formatNum(vaulted.ore, 0)} ORE</span>
+              <span>held in the ORE treasury + stORE vault ({pctSupply(vaulted.ore)} of supply) — protocol-owned, excluded from holder cohorts.</span>
+            </div>
+          )}
         </ChartCard>
 
         {/* per-cohort table */}
         <ChartCard variant="dispersion" cutCorner="bl" title="By cohort"
-          subtitle="Every size band, its holder count and the ORE it controls. Few whales, most of the ORE."
-          right={<span className="section-label"><Refreshing active={polled.fetching && !!d} /></span>}>
-          <div className={`${"overflow-x-auto"}`}>
+          subtitle="Every size band, its holder count and the ORE it controls. Few whales, most of the ORE.">
+          <div className="overflow-x-auto">
             <table className="w-full font-mono text-[13px]">
               <thead><tr className="text-left text-[12.5px] uppercase tracking-[0.08em] text-[#c6cde6]">
                 <th className="px-2 py-2 font-bold">Cohort</th>
@@ -129,7 +179,7 @@ export function CohortTab() {
                       <td className="px-2 py-2 text-right text-gray-200">{formatNum(holders)}</td>
                       <td className="px-2 py-2 text-right text-fog-muted">{totalHolders ? formatPct(holders / totalHolders, 1) : "·"}</td>
                       <td className="px-2 py-2 text-right text-gold">{formatNum(ore, 0)}</td>
-                      <td className="px-2 py-2 text-right text-fog-muted">{minerHeld ? formatPct(ore / minerHeld, 1) : "·"}</td>
+                      <td className="px-2 py-2 text-right text-fog-muted">{held ? formatPct(ore / held, 1) : "·"}</td>
                     </tr>
                   );
                 })}
@@ -141,7 +191,7 @@ export function CohortTab() {
 
       {/* balance changes — full width */}
       <ChartCard variant="dispersion" cutCorner="bl" title="Cohort balance changes"
-        subtitle="Net ORE each cohort gained (up) or lost (down) between census snapshots — accumulation vs distribution. A miner crossing a size line shows as one cohort down + the next up.">
+        subtitle="Net ORE each cohort gained (up) or lost (down) between snapshots — accumulation vs distribution. A wallet crossing a size line shows as one cohort down + the next up.">
         <div className="mb-1.5 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
           {COHORTS.map((c) => (
             <span key={c.id} className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: c.color }} /> {c.name}</span>
@@ -149,12 +199,14 @@ export function CohortTab() {
         </div>
         <CohortBalanceBars buckets={buckets} series={series} loading={loading} height={320}
           fmt={(v) => formatNum(v, 1)} unit="net ORE change per snapshot"
-          emptyText="collecting census snapshots — balance-change history builds up as new snapshots land (roughly daily)." />
+          emptyText={isHolder
+            ? "collecting holder snapshots — balance-change history builds up as the daily sweep runs."
+            : "collecting census snapshots — balance-change history builds up as new snapshots land."} />
       </ChartCard>
 
-      {/* footer: freshness + error */}
+      {/* footer */}
       <div className="flex items-center justify-between font-mono text-[12px] text-fog-muted">
-        <span>{d?.updated_at ? `census snapshot ${timeAgo(d.updated_at)}` : polled.error ? "" : "loading…"}</span>
+        <span>{md?.updated_at ? `${isHolder ? "holder sweep" : "census snapshot"} ${timeAgo(md.updated_at)}` : polled.error ? "" : "loading…"}</span>
         {polled.error && (
           <button onClick={polled.refresh} className="rounded border border-line px-2 py-1 text-fog-muted transition-colors hover:border-steel hover:text-white">
             retry
