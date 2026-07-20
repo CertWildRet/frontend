@@ -186,6 +186,38 @@ export function CohortTab() {
               </tbody>
             </table>
           </div>
+          {/* concentration visual — fills the card and shows the inversion at a
+              glance: the crowd is Plankton by count, but the ORE is nearly all Whale. */}
+          <div className="mt-4 space-y-2.5 border-t border-white/[0.05] pt-3">
+            {[
+              { key: "wallets", label: isHolder ? "by wallets" : "by miners", total: totalHolders, get: (c: (typeof COHORTS)[number]) => byId(c.id)?.holders ?? 0 },
+              { key: "ore", label: "by ORE held", total: held, get: (c: (typeof COHORTS)[number]) => byId(c.id)?.ore ?? 0 },
+            ].map((row) => (
+              <div key={row.key}>
+                <div className="mb-1 flex justify-between font-mono text-[11px] text-fog-muted">
+                  <span>{row.label}</span>
+                  <span>{row.key === "ore" ? `${formatNum(row.total, 0)} ORE` : formatNum(row.total)}</span>
+                </div>
+                <div className="flex h-3 overflow-hidden rounded-[3px] bg-white/[0.03]">
+                  {COHORTS.map((c) => {
+                    const w = row.total ? (row.get(c) / row.total) * 100 : 0;
+                    return w > 0 ? <div key={c.id} style={{ width: `${w}%`, background: c.color }} title={`${c.name}: ${w.toFixed(1)}%`} /> : null;
+                  })}
+                </div>
+              </div>
+            ))}
+            <p className="font-mono text-[11px] leading-relaxed text-fog-muted">
+              {(() => {
+                const pk = byId(1), wh = byId(5);
+                const pkH = totalHolders ? (pk?.holders ?? 0) / totalHolders : 0;
+                const pkO = held ? (pk?.ore ?? 0) / held : 0;
+                const whH = totalHolders ? (wh?.holders ?? 0) / totalHolders : 0;
+                const whO = held ? (wh?.ore ?? 0) / held : 0;
+                const who = isHolder ? "wallets" : "miners";
+                return `Plankton are ${formatPct(pkH, 0)} of ${who} but hold ${formatPct(pkO, 1)} of the ORE; whales are ${formatPct(whH, 1)} of ${who} but hold ${formatPct(whO, 0)}.`;
+              })()}
+            </p>
+          </div>
         </ChartCard>
       </div>
 
