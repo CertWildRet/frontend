@@ -27,19 +27,24 @@
     rgba(91, 108, 255, 0.4) 85%,
     rgba(34, 224, 230, 0.55)
   );
-  background-size: 300% 300%;
+  background-size: 200% 200%;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
   opacity: 0.55;
-  /* alternate: the spectral tile is not cyclical — a one-way loop seams pink→cyan */
-  animation: hueShift 12s ease-in-out 3 alternate forwards;
+  /* ONE-WAY seamless scroll (no `alternate`): the palindrome tile has matching
+     cyan ends, so shifting a full 200% period loops back onto itself with no
+     seam — and no direction reversal, which is what read as a "step/jump" in the
+     old alternate cycle. `linear` keeps a constant velocity (no ease pause), and
+     landing on the 200% frame == the 0% frame means the 3-run freeze is seamless
+     too. Own keyframes so the shared `hueShift` (CTA pills) is untouched. */
+  animation: spectralDrift 18s linear 3 forwards;
 }
 
-@keyframes hueShift {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 300% 50%; }
+@keyframes spectralDrift {
+  from { background-position: 0% 0%; }
+  to { background-position: 200% 200%; }
 }
 
 /* brighter refractive top edge for glass surfaces */
@@ -52,7 +57,7 @@
   -webkit-backdrop-filter: blur(22px) saturate(120%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.05),
     0 24px 60px -28px rgba(0, 0, 0, 0.85),
     0 0 40px -16px rgba(91, 108, 255, 0.35);
 }
