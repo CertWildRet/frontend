@@ -322,7 +322,9 @@ function MinerTrend({ series, pricesNow, roundsWin, setRoundsWin, refreshing, pa
         <StatTile variant="inset" label="Total net"
           value={<span className={netTone(cum)}>{cum >= 0 ? "+" : ""}{cur === "usd" ? "$" : ""}{formatNum(cum, cur === "usd" ? 2 : 3)}</span>}
           unit={cur === "sol" ? "SOL" : undefined}
-          hint={nowUsd != null ? `at today's prices ${nowUsd >= 0 ? "+" : "-"}$${formatNum(Math.abs(nowUsd), 2)}` : undefined} />
+          hint={nowUsd != null ? (
+            <>at today&apos;s prices <span className={netTone(nowUsd)}>{nowUsd >= 0 ? "+" : "-"}${formatNum(Math.abs(nowUsd), 2)}</span></>
+          ) : undefined} />
         <StatTile variant="inset" label="ORE cost"
           value={oreCostWin != null ? formatNum(oreCostWin, 3)
             : oreWonWin > 0 ? <span className="text-pos">free</span> : "·"}
