@@ -331,6 +331,16 @@ function MinerTrend({ series, pricesNow, roundsWin, setRoundsWin, refreshing, pa
       </div>
       <PnlChart points={pts} height={220}
         fmt={(v) => (cur === "usd" ? `$${formatNum(v, 2)}` : `${formatNum(v, 3)}`)}
+        axisFmt={(v) => {
+          // Compact so six-figure whales (FeNY: $108K axis, $98K badge) don't
+          // overflow the fixed label gutter. Full precision stays in the tooltip.
+          const a = Math.abs(v), sgn = v < 0 ? "-" : "", u = cur === "usd" ? "$" : "";
+          const c = a >= 1e6 ? `${(a / 1e6).toFixed(1)}M`
+            : a >= 1e3 ? `${(a / 1e3).toFixed(1)}K`
+            : a >= 100 ? a.toFixed(0)
+            : a.toFixed(cur === "usd" ? 2 : 3);
+          return `${sgn}${u}${c}`;
+        }}
         emptyText="not enough round history yet" />
     </div>
   );

@@ -548,15 +548,19 @@ export function PopBars({
 
 // ── PnlChart: cumulative P/L line with signed green/red fill + end badge ─────
 export function PnlChart({
-  points, height = 220, fmt = (v: number) => v.toFixed(2),
+  points, height = 220, fmt = (v: number) => v.toFixed(2), axisFmt,
   loading = false, emptyText,
 }: {
   points: TPt[]; height?: number; fmt?: (v: number) => string;
+  /** Compact formatter for the y-axis ticks + end badge (defaults to `fmt`).
+   *  Keeps six-figure whales from overflowing the fixed label gutter. */
+  axisFmt?: (v: number) => string;
   loading?: boolean; emptyText?: string;
 }) {
   const [ref, W] = useMeasuredWidth();
   const [hover, setHover] = useState<number | null>(null);
-  const H = height, padL = 14, padR = 64, padT = 14, padB = 26;
+  const H = height, padL = 14, padR = 68, padT = 14, padB = 26;
+  const yfmt = axisFmt ?? fmt;
   const POS = "#4ADE80", NEG = "#F87171";
   const n = points.length;
   if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} text={emptyText} /></div>;
@@ -596,7 +600,7 @@ export function PnlChart({
           return (
             <g key={gi}>
               <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
-              <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={AXIS} textAnchor="start" fontFamily="monospace">{fmt(max - g * (max - min))}</text>
+              <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={AXIS} textAnchor="start" fontFamily="monospace">{yfmt(max - g * (max - min))}</text>
             </g>
           );
         })}
@@ -607,7 +611,7 @@ export function PnlChart({
         <path d={line} fill="none" stroke={NEG} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" clipPath="url(#pnl-below)" />
         <g>
           <rect x={plotR + 4} y={y(last) - 10} width={padR - 8} height={20} rx={4} fill={last >= 0 ? POS : NEG} />
-          <text x={plotR + padR / 2} y={y(last) + 4} fontSize={12} fontWeight={700} fill="#070912" textAnchor="middle" fontFamily="monospace">{fmt(last)}</text>
+          <text x={plotR + padR / 2} y={y(last) + 4} fontSize={12} fontWeight={700} fill="#070912" textAnchor="middle" fontFamily="monospace">{yfmt(last)}</text>
         </g>
         {xt.map((idx, ti) => (
           <text key={ti} x={x(idx)} y={H - 8} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily="monospace"
