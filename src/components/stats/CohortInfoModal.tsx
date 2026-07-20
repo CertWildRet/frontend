@@ -61,16 +61,16 @@ export function CohortInfoModal({ open, onClose }: { open: boolean; onClose: () 
     return () => clearTimeout(t);
   }, [open]);
 
-  // While mounted: Escape closes, and body scroll is locked.
+  // While mounted: Escape closes. NOTE: no body scroll-lock — setting
+  // body{overflow:hidden} detaches the page's `sticky top-0` header (it relies on
+  // <body> being the scroll container), making the nav vanish. The fixed-inset
+  // backdrop already covers the page, so a locked background isn't worth that.
   useEffect(() => {
     if (!render) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
     };
   }, [render, onClose]);
 
