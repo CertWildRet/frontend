@@ -161,12 +161,22 @@ export function ChartCard({
   );
 }
 
+// Axis top that HUGS the data. The charts draw 4 quarter-gridlines, so instead of
+// rounding the whole magnitude up to 1/2/5/10×10ⁿ (which overshot hard — a 30K peak
+// drew a 50K axis, ~40% dead space), pick the smallest "nice" QUARTER-step that
+// still clears the peak. The 4 labels stay round (0, q, 2q, 3q, 4q) and the top
+// gridline sits just above the peak. Generic: scale-free, so it fits every range,
+// timeframe and filter (2.7K → 2.8K axis, 31K → 32K axis, etc.).
 const niceMax = (v: number): number => {
   if (v <= 0) return 1;
-  const pow = Math.pow(10, Math.floor(Math.log10(v)));
-  const n = v / pow;
-  const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
-  return step * pow;
+  const q = v / 4;
+  const pow = Math.pow(10, Math.floor(Math.log10(q)));
+  const n = q / pow; // 1..10
+  const nice =
+    n <= 1 ? 1 : n <= 1.25 ? 1.25 : n <= 1.5 ? 1.5 : n <= 1.75 ? 1.75 : n <= 2 ? 2 :
+    n <= 2.5 ? 2.5 : n <= 3 ? 3 : n <= 3.5 ? 3.5 : n <= 4 ? 4 : n <= 4.5 ? 4.5 :
+    n <= 5 ? 5 : n <= 6 ? 6 : n <= 7 ? 7 : n <= 8 ? 8 : n <= 9 ? 9 : 10;
+  return Math.round(nice * pow * 4 * 1e6) / 1e6; // clean sub-1 float artifacts
 };
 
 /** Compact axis formatter (340K, 1.2M, 1.41) — for wide magnitude axes. */
