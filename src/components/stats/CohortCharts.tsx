@@ -132,7 +132,7 @@ export function Donut({
   );
 }
 
-export type StackBucket = { label: string; values: number[] }; // values[] aligned to `series`
+export type StackBucket = { label: string; values: number[]; totals?: number[] }; // values/totals aligned to `series`
 
 /** Diverging stacked bars: positive stacks up, negative down, around a zero line.
  *  `series` gives the name+color of each stack layer (cohorts). */
@@ -212,7 +212,13 @@ export function CohortBalanceBars({
           const net = b.values.reduce((a, v) => a + v, 0);
           const lines = [
             b.label,
-            ...series.map((s, i) => b.values[i] ? `${s.name}: ${b.values[i] > 0 ? "+" : ""}${fmt(b.values[i])}` : "").filter(Boolean),
+            ...series.map((s, i) => {
+              if (!b.values[i]) return "";
+              // % of that cohort's own total — makes clear a big-looking ORE move is tiny
+              const t = b.totals?.[i];
+              const pct = t ? ` (${b.values[i] > 0 ? "+" : ""}${((b.values[i] / t) * 100).toFixed(2)}%)` : "";
+              return `${s.name}: ${b.values[i] > 0 ? "+" : ""}${fmt(b.values[i])}${pct}`;
+            }).filter(Boolean),
             `net: ${net > 0 ? "+" : ""}${fmt(net)}`,
           ];
           const tw = Math.max(...lines.map((l) => l.length)) * 7 + 16;

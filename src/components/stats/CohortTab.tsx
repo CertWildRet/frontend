@@ -60,16 +60,20 @@ export function CohortTab() {
   }).filter((s) => s.value > 0);
   const donutTotal = slices.reduce((a, s) => a + s.value, 0);
 
-  // balance-change buckets: one diverging stacked bar per snapshot
-  const bucketMap = new Map<string, number[]>();
+  // balance-change buckets: one diverging stacked bar per snapshot. Carry each
+  // cohort's TOTAL alongside the delta so the tooltip can show the move as a % of
+  // the cohort (a big-looking ORE number is usually a rounding error on the band).
+  const bucketMap = new Map<string, { values: number[]; totals: number[] }>();
   for (const ch of md?.changes ?? []) {
-    if (!bucketMap.has(ch.snapshot_ts)) bucketMap.set(ch.snapshot_ts, [0, 0, 0, 0, 0]);
-    bucketMap.get(ch.snapshot_ts)![ch.cohort - 1] = ch.delta_ore;
+    if (!bucketMap.has(ch.snapshot_ts)) bucketMap.set(ch.snapshot_ts, { values: [0, 0, 0, 0, 0], totals: [0, 0, 0, 0, 0] });
+    const e = bucketMap.get(ch.snapshot_ts)!;
+    e.values[ch.cohort - 1] = ch.delta_ore;
+    e.totals[ch.cohort - 1] = ch.ore;
   }
-  const buckets = [...bucketMap.entries()].map(([ts, values]) => {
+  const buckets = [...bucketMap.entries()].map(([ts, { values, totals }]) => {
     const dt = new Date(ts);
     const label = `${dt.getMonth() + 1}/${dt.getDate()} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
-    return { label, values };
+    return { label, values, totals };
   });
   const series = COHORTS.map((c) => ({ name: c.name, color: c.color }));
 
@@ -223,7 +227,7 @@ export function CohortTab() {
 
       {/* balance changes — full width */}
       <ChartCard variant="dispersion" cutCorner="bl" title="Cohort balance changes"
-        subtitle="Net ORE each cohort gained (up) or lost (down) between snapshots — accumulation vs distribution. A wallet crossing a size line shows as one cohort down + the next up.">
+        subtitle="Net ORE each cohort gained (up) or lost (down) between snapshots — accumulation vs distribution. A wallet crossing a size line shows as one cohort down + the next up. Moves are usually a fraction of a percent of each band (hover for the %); the axis auto-zooms, so small shifts still fill the bars.">
         <div className="mb-1.5 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
           {COHORTS.map((c) => (
             <span key={c.id} className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: c.color }} /> {c.name}</span>
