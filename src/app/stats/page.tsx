@@ -352,7 +352,9 @@ function TrendsTab() {
             ) : undefined}>
             <AreaLine
               points={(dominance.data?.points ?? []).filter((p) => p.dominance_pct != null).map((p) => ({ label: hLbl(p.hour_ts), value: p.dominance_pct as number }))}
-              height={210} zeroBaseline={false} color="#22E0E6"
+              /* taller than the yields plot to make up for the yields card's extra
+                 stats row + 2-line legend, so the two cards end at ~the same height */
+              height={285} zeroBaseline={false} color="#22E0E6"
               fmt={(v) => formatNum(v, 2) + "%"} yFmt={(v) => formatNum(v, 2) + "%"}
               loading={dominance.loading} />
           </ChartCard>
