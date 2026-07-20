@@ -105,10 +105,14 @@ export function ChartCard({
             {subtitle && <div className="mt-1 font-mono text-[13px] leading-relaxed text-[#A8B0CC]">{subtitle}</div>}
           </div>
           {(watermark || right) && (
-            <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+            <div className="flex shrink-0 flex-col items-end gap-2">
               {watermark && (
-                <div className="flex items-center gap-2">
-                  {/* copy-chart-as-image — beside the branding watermark */}
+                // The watermark is the only in-flow element, so it stays pinned to
+                // the same right edge whether or not the share button is present —
+                // the button is absolute (out of flow), so excluding it from the
+                // capture no longer lets the watermark reflow leftward.
+                <div className="relative flex items-center">
+                  {/* copy-chart-as-image — sits just LEFT of the watermark, absolutely */}
                   <button
                     type="button"
                     onClick={onShare}
@@ -116,7 +120,7 @@ export function ChartCard({
                     disabled={share === "working"}
                     title="Copy this chart as an image"
                     aria-label="Copy this chart to the clipboard as an image"
-                    className="inline-flex items-center gap-1 rounded-md border border-line px-1.5 py-1 font-mono text-[11px] leading-none text-[#C7D0EA] transition-colors hover:border-steel hover:text-white disabled:opacity-60"
+                    className="absolute right-full top-1/2 mr-2 -translate-y-1/2 inline-flex items-center gap-1 rounded-md border border-line px-1.5 py-1 font-mono text-[11px] leading-none text-[#C7D0EA] transition-colors hover:border-steel hover:text-white disabled:opacity-60"
                   >
                     {share === "done" ? (
                       <>
