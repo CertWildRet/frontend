@@ -187,7 +187,7 @@ export function CohortBalanceBars({
                 if (!v) return null;
                 let y0: number, y1: number;
                 if (v > 0) { y1 = y(up); up += v; y0 = y(up); } else { y0 = y(dn); dn += v; y1 = y(dn); }
-                const h = Math.max(0, y0 - y1);
+                const h = Math.abs(y0 - y1); // y grows downward, so top/bottom order flips by sign
                 if (h < 0.4) return null;
                 return <rect key={si} x={x} y={Math.min(y0, y1)} width={bwInner} height={h} fill={series[si]?.color ?? "#888"}
                   stroke={SURFACE} strokeWidth={0.75} />;
