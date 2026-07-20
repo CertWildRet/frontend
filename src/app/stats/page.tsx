@@ -317,15 +317,17 @@ function TrendsTab() {
         {/* (5) yields — refining vs staking APR. Half-width, paired in a row with miner dominance. */}
         <div>
           <ChartCard variant="dispersion" cutCorner="tr" title="Yields · hold unclaimed vs claim & stake"
-            subtitle={`Refining APR (what your unclaimed ORE earns from others' claim fees) vs stORE staking APR. The shaded gap between them is the unclaimed carry: the extra APR you keep by NOT claiming. Annualized, rolling window up to 7d${yields.data?.latest?.window_days != null && yields.data.latest.window_days < 6.5 ? ` (currently ${formatNum(yields.data.latest.window_days, 1)}d, precise history began Jul 13)` : ""}.`}
-            right={(avgRefin != null || avgStake != null || carryAvg != null) ? (
-              <span className="flex max-w-full flex-wrap items-center gap-x-2.5 gap-y-1 rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold"
-                title="All three are averages over the plotted points; hover the chart for the per-hour carry">
+            subtitle="Refining APR on unclaimed ORE vs stORE staking APR. The shaded gap is the carry you keep by not claiming.">
+            {(avgRefin != null || avgStake != null || carryAvg != null) && (
+              // Averages moved out of the header (they were stealing its width on the
+              // half-width card) into a compact full-width row above the chart.
+              <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[12.5px] font-bold"
+                title="Averages over the plotted points; hover the chart for the per-hour carry.">
                 {avgRefin != null && <span style={{ color: "#22E0E6" }}>refining avg {formatNum(avgRefin, 1)}%</span>}
                 {avgStake != null && <span style={{ color: "#E8881A" }}>staking avg {formatNum(avgStake, 1)}%</span>}
                 {carryAvg != null && <span className={carryAvg >= 0 ? "text-pos" : "text-red"}>carry avg {carryAvg >= 0 ? "+" : ""}{formatNum(carryAvg, 1)}%</span>}
-              </span>
-            ) : undefined}>
+              </div>
+            )}
             <DualLine shared band={{ name: "unclaimed carry (refining minus staking)" }}
               a={yPts.map((p) => ({ label: hLbl(p.hour_ts), value: p.refining_apr }))}
               b={yPts.map((p) => ({ label: hLbl(p.hour_ts), value: p.staking_apr }))}
@@ -339,7 +341,7 @@ function TrendsTab() {
         {/* (6) miner dominance — unrefined treasury ORE vs total supply. Half-width, paired with yields. */}
         <div>
           <ChartCard variant="dispersion" cutCorner="bl" title="Miner dominance"
-            subtitle="Unrefined (unclaimed) ORE held by the mine treasury as a share of total supply. Rising = miners sitting on winnings; falling = claims outpacing emission. Snapshot history began Jul 13 and deepens daily."
+            subtitle="Unclaimed ORE held by the mine treasury as a share of total supply. Rising = miners holding winnings; falling = claims outpacing emission."
             right={dominance.data?.latest?.dominance_pct != null ? (
               <span className="rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold text-[#22E0E6]"
                 title={dominance.data.latest.unclaimed_ore != null && dominance.data.latest.supply_ore != null
