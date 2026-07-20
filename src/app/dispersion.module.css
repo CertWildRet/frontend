@@ -13,38 +13,40 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 2px;
-  /* palindromic tile — repeat edges are cyan|cyan (no amber->cyan wall) */
+  /* 3px ring — a 2px hairline read as too slim on the glass cards. */
+  padding: 3px;
+  /* PALINDROME (cyan → … → amber center → … → cyan): symmetric, so the sweep never
+     shows a hard cyan↔pink/amber wall — the same trick that makes the "Find the
+     Alpha" hero title smooth. Alphas bumped so the thicker ring reads solid. */
   background: linear-gradient(
     135deg,
-    rgba(34, 224, 230, 0.55),
-    rgba(91, 108, 255, 0.4) 15%,
-    rgba(154, 107, 255, 0.45) 30%,
-    rgba(255, 90, 200, 0.4) 42%,
-    rgba(255, 192, 97, 0.5) 50%,
-    rgba(255, 90, 200, 0.4) 58%,
-    rgba(154, 107, 255, 0.45) 70%,
-    rgba(91, 108, 255, 0.4) 85%,
-    rgba(34, 224, 230, 0.55)
+    rgba(34, 224, 230, 0.75),
+    rgba(91, 108, 255, 0.6) 15%,
+    rgba(154, 107, 255, 0.66) 30%,
+    rgba(255, 90, 200, 0.6) 42%,
+    rgba(255, 192, 97, 0.72) 50%,
+    rgba(255, 90, 200, 0.6) 58%,
+    rgba(154, 107, 255, 0.66) 70%,
+    rgba(91, 108, 255, 0.6) 85%,
+    rgba(34, 224, 230, 0.75)
   );
-  background-size: 200% 200%;
+  background-size: 200% 100%;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
-  opacity: 0.55;
-  /* ONE-WAY seamless scroll (no `alternate`): the palindrome tile has matching
-     cyan ends, so shifting a full 200% period loops back onto itself with no
-     seam — and no direction reversal, which is what read as a "step/jump" in the
-     old alternate cycle. `linear` keeps a constant velocity (no ease pause), and
-     landing on the 200% frame == the 0% frame means the 3-run freeze is seamless
-     too. Own keyframes so the shared `hueShift` (CTA pills) is untouched. */
-  animation: spectralDrift 18s linear 3 forwards;
+  opacity: 0.72;
+  /* Match the "Find the Alpha" recipe exactly: ease-in-out ALTERNATE sweeps the
+     palindrome back and forth — it eases to a stop and reverses at each end (no
+     hard position reset, no direction "step"), and the symmetric gradient means
+     no color wall at any phase. Own keyframes so the shared `hueShift` (CTA pills)
+     stays put. */
+  animation: spectralDrift 16s ease-in-out 3 alternate forwards;
 }
 
 @keyframes spectralDrift {
   from { background-position: 0% 0%; }
-  to { background-position: 200% 200%; }
+  to { background-position: 200% 0%; }
 }
 
 /* brighter refractive top edge for glass surfaces */
@@ -57,7 +59,7 @@
   -webkit-backdrop-filter: blur(22px) saturate(120%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 0 0 2px rgba(255, 255, 255, 0.05),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.09),
     0 24px 60px -28px rgba(0, 0, 0, 0.85),
     0 0 40px -16px rgba(91, 108, 255, 0.35);
 }
@@ -449,14 +451,22 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 14px 40px -24px rgba(0, 0, 0, 0.8);
 }
 
-/* spectral text fill for marks/numbers */
+/* spectral text fill for marks/numbers (e.g. landing "Discipline compounds…").
+   PALINDROME + ease-in-out ALTERNATE — same recipe as the smooth "Find the Alpha"
+   hero. The old non-symmetric gradient (cyan→…→amber) scrolled `linear`, so it hit
+   a hard amber↔cyan wall on every loop; the symmetric cyan→…→pink→…→cyan sweep back
+   and forth never shows that jump. */
 .spectralText {
-  background: linear-gradient(110deg, #22e0e6, #5b6cff, #9a6bff, #ff5ac8, #ffc061);
+  background: linear-gradient(110deg, #22e0e6, #5b6cff 22%, #9a6bff 38%, #ff5ac8 50%, #9a6bff 62%, #5b6cff 78%, #22e0e6);
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: barFlow 8s linear 3 forwards;
+  animation: spectralTextFlow 8s ease-in-out 3 alternate forwards;
+}
+@keyframes spectralTextFlow {
+  from { background-position: 0% 0; }
+  to { background-position: 200% 0; }
 }
 
 /* ════════════════════════════════════════════════════════════════
