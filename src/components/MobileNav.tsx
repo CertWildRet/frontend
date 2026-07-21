@@ -20,9 +20,9 @@ const ANIM_MS = 300;
  * panel rendered via a PORTAL to <body>: the sticky header sets `contain:paint`
  * + `transform` (scroll-perf), which would otherwise CLIP an absolutely-
  * positioned dropdown to the header box. The portal escapes that containing
- * block; we anchor the fixed panel to the live header's bottom edge and animate
- * it open/closed with the same ease-in-out drawer (grid-template-rows 0fr->1fr +
- * fade) used by the cycle expanders.
+ * block; we anchor the fixed panel to the navbar's bottom edge (above the live
+ * ticker) and animate it open/closed with the same ease-in-out drawer
+ * (grid-template-rows 0fr->1fr + fade) used by the cycle expanders.
  */
 export function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -47,12 +47,12 @@ export function MobileNav() {
     return () => clearTimeout(t);
   }, [open]);
 
-  // Anchor the portaled panel right below the header (measured live).
+  // Anchor the portaled panel right below the navbar row (above the live ticker).
   useEffect(() => {
     if (!render) return;
     const measure = () => {
-      const header = btnRef.current?.closest("header");
-      setTop(header ? header.getBoundingClientRect().bottom : 56);
+      const navbar = btnRef.current?.closest("[data-site-navbar]");
+      setTop(navbar ? navbar.getBoundingClientRect().bottom : 56);
     };
     measure();
     window.addEventListener("resize", measure);

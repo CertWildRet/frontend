@@ -1,6 +1,7 @@
 /** Single source of truth for the primary nav (desktop SiteHeader + MobileNav). */
 export const NAV_ITEMS = [
-  { href: "/stats", label: "Ore Data" },
+  { href: "/stats", label: "Data" },
+  { href: "/automine", label: "Automine" },
   { href: "/profile", label: "Profile" },
   // Hidden for now — restore when shipping these surfaces again:
   // { href: "/ore", label: "ORE" },
