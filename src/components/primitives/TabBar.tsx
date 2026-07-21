@@ -19,6 +19,9 @@ export const tabActiveClass =
 export const tabIdleClass =
   "rounded-lg border border-transparent font-semibold text-[#C6CCEC] transition-colors hover:bg-[rgba(234,236,246,0.06)] hover:text-[#EAECF6]";
 
+export const tabBarIdleClass =
+  "rounded-lg border border-white/25 font-semibold text-[#C6CCEC]/80 transition-colors hover:bg-[rgba(234,236,246,0.06)] hover:text-[#EAECF6] hover:border-white/35";
+
 export type TabItem<T extends string = string> = {
   id: T;
   label: ReactNode;
@@ -38,11 +41,13 @@ function TabButton<T extends string>({
   active,
   onSelect,
   size,
+  idleClass = tabIdleClass,
 }: {
   item: TabItem<T>;
   active: boolean;
   onSelect: () => void;
   size: "lg" | "sm";
+  idleClass?: string;
 }) {
   const pad =
     size === "lg"
@@ -58,7 +63,7 @@ function TabButton<T extends string>({
       className={
         active
           ? `${tabActiveClass} ${pad}`
-          : `${tabIdleClass} ${pad}`
+          : `${idleClass} ${pad}`
       }
     >
       {item.label}
@@ -90,6 +95,7 @@ export function TabBar<T extends string>({
           active={value === item.id}
           onSelect={() => onChange(item.id)}
           size="lg"
+          idleClass={tabBarIdleClass}
         />
       ))}
     </div>

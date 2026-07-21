@@ -115,19 +115,11 @@ export default function StatsPage() {
     <MinerNavContext.Provider value={goToMiner}>
     <div className={styles.page}>
       <header className={styles.hero}>
-        <div className={styles.eyebrow}>
-          <span className={styles.liveDot} aria-hidden />
-          ORE intelligence layer
-        </div>
         <h1 className={styles.title}>
           Dig into the Data,
           <br />
           <span className={styles.titleAccent}>Find the Alpha</span>
         </h1>
-        <p className={styles.subtitle}>
-          Follow deployment, production cost, miner behavior, and every
-          motherlode hit across the ORE mining economy.
-        </p>
         <div className={styles.signals} aria-label="Data coverage">
           <span className={styles.signal}>On-chain data</span>
           <span className={styles.signal}>Live polling</span>
