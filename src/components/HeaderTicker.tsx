@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatNum } from "@/lib/format";
 
 type Ticker = {
   sol_usd: number | null;
@@ -8,10 +9,11 @@ type Ticker = {
   ore_sol: number | null;
   uore_apr: number | null;
   store_apr: number | null;
+  motherlode_pool_ore: number | null;
 };
 
 /**
- * Live market strip in the site header: spot prices + the two headline yields.
+ * Live market strip in the site header: spot prices, motherlode pool, and yields.
  * Reads the Vercel-cached /api/ticker (60s revalidate) and re-polls each minute,
  * so the upstream analytics service load is constant regardless of visitors.
  */
@@ -36,6 +38,14 @@ export function HeaderTicker() {
   if (t.ore_usd != null) items.push({ label: "ORE", value: `$${t.ore_usd.toFixed(2)}`, color: "#22E0E6", title: "ORE spot price (USD)" });
   if (t.sol_usd != null) items.push({ label: "SOL", value: `$${t.sol_usd.toFixed(2)}`, color: "#9DB7D8", title: "SOL spot price (USD)" });
   if (t.ore_sol != null) items.push({ label: "ORE/SOL", value: t.ore_sol.toFixed(3), color: "#EAECF6", title: "How many SOL one ORE is worth" });
+  if (t.motherlode_pool_ore != null) {
+    items.push({
+      label: "ML:",
+      value: `${formatNum(t.motherlode_pool_ore, 1)} Ore`,
+      color: "#EAECF6",
+      title: "Current motherlode pool size — pays out when the motherlode hits (1-in-625 rounds)",
+    });
+  }
   if (t.store_apr != null) items.push({ label: "stORE APR", value: `${t.store_apr.toFixed(1)}%`, color: "#E8881A", title: "stORE staking yield, annualized over a rolling window of up to 7 days" });
   if (t.uore_apr != null) items.push({ label: "uORE APR", value: `${t.uore_apr.toFixed(1)}%`, color: "#FFC061", title: "Refining yield on unclaimed ORE, annualized over a rolling window of up to 7 days" });
   if (!items.length) return null;

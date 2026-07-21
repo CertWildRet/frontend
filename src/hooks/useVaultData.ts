@@ -207,9 +207,20 @@ export function useVaultData(pollMs = 12_000) {
   }, [connection]);
 
   useEffect(() => {
-    refresh();
-    const id = setInterval(refresh, pollMs);
-    return () => clearInterval(id);
+    const tick = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      void refresh();
+    };
+    tick();
+    let id: ReturnType<typeof setInterval> | null = setInterval(tick, pollMs);
+    const onVis = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      if (id) clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [refresh, pollMs]);
 
   return { data, loading, error, refresh };

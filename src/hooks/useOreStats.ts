@@ -5,6 +5,8 @@
  * (historical / fallback; the live layer is useOreLive). Modeled on the app's
  * existing poll hooks: fetch on mount, re-fetch on an interval, expose a manual
  * refresh, and never leave a stale error masking fresh data.
+ *
+ * Background intervals also pause while the document is hidden.
  */
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { OreEnvelope } from "@/lib/oreStats";
@@ -85,17 +87,36 @@ export function usePolled<T>(
     // slow endpoint (e.g. a heavy miner's lifetime P&L) piles up one query per
     // tick until the DB is saturated with duplicate in-flight copies — the
     // measured cause of the /ore/miner hangs. Deps-change/mount runs bypass it.
-    const guardedTick = () => { if (!running.current) doRun(); };
+    // Also skip while the browser tab is hidden; resume refetches when visible.
+    const guardedTick = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      if (!running.current) doRun();
+    };
     // Fetch now unless THIS run identity (same deps) fired recently enough
     // that the interval wouldn't have — deps changes always refetch, resuming
     // a tab only refetches when the data is actually stale.
     const fresh = lastRunFn.current === run && intervalMs > 0 && Date.now() - lastRunAt.current < intervalMs;
-    if (!fresh) doRun();
-    if (intervalMs > 0) {
-      const id = setInterval(guardedTick, intervalMs);
-      return () => { alive = false; clearInterval(id); };
+    if (!fresh) guardedTick();
+    if (intervalMs <= 0) {
+      const onVis = () => {
+        if (document.visibilityState === "visible") guardedTick();
+      };
+      document.addEventListener("visibilitychange", onVis);
+      return () => {
+        alive = false;
+        document.removeEventListener("visibilitychange", onVis);
+      };
     }
-    return () => { alive = false; };
+    const id = setInterval(guardedTick, intervalMs);
+    const onVis = () => {
+      if (document.visibilityState === "visible") guardedTick();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      alive = false;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [run, intervalMs, active]);
 
   return { data, provenance, error, loading, fetching, refresh: run };

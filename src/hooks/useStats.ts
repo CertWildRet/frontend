@@ -57,6 +57,8 @@ export function useStats(pollMs = 20_000): PoolStatsData | null {
     if (MOCK || !BRAIN || typeof window === "undefined") return;
     let stop = false;
     const tick = async () => {
+      if (stop) return;
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       try {
         const r = await fetch(`${BRAIN}/api/stats`, { cache: "no-store" });
         if (!r.ok) return;
@@ -67,10 +69,15 @@ export function useStats(pollMs = 20_000): PoolStatsData | null {
       }
     };
     tick();
-    const id = setInterval(tick, pollMs);
+    let id: ReturnType<typeof setInterval> | null = setInterval(tick, pollMs);
+    const onVis = () => {
+      if (document.visibilityState === "visible") void tick();
+    };
+    document.addEventListener("visibilitychange", onVis);
     return () => {
       stop = true;
-      clearInterval(id);
+      if (id) clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
     };
   }, [pollMs]);
 

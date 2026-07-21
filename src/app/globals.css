@@ -134,6 +134,12 @@
   .atmosphere::before, .atmosphere-beam { animation: none !important; }
 }
 
+/* Applied by <PauseWhenOffscreen> — freezes CSS animations off-screen. */
+.offscreenPaused,
+.offscreenPaused * {
+  animation-play-state: paused !important;
+}
+
 @layer components {
   .card {
     @apply relative rounded-xl p-5 backdrop-blur-sm;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, createElement, useContext, useEffect, useState, type ReactNode } from "react";
 
 export type PhaseClock = {
   phaseLabel: "OPEN" | "BETTING" | "··";
@@ -35,13 +35,19 @@ const EMPTY: PhaseClock = {
   nextLabel: "",
 };
 
-export function usePhaseClock(d: ClockInput): PhaseClock {
+const PhaseClockNowContext = createContext<number | null>(null);
+
+/** One 1s tick for the whole /ore surface instead of one per card/hero. */
+export function PhaseClockProvider({ children }: { children: ReactNode }) {
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
   useEffect(() => {
     const id = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
     return () => clearInterval(id);
   }, []);
+  return createElement(PhaseClockNowContext.Provider, { value: now }, children);
+}
 
+function computePhaseClock(d: ClockInput, now: number): PhaseClock {
   if (!d || !d.initialized || d.phase === undefined) return EMPTY;
 
   const isOpen = d.phase === 1;
@@ -58,6 +64,19 @@ export function usePhaseClock(d: ClockInput): PhaseClock {
     progress: total > 0 ? Math.min(1, elapsed / total) : 0,
     nextLabel: isOpen ? "Mining round begins" : "Deposit / claim window opens",
   };
+}
+
+export function usePhaseClock(d: ClockInput): PhaseClock {
+  const sharedNow = useContext(PhaseClockNowContext);
+  const [localNow, setLocalNow] = useState(() => Math.floor(Date.now() / 1000));
+
+  useEffect(() => {
+    if (sharedNow != null) return;
+    const id = setInterval(() => setLocalNow(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(id);
+  }, [sharedNow]);
+
+  return computePhaseClock(d, sharedNow ?? localNow);
 }
 
 export function fmtCountdown(secs: number): string {

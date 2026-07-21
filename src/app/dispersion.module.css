@@ -760,17 +760,6 @@
   .howSparkStatic { opacity: 1; }
 }
 
-/* ── Off-screen pause ─────────────────────────────────────────────────────
-   Applied by <PauseWhenOffscreen> to a heavy animated subtree when it scrolls
-   out of the viewport: freezes ALL its CSS animations so the boards, rings and
-   border shimmers stop compositing/painting while off-screen (the single
-   biggest steady-state perf win). Visual is identical while visible. Does not
-   affect SMIL - the APY dot is handled via the SVG pauseAnimations() hook. */
-.offscreenPaused,
-.offscreenPaused * {
-  animation-play-state: paused !important;
-}
-
 /* ── Mobile compositing diet (see globals.css note) ── */
 @media (max-width: 768px), (prefers-reduced-motion: reduce) {
   .spectralEdge, .spectralEdge::before,

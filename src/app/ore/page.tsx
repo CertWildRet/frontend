@@ -3,6 +3,7 @@
 import { useVaultData } from "@/hooks/useVaultData";
 import { useUserPosition } from "@/hooks/useUserPosition";
 import { useStats } from "@/hooks/useStats";
+import { PhaseClockProvider } from "@/hooks/usePhaseClock";
 import { PoolStats } from "@/components/PoolStats";
 import { PoolEconomics } from "@/components/PoolEconomics";
 import { PhaseTimers } from "@/components/PhaseTimers";
@@ -25,6 +26,7 @@ export default function OrePage() {
   };
 
   return (
+    <PhaseClockProvider>
     <div className="space-y-8">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -57,5 +59,6 @@ export default function OrePage() {
 
       <LiveCrankPanel />
     </div>
+    </PhaseClockProvider>
   );
 }
