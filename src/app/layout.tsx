@@ -12,9 +12,9 @@ import { StatTickerGate } from "@/components/StatTickerGate";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
-  title: "Diamond Pools · pressure makes diamonds",
+  title: "Diamond Pools · ORE protocol stats and pooling protocol",
   description:
-    "Deposit SOL into one disciplined vault. A quant engine prices every ORE round, digs only when the numbers clear, and settles on chain. Non-custodial, built on Solana.",
+    "ORE protocol statistics and a non-custodial pooling protocol for mining, staking, and protocol liquidity on Solana.",
   icons: {
     icon: [
       { url: "/favicon-32x32.webp", sizes: "32x32", type: "image/webp" },
