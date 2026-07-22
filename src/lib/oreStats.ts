@@ -486,8 +486,14 @@ export const fetchOreDominance = () => get<OreDominance>(`/ore/dominance`);
 // ── /ore/cohorts : ORE holder-size distribution + cohort balance changes ──────
 // v1 is MINER-SIDE ORE only (unclaimed + live refined) — not a true token-holder
 // distribution. cohort 1..5 = Plankton/Shrimp/Fish/Shark/Whale.
-export type OreCohortRow = { cohort: number; holders: number; ore: number; supply_ore: number | null };
-export type OreCohortChange = { snapshot_ts: string; cohort: number; delta_ore: number; ore: number; holders: number };
+export type OreCohortRow = {
+  cohort: number; holders: number; ore: number; supply_ore: number | null;
+  is_estimated: boolean; estimate_method: string | null;
+};
+export type OreCohortChange = {
+  snapshot_ts: string; cohort: number; delta_ore: number; ore: number; holders: number;
+  is_estimated: boolean; estimate_method: string | null;
+};
 export type OreCohortSource = "miner" | "holder";
 export type OreCohortVaulted = { owners: number; ore: number };
 export type OreCohortStats = {
@@ -504,6 +510,8 @@ export type OreCohorts = {
   miner_held_ore: number; // alias of held_ore (backward compat)
   total_holders: number;
   miner_side: boolean;
+  latest_estimated: boolean;
+  estimate_method: string | null;
   vaulted: OreCohortVaulted | null; // holder source only: excluded protocol/vault ORE
   stats: OreCohortStats | null; // holder source only: concentration metrics
   note?: string;

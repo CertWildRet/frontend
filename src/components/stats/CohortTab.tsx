@@ -66,18 +66,20 @@ export function CohortTab() {
   // balance-change buckets: one diverging stacked bar per snapshot. Carry each
   // cohort's TOTAL alongside the delta so the tooltip can show the move as a % of
   // the cohort (a big-looking ORE number is usually a rounding error on the band).
-  const bucketMap = new Map<string, { values: number[]; totals: number[] }>();
+  const bucketMap = new Map<string, { values: number[]; totals: number[]; approximate: boolean }>();
   for (const ch of md?.changes ?? []) {
-    if (!bucketMap.has(ch.snapshot_ts)) bucketMap.set(ch.snapshot_ts, { values: [0, 0, 0, 0, 0], totals: [0, 0, 0, 0, 0] });
+    if (!bucketMap.has(ch.snapshot_ts)) bucketMap.set(ch.snapshot_ts, { values: [0, 0, 0, 0, 0], totals: [0, 0, 0, 0, 0], approximate: false });
     const e = bucketMap.get(ch.snapshot_ts)!;
     e.values[ch.cohort - 1] = ch.delta_ore;
     e.totals[ch.cohort - 1] = ch.ore;
+    e.approximate ||= ch.is_estimated;
   }
-  const buckets = [...bucketMap.entries()].map(([ts, { values, totals }]) => {
+  const buckets = [...bucketMap.entries()].map(([ts, { values, totals, approximate }]) => {
     const dt = new Date(ts);
     const label = `${dt.getMonth() + 1}/${dt.getDate()} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
-    return { label, values, totals };
+    return { label, values, totals, approximate };
   });
+  const hasApproximateTicks = buckets.some((bucket) => bucket.approximate);
   const series = COHORTS.map((c) => ({ name: c.name, color: c.color }));
 
   return (
@@ -110,6 +112,7 @@ export function CohortTab() {
           <span className="text-white">Miner-held ORE only.</span> ORE miners hold on the mine (unclaimed rewards + live refined)
           {supplyShare != null ? <> — about <span className="text-white">{formatPct(supplyShare, 0)}</span> of circulating supply</> : ""}.
           Switch to <span className="text-white">Wallet Holders</span> for the full token-holder picture.
+          {md?.latest_estimated ? <span className="ml-1 text-[#ffe9a8]">Latest distribution: Approx*</span> : null}
         </div>
       )}
 
@@ -187,6 +190,7 @@ export function CohortTab() {
                         <span className="inline-flex items-center gap-2">
                           <span className="h-2.5 w-2.5 rounded-sm" style={{ background: c.color }} />
                           <span className="text-white">{c.name}</span>
+                          {!isHolder && r?.is_estimated ? <span className="text-[10px] font-bold text-amber">Approx*</span> : null}
                         </span>
                       </td>
                       <td className="px-2 py-2 text-fog-muted">{c.range}</td>
@@ -248,11 +252,18 @@ export function CohortTab() {
           emptyText={isHolder
             ? "collecting holder snapshots — balance-change history builds up as the daily sweep runs."
             : "collecting census snapshots — balance-change history builds up as new snapshots land."} />
+        {!isHolder && hasApproximateTicks && (
+          <p className="mt-2 font-mono text-[11.5px] leading-relaxed text-amber">
+            Approx* = exact Treasury total with the cohort split estimated from surrounding complete Miner census snapshots.
+          </p>
+        )}
       </ChartCard>
 
       {/* footer */}
       <div className="flex items-center justify-between font-mono text-[12px] text-fog-muted">
-        <span>{md?.updated_at ? `${isHolder ? "holder sweep" : "census snapshot"} ${timeAgo(md.updated_at)}` : polled.error ? "" : "loading…"}</span>
+        <span>{md?.updated_at
+          ? `${isHolder ? "holder sweep" : md.latest_estimated ? "Approx* cohort estimate" : "census snapshot"} ${timeAgo(md.updated_at)}`
+          : polled.error ? "" : "loading…"}</span>
         {polled.error && (
           <button onClick={polled.refresh} className="rounded border border-line px-2 py-1 text-fog-muted transition-colors hover:border-steel hover:text-white">
             retry

@@ -132,7 +132,12 @@ export function Donut({
   );
 }
 
-export type StackBucket = { label: string; values: number[]; totals?: number[] }; // values/totals aligned to `series`
+export type StackBucket = {
+  label: string;
+  values: number[];
+  totals?: number[];
+  approximate?: boolean;
+}; // values/totals aligned to `series`
 
 /** Diverging stacked bars: positive stacks up, negative down, around a zero line.
  *  `series` gives the name+color of each stack layer (cohorts). */
@@ -198,20 +203,21 @@ export function CohortBalanceBars({
                 const h = Math.abs(y0 - y1); // y grows downward, so top/bottom order flips by sign
                 if (h < 0.4) return null;
                 return <rect key={si} x={x} y={Math.min(y0, y1)} width={bwInner} height={h} fill={series[si]?.color ?? "#888"}
-                  stroke={SURFACE} strokeWidth={0.75} />;
+                  stroke={b.approximate ? "rgba(255,255,255,0.65)" : SURFACE} strokeWidth={0.75}
+                  strokeDasharray={b.approximate ? "2 1" : undefined} />;
               })}
             </g>
           );
         })}
         {xt.map((idx, ti) => (
           <text key={ti} x={padL + idx * bw + bw / 2} y={H - 9} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily="monospace"
-            textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{buckets[idx].label}</text>
+            textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{buckets[idx].label}{buckets[idx].approximate ? " Approx*" : ""}</text>
         ))}
         {hover != null && (() => {
           const b = buckets[hover];
           const net = b.values.reduce((a, v) => a + v, 0);
           const lines = [
-            b.label,
+            `${b.label}${b.approximate ? " · Approx*" : ""}`,
             ...series.map((s, i) => {
               if (!b.values[i]) return "";
               // % of that cohort's own total — makes clear a big-looking ORE move is tiny
