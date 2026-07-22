@@ -495,6 +495,7 @@ export type OreCohortChange = {
   is_estimated: boolean; estimate_method: string | null;
 };
 export type OreCohortSource = "miner" | "holder";
+export type OreCohortRange = "24h" | "7d" | "30d" | "90d" | "all";
 export type OreCohortVaulted = { owners: number; ore: number };
 export type OreCohortStats = {
   real_holders: number; real_ore: number; vaulted_ore: number; vaulted_owners: number;
@@ -502,6 +503,7 @@ export type OreCohortStats = {
 };
 export type OreCohorts = {
   source: OreCohortSource;
+  range: string;
   updated_at: string | null;
   distribution: OreCohortRow[];
   changes: OreCohortChange[];
@@ -516,8 +518,8 @@ export type OreCohorts = {
   stats: OreCohortStats | null; // holder source only: concentration metrics
   note?: string;
 };
-export const fetchOreCohorts = (source: OreCohortSource = "holder", days = 30) =>
-  get<OreCohorts>(`/ore/cohorts?source=${source}&days=${days}`);
+export const fetchOreCohorts = (source: OreCohortSource = "holder", range: OreCohortRange = "30d") =>
+  get<OreCohorts>(`/ore/cohorts?source=${source}&range=${range}`);
 export const fetchOreMiner = (pubkey: string, rounds: number | "all" = 1000) => get<OreMinerDetail>(`/ore/miner/${pubkey}?rounds=${rounds}`);
 export const fetchOreRng = () => get<OreRng>("/ore/rng");
 export const fetchOreMotherlode = (limit = 50, offset = 0) =>

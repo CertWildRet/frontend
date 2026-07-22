@@ -18,7 +18,7 @@ import { ChartCard } from "@/components/stats/Charts";
 import { Donut, CohortBalanceBars, COHORTS } from "@/components/stats/CohortCharts";
 import { CohortInfoModal } from "@/components/stats/CohortInfoModal";
 import { usePolled } from "@/hooks/useOreStats";
-import { fetchOreCohorts, type OreCohortSource } from "@/lib/oreStats";
+import { fetchOreCohorts, type OreCohortRange, type OreCohortSource } from "@/lib/oreStats";
 import { formatNum, formatPct } from "@/lib/format";
 
 const timeAgo = (iso: string | null) => {
@@ -30,11 +30,20 @@ const timeAgo = (iso: string | null) => {
   return `${Math.round(s / 86400)}d ago`;
 };
 
+const COHORT_RANGES: { id: OreCohortRange; label: string }[] = [
+  { id: "24h", label: "24H" },
+  { id: "7d", label: "7D" },
+  { id: "30d", label: "30D" },
+  { id: "90d", label: "90D" },
+  { id: "all", label: "All" },
+];
+
 export function CohortTab() {
   const [source, setSource] = useState<OreCohortSource>("holder");
+  const [range, setRange] = useState<OreCohortRange>("30d");
   const [metric, setMetric] = useState<"holders" | "ore">("holders");
   const [infoOpen, setInfoOpen] = useState(false);
-  const polled = usePolled(() => fetchOreCohorts(source, 30), 300_000, [source]);
+  const polled = usePolled(() => fetchOreCohorts(source, range), 300_000, [source, range]);
   const d = polled.data;
   // Only use data whose source matches the current toggle — during a switch `d`
   // still holds the OLD source's payload for a render or two, and reading scalars
@@ -241,7 +250,13 @@ export function CohortTab() {
 
       {/* balance changes — full width */}
       <ChartCard variant="dispersion" cutCorner="bl" title="Cohort balance changes"
-        subtitle="Net ORE each cohort gained (up) or lost (down) between snapshots — accumulation vs distribution. A wallet crossing a size line shows as one cohort down + the next up. Moves are usually a fraction of a percent of each band (hover for the %); the axis auto-zooms, so small shifts still fill the bars.">
+        subtitle="Net ORE each cohort gained (up) or lost (down) between snapshots — accumulation vs distribution. A wallet crossing a size line shows as one cohort down + the next up. Moves are usually a fraction of a percent of each band (hover for the %); the axis auto-zooms, so small shifts still fill the bars."
+        right={(
+          <>
+            <Refreshing active={polled.fetching && !!md} />
+            <SegmentedControl aria-label="Cohort balance time range" items={COHORT_RANGES} value={range} onChange={setRange} />
+          </>
+        )}>
         <div className="mb-1.5 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
           {COHORTS.map((c) => (
             <span key={c.id} className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: c.color }} /> {c.name}</span>
