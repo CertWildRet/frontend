@@ -10,6 +10,7 @@ type Ticker = {
   uore_apr: number | null;
   store_apr: number | null;
   motherlode_pool_ore: number | null;
+  motherlode_odds: number | null;
 };
 
 /**
@@ -43,7 +44,7 @@ export function HeaderTicker() {
       label: "ML:",
       value: `${formatNum(t.motherlode_pool_ore, 1)} Ore`,
       color: "#EAECF6",
-      title: "Current motherlode pool size — pays out when the motherlode hits (1-in-625 rounds)",
+      title: `Current motherlode pool size — pays out when the motherlode hits (1-in-${t.motherlode_odds ?? 500} rounds)`,
     });
   }
   if (t.store_apr != null) items.push({ label: "stORE APR", value: `${t.store_apr.toFixed(1)}%`, color: "#E8881A", title: "stORE staking yield, annualized over a rolling window of up to 7 days" });

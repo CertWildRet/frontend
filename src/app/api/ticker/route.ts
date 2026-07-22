@@ -15,13 +15,9 @@ const UPSTREAM = (
 
 export async function GET() {
   try {
-    const [tickerRes, mlRes] = await Promise.all([
-      fetch(`${UPSTREAM}/ore/ticker`, { next: { revalidate: 60 } }),
-      fetch(`${UPSTREAM}/ore/motherlode?limit=1&offset=0`, { next: { revalidate: 60 } }),
-    ]);
+    const tickerRes = await fetch(`${UPSTREAM}/ore/ticker`, { next: { revalidate: 60 } });
     const json = await tickerRes.json();
-    const mlJson = mlRes.ok ? await mlRes.json() : null;
-    const poolGrams = mlJson?.data?.current?.pool_grams;
+    const poolGrams = json?.data?.motherlode_pool_grams;
     const motherlode_pool_ore = poolGrams != null ? oreGramsToOre(poolGrams) : null;
     return NextResponse.json(
       {

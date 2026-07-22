@@ -101,7 +101,7 @@ export function SiteHeader() {
       </header>
 
       <div
-        className="border-t border-white/[0.06]"
+        className="hidden border-t border-white/[0.06] lg:block"
         style={{ background: "rgba(7,9,18,0.35)" }}
       >
         <div className="mx-auto max-w-6xl px-4 py-2 sm:px-6">
