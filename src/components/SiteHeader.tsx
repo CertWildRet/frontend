@@ -58,7 +58,7 @@ export function SiteHeader() {
           <div className="flex min-w-0 items-center gap-3 sm:gap-6">
             <Link href="/" className="flex shrink-0 items-center gap-2">
               <Image
-                src="/logo.webp"
+                src="/diamond.webp"
                 alt="Diamond Pools"
                 width={40}
                 height={40}

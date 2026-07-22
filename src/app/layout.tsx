@@ -17,6 +17,7 @@ export const metadata: Metadata = {
     "Deposit SOL into one disciplined vault. A quant engine prices every ORE round, digs only when the numbers clear, and settles on chain. Non-custodial, built on Solana.",
   icons: {
     icon: [
+      { url: "/favicon-32x32.webp", sizes: "32x32", type: "image/webp" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
       { url: "/icon.png", sizes: "any", type: "image/png" },
     ],
