@@ -24,7 +24,7 @@ const ROWS: Array<[string, React.ReactNode, React.ReactNode]> = [
   ["Has unclaimed rewards on the mine", NO, YES],
   ["Claimed their ORE to a wallet", YES, NO],
   ["Bought ORE, never mined", YES, NO],
-  ["Staked their ORE into stORE", <>{NO}<Tag tone="cyan">vaulted</Tag></>, NO],
+  ["Staked their ORE into stORE", <>{NO}<Tag tone="cyan">custody</Tag></>, NO],
   ["Is a CEX hot wallet", <>{YES}<Tag tone="cyan">whale</Tag></>, NO],
 ];
 
@@ -114,13 +114,13 @@ export function CohortInfoModal({ open, onClose }: { open: boolean; onClose: () 
             <div className="rounded-lg border border-[#7fe9ee]/25 bg-[#7fe9ee]/[0.06] px-3 py-2">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-[#7fe9ee]">Wallet Holders</div>
               <p className="mt-1 text-silver">
-                ORE actually sitting in wallets — the <span className="text-fog">true token distribution</span> (~70% of circulating).
+                ORE sitting in <span className="text-fog">direct token-account owners</span>, after known program custody is removed.
               </p>
             </div>
             <div className="rounded-lg border border-amber/20 bg-amber/[0.05] px-3 py-2">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-amber">Unclaimed Rewards</div>
               <p className="mt-1 text-silver">
-                Mined ORE still <span className="text-fog">on the mine</span>, not yet claimed out (~23% of circulating).
+                Each miner&apos;s claim on ORE still <span className="text-fog">on the mine</span>, not yet claimed to a wallet.
               </p>
             </div>
           </div>
@@ -150,17 +150,28 @@ export function CohortInfoModal({ open, onClose }: { open: boolean; onClose: () 
           {/* the fine print — the nuances that actually trip people up */}
           <ul className="space-y-2 text-[11.5px] text-silver">
             <li>
-              <span className="text-fog">Wallet Holders is liquid ORE only.</span> It counts the ORE token, not stORE. ORE that&apos;s been
-              staked into stORE sits in the stake vault and shows in the separate <span className="text-fog">vaulted</span> figure under the
-              donut — so a pure stORE staker shows as 0 here.
+              <span className="text-fog">Wallet Holders means direct-wallet ORE.</span> It does not count stORE. ORE backing stORE is shown
+              under <span className="text-fog">contract custody</span>, so a pure stORE holder shows as 0 in the direct-wallet bands.
             </li>
             <li>
               <span className="text-fog">Unclaimed Rewards is unclaimed ORE only</span> — unclaimed mining rewards + pending refined ORE
               (both ORE, no stORE, no SOL).
             </li>
             <li>
-              <span className="text-fog">Vaulted is excluded from both.</span> Protocol vaults (the mine treasury + stORE stake vault, ~143k
-              ORE) are reported separately, never as holder whales.
+              <span className="text-fog">The Mining Treasury is the HaWG program PDA.</span> Its token account escrows unclaimed + refined
+              miner rewards; motherlode is one accounting field inside that Treasury, not another name for its whole balance.
+            </li>
+            <li>
+              <span className="text-fog">The two views are not additive.</span> The Mining Treasury account is excluded as a wallet owner,
+              while Unclaimed Rewards re-attributes its miner liabilities to the miners who earned them.
+            </li>
+            <li>
+              <span className="text-fog">Buyback totals are flow, not current holdings.</span> Bought ORE passes through the Mining Treasury;
+              the current program routes 10% to staking rewards and burns 90%.
+            </li>
+            <li>
+              <span className="text-fog">Contract custody is not one ownership claim.</span> Mining escrow, stORE backing, and staking rewards
+              have different beneficiaries, so the UI reports each separately instead of calling their sum protocol-owned.
             </li>
             <li>
               <span className="text-fog">A &ldquo;whale&rdquo; means different things.</span> In Wallet Holders it&apos;s a wallet holding a

@@ -489,17 +489,44 @@ export const fetchOreDominance = () => get<OreDominance>(`/ore/dominance`);
 export type OreCohortRow = {
   cohort: number; holders: number; ore: number; supply_ore: number | null;
   is_estimated: boolean; estimate_method: string | null;
+  classification_version: number;
 };
 export type OreCohortChange = {
   snapshot_ts: string; cohort: number; delta_ore: number; ore: number; holders: number;
   is_estimated: boolean; estimate_method: string | null;
+  classification_version: number;
 };
 export type OreCohortSource = "miner" | "holder";
 export type OreCohortRange = "24h" | "7d" | "30d" | "90d" | "all";
 export type OreCohortVaulted = { owners: number; ore: number };
+export type OreCohortCustodyComponent = { ore: number; addresses: string[] };
+export type OreCohortCustody = {
+  total_ore: number;
+  owners: number;
+  classification_version: number;
+  components: {
+    mine_treasury: OreCohortCustodyComponent;
+    store_backing: OreCohortCustodyComponent;
+    staking_rewards: OreCohortCustodyComponent;
+    other_excluded: OreCohortCustodyComponent;
+  };
+  treasury_accounting: {
+    observed_at: string;
+    unclaimed_ore: number;
+    refined_ore: number;
+    motherlode_ore: number;
+    accounted_ore: number;
+    balance_minus_accounting_ore: number;
+  } | null;
+};
 export type OreCohortStats = {
   real_holders: number; real_ore: number; vaulted_ore: number; vaulted_owners: number;
   largest_ore: number | null; top10_ore: number | null; top100_ore: number | null;
+  classification_version: number;
+  mine_treasury_ore: number | null;
+  store_backing_ore: number | null;
+  staking_rewards_ore: number | null;
+  other_excluded_ore: number | null;
 };
 export type OreCohorts = {
   source: OreCohortSource;
@@ -514,7 +541,9 @@ export type OreCohorts = {
   miner_side: boolean;
   latest_estimated: boolean;
   estimate_method: string | null;
-  vaulted: OreCohortVaulted | null; // holder source only: excluded protocol/vault ORE
+  classification_version: number | null;
+  custody: OreCohortCustody | null; // holder source only: purpose-specific contract custody
+  vaulted: OreCohortVaulted | null; // backward-compatible combined custody total
   stats: OreCohortStats | null; // holder source only: concentration metrics
   note?: string;
 };

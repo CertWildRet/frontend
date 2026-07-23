@@ -3,12 +3,11 @@
 /**
  * Cohort tab — ORE holder-size distribution + cohort balance changes, with a
  * source toggle (spelled out in full by the (?) CohortInfoModal):
- *   Wallet Holders (default) — liquid ORE in wallets, per owner across every ORE
- *                              token account (~70% of circulating). Protocol vaults
- *                              (mine treasury + stORE stake vault) are a separate
- *                              "vaulted" figure, not holder whales. stORE is not counted.
+ *   Wallet Holders (default) — liquid ORE in direct wallets, per owner across every
+ *                              ORE token account. Known program custody is broken
+ *                              out by purpose, not counted as holder whales.
  *   Unclaimed Rewards        — miner-side ORE only: unclaimed rewards + live refined
- *                              (~23%), still on the mine, not yet claimed to a wallet.
+ *                              still on the mine, not yet claimed to a wallet.
  */
 import { useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
@@ -58,12 +57,41 @@ export function CohortTab() {
   const totalHolders = md?.total_holders ?? 0;
   const held = md?.held_ore ?? 0;
   const supply = md?.supply_ore ?? null;
-  const vaulted = md?.vaulted ?? null;
+  const custody = md?.custody ?? null;
+  const custodyTotal = custody
+    ? { owners: custody.owners, ore: custody.total_ore }
+    : md?.vaulted ?? null; // old analytics deploy compatibility
   const stats = md?.stats ?? null;
   const supplyShare = supply && supply > 0 ? held / supply : null;
   const whales = byId(5)?.holders ?? 0;
   const whaleOre = byId(5)?.ore ?? 0;
   const pctSupply = (ore: number | null | undefined) => (supply && ore != null ? formatPct(ore / supply, ore / supply >= 0.1 ? 0 : 1) : "···");
+  const custodyComponents = custody ? [
+    {
+      id: "mine_treasury",
+      label: "Mining Treasury",
+      ore: custody.components.mine_treasury.ore,
+      detail: "Escrow backing unclaimed + refined miner rewards; motherlode is one accounting field inside it.",
+    },
+    {
+      id: "store_backing",
+      label: "stORE backing",
+      ore: custody.components.store_backing.ore,
+      detail: "ORE backing stORE held by users.",
+    },
+    {
+      id: "staking_rewards",
+      label: "Staking rewards",
+      ore: custody.components.staking_rewards.ore,
+      detail: "Staker reward custody; bury/buyback routes its 10% staker share here.",
+    },
+    {
+      id: "other_excluded",
+      label: "Other exclusions",
+      ore: custody.components.other_excluded.ore,
+      detail: "Extra owners explicitly excluded by the analytics operator.",
+    },
+  ].filter((component) => component.ore > 0) : [];
 
   // donut slices — relative composition of the 5 size cohorts
   const slices = COHORTS.map((c) => {
@@ -111,10 +139,10 @@ export function CohortTab() {
       {/* honesty banner per source */}
       {isHolder ? (
         <div className="rounded-lg border border-white/[0.07] bg-cyan/[0.05] px-3 py-2 font-mono text-[12px] leading-relaxed text-[#7fe9ee]">
-          <span className="text-white">On-chain ORE holders.</span> Every wallet holding ORE, aggregated per owner across all token accounts
+          <span className="text-white">Direct-wallet ORE holders.</span> ORE is aggregated per owner across all token accounts
           {supplyShare != null ? <> — <span className="text-white">{formatPct(supplyShare, 0)}</span> of circulating supply</> : ""}.
-          Protocol vaults (the mine treasury + stORE stake vault) are shown separately below, not as holder whales; exchange custodial
-          wallets can&apos;t be labeled and may appear as whales.
+          Known program custody is shown separately by purpose below, not as holder whales. Exchange custodial wallets can&apos;t be
+          labeled and may appear as whales.
         </div>
       ) : (
         <div className="rounded-lg border border-white/[0.07] bg-amber/[0.05] px-3 py-2 font-mono text-[12px] leading-relaxed text-amber">
@@ -127,12 +155,12 @@ export function CohortTab() {
 
       {/* hero tiles */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatTile variant="inset" label={isHolder ? "Holders" : "Holders (miner-side)"} value={loading ? "···" : formatNum(totalHolders)}
-          hint={isHolder ? "wallets holding ORE" : "miners holding >0 ORE"} />
-        <StatTile variant="inset" label={isHolder ? "Held by holders" : "Miner-held ORE"} value={loading ? "···" : formatNum(held, 0)} unit="ORE" tone="gold"
+        <StatTile variant="inset" label={isHolder ? "Direct holders" : "Holders (miner-side)"} value={loading ? "···" : formatNum(totalHolders)}
+          hint={isHolder ? "wallet owners holding ORE" : "miners holding >0 ORE"} />
+        <StatTile variant="inset" label={isHolder ? "In direct wallets" : "Miner-held ORE"} value={loading ? "···" : formatNum(held, 0)} unit="ORE" tone="gold"
           hint={supply ? `of ${formatNum(supply, 0)} circulating` : undefined} />
         <StatTile variant="inset" label="Share of supply" value={supplyShare != null ? formatPct(supplyShare, 1) : "···"}
-          hint={isHolder ? "holders ÷ circulating" : "miner-held ÷ circulating"} />
+          hint={isHolder ? "direct wallets ÷ circulating" : "miner-held ÷ circulating"} />
         <StatTile variant="inset" label="Whales (>500)" value={loading ? "···" : formatNum(whales)}
           hint={whaleOre ? `hold ${formatNum(whaleOre, 0)} ORE` : "the biggest cohort"} />
       </div>
@@ -153,9 +181,9 @@ export function CohortTab() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* distribution donut */}
-        <ChartCard variant="dispersion" cutCorner="tr" title="Holder distribution"
+        <ChartCard variant="dispersion" cutCorner="tr" title={isHolder ? "Direct-wallet distribution" : "Holder distribution"}
           subtitle={isHolder
-            ? "Every ORE wallet by size. Whale = the bright-gold sliver; Plankton = the teal majority by count."
+            ? "Every direct ORE wallet by size, after known program custody is removed."
             : "ORE miners bucketed by how much ORE they hold on the mine."}
           right={
             <SegmentedControl aria-label="Distribution metric" variant="loose"
@@ -166,19 +194,39 @@ export function CohortTab() {
             centerLabel={formatNum(donutTotal, 0)}
             centerSub={metric === "holders" ? "holders" : "ORE held"}
             fmt={(v) => formatNum(v, 0)} />
-          {/* vaulted readout UNDER the donut — excluded from cohorts but still shown */}
-          {isHolder && vaulted && vaulted.ore > 0 && (
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 rounded-lg border border-line bg-white/[0.02] px-3 py-2 text-center font-mono text-[12px] leading-relaxed text-fog-muted">
-              <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: "#6b7280" }} />
-              <span className="text-gray-200">{formatNum(vaulted.ore, 0)} ORE</span>
-              <span>held in the ORE treasury + stORE vault ({pctSupply(vaulted.ore)} of supply) — protocol-owned, excluded from holder cohorts.</span>
+          {/* Contract custody is excluded from holder bands, then explained by purpose. */}
+          {isHolder && custodyTotal && custodyTotal.ore > 0 && (
+            <div className="mt-3 rounded-lg border border-line bg-white/[0.02] px-3 py-3 font-mono text-[12px] leading-relaxed text-fog-muted">
+              <div className="text-center">
+                <span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm" style={{ background: "#6b7280" }} />
+                <span className="text-gray-200">{formatNum(custodyTotal.ore, 0)} ORE</span>
+                <span> in contract custody ({pctSupply(custodyTotal.ore)} of supply), excluded from direct-wallet cohorts.</span>
+              </div>
+              {custodyComponents.length > 0 && (
+                <div className="mt-3 grid gap-2 border-t border-white/[0.05] pt-3 sm:grid-cols-3">
+                  {custodyComponents.map((component) => (
+                    <div key={component.id} className="rounded-md bg-black/15 px-2.5 py-2">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-fog">{component.label}</span>
+                        <span className="whitespace-nowrap text-gray-200">{formatNum(component.ore, 0)} ORE</span>
+                      </div>
+                      <p className="mt-1 text-[10.5px] leading-snug text-fog-muted">{component.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="mt-2 text-center text-[10.5px] text-fog-muted">
+                Contract custody describes where tokens sit; it does not mean every component is protocol-owned inventory.
+              </p>
             </div>
           )}
         </ChartCard>
 
         {/* per-cohort table */}
         <ChartCard variant="dispersion" cutCorner="bl" title="By cohort"
-          subtitle="Every size band, its holder count and the ORE it controls. Few whales, most of the ORE.">
+          subtitle={isHolder
+            ? "Every direct-wallet size band, its owner count and ORE balance."
+            : "Every miner size band, its holder count and ORE balance."}>
           <div className="overflow-x-auto">
             <table className="w-full font-mono text-[13px]">
               <thead><tr className="text-left text-[12.5px] uppercase tracking-[0.08em] text-[#c6cde6]">
