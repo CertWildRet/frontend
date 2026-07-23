@@ -11,6 +11,8 @@ import { ChartWatermarkContext } from "@/components/stats/Charts";
 import { CohortTab } from "@/components/stats/CohortTab";
 import { PolledActiveContext } from "@/hooks/useOreStats";
 import { TrendsTab } from "./TrendsTab";
+import { ProtocolTab } from "./ProtocolTab";
+import { EcosystemTab } from "./EcosystemTab";
 import { RoundAnalysisTab } from "./RoundAnalysisTab";
 import { MinersTab } from "./MinersTab";
 import { MotherlodeTab } from "./MotherlodeTab";
@@ -28,6 +30,7 @@ const tabFromQuery = (raw: string | null): Tab => {
   if (!raw) return "trends";
   const normalized = raw.toLowerCase().replaceAll("-", "_");
   if (normalized === "search_miners" || normalized === "miner") return "miners";
+  if (normalized === "protocol_internals") return "protocol";
   return TAB_IDS.has(normalized as Tab) ? normalized as Tab : "trends";
 };
 
@@ -122,6 +125,8 @@ export function StatsClient() {
             <PolledActiveContext.Provider key={t.id} value={tab === t.id}>
               <div hidden={tab !== t.id}>
                 {t.id === "trends" ? <TrendsTab /> :
+                 t.id === "protocol" ? <ProtocolTab /> :
+                 t.id === "ecosystem" ? <EcosystemTab /> :
                  t.id === "round_analysis" ? <RoundAnalysisTab /> :
                  t.id === "miners" ? <MinersTab seed={minerSeed} onQueryChange={syncMinerQuery} /> :
                  t.id === "motherlode" ? <MotherlodeTab /> :

@@ -4,22 +4,21 @@ import { useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { TileSkeleton, Refreshing } from "@/components/primitives/Skeleton";
-import { AreaLine, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
-import { DualLine, CostEvChart, BarsLine, PopBars, SOL_COLOR, ORE_COLOR, type TPt } from "@/components/stats/TrendCharts";
+import { ChartCard, type Pt } from "@/components/stats/Charts";
+import { DualLine, CostEvChart, BarsLine, PopBars, ORE_COLOR, type TPt } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
 import {
-  fetchOreSeries, fetchOreTrends, fetchOreYields, fetchOreDominance, fetchOreEcosystem,
-  expectedPopOre, lamportsToSol,
-  type OreSeriesPoint, type OreTrendPoint, type OreEcoPoint,
+  fetchOreTrends, fetchOreYields, fetchOreDominance,
+  expectedPopOre,
+  type OreTrendPoint,
 } from "@/lib/oreStats";
-import { formatSol, formatNum } from "@/lib/format";
+import { formatNum } from "@/lib/format";
 import { Caveats } from "./shared";
 
 // ── Trends: the miner-actionable dashboard (quant layout spec, ORE_PC v2) ─────
-// Four charts answering "should I deploy right now": prices, production cost vs
-// market with the EV gap, activity, and the motherlode pool vs its expectation.
-// Protocol-operator charts (rake / vaulted / winners) live in a collapsed
-// section below — kept for an eventual protocol/LP view, out of the miner path.
+// Charts answering "should I deploy right now": prices, production cost vs
+// market with the EV gap, activity, yields/dominance, and motherlode pop value.
+// Protocol internals and Ecosystem live in their own tabs.
 const RANGES: { id: string; label: string }[] = [
   { id: "24h", label: "24H" }, { id: "7d", label: "7D" }, { id: "30d", label: "30D" }, { id: "90d", label: "90D" }, { id: "all", label: "All" },
 ];
@@ -252,159 +251,7 @@ export function TrendsTab() {
         </div>
       </div>
 
-      <ProtocolCharts />
-
-      <EcosystemSection />
-
       <Caveats provenance={trends.provenance} error={trends.error} onRetry={trends.refresh} />
-    </div>
-  );
-}
-
-/** Protocol-operator charts — a self-governed section with its own time control
- *  (the top-level picker includes 24h, which /ore/series doesn't serve; mixed
- *  scopes read as broken, so each section owns its range). */
-const PROTOCOL_RANGES: { id: string; label: string }[] = [
-  { id: "7d", label: "7D" }, { id: "30d", label: "30D" }, { id: "90d", label: "90D" }, { id: "1y", label: "1Y" }, { id: "all", label: "All" },
-];
-function ProtocolCharts() {
-  const [range, setRange] = useState("30d");
-  const series = usePolled(() => fetchOreSeries(range), 60_000, [range]);
-  const pts = series.data?.points ?? [];
-  const lbl = (p: OreSeriesPoint) => {
-    const dt = new Date(Number(p.bucket_ts) * 1000);
-    return range === "7d" ? `${dt.getMonth() + 1}/${dt.getDate()} ${dt.getHours()}:00` : `${dt.getMonth() + 1}/${dt.getDate()}`;
-  };
-  const mk = (pick: (p: OreSeriesPoint) => number): Pt[] => pts.map((p) => ({ label: lbl(p), value: pick(p) }));
-  // matches /ore/series bucketing: 7d hourly, 30d/90d daily, 1y/all weekly
-  const seriesPer = range === "7d" ? "hour" : range === "1y" || range === "all" ? "week" : "day";
-
-  return (
-    <div className="space-y-5 border-t border-line pt-6">
-      <div className="flex flex-wrap items-center justify-between gap-y-2">
-        <div className="section-label">
-          Protocol internals · rake, vaulted, winners
-          <Refreshing active={series.fetching && !!series.data} />
-        </div>
-        <SegmentedControl aria-label="Protocol time range" items={PROTOCOL_RANGES} value={range} onChange={setRange} />
-      </div>
-      <div className="grid gap-5 lg:grid-cols-2">
-      <ChartCard variant="dispersion" cutCorner="tr" title="SOL deployed" subtitle={`Total SOL deployed to play the rounds, per ${seriesPer}.`}>
-        <AreaLine spectral fill points={mk((p) => lamportsToSol(p.deployed))} height={195} fmt={(v) => formatSol(v, 0) + " SOL"} yFmt={compactNum} />
-      </ChartCard>
-      <ChartCard variant="dispersion" cutCorner="bl" title="Effective rake" subtitle={`What the protocol keeps of the SOL played, per ${seriesPer} (1% admin + ~9.9% buyback). Zoomed way in; it barely moves.`}>
-        <AreaLine spectral fill points={mk((p) => (p.avg_rake_bps ?? 0) / 100)} height={195} zeroBaseline={false} fmt={(v) => v.toFixed(4) + "%"} yFmt={(v) => v.toFixed(2) + "%"} />
-      </ChartCard>
-      <ChartCard variant="dispersion" cutCorner="tr" title="SOL vaulted (protocol take)" subtitle={`Total SOL the protocol kept (buyback + admin fee), per ${seriesPer}.`}>
-        <AreaLine spectral fill points={mk((p) => lamportsToSol(p.vaulted))} height={195} fmt={(v) => formatSol(v, 1) + " SOL"} yFmt={compactNum} />
-      </ChartCard>
-      <ChartCard variant="dispersion" cutCorner="bl" title="Winners / round" subtitle="Avg miners rewarded per round (reset-event count).">
-        <AreaLine
-          spectral
-          fill
-          points={pts.filter((p) => p.avg_winners != null).map((p) => ({ label: lbl(p), value: Number(p.avg_winners) }))}
-          height={195} zeroBaseline={false} fmt={(v) => formatNum(v, 0)} />
-      </ChartCard>
-      </div>
-    </div>
-  );
-}
-
-
-// ── Ecosystem: investor metrics — supply, buybacks, pools, whales, claims ─────
-const ECO_RANGES: { id: string; label: string }[] = [
-  { id: "30d", label: "30D" }, { id: "90d", label: "90D" }, { id: "all", label: "All" },
-];
-function EcosystemSection() {
-  const [range, setRange] = useState("90d");
-  const eco = usePolled(() => fetchOreEcosystem(range), 60_000, [range]);
-  const trends = usePolled(() => fetchOreTrends(range), 60_000, [range]);
-  const pts = eco.data?.points ?? [];
-  const sum = eco.data?.summary;
-  const marketByDay = indexByTs(trends.data?.points ?? [], "day_ts");
-  const dayLbl = (ts: number) => { const dt = new Date(ts * 1000); return `${dt.getMonth() + 1}/${dt.getDate()}`; };
-  const mkP = (pick: (p: OreEcoPoint) => number | null): Pt[] =>
-    pts.filter((p) => pick(p) != null).map((p) => ({ label: dayLbl(p.day_ts), value: pick(p)! }));
-  const mkN = (pick: (p: OreEcoPoint) => number | null): TPt[] =>
-    pts.map((p) => ({ label: dayLbl(p.day_ts), value: pick(p) }));
-  const buybackBars: TPt[] = pts.map((p) => ({ label: dayLbl(p.day_ts), value: p.buyback_sol }));
-  const oreSolLine: TPt[] = pts.map((p) => ({
-    label: dayLbl(p.day_ts),
-    value: marketByDay.get(p.day_ts)?.market_ratio_sol ?? null,
-  }));
-
-  return (
-    <div className="space-y-5 border-t border-line pt-6">
-      <div className="flex flex-wrap items-center justify-between gap-y-2">
-        <div className="section-label">
-          Ecosystem · supply, buybacks &amp; market structure
-          <Refreshing active={eco.fetching && !!eco.data} />
-        </div>
-        <SegmentedControl aria-label="Time range" items={ECO_RANGES} value={range} onChange={setRange} />
-      </div>
-
-      {eco.loading && !eco.data ? (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4"><TileSkeleton /><TileSkeleton /><TileSkeleton /><TileSkeleton /></div>
-      ) : (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <StatTile label="Circulating ORE" value={sum?.circulating_ore != null ? formatNum(sum.circulating_ore, 0) : "···"} unit="ORE" tone="gold" hint="from the last buyback event" />
-          <StatTile label="Burned (window)" value={sum?.lifetime_burned_ore != null ? formatNum(sum.lifetime_burned_ore, 0) : "···"} unit="ORE" hint={`+ ${sum?.lifetime_shared_ore != null ? formatNum(sum.lifetime_shared_ore, 0) : "·"} shared to stakers`} />
-          <StatTile label="Buyback SOL (window)" value={sum?.lifetime_buyback_sol != null ? formatNum(sum.lifetime_buyback_sol, 0) : "···"} unit="SOL" hint="swapped into ORE and burned" />
-          <StatTile label="Unclaimed ORE now" value={sum?.unclaimed_ore_now != null ? formatNum(sum.unclaimed_ore_now, 0) : "···"} unit="ORE" hint="supply overhang, earning refining" />
-        </div>
-      )}
-
-      <div className="grid gap-5 lg:grid-cols-2">
-        <div className="lg:col-span-2">
-          <ChartCard variant="dispersion" cutCorner="tr" title="Emission vs burn"
-            subtitle="ORE minted per day vs ORE destroyed by buyback burns: the net issuance picture.">
-            <DualLine a={mkN((p) => p.minted_ore)} b={mkN((p) => p.burned_ore)} aName="minted / day" bName="burned / day"
-              aColor="#22E0E6" bColor="#F87171" height={220}
-              aFmt={(v) => formatNum(v, 0)} bFmt={(v) => formatNum(v, 0)} loading={eco.loading} />
-          </ChartCard>
-        </div>
-        <ChartCard variant="dispersion" cutCorner="bl" title="Cumulative net issuance"
-          subtitle="Running minted − burned over the window. Falling = deflationary stretch.">
-          <AreaLine spectral fill points={mkP((p) => p.cum_net_ore)} height={200} zeroBaseline={false}
-            fmt={(v) => formatNum(v, 0) + " ORE"} yFmt={compactNum} loading={eco.loading} />
-        </ChartCard>
-        <ChartCard variant="dispersion" cutCorner="tr" title="Buyback pressure"
-          subtitle="SOL swapped into ORE per day (bars, 10% of losing tiles). ORE/SOL market price on the right — buybacks sell SOL for ORE.">
-          <BarsLine
-            bars={buybackBars}
-            line={oreSolLine}
-            barName="buyback SOL / day"
-            lineName="market ORE/SOL"
-            barColor="#5B6CFF"
-            lineColor="#9DB7D8"
-            height={200}
-            barFmt={(v) => formatSol(v, 1) + " SOL"}
-            lineFmt={(v) => formatNum(v, 3)}
-            /* Compact axis ticks — "3192.5 SOL" was clipping the left gutter. */
-            barAxisFmt={compactNum}
-            lineAxisFmt={(v) => formatNum(v, 2)}
-            loading={eco.loading || trends.loading} />
-        </ChartCard>
-        <ChartCard variant="dispersion" cutCorner="bl" title="Pooled-mining share"
-          subtitle="% of deployed SOL flowing through managed cranks (a signer driving ≥3 miners that day).">
-          <AreaLine fill points={mkP((p) => p.pool_share_pct)} height={200} zeroBaseline={false} color="#9A6BFF"
-            fmt={(v) => formatNum(v, 1) + "%"} yFmt={(v) => formatNum(v, 0) + "%"} loading={eco.loading} />
-        </ChartCard>
-        <ChartCard variant="dispersion" cutCorner="tr" title="Whale concentration"
-          subtitle="Top-10 miner authorities' share of deployed SOL per day.">
-          <AreaLine fill points={mkP((p) => p.top10_share_pct)} height={200} zeroBaseline={false} color="#E8881A"
-            fmt={(v) => formatNum(v, 1) + "%"} yFmt={(v) => formatNum(v, 0) + "%"} loading={eco.loading} />
-        </ChartCard>
-        <div className="lg:col-span-2">
-          <ChartCard variant="dispersion" cutCorner="bl" title="Claims flow"
-            subtitle="What miners cash out per day: SOL winnings vs ORE claims. Falling ORE claims = holders letting the pile refine.">
-            <DualLine a={mkN((p) => p.claims_sol)} b={mkN((p) => p.claims_ore)} aName="SOL claimed" bName="ORE claimed"
-              aColor={SOL_COLOR} bColor={ORE_COLOR} height={210}
-              aFmt={(v) => formatNum(v, 0)} bFmt={(v) => formatNum(v, 0)} loading={eco.loading} />
-          </ChartCard>
-        </div>
-      </div>
-      <Caveats provenance={null} error={eco.error} onRetry={eco.refresh} />
     </div>
   );
 }

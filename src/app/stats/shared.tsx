@@ -7,7 +7,7 @@ import { oreGramsToOre, lamportsToSol, type OreMotherlodeHit } from "@/lib/oreSt
 import { formatNum, formatPct } from "@/lib/format";
 import styles from "./stats.module.css";
 
-export type Tab = "trends" | "round_analysis" | "miners" | "motherlode" | "rounds" | "cohort";
+export type Tab = "trends" | "protocol" | "ecosystem" | "round_analysis" | "miners" | "motherlode" | "rounds" | "cohort";
 
 // Cross-tab jump: any row (e.g. a motherlode sharer) can send a pubkey to the
 // Search Miners tab and pre-fill its search bar. `n` bumps each call so re-clicking
@@ -17,6 +17,8 @@ export const MinerNavContext = createContext<(pubkey: string) => void>(() => {})
 
 export const TABS: { id: Tab; label: string }[] = [
   { id: "trends", label: "Trends" },
+  { id: "protocol", label: "Protocol" },
+  { id: "ecosystem", label: "Ecosystem" },
   { id: "round_analysis", label: "Round Analysis" },
   { id: "miners", label: "Search Miners" },
   { id: "motherlode", label: "Motherlode" },
