@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { Refreshing } from "@/components/primitives/Skeleton";
@@ -64,15 +64,28 @@ type MinersTabData = {
   rows: MinerRow[];
 };
 
-export function MinersTab({ seed }: { seed?: MinerSeed | null }) {
+export function MinersTab({
+  seed,
+  onQueryChange,
+}: {
+  seed?: MinerSeed | null;
+  onQueryChange?: (query: string) => void;
+}) {
   const [sort, setSort] = useState("net_sol");
   const [minDep, setMinDep] = useState(0);
   const [qInput, setQInput] = useState("");
   const [q, setQ] = useState("");
   const [offset, setOffset] = useState(0);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const onQueryChangeRef = useRef(onQueryChange);
+  useEffect(() => { onQueryChangeRef.current = onQueryChange; }, [onQueryChange]);
   useEffect(() => {
-    const t = setTimeout(() => { setQ(qInput.trim()); setOffset(0); }, 350);
+    const t = setTimeout(() => {
+      const next = qInput.trim();
+      setQ(next);
+      setOffset(0);
+      onQueryChangeRef.current?.(next);
+    }, 350);
     return () => clearTimeout(t);
   }, [qInput]);
   // Seeded from another tab (e.g. a motherlode sharer's jump arrow): fill the
