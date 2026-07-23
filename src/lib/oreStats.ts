@@ -174,6 +174,9 @@ export type OreMiners = {
   limit: number;
   offset: number;
   sort: string;
+  min_deployed_sol: number;
+  net_positive_pct: number | null;
+  ore_sol_ratio: number | null;
   our_miner: string;
 };
 
@@ -458,9 +461,10 @@ export const fetchOreRound = (roundId: number | string) =>
   get<{ round: OreRoundDetail }>(`/ore/round/${roundId}`);
 export const fetchOreLeaderboard = (sort = "net_sol", minDeployed = 0, offset = 0, limit = 50) =>
   get<OreLeaderboard>(`/ore/leaderboard?sort=${sort}&min_deployed=${minDeployed}&offset=${offset}&limit=${limit}`);
-export const fetchOreMiners = (opts: { sort?: string; offset?: number; limit?: number; q?: string } = {}) => {
+export const fetchOreMiners = (opts: { sort?: string; minDeployed?: number; offset?: number; limit?: number; q?: string } = {}) => {
   const p = new URLSearchParams();
   if (opts.sort) p.set("sort", opts.sort);
+  if (opts.minDeployed) p.set("min_deployed", String(opts.minDeployed));
   if (opts.offset) p.set("offset", String(opts.offset));
   if (opts.limit) p.set("limit", String(opts.limit));
   if (opts.q) p.set("q", opts.q);

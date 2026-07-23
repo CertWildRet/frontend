@@ -65,6 +65,12 @@ type MinersTabData = {
   rows: MinerRow[];
 };
 
+type CensusMeta = {
+  snapshot_ts: string;
+  total: number;
+  net_positive_pct: number | null;
+};
+
 export function MinersTab({
   seed,
   onQueryChange,
@@ -98,9 +104,10 @@ export function MinersTab({
   }, [seed?.n]);
 
   const useLeaderboard = LB_SORT_IDS.has(sort) && !q;
+  const minersMinDep = q ? 0 : minDep;
   const requestKey = useLeaderboard
     ? `leaderboard:${sort}:${minDep}:${offset}`
-    : `miners:${MINERS_SORT_FALLBACK[sort] ?? sort}:${offset}:${q}`;
+    : `miners:${MINERS_SORT_FALLBACK[sort] ?? sort}:${minersMinDep}:${offset}:${q}`;
   const polled = usePolled(async (): Promise<OreEnvelope<MinersTabData>> => {
     if (useLeaderboard) {
       const env = await fetchOreLeaderboard(sort, minDep, offset);
@@ -129,7 +136,7 @@ export function MinersTab({
       };
     }
     const minersSort = MINERS_SORT_FALLBACK[sort] ?? sort;
-    const env = await fetchOreMiners({ sort: minersSort, offset, q, limit: PAGE });
+    const env = await fetchOreMiners({ sort: minersSort, minDeployed: minersMinDep, offset, q, limit: PAGE });
     const rows: MinerRow[] = (env.data.miners ?? []).map((mn) => ({
       authority: mn.authority,
       is_ours: mn.is_ours,
@@ -149,7 +156,7 @@ export function MinersTab({
         snapshot_ts: env.data.snapshot_ts,
         total: env.data.total,
         bands: null,
-        net_positive_pct: null,
+        net_positive_pct: env.data.net_positive_pct ?? null,
         rows,
       },
     };
@@ -159,7 +166,24 @@ export function MinersTab({
   // for a newly requested miner. The old payload remains cached in usePolled,
   // but is hidden until the matching response lands.
   const d = polled.data?.request_key === requestKey ? polled.data : null;
-  const total = d?.total ?? 0;
+  const [censusMeta, setCensusMeta] = useState<CensusMeta | null>(null);
+  // Census identity is independent of sorting. Preserve it while a new row
+  // ordering loads so the heading never flashes back to "loading census…".
+  useEffect(() => {
+    if (!q && d?.snapshot_ts) {
+      setCensusMeta((previous) => ({
+        snapshot_ts: d.snapshot_ts!,
+        total: d.total,
+        net_positive_pct: d.net_positive_pct ?? previous?.net_positive_pct ?? null,
+      }));
+    }
+  }, [d, q]);
+  const resultTotal = d?.total ?? 0;
+  const headlineMeta = !q && censusMeta
+    ? censusMeta
+    : d?.snapshot_ts
+      ? { snapshot_ts: d.snapshot_ts, total: d.total, net_positive_pct: d.net_positive_pct }
+      : null;
   const b = d?.bands ?? null;
   const bandRows = b
     ? [
@@ -190,12 +214,12 @@ export function MinersTab({
       {exactAddress && d && !polled.fetching && rows.length === 0 && <MinerDetail pubkey={exactAddress} />}
       <ChartCard
         title="Miners"
-        subtitle={d?.snapshot_ts
-          ? `On-chain lifetime census ${new Date(d.snapshot_ts).toLocaleDateString()} · ${formatNum(total)} miners · ranked by ${sortLabel}`
+        subtitle={headlineMeta
+          ? `On-chain lifetime census ${new Date(headlineMeta.snapshot_ts).toLocaleDateString()} · ${formatNum(headlineMeta.total)} miners · ranked by ${sortLabel}`
           : "loading census…"}>
-        {d?.net_positive_pct != null && (
+        {headlineMeta?.net_positive_pct != null && (
           <div className="mb-3 font-mono text-[12.5px] text-fog-muted">
-            <span className="text-pos">{formatPct(d.net_positive_pct)}</span> of miners are net-positive lifetime
+            <span className="text-pos">{formatPct(headlineMeta.net_positive_pct)}</span> of miners are net-positive lifetime
             (SOL returned − deployed, plus ORE earned at today's market ratio)
           </div>
         )}
@@ -214,7 +238,7 @@ export function MinersTab({
               className="min-w-0 flex-1 rounded-md border border-line bg-ink-800 px-3 py-2 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none lg:w-52 lg:flex-none xl:w-56" />
           </div>
         </div>
-        {useLeaderboard && (
+        {!q && (
           <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] text-fog-muted">
             <span className="shrink-0">min deployed:</span>
             <SegmentedControl
@@ -297,7 +321,7 @@ export function MinersTab({
             </tbody>
           </table>
         </div>
-        <Pager offset={offset} total={total} onPage={setOffset} unit="miners" loading={!d && polled.fetching} />
+        <Pager offset={offset} total={resultTotal} onPage={setOffset} unit="miners" loading={!d && polled.fetching} />
         {useLeaderboard && (
           <p className="mt-3 max-w-3xl font-mono text-[13px] leading-snug text-fog-muted">
             <span className="text-gray-300">Net SOL</span> = lifetime returned SOL − deployed (real profit, can be negative).
