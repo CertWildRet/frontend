@@ -380,6 +380,9 @@ function EcosystemSection() {
             height={200}
             barFmt={(v) => formatSol(v, 1) + " SOL"}
             lineFmt={(v) => formatNum(v, 3)}
+            /* Compact axis ticks — "3192.5 SOL" was clipping the left gutter. */
+            barAxisFmt={compactNum}
+            lineAxisFmt={(v) => formatNum(v, 2)}
             loading={eco.loading || trends.loading} />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="bl" title="Pooled-mining share"

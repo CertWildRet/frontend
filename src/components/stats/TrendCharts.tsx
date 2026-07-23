@@ -348,6 +348,8 @@ export function BarsLine({
   height = 210,
   barFmt = (v: number) => v.toFixed(1),
   lineFmt = (v: number) => v.toFixed(0),
+  barAxisFmt,
+  lineAxisFmt,
   lineBreakOnDrop = false,
   line2, line2Name, line2Color = "#A8C4FF",
   loading = false,
@@ -356,6 +358,8 @@ export function BarsLine({
   bars: TPt[]; line: TPt[]; barName: string; lineName: string;
   barColor?: string; lineColor?: string; height?: number;
   barFmt?: (v: number) => string; lineFmt?: (v: number) => string;
+  /** Compact y-axis ticks (defaults to barFmt/lineFmt). Keep tooltips verbose. */
+  barAxisFmt?: (v: number) => string; lineAxisFmt?: (v: number) => string;
   /** Sawtooth series (motherlode pool): break the line where it resets down. */
   lineBreakOnDrop?: boolean;
   /** Optional second line plotted on the LEFT (bar) axis — e.g. a smoothed
@@ -369,7 +373,11 @@ export function BarsLine({
   const [ref, W] = useMeasuredWidth();
   const [svgFillRef, H] = useFillHeight(height, fill);
   const [hover, setHover] = useState<number | null>(null);
-  const padL = 52, padR = 52, padT = 14, padB = 26;
+  // Wider gutters than DualLine — bar tick strings (e.g. "3.2K") and right-axis
+  // prices need room or they clip against the card edge on half-width layouts.
+  const padL = 58, padR = 48, padT = 14, padB = 26;
+  const aBar = barAxisFmt ?? barFmt;
+  const aLine = lineAxisFmt ?? lineFmt;
   const n = bars.length;
   if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} /></div>;
 
@@ -408,8 +416,8 @@ export function BarsLine({
           return (
             <g key={gi}>
               <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
-              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={barColor} textAnchor="end" fontFamily="monospace">{barFmt(sb.max - g * sb.max)}</text>
-              <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={lineColor} textAnchor="start" fontFamily="monospace">{lineFmt(sln.max - g * (sln.max - sln.min))}</text>
+              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={barColor} textAnchor="end" fontFamily="monospace">{aBar(sb.max - g * sb.max)}</text>
+              <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={lineColor} textAnchor="start" fontFamily="monospace">{aLine(sln.max - g * (sln.max - sln.min))}</text>
             </g>
           );
         })}
