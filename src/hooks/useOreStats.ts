@@ -45,6 +45,10 @@ export function usePolled<T>(
   const [fetching, setFetching] = useState(true);
   const hasData = useRef(false);
   const running = useRef(false); // in-flight guard: a slow request must not stack
+  // A dependency change while the previous request is still running must not be
+  // dropped. Remember one latest rerun; fetchRef always points it at the newest
+  // query/sort/range rather than replaying the stale request.
+  const rerunRequested = useRef(false);
   const fetchRef = useRef(fetcher);
   fetchRef.current = fetcher;
 
@@ -52,6 +56,10 @@ export function usePolled<T>(
   // re-triggers the effect below and re-fetches. Empty deps = mount + interval only.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const run = useCallback(async () => {
+    if (running.current) {
+      rerunRequested.current = true;
+      return;
+    }
     running.current = true;
     setFetching(true);
     if (!hasData.current) setLoading(true);
@@ -65,8 +73,15 @@ export function usePolled<T>(
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
-      setFetching(false);
       running.current = false;
+      if (rerunRequested.current) {
+        rerunRequested.current = false;
+        // Start immediately so no interval/visibility event is required to
+        // recover a query change that arrived during the previous request.
+        void run();
+      } else {
+        setFetching(false);
+      }
     }
   }, deps);
 
@@ -96,7 +111,10 @@ export function usePolled<T>(
     // that the interval wouldn't have — deps changes always refetch, resuming
     // a tab only refetches when the data is actually stale.
     const fresh = lastRunFn.current === run && intervalMs > 0 && Date.now() - lastRunAt.current < intervalMs;
-    if (!fresh) guardedTick();
+    // Dependency changes and first mount call `run` even if another request is
+    // active; `run` queues exactly one latest rerun. Interval ticks remain
+    // guarded below so routine polling never stacks duplicate requests.
+    if (!fresh) doRun();
     if (intervalMs <= 0) {
       const onVis = () => {
         if (document.visibilityState === "visible") guardedTick();

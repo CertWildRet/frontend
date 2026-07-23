@@ -56,6 +56,7 @@ type MinerRow = {
 // Unified shape for both fetch branches (leaderboard census vs live miners
 // search) so usePolled binds a single envelope type.
 type MinersTabData = {
+  request_key: string;
   mode: "leaderboard" | "miners";
   snapshot_ts: string | null;
   total: number;
@@ -97,6 +98,9 @@ export function MinersTab({
   }, [seed?.n]);
 
   const useLeaderboard = LB_SORT_IDS.has(sort) && !q;
+  const requestKey = useLeaderboard
+    ? `leaderboard:${sort}:${minDep}:${offset}`
+    : `miners:${MINERS_SORT_FALLBACK[sort] ?? sort}:${offset}:${q}`;
   const polled = usePolled(async (): Promise<OreEnvelope<MinersTabData>> => {
     if (useLeaderboard) {
       const env = await fetchOreLeaderboard(sort, minDep, offset);
@@ -114,6 +118,7 @@ export function MinersTab({
       return {
         ...env,
         data: {
+          request_key: requestKey,
           mode: "leaderboard" as const,
           snapshot_ts: env.data.snapshot_ts,
           total: env.data.total,
@@ -139,6 +144,7 @@ export function MinersTab({
     return {
       ...env,
       data: {
+        request_key: requestKey,
         mode: "miners" as const,
         snapshot_ts: env.data.snapshot_ts,
         total: env.data.total,
@@ -149,7 +155,10 @@ export function MinersTab({
     };
   }, 0, [useLeaderboard, sort, minDep, offset, q]);
 
-  const d = polled.data;
+  // Never render rows from the previous leaderboard/query under the controls
+  // for a newly requested miner. The old payload remains cached in usePolled,
+  // but is hidden until the matching response lands.
+  const d = polled.data?.request_key === requestKey ? polled.data : null;
   const total = d?.total ?? 0;
   const b = d?.bands ?? null;
   const bandRows = b
@@ -178,15 +187,16 @@ export function MinersTab({
         </button>
       )}
       {/* census-missing wallets have no table row to expand (event history only) */}
-      {exactAddress && !polled.loading && rows.length === 0 && <MinerDetail pubkey={exactAddress} />}
+      {exactAddress && d && !polled.fetching && rows.length === 0 && <MinerDetail pubkey={exactAddress} />}
       <ChartCard
         title="Miners"
         subtitle={d?.snapshot_ts
           ? `On-chain lifetime census ${new Date(d.snapshot_ts).toLocaleDateString()} · ${formatNum(total)} miners · ranked by ${sortLabel}`
           : "loading census…"}
-        right={
+        headerRight={
           <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="search address…"
-            className="w-full rounded-md border border-line bg-ink-800 px-2.5 py-1.5 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none sm:w-64" />
+            aria-label="Search miner address"
+            className="w-full rounded-md border border-line bg-ink-800 px-3 py-2 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none sm:w-72" />
         }>
         {d?.net_positive_pct != null && (
           <div className="mb-3 font-mono text-[12.5px] text-fog-muted">
@@ -238,7 +248,7 @@ export function MinersTab({
               </tr>
             </thead>
             <tbody>
-              {polled.loading && !polled.data && <SkeletonRows cols={8} />}
+              {!d && polled.fetching && <SkeletonRows cols={8} />}
               {rows.map((m, i) => {
                 const net = lamportsToSol(m.net_sol);
                 const isOpen = expanded === m.authority;
@@ -287,7 +297,7 @@ export function MinersTab({
             </tbody>
           </table>
         </div>
-        <Pager offset={offset} total={total} onPage={setOffset} unit="miners" loading={polled.loading && !polled.data} />
+        <Pager offset={offset} total={total} onPage={setOffset} unit="miners" loading={!d && polled.fetching} />
         {useLeaderboard && (
           <p className="mt-3 max-w-3xl font-mono text-[13px] leading-snug text-fog-muted">
             <span className="text-gray-300">Net SOL</span> = lifetime returned SOL − deployed (real profit, can be negative).
