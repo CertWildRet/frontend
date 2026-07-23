@@ -121,6 +121,9 @@ export function DualLine({
   bFmt = (v: number) => v.toFixed(2),
   loading = false,
   shared = false,
+  /** Paint both y-axis tick labels in the neutral AXIS color (same as the
+   *  shared Yields chart) instead of matching each series stroke. */
+  neutralAxes = false,
   band,
   emptyText,
   fill = false,
@@ -131,6 +134,9 @@ export function DualLine({
   loading?: boolean;
   /** Same-unit series: one combined y-scale, single left axis (no dual-axis). */
   shared?: boolean;
+  /** Paint both y-axis tick labels in the neutral AXIS color (same as the
+   *  shared Yields chart) instead of matching each series stroke. */
+  neutralAxes?: boolean;
   /** shared-mode only: fill the gap between the lines, green where a > b and
    *  red where a < b, and name it in the legend + tooltip (the "carry"). */
   band?: { name: string };
@@ -182,9 +188,9 @@ export function DualLine({
           return (
             <g key={gi}>
               <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
-              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={shared ? AXIS : aColor} textAnchor="end" fontFamily="monospace">{aFmt(sa.max - g * (sa.max - sa.min))}</text>
+              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={shared || neutralAxes ? AXIS : aColor} textAnchor="end" fontFamily="monospace">{aFmt(sa.max - g * (sa.max - sa.min))}</text>
               {!shared && (
-                <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={bColor} textAnchor="start" fontFamily="monospace">{bFmt(sb.max - g * (sb.max - sb.min))}</text>
+                <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={neutralAxes ? AXIS : bColor} textAnchor="start" fontFamily="monospace">{bFmt(sb.max - g * (sb.max - sb.min))}</text>
               )}
             </g>
           );
