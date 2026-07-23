@@ -79,13 +79,6 @@ export function TrendsTab() {
   const mlOdds = ml?.odds_per_round ?? 625;
   const corr = returnsCorrelation(tp.map((p) => p.ore_usd), tp.map((p) => p.sol_usd));
   const yPts = yields.data?.points ?? [];
-  const refinByHour = indexByTs(yPts, "hour_ts");
-  const domPts = (dominance.data?.points ?? []).filter((p) => p.dominance_pct != null);
-  const domDominance: TPt[] = domPts.map((p) => ({ label: hLbl(p.hour_ts), value: p.dominance_pct }));
-  const domRefining: TPt[] = domPts.map((p) => ({
-    label: hLbl(p.hour_ts),
-    value: refinByHour.get(p.hour_ts)?.refining_apr ?? null,
-  }));
   const avgRefin = avgOf(yPts.map((p) => p.refining_apr));
   const avgStake = avgOf(yPts.map((p) => p.staking_apr));
   // Carry in the pill is AVG minus AVG — the two numbers beside it are window
@@ -104,6 +97,16 @@ export function TrendsTab() {
   };
   const mkT = (pick: (p: OreTrendPoint) => number | null): TPt[] =>
     tp.map((p) => ({ label: dayLbl(p.day_ts), value: pick(p) }));
+
+  // Join refining APR onto dominance hours (must run after hLbl is declared —
+  // accessing a const arrow before init throws TDZ and crashes /stats).
+  const refinByHour = indexByTs(yPts, "hour_ts");
+  const domPts = (dominance.data?.points ?? []).filter((p) => p.dominance_pct != null);
+  const domDominance: TPt[] = domPts.map((p) => ({ label: hLbl(p.hour_ts), value: p.dominance_pct }));
+  const domRefining: TPt[] = domPts.map((p) => ({
+    label: hLbl(p.hour_ts),
+    value: refinByHour.get(p.hour_ts)?.refining_apr ?? null,
+  }));
 
   // Motherlode: last 48 pops as bars + the LIVE pool as the final (highlighted) bar.
   const POPS_SHOWN = 48;
