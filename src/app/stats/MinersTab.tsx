@@ -208,7 +208,6 @@ export function MinersTab({
             value={sort}
             onChange={(id) => { setSort(id); setOffset(0); }}
           />
-          <Refreshing active={polled.fetching && !!polled.data} />
           <div className="flex w-full items-center justify-end gap-2 lg:ml-auto lg:w-auto">
             <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="search address…"
               aria-label="Search miner address"
@@ -225,6 +224,7 @@ export function MinersTab({
               value={String(minDep)}
               onChange={(id) => { setMinDep(Number(id)); setOffset(0); }}
             />
+            <Refreshing active={polled.fetching && !!polled.data} />
           </div>
         )}
         <div className={tableWrap}>
