@@ -35,6 +35,7 @@ export function ChartCard({
   right,
   variant = "default",
   cutCorner = "tr",
+  contentClassName,
 }: {
   title?: string;
   subtitle?: string;
@@ -44,13 +45,16 @@ export function ChartCard({
   variant?: "default" | "dispersion";
   /** Crystal cut corner when variant is dispersion. */
   cutCorner?: "tr" | "bl";
+  /** Optional layout classes for the card body beneath its heading. */
+  contentClassName?: string;
 }) {
   const watermark = useContext(ChartWatermarkContext);
   const cutClass = cutCorner === "bl" ? styles.cutBL : styles.cutTR;
-  const wrapperClass =
+  const surfaceClass =
     variant === "dispersion"
       ? `${styles.glass} ${styles.spectralEdge} ${cutClass} h-full overflow-hidden rounded-3xl px-5 py-5 sm:px-6 sm:py-6`
       : `${styles.glass} ${styles.spectralEdge} ${cutClass} h-full overflow-hidden rounded-2xl px-5 py-5 sm:px-6 sm:py-6`;
+  const wrapperClass = `${surfaceClass}${contentClassName ? " flex flex-col" : ""}`;
 
   const cardRef = useRef<HTMLDivElement>(null);
   const [share, setShare] = useState<"idle" | "working" | "done" | "error">("idle");
@@ -157,7 +161,7 @@ export function ChartCard({
           {right && <div className="mt-2 flex flex-wrap items-center gap-2 sm:justify-end">{right}</div>}
         </div>
       )}
-      {children}
+      {contentClassName ? <div className={contentClassName}>{children}</div> : children}
     </div>
   );
 }

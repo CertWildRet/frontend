@@ -205,12 +205,21 @@ export function CohortTab() {
               {custodyComponents.length > 0 && (
                 <div className="mt-3 grid gap-2 border-t border-white/[0.05] pt-3 sm:grid-cols-3">
                   {custodyComponents.map((component) => (
-                    <div key={component.id} className="rounded-md bg-black/15 px-2.5 py-2">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-fog">{component.label}</span>
-                        <span className="whitespace-nowrap text-gray-200">{formatNum(component.ore, 0)} ORE</span>
+                    <div
+                      key={component.id}
+                      tabIndex={0}
+                      aria-label={`${component.label}: ${formatNum(component.ore, 0)} ORE. ${component.detail}`}
+                      className="group relative cursor-help rounded-md bg-black/15 px-3 py-2 outline-none transition-colors hover:bg-white/[0.04] focus-visible:ring-1 focus-visible:ring-steel/50"
+                    >
+                      <div className="text-fog">{component.label}</div>
+                      <div className="mt-0.5 whitespace-nowrap text-gray-200">{formatNum(component.ore, 0)} ORE</div>
+                      <div
+                        role="tooltip"
+                        className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-md border border-line-bright bg-ink-800 px-3 py-2 text-center text-[10.5px] leading-snug text-fog opacity-0 shadow-xl transition-opacity group-hover:opacity-100 group-focus:opacity-100"
+                      >
+                        {component.detail}
+                        <span className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-line-bright bg-ink-800" />
                       </div>
-                      <p className="mt-1 text-[10.5px] leading-snug text-fog-muted">{component.detail}</p>
                     </div>
                   ))}
                 </div>
@@ -220,10 +229,29 @@ export function CohortTab() {
               </p>
             </div>
           )}
+          {!isHolder && md && (
+            <div className="mt-3 rounded-lg border border-line bg-white/[0.02] px-3 py-3 font-mono text-[12px] leading-relaxed text-fog-muted">
+              <div className="text-center">
+                <span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm bg-amber" />
+                <span className="text-gray-200">{formatNum(held, 0)} ORE</span>
+                <span> attributed to {formatNum(totalHolders)} miners is still held in Mining Treasury custody until claimed.</span>
+              </div>
+              <p className="mt-2 text-center text-[10.5px] text-fog-muted">
+                These cohorts re-attribute that escrow to the miners who earned it; they are not direct-wallet balances,
+                stORE backing, or lifetime buyback inventory.
+              </p>
+              {md.latest_estimated && (
+                <p className="mt-2 border-t border-white/[0.05] pt-2 text-center text-[10.5px] text-[#ffe9a8]">
+                  Approx* means the latest missing 30-minute snapshot was reconstructed from surrounding Mining Treasury anchors.
+                </p>
+              )}
+            </div>
+          )}
         </ChartCard>
 
         {/* per-cohort table */}
         <ChartCard variant="dispersion" cutCorner="bl" title="By cohort"
+          contentClassName="flex min-h-0 flex-1 flex-col"
           subtitle={isHolder
             ? "Every direct-wallet size band, its owner count and ORE balance."
             : "Every miner size band, its holder count and ORE balance."}>
@@ -263,7 +291,7 @@ export function CohortTab() {
           </div>
           {/* concentration visual — fills the card and shows the inversion at a
               glance: the crowd is Plankton by count, but the ORE is nearly all Whale. */}
-          <div className="mt-5 space-y-4 border-t border-white/[0.05] pt-5">
+          <div className="mt-auto space-y-4 border-t border-white/[0.05] pt-5">
             {[
               { key: "wallets", label: isHolder ? "by wallets" : "by miners", total: totalHolders, get: (c: (typeof COHORTS)[number]) => byId(c.id)?.holders ?? 0 },
               { key: "ore", label: "by ORE held", total: held, get: (c: (typeof COHORTS)[number]) => byId(c.id)?.ore ?? 0 },
