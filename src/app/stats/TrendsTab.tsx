@@ -58,6 +58,14 @@ const avgOf = (xs: (number | null)[]): number | null => {
   return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null;
 };
 
+/** Index a time-series by bucket timestamp for joining across /ore/* endpoints. */
+function indexByTs<T extends { hour_ts?: number; day_ts?: number }>(
+  rows: T[],
+  key: "hour_ts" | "day_ts",
+): Map<number, T> {
+  return new Map(rows.map((r) => [r[key] as number, r]));
+}
+
 export function TrendsTab() {
   const [range, setRange] = useState("30d");
   const trends = usePolled(() => fetchOreTrends(range), 60_000, [range]);
@@ -71,6 +79,13 @@ export function TrendsTab() {
   const mlOdds = ml?.odds_per_round ?? 625;
   const corr = returnsCorrelation(tp.map((p) => p.ore_usd), tp.map((p) => p.sol_usd));
   const yPts = yields.data?.points ?? [];
+  const refinByHour = indexByTs(yPts, "hour_ts");
+  const domPts = (dominance.data?.points ?? []).filter((p) => p.dominance_pct != null);
+  const domDominance: TPt[] = domPts.map((p) => ({ label: hLbl(p.hour_ts), value: p.dominance_pct }));
+  const domRefining: TPt[] = domPts.map((p) => ({
+    label: hLbl(p.hour_ts),
+    value: refinByHour.get(p.hour_ts)?.refining_apr ?? null,
+  }));
   const avgRefin = avgOf(yPts.map((p) => p.refining_apr));
   const avgStake = avgOf(yPts.map((p) => p.staking_apr));
   // Carry in the pill is AVG minus AVG — the two numbers beside it are window
@@ -186,7 +201,7 @@ export function TrendsTab() {
         {/* (6) miner dominance — unrefined treasury ORE vs total supply. Half-width, paired with yields. */}
         <div>
           <ChartCard variant="dispersion" cutCorner="bl" title="Miner dominance"
-            subtitle="Unclaimed ORE held by the mine treasury as a share of total supply. Rising = miners holding winnings; falling = claims outpacing emission."
+            subtitle="Unclaimed ORE as a share of supply (left) vs refining APR (right). They tend to move inversely — high dominance = miners sitting on unclaimed ORE earning refining."
             right={dominance.data?.latest?.dominance_pct != null ? (
               <span className="rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold text-[#22E0E6]"
                 title={dominance.data.latest.unclaimed_ore != null && dominance.data.latest.supply_ore != null
@@ -195,13 +210,19 @@ export function TrendsTab() {
                 now {formatNum(dominance.data.latest.dominance_pct, 2)}%
               </span>
             ) : undefined}>
-            <AreaLine
-              points={(dominance.data?.points ?? []).filter((p) => p.dominance_pct != null).map((p) => ({ label: hLbl(p.hour_ts), value: p.dominance_pct as number }))}
-              /* taller than the yields plot to make up for the yields card's extra
-                 stats row + 2-line legend, so the two cards end at ~the same height */
-              height={210} fill zeroBaseline={false} color="#22E0E6"
-              fmt={(v) => formatNum(v, 2) + "%"} yFmt={(v) => formatNum(v, 2) + "%"}
-              loading={dominance.loading} />
+            <DualLine
+              a={domDominance}
+              b={domRefining}
+              aName="miner dominance"
+              bName="refining APR"
+              aColor="#22E0E6"
+              bColor="#E8881A"
+              height={210}
+              fill
+              neutralAxes
+              aFmt={(v) => formatNum(v, 2) + "%"}
+              bFmt={(v) => formatNum(v, 1) + "%"}
+              loading={dominance.loading || yields.loading} />
           </ChartCard>
         </div>
         {/* (4) motherlode — full width */}
@@ -294,13 +315,20 @@ const ECO_RANGES: { id: string; label: string }[] = [
 function EcosystemSection() {
   const [range, setRange] = useState("90d");
   const eco = usePolled(() => fetchOreEcosystem(range), 60_000, [range]);
+  const trends = usePolled(() => fetchOreTrends(range), 60_000, [range]);
   const pts = eco.data?.points ?? [];
   const sum = eco.data?.summary;
+  const marketByDay = indexByTs(trends.data?.points ?? [], "day_ts");
   const dayLbl = (ts: number) => { const dt = new Date(ts * 1000); return `${dt.getMonth() + 1}/${dt.getDate()}`; };
   const mkP = (pick: (p: OreEcoPoint) => number | null): Pt[] =>
     pts.filter((p) => pick(p) != null).map((p) => ({ label: dayLbl(p.day_ts), value: pick(p)! }));
   const mkN = (pick: (p: OreEcoPoint) => number | null): TPt[] =>
     pts.map((p) => ({ label: dayLbl(p.day_ts), value: pick(p) }));
+  const buybackBars: TPt[] = pts.map((p) => ({ label: dayLbl(p.day_ts), value: p.buyback_sol }));
+  const oreSolLine: TPt[] = pts.map((p) => ({
+    label: dayLbl(p.day_ts),
+    value: marketByDay.get(p.day_ts)?.market_ratio_sol ?? null,
+  }));
 
   return (
     <div className="space-y-5 border-t border-line pt-6">
@@ -338,9 +366,18 @@ function EcosystemSection() {
             fmt={(v) => formatNum(v, 0) + " ORE"} yFmt={compactNum} loading={eco.loading} />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="tr" title="Buyback pressure"
-          subtitle="SOL spent buying ORE per day (10% of losing tiles flows here).">
-          <AreaLine spectral fill points={mkP((p) => p.buyback_sol)} height={200}
-            fmt={(v) => formatSol(v, 1) + " SOL"} yFmt={compactNum} loading={eco.loading} />
+          subtitle="SOL swapped into ORE per day (bars, 10% of losing tiles). ORE/SOL market price on the right — buybacks sell SOL for ORE.">
+          <BarsLine
+            bars={buybackBars}
+            line={oreSolLine}
+            barName="buyback SOL / day"
+            lineName="market ORE/SOL"
+            barColor="#5B6CFF"
+            lineColor="#9DB7D8"
+            height={200}
+            barFmt={(v) => formatSol(v, 1) + " SOL"}
+            lineFmt={(v) => formatNum(v, 3)}
+            loading={eco.loading || trends.loading} />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="bl" title="Pooled-mining share"
           subtitle="% of deployed SOL flowing through managed cranks (a signer driving ≥3 miners that day).">
