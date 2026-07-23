@@ -192,12 +192,7 @@ export function MinersTab({
         title="Miners"
         subtitle={d?.snapshot_ts
           ? `On-chain lifetime census ${new Date(d.snapshot_ts).toLocaleDateString()} · ${formatNum(total)} miners · ranked by ${sortLabel}`
-          : "loading census…"}
-        headerRight={
-          <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="search address…"
-            aria-label="Search miner address"
-            className="w-full rounded-md border border-line bg-ink-800 px-3 py-2 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none sm:w-72" />
-        }>
+          : "loading census…"}>
         {d?.net_positive_pct != null && (
           <div className="mb-3 font-mono text-[12.5px] text-fog-muted">
             <span className="text-pos">{formatPct(d.net_positive_pct)}</span> of miners are net-positive lifetime
@@ -213,7 +208,12 @@ export function MinersTab({
             value={sort}
             onChange={(id) => { setSort(id); setOffset(0); }}
           />
-          <span className="section-label ml-auto"><Refreshing active={polled.fetching && !!polled.data} /></span>
+          <Refreshing active={polled.fetching && !!polled.data} />
+          <div className="flex w-full items-center justify-end gap-2 lg:ml-auto lg:w-auto">
+            <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="search address…"
+              aria-label="Search miner address"
+              className="min-w-0 flex-1 rounded-md border border-line bg-ink-800 px-3 py-2 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none lg:w-64 lg:flex-none xl:w-72" />
+          </div>
         </div>
         {useLeaderboard && (
           <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] text-fog-muted">

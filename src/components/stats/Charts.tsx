@@ -32,7 +32,6 @@ export function ChartCard({
   title,
   subtitle,
   children,
-  headerRight,
   right,
   variant = "default",
   cutCorner = "tr",
@@ -41,8 +40,6 @@ export function ChartCard({
   title?: string;
   subtitle?: string;
   children: React.ReactNode;
-  /** A compact control displayed in the title row (full-width below it on mobile). */
-  headerRight?: React.ReactNode;
   right?: React.ReactNode;
   /** Home-page step-row glass container — spectral edge + crystal cut. */
   variant?: "default" | "dispersion";
@@ -99,13 +96,13 @@ export function ChartCard({
 
   return (
     <div ref={cardRef} data-fillcard className={wrapperClass}>
-      {(title || subtitle || headerRight || right || watermark) && (
+      {(title || subtitle || right || watermark) && (
         <div className="mb-3">
           {/* row 1: heading + branding/share ALWAYS share a line, so the mark stays
               top-right aligned with the title on mobile too (it just shrinks). Only
               rendered when there's a title or watermark to carry it. */}
-          {(title || headerRight || watermark) && (
-          <div className="flex flex-wrap items-start justify-between gap-2">
+          {(title || watermark) && (
+          <div className="flex items-start justify-between gap-2">
             {title ? (
               <h2
                 className="min-w-0 flex-1 text-[19px] font-semibold tracking-tight text-[#EAECF6]"
@@ -115,11 +112,6 @@ export function ChartCard({
               </h2>
             ) : (
               <span className="flex-1" />
-            )}
-            {headerRight && (
-              <div className="order-3 mt-1.5 w-full sm:order-none sm:ml-auto sm:mt-0 sm:w-auto">
-                {headerRight}
-              </div>
             )}
             {watermark && (
               // The watermark is the only in-flow element here, so it holds the same
