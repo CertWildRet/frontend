@@ -212,7 +212,7 @@ export function MinersTab({
           <div className="flex w-full items-center justify-end gap-2 lg:ml-auto lg:w-auto">
             <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="search address…"
               aria-label="Search miner address"
-              className="min-w-0 flex-1 rounded-md border border-line bg-ink-800 px-3 py-2 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none lg:w-64 lg:flex-none xl:w-72" />
+              className="min-w-0 flex-1 rounded-md border border-line bg-ink-800 px-3 py-2 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none lg:w-52 lg:flex-none xl:w-56" />
           </div>
         </div>
         {useLeaderboard && (
