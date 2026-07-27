@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { Suspense } from "react";
 import "@fontsource/chakra-petch/500.css";
 import "@fontsource/chakra-petch/600.css";
 import "@fontsource/chakra-petch/700.css";
@@ -34,7 +35,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="atmosphere-foil" />
         </div>
         <Providers>
-          <SiteHeader />
+          {/* SiteHeader uses useSearchParams for Search Miner vs Data active state. */}
+          <Suspense fallback={null}>
+            <SiteHeader />
+          </Suspense>
           <StatTickerGate />
           <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
           <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(7,9,18,0.5)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
