@@ -13,6 +13,7 @@ import { AreaLine, ChartCard, compactNum, type Pt } from "@/components/stats/Cha
 import { DualLine, BarsLine, type TPt } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
 import { fetchOreEcosystem, fetchOreTrends, type OreEcoPoint } from "@/lib/oreStats";
+import { CHART } from "@/lib/chartColors";
 import { formatSol, formatNum } from "@/lib/format";
 import { Caveats } from "./shared";
 
@@ -74,7 +75,7 @@ export function EcosystemTab() {
         </div>
         <ChartCard variant="dispersion" cutCorner="bl" title="Cumulative net issuance"
           subtitle="Running minted − burned over the window. Falling = deflationary stretch.">
-          <AreaLine spectral fill points={mkP((p) => p.cum_net_ore)} height={200} zeroBaseline={false}
+          <AreaLine fill color={CHART.teal} points={mkP((p) => p.cum_net_ore)} height={200} zeroBaseline={false}
             fmt={(v) => formatNum(v, 0) + " ORE"} yFmt={compactNum} loading={eco.loading} />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="tr" title="Buyback pressure"
