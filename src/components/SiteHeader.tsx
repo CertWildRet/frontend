@@ -85,8 +85,8 @@ export function SiteHeader() {
                     style={active ? activeStyle : tabDisplayFont}
                     className={
                       active
-                        ? `${tabActiveClass} shrink-0 px-3.5 py-1.5 text-[14px]`
-                        : `${tabIdleClass} shrink-0 px-3 py-1.5 text-[14px]`
+                        ? `${tabActiveClass} inline-flex items-center shrink-0 px-3.5 py-2 text-[14px]`
+                        : `${tabIdleClass} inline-flex items-center shrink-0 px-3 py-2 text-[14px]`
                     }
                   >
                     <NavLinkLabel item={l} />
