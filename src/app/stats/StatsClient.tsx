@@ -13,6 +13,7 @@ import { PolledActiveContext } from "@/hooks/useOreStats";
 import { TrendsTab } from "./TrendsTab";
 import { EcosystemTab } from "./EcosystemTab";
 import { RoundAnalysisTab } from "./RoundAnalysisTab";
+import { MinerRankingsTab } from "./MinerRankingsTab";
 import { MinersTab } from "./MinersTab";
 import { MotherlodeTab } from "./MotherlodeTab";
 import { RoundsTab } from "./RoundsTab";
@@ -29,6 +30,7 @@ const tabFromQuery = (raw: string | null): Tab => {
   if (!raw) return "trends";
   const normalized = raw.toLowerCase().replaceAll("-", "_");
   if (normalized === "search_miners" || normalized === "miner") return "miners";
+  if (normalized === "miner_rankings") return "rankings";
   if (normalized === "protocol" || normalized === "protocol_internals") return "trends";
   return TAB_IDS.has(normalized as Tab) ? normalized as Tab : "trends";
 };
@@ -126,6 +128,7 @@ export function StatsClient() {
                 {t.id === "trends" ? <TrendsTab /> :
                  t.id === "ecosystem" ? <EcosystemTab /> :
                  t.id === "round_analysis" ? <RoundAnalysisTab /> :
+                 t.id === "rankings" ? <MinerRankingsTab /> :
                  t.id === "miners" ? <MinersTab seed={minerSeed} onQueryChange={syncMinerQuery} /> :
                  t.id === "motherlode" ? <MotherlodeTab /> :
                  t.id === "rounds" ? <RoundsTab /> : <CohortTab />}

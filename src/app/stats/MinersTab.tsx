@@ -1,74 +1,41 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState } from "react";
+/**
+ * Search Miners — address lookup (search box + results / MinerDetail).
+ * Census leaderboard lives on Miner Rankings.
+ */
+import { useEffect, useRef, useState } from "react";
 import { SegmentedControl } from "@/components/primitives/TabBar";
-import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { Refreshing } from "@/components/primitives/Skeleton";
-import { HBars, ChartCard } from "@/components/stats/Charts";
+import { ChartCard } from "@/components/stats/Charts";
 import { MinerDetail } from "@/components/stats/MinerDetail";
 import { usePolled } from "@/hooks/useOreStats";
+import { fetchOreMiners, type OreEnvelope, type OreProvenance } from "@/lib/oreStats";
+import { formatNum } from "@/lib/format";
 import {
-  fetchOreLeaderboard, fetchOreMiners,
-  lamportsToSol, oreGramsToOre,
-  type OreEnvelope, type OreBands,
-} from "@/lib/oreStats";
-import { formatSol, formatNum, formatPct } from "@/lib/format";
-import {
-  PAGE, Pager, SkeletonRows, Caveats, netTone,
-  tableWrap, theadRow, th, td, bodyRow, oursRow,
+  PAGE, Pager, Caveats,
   type MinerSeed,
 } from "./shared";
+import {
+  SEARCH_SORTS, MINERS_SORT_FALLBACK, MinerTable,
+  type MinerRow,
+} from "./minersShared";
 
-// ── Search Miners: ranked census explorer (leaderboard + address search) ─────
-const MINER_SORTS: { id: string; label: string }[] = [
-  { id: "net_sol", label: "Net SOL" },
-  { id: "earned", label: "SOL earned" },
-  { id: "deployed", label: "SOL deployed" },
-  { id: "ore", label: "ORE earned" },
-  { id: "roi", label: "Gross ROI" },
-  { id: "unclaimed", label: "Unclaimed ORE" },
-  { id: "refined", label: "Refined ORE" },
-  { id: "lifetime_ore", label: "Lifetime ORE" },
-  { id: "lifetime_sol", label: "Lifetime SOL" },
-];
-/** Sorts served by /ore/leaderboard (supports min-deployed filter + ROI bands). */
-const LB_SORT_IDS = new Set(["net_sol", "earned", "deployed", "ore", "roi"]);
-/** Map leaderboard-only sort ids onto /ore/miners when searching by address. */
-const MINERS_SORT_FALLBACK: Record<string, string> = {
-  earned: "lifetime_sol",
-  ore: "lifetime_ore",
-  roi: "net_sol",
-};
-const MIN_DEP = [0, 1, 10, 100];
-
-type MinerRow = {
-  authority: string;
-  is_ours: boolean;
-  deployed: string;
-  earned: string;
-  ore: string;
-  net_sol: string;
-  roi: number | null;
-  unclaimed: string | null;
-  refined: string | null;
-};
-
-// Unified shape for both fetch branches (leaderboard census vs live miners
-// search) so usePolled binds a single envelope type.
-type MinersTabData = {
+type SearchData = {
   request_key: string;
-  mode: "leaderboard" | "miners";
   snapshot_ts: string | null;
   total: number;
-  bands: OreBands | null;
   net_positive_pct: number | null;
   rows: MinerRow[];
 };
 
-type CensusMeta = {
-  snapshot_ts: string;
-  total: number;
-  net_positive_pct: number | null;
+const EMPTY_PROVENANCE: OreProvenance = {
+  ore_max_round: "0",
+  ore_cumulative_through_round: null,
+  reset_tail_last_round: "0",
+  census_snapshot_ts: null,
+  ingest_enabled: true,
+  caveats: [],
 };
 
 export function MinersTab({
@@ -79,7 +46,6 @@ export function MinersTab({
   onQueryChange?: (query: string) => void;
 }) {
   const [sort, setSort] = useState("net_sol");
-  const [minDep, setMinDep] = useState(0);
   const [qInput, setQInput] = useState("");
   const [q, setQ] = useState("");
   const [offset, setOffset] = useState(0);
@@ -103,40 +69,23 @@ export function MinersTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seed?.n]);
 
-  const useLeaderboard = LB_SORT_IDS.has(sort) && !q;
-  const minersMinDep = q ? 0 : minDep;
-  const requestKey = useLeaderboard
-    ? `leaderboard:${sort}:${minDep}:${offset}`
-    : `miners:${MINERS_SORT_FALLBACK[sort] ?? sort}:${minersMinDep}:${offset}:${q}`;
-  const polled = usePolled(async (): Promise<OreEnvelope<MinersTabData>> => {
-    if (useLeaderboard) {
-      const env = await fetchOreLeaderboard(sort, minDep, offset);
-      const rows: MinerRow[] = (env.data.top ?? []).map((m) => ({
-        authority: m.authority,
-        is_ours: m.is_ours,
-        deployed: m.lifetime_deployed,
-        earned: m.lifetime_rewards_sol,
-        ore: m.lifetime_rewards_ore,
-        net_sol: m.net_sol,
-        roi: m.roi,
-        unclaimed: null,
-        refined: null,
-      }));
+  const minersSort = MINERS_SORT_FALLBACK[sort] ?? sort;
+  const requestKey = `miners:${minersSort}:${offset}:${q}`;
+  const polled = usePolled(async (): Promise<OreEnvelope<SearchData>> => {
+    if (!q) {
       return {
-        ...env,
+        ok: true,
         data: {
           request_key: requestKey,
-          mode: "leaderboard" as const,
-          snapshot_ts: env.data.snapshot_ts,
-          total: env.data.total,
-          bands: env.data.bands,
-          net_positive_pct: env.data.net_positive_pct,
-          rows,
+          snapshot_ts: null,
+          total: 0,
+          net_positive_pct: null,
+          rows: [],
         },
+        provenance: EMPTY_PROVENANCE,
       };
     }
-    const minersSort = MINERS_SORT_FALLBACK[sort] ?? sort;
-    const env = await fetchOreMiners({ sort: minersSort, minDeployed: minersMinDep, offset, q, limit: PAGE });
+    const env = await fetchOreMiners({ sort: minersSort, minDeployed: 0, offset, q, limit: PAGE });
     const rows: MinerRow[] = (env.data.miners ?? []).map((mn) => ({
       authority: mn.authority,
       is_ours: mn.is_ours,
@@ -152,190 +101,84 @@ export function MinersTab({
       ...env,
       data: {
         request_key: requestKey,
-        mode: "miners" as const,
         snapshot_ts: env.data.snapshot_ts,
         total: env.data.total,
-        bands: null,
         net_positive_pct: env.data.net_positive_pct ?? null,
         rows,
       },
     };
-  }, 0, [useLeaderboard, sort, minDep, offset, q]);
+  }, 0, [sort, offset, q]);
 
-  // Never render rows from the previous leaderboard/query under the controls
-  // for a newly requested miner. The old payload remains cached in usePolled,
-  // but is hidden until the matching response lands.
-  const d = polled.data?.request_key === requestKey ? polled.data : null;
-  const [censusMeta, setCensusMeta] = useState<CensusMeta | null>(null);
-  // Census identity is independent of sorting. Preserve it while a new row
-  // ordering loads so the heading never flashes back to "loading census…".
-  useEffect(() => {
-    if (!q && d?.snapshot_ts) {
-      setCensusMeta((previous) => ({
-        snapshot_ts: d.snapshot_ts!,
-        total: d.total,
-        net_positive_pct: d.net_positive_pct ?? previous?.net_positive_pct ?? null,
-      }));
-    }
-  }, [d, q]);
-  const resultTotal = d?.total ?? 0;
-  const headlineMeta = !q && censusMeta
-    ? censusMeta
-    : d?.snapshot_ts
-      ? { snapshot_ts: d.snapshot_ts, total: d.total, net_positive_pct: d.net_positive_pct }
-      : null;
-  const b = d?.bands ?? null;
-  const bandRows = b
-    ? [
-        { label: "#1", value: b.top1 }, { label: "top 5%", value: b.b05 }, { label: "top 10%", value: b.b10 },
-        { label: "top 20%", value: b.b20 }, { label: "top 30%", value: b.b30 }, { label: "top 50%", value: b.b50 },
-        { label: "all", value: b.avg_all },
-      ]
-    : [];
-  const sortLabel = MINER_SORTS.find((x) => x.id === sort)?.label ?? sort;
+  // Never render rows from a previous query under the new controls.
+  const d = q && polled.data?.request_key === requestKey ? polled.data : null;
   const rows = d?.rows ?? [];
   const exactAddress = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(q) ? q : null;
 
-  // A searched wallet filters the table to its own row — auto-expand it there
-  // instead of rendering a second copy of the panel above the table.
   useEffect(() => {
     if (exactAddress) setExpanded(exactAddress);
   }, [exactAddress]);
 
+  const sortLabel = SEARCH_SORTS.find((x) => x.id === sort)?.label ?? sort;
+
   return (
     <div className="space-y-5">
-      {exactAddress && (
+      {q && (
         <button type="button" onClick={() => setQInput("")}
           className="flex items-center gap-1.5 rounded-md border border-line bg-ink-800 px-3 py-1.5 font-mono text-[13px] font-semibold text-fog-muted transition-colors hover:border-steel hover:text-white">
-          <span aria-hidden>←</span> Back to all miners
+          <span aria-hidden>←</span> Clear search
         </button>
       )}
       {/* census-missing wallets have no table row to expand (event history only) */}
       {exactAddress && d && !polled.fetching && rows.length === 0 && <MinerDetail pubkey={exactAddress} />}
+
       <ChartCard
-        title="Miners"
-        subtitle={headlineMeta
-          ? `On-chain lifetime census ${new Date(headlineMeta.snapshot_ts).toLocaleDateString()} · ${formatNum(headlineMeta.total)} miners · ranked by ${sortLabel}`
-          : "loading census…"}>
-        {headlineMeta?.net_positive_pct != null && (
-          <div className="mb-3 font-mono text-[12.5px] text-fog-muted">
-            <span className="text-pos">{formatPct(headlineMeta.net_positive_pct)}</span> of miners are net-positive lifetime
-            (SOL returned − deployed, plus ORE earned at today's market ratio)
-          </div>
-        )}
+        title="Search Miners"
+        subtitle={q
+          ? (d?.snapshot_ts
+            ? `Results for ${q.slice(0, 4)}…${q.slice(-4)} · ${formatNum(d.total)} match${d.total === 1 ? "" : "es"} · sorted by ${sortLabel}`
+            : "searching…")
+          : "Look up any ORE miner by Solana wallet address"}>
         <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] text-fog-muted">
-          <span className="shrink-0">sort:</span>
-          <SegmentedControl
-            aria-label="Miner sort"
-            variant="loose"
-            items={MINER_SORTS}
-            value={sort}
-            onChange={(id) => { setSort(id); setOffset(0); }}
+          <input
+            value={qInput}
+            onChange={(e) => setQInput(e.target.value)}
+            placeholder="paste Solana wallet address…"
+            aria-label="Search miner address"
+            className="min-w-0 flex-1 rounded-md border border-line bg-ink-800 px-3 py-2 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none sm:max-w-md"
           />
-          <div className="flex w-full items-center justify-end gap-2 lg:ml-auto lg:w-auto">
-            <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="search address…"
-              aria-label="Search miner address"
-              className="min-w-0 flex-1 rounded-md border border-line bg-ink-800 px-3 py-2 font-mono text-[13px] text-white placeholder:text-fog-muted focus:border-steel focus:outline-none lg:w-52 lg:flex-none xl:w-56" />
-          </div>
+          <Refreshing active={!!q && polled.fetching && !!polled.data} />
         </div>
-        {!q && (
-          <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] text-fog-muted">
-            <span className="shrink-0">min deployed:</span>
-            <SegmentedControl
-              aria-label="Minimum deployed"
-              variant="loose"
-              items={MIN_DEP.map((v) => ({ id: String(v), label: v === 0 ? "any" : `${v} SOL` }))}
-              value={String(minDep)}
-              onChange={(id) => { setMinDep(Number(id)); setOffset(0); }}
-            />
-            <Refreshing active={polled.fetching && !!polled.data} />
-          </div>
-        )}
-        <div className={tableWrap}>
-          <table className="w-full font-mono text-[13px] sm:min-w-[640px]">
-            <thead>
-              <tr className={theadRow}>
-                <th className={th}>#</th>
-                <th className={th}>Miner</th>
-                <th className={`${th} hidden text-right sm:table-cell`}>Deployed</th>
-                <th className={`${th} hidden text-right sm:table-cell`}>Earned</th>
-                <th className={`${th} text-right`}>Net SOL</th>
-                <th className={`${th} hidden text-right sm:table-cell`}>ORE</th>
-                {useLeaderboard ? (
-                  <th className={`${th} hidden text-right sm:table-cell`}>ROI</th>
-                ) : (
-                  <>
-                    <th className={`${th} hidden text-right sm:table-cell`}>Unclaimed</th>
-                    <th className={`${th} hidden text-right sm:table-cell`}>Refined</th>
-                  </>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {!d && polled.fetching && <SkeletonRows cols={8} />}
-              {rows.map((m, i) => {
-                const net = lamportsToSol(m.net_sol);
-                const isOpen = expanded === m.authority;
-                return (
-                  <Fragment key={m.authority}>
-                  <tr className={`${m.is_ours ? oursRow : bodyRow} cursor-pointer`}
-                    title="Click to expand this wallet"
-                    onClick={() => setExpanded(isOpen ? null : m.authority)}>
-                    <td className={`${td} text-fog-muted`}>
-                      <span className={`mr-1 inline-block transition-transform ${isOpen ? "rotate-90" : ""}`}>▸</span>
-                      {offset + i + 1}
-                    </td>
-                    <td className={`${td} ${m.is_ours ? "text-steel" : "text-white"}`}>
-                      <CopyAddress address={m.authority} />{m.is_ours ? " ◆ ours" : ""}
-                    </td>
-                    <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatSol(lamportsToSol(m.deployed), 1)}</td>
-                    <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatSol(lamportsToSol(m.earned), 1)}</td>
-                    <td className={`${td} num text-right ${netTone(net)}`}>{net >= 0 ? "+" : ""}{formatSol(net, 2)}</td>
-                    <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatNum(oreGramsToOre(m.ore), useLeaderboard ? 0 : 1)}</td>
-                    {useLeaderboard ? (
-                      <td className={`${td} hidden num text-right text-gold sm:table-cell`}>{m.roi ? m.roi.toFixed(2) + "×" : "·"}</td>
-                    ) : (
-                      <>
-                        <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatNum(oreGramsToOre(m.unclaimed), 2)}</td>
-                        <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatNum(oreGramsToOre(m.refined), 2)}</td>
-                      </>
-                    )}
-                  </tr>
-                  {isOpen && (
-                    <tr>
-                      {/* w-0 min-w-full: the wrapper collapses to 0 during the table's
-                          intrinsic-width pass (percentage min-width can't resolve against
-                          an indefinite basis), so a full-width nested panel can't force the
-                          leaderboard wider than its container on mobile; it fills the cell at
-                          layout time. The panel's own scrollers handle their overflow. */}
-                      <td colSpan={8} className="bg-white/[0.015] px-2 py-3 sm:px-4">
-                        <div className="w-0 min-w-full">
-                          <MinerDetail pubkey={m.authority} />
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <Pager offset={offset} total={resultTotal} onPage={setOffset} unit="miners" loading={!d && polled.fetching} />
-        {useLeaderboard && (
-          <p className="mt-3 max-w-3xl font-mono text-[13px] leading-snug text-fog-muted">
-            <span className="text-gray-300">Net SOL</span> = lifetime returned SOL − deployed (real profit, can be negative).
-            ROI is the gross returned/deployed ratio. Both from the on-chain returned-SOL watermark (may include stake-back).
+
+        {!q ? (
+          <p className="rounded-lg border border-dashed border-line bg-ink-800/40 px-4 py-8 text-center font-mono text-[13px] text-fog-muted">
+            Paste a Solana wallet address to load that miner&apos;s stats.
           </p>
+        ) : (
+          <>
+            <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] text-fog-muted">
+              <span className="shrink-0">sort:</span>
+              <SegmentedControl
+                aria-label="Miner sort"
+                variant="loose"
+                items={SEARCH_SORTS}
+                value={sort}
+                onChange={(id) => { setSort(id); setOffset(0); }}
+              />
+            </div>
+            <MinerTable
+              rows={rows}
+              offset={offset}
+              loading={!d && polled.fetching}
+              mode="miners"
+              expanded={expanded}
+              onToggle={setExpanded}
+            />
+            <Pager offset={offset} total={d?.total ?? 0} onPage={setOffset} unit="miners" loading={!d && polled.fetching} />
+          </>
         )}
       </ChartCard>
 
-      {useLeaderboard && (
-        <ChartCard title="Gross ROI by percentile band" subtitle={b ? `${formatNum(b.n)} miners with a deploy · a size-neutral view` : ""}>
-          {b ? <div className="max-w-3xl"><HBars rows={bandRows} /></div> : <p className="font-mono text-xs text-fog-muted">No census yet.</p>}
-        </ChartCard>
-      )}
-      <Caveats provenance={polled.provenance} error={polled.error} onRetry={polled.refresh} />
+      {q && <Caveats provenance={polled.provenance} error={polled.error} onRetry={polled.refresh} />}
     </div>
   );
 }
