@@ -9,6 +9,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TabBar } from "@/components/primitives/TabBar";
 import { ChartWatermarkContext } from "@/components/stats/Charts";
 import { CohortTab } from "@/components/stats/CohortTab";
+import { RwaTab } from "@/components/stats/RwaTab";
 import { PolledActiveContext } from "@/hooks/useOreStats";
 import { TrendsTab } from "./TrendsTab";
 import { EcosystemTab } from "./EcosystemTab";
@@ -128,7 +129,8 @@ export function StatsClient() {
                  t.id === "round_analysis" ? <RoundAnalysisTab /> :
                  t.id === "miners" ? <MinersTab seed={minerSeed} onQueryChange={syncMinerQuery} /> :
                  t.id === "motherlode" ? <MotherlodeTab /> :
-                 t.id === "rounds" ? <RoundsTab /> : <CohortTab />}
+                 t.id === "rounds" ? <RoundsTab /> :
+                 t.id === "cohort" ? <CohortTab /> : <RwaTab />}
               </div>
             </PolledActiveContext.Provider>
           ) : null,
