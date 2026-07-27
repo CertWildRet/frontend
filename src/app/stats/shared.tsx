@@ -1,7 +1,8 @@
 "use client";
 
 /** Shared helpers for Ore Data tabs. */
-import { createContext } from "react";
+import { createContext, type ReactNode } from "react";
+import { IconSearch } from "@tabler/icons-react";
 import { compactNum } from "@/components/stats/Charts";
 import { oreGramsToOre, lamportsToSol, type OreMotherlodeHit } from "@/lib/oreStats";
 import { formatNum, formatPct } from "@/lib/format";
@@ -15,12 +16,20 @@ export type Tab = "trends" | "protocol" | "ecosystem" | "round_analysis" | "mine
 export type MinerSeed = { pubkey: string; n: number };
 export const MinerNavContext = createContext<(pubkey: string) => void>(() => {});
 
-export const TABS: { id: Tab; label: string }[] = [
+export const TABS: { id: Tab; label: ReactNode }[] = [
   { id: "trends", label: "Trends" },
   { id: "protocol", label: "Protocol" },
   { id: "ecosystem", label: "Ecosystem" },
   { id: "round_analysis", label: "Round Analysis" },
-  { id: "miners", label: "Search Miners" },
+  {
+    id: "miners",
+    label: (
+      <span className="inline-flex items-center gap-1.5">
+        <IconSearch size={15} stroke={1.75} aria-hidden />
+        Search Miners
+      </span>
+    ),
+  },
   { id: "motherlode", label: "Motherlode" },
   { id: "rounds", label: "Rounds" },
   { id: "cohort", label: "Cohort" },
