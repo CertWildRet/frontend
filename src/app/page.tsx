@@ -7,8 +7,7 @@ import {
 } from "./parts";
 import { PauseWhenOffscreen } from "@/components/PauseWhenOffscreen";
 import { HeroLiveStrip } from "@/components/HeroLiveStrip";
-import { SPECTRAL_CHART } from "@/lib/spectral";
-import { SpectralChartDefs } from "@/lib/SpectralChartDefs";
+import { CHART } from "@/lib/chartColors";
 
 /* ── inline data ─────────────────────────────────────────────────── */
 const STEPS = [
@@ -656,10 +655,14 @@ function StepYieldGraphic() {
   const DUR = "8.5s";
   const KEYTIMES = "0;0.41;1"; // draw over first 41%, then hold to end
   const KEYSPLINES = "0.42 0 0.58 1;0 0 0 0"; // draw eased (ease-in-out), hold frozen
+  const skyGlow = "drop-shadow(0 0 3px rgba(56,189,248,0.7))";
   return (
     <svg className={styles.howChart} viewBox="0 0 100 100" aria-hidden>
       <defs>
-        <SpectralChartDefs lineId="apyLine" areaId="apyArea" />
+        <linearGradient id="apyArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={CHART.sky} stopOpacity="0.4" />
+          <stop offset="100%" stopColor={CHART.sky} stopOpacity="0" />
+        </linearGradient>
       </defs>
       <line x1="6" y1="84" x2="94" y2="84" stroke="rgba(255,255,255,0.08)" strokeWidth="0.6" />
       {/* AREA - fades in on the same SMIL clock as the draw. */}
@@ -687,13 +690,13 @@ function StepYieldGraphic() {
         className={styles.howLine}
         d="M6 82 C 28 80, 40 62, 56 50 S 80 22, 94 10"
         pathLength={1}
-        stroke="url(#apyLine)"
+        stroke={CHART.sky}
         strokeWidth="1.1"
         strokeLinecap="round"
         fill="none"
         strokeDasharray="1"
         strokeDashoffset="1"
-        style={{ filter: SPECTRAL_CHART.lineGlow }}
+        style={{ filter: skyGlow }}
       >
         <animate
           attributeName="stroke-dashoffset"
@@ -715,9 +718,9 @@ function StepYieldGraphic() {
         cx="0"
         cy="0"
         r="2.6"
-        fill={SPECTRAL_CHART.mark}
+        fill={CHART.sky}
         opacity="0"
-        style={{ filter: SPECTRAL_CHART.markGlow }}
+        style={{ filter: skyGlow }}
       >
         <animate
           attributeName="opacity"
@@ -749,8 +752,8 @@ function StepYieldGraphic() {
         cx="94"
         cy="10"
         r="2.6"
-        fill={SPECTRAL_CHART.mark}
-        style={{ filter: SPECTRAL_CHART.markGlow }}
+        fill={CHART.sky}
+        style={{ filter: skyGlow }}
       />
     </svg>
   );

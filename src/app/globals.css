@@ -4,6 +4,21 @@
 
 :root {
   color-scheme: dark;
+  /* Chart series palette — keep in sync with src/lib/chartColors.ts */
+  --chart-cyan: #22E0E6;
+  --chart-blue: #5B6CFF;
+  --chart-violet: #9A6BFF;
+  --chart-pink: #FF5AC8;
+  --chart-amber: #E8881A;
+  --chart-steel: #9DB7D8;
+  --chart-green: #4ADE80;
+  --chart-red: #F87171;
+  --chart-teal: #2DD4BF;
+  --chart-sky: #38BDF8;
+  --chart-indigo: #818CF8;
+  --chart-rose: #FB7185;
+  --chart-lime: #A3E635;
+  --chart-orange: #FB923C;
 }
 
 @layer base {

@@ -14,6 +14,7 @@ import {
   type OreSeriesPoint,
 } from "@/lib/oreStats";
 import { formatNum } from "@/lib/format";
+import { CHART } from "@/lib/chartColors";
 import { Caveats } from "./shared";
 
 // ── Trends: the miner-actionable dashboard (quant layout spec, ORE_PC v2) ─────
@@ -239,8 +240,8 @@ export function TrendsTab() {
         <ChartCard variant="dispersion" cutCorner="bl" title="Winners / round"
           subtitle="Avg miners rewarded per round (reset-event count).">
           <AreaLine
-            spectral
             fill
+            color={CHART.pink}
             points={seriesPts.filter((p) => p.avg_winners != null).map((p) => ({ label: seriesLbl(p), value: Number(p.avg_winners) }))}
             height={205}
             zeroBaseline={false}
