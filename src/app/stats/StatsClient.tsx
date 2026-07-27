@@ -2,7 +2,8 @@
 
 /**
  * Interactive Ore Data shell — TabBar + visited-tab mounting.
- * Visited tabs stay mounted (hidden) so fetched data + pagination survive switches.
+ * Keeps the last few visited tabs mounted (hidden) so recent switches are
+ * instant; older tabs unmount to free chart/table memory.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -25,6 +26,9 @@ import {
 } from "./shared";
 import styles from "./stats.module.css";
 
+/** Max Ore Data tabs kept mounted (current + recent). Older ones unmount. */
+const MAX_VISITED_TABS = 2;
+
 const TAB_IDS = new Set<Tab>(TABS.map((tab) => tab.id));
 const tabFromQuery = (raw: string | null): Tab => {
   if (!raw) return "trends";
@@ -35,6 +39,11 @@ const tabFromQuery = (raw: string | null): Tab => {
   return TAB_IDS.has(normalized as Tab) ? normalized as Tab : "trends";
 };
 
+function pushVisited(order: Tab[], next: Tab): Tab[] {
+  const without = order.filter((id) => id !== next);
+  return [...without, next].slice(-MAX_VISITED_TABS);
+}
+
 export function StatsClient() {
   const router = useRouter();
   const pathname = usePathname();
@@ -44,12 +53,12 @@ export function StatsClient() {
   // /stats?miner=<address> is sufficient on its own.
   const requestedTab: Tab = urlMiner ? "miners" : tabFromQuery(searchParams.get("section"));
   const [tab, setTab] = useState<Tab>(requestedTab);
-  // Visited tabs stay MOUNTED (hidden) so their fetched data + pagination
-  // survive tab switches — switching back is instant instead of a blank refetch.
-  const [visited, setVisited] = useState<Set<Tab>>(() => new Set([requestedTab]));
+  // LRU of visited tabs — capped so chart-heavy trees don't accumulate forever.
+  const [visitedOrder, setVisitedOrder] = useState<Tab[]>(() => [requestedTab]);
+  const visited = new Set(visitedOrder);
   const [minerQuery, setMinerQuery] = useState(urlMiner ?? "");
   const setActiveTab = useCallback((next: Tab) => {
-    setVisited((current) => current.has(next) ? current : new Set(current).add(next));
+    setVisitedOrder((current) => pushVisited(current, next));
     setTab(next);
   }, []);
 
@@ -119,8 +128,8 @@ export function StatsClient() {
         <TabBar aria-label="Ore Data sections" items={TABS} value={tab} onChange={openTab} />
       </div>
       <div className={styles.content}>
-        {/* visited tabs stay mounted (instant switching, state kept) but their
-            pollers PAUSE while hidden — see PolledActiveContext */}
+        {/* Recent tabs stay mounted (instant switching) but pollers PAUSE while
+            hidden — see PolledActiveContext. Older visited tabs unmount. */}
         {TABS.map((t) =>
           visited.has(t.id) ? (
             <PolledActiveContext.Provider key={t.id} value={tab === t.id}>

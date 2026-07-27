@@ -23,25 +23,16 @@ const activeStyle = { ...tabDisplayFont, ...tabActiveGlow } as const;
  * The single, app-wide top bar - dispersion/glass theme. Renders the prism
  * logo, inline nav with an active-route glass pill, wallet button, and the
  * live market ticker beneath the navbar row.
+ *
+ * Glass blur lives in `.site-chrome` (globals.css) so the mobile compositing
+ * diet can disable backdrop-filter — inline styles cannot be overridden.
  */
-const chromeStyle = {
-  background: "linear-gradient(180deg, rgba(14,18,34,0.85), rgba(7,9,18,0.75))",
-  backdropFilter: "blur(22px) saturate(120%)",
-  WebkitBackdropFilter: "blur(22px) saturate(120%)",
-  boxShadow: "0 8px 32px -12px rgba(0,0,0,0.6)",
-  contain: "paint",
-  transform: "translateZ(0)",
-} as const;
-
 export function SiteHeader() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   return (
-    <div
-      className="sticky top-0 z-30 border-b border-white/[0.06]"
-      style={chromeStyle}
-    >
+    <div className="site-chrome sticky top-0 z-30 border-b border-white/[0.06]">
       {/* spectral gradient def for the prism mark */}
       <svg width="0" height="0" className="absolute" aria-hidden>
         <defs>

@@ -1,38 +1,32 @@
 "use client";
 
-import { useMemo } from "react";
-import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
-import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import "@solana/wallet-adapter-react-ui/styles.css";
-import { rpcEndpoint } from "@/lib/cwr";
-import { MOCK } from "@/lib/mock";
-import { MockWalletAdapter, MockAutoConnect } from "@/lib/mockWallet";
+import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 import { ToastProvider } from "./Toast";
+import { WalletShellActive, needsWalletShell } from "./walletShell";
 
 /**
- * Client-side provider boundary: RPC connection + wallet adapter + connect modal.
+ * App providers: Toast is always on. Solana wallet/RPC shell is loaded only on
+ * routes that need it (/ore, /profile, …) so Ore Data (/stats) stays light.
  *
- * `wallets={[]}` is intentional - modern wallet-adapter auto-detects any wallet
- * implementing the Wallet Standard (Phantom, Solflare, Backpack, …), so we
- * don't bundle per-wallet adapter packages (that's what dragged in the
- * Trezor/Stellar/USB multi-chain subtree we removed).
+ * `wallets={[]}` inside SolanaProviders is intentional — wallet-adapter
+ * auto-detects Wallet Standard wallets without bundling per-wallet packages.
  */
+const SolanaProviders = dynamic(
+  () => import("./SolanaProviders").then((m) => m.SolanaProviders),
+);
+
 export function Providers({ children }: { children: React.ReactNode }) {
-  const endpoint = useMemo(() => rpcEndpoint(), []);
-  // Mock mode injects a no-op "connected" wallet so the connected UI is
-  // designable; otherwise the empty list lets wallet-adapter auto-detect real
-  // Wallet-Standard wallets (Phantom, Solflare, …).
-  const wallets = useMemo(() => (MOCK ? [new MockWalletAdapter()] : []), []);
+  const pathname = usePathname();
+  const wallet = needsWalletShell(pathname);
+
   return (
-    <ConnectionProvider endpoint={endpoint} config={{ commitment: "confirmed" }}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>
-          <ToastProvider>
-            {MOCK && <MockAutoConnect />}
-            {children}
-          </ToastProvider>
-        </WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <ToastProvider>
+      {wallet ? (
+        <SolanaProviders>{children}</SolanaProviders>
+      ) : (
+        <WalletShellActive.Provider value={false}>{children}</WalletShellActive.Provider>
+      )}
+    </ToastProvider>
   );
 }

@@ -17,20 +17,29 @@ type Ticker = {
  * Live market strip in the site header: spot prices, motherlode pool, and yields.
  * Reads the Vercel-cached /api/ticker (60s revalidate) and re-polls each minute,
  * so the upstream analytics service load is constant regardless of visitors.
+ * Pauses while the document is hidden.
  */
 export function HeaderTicker() {
   const [t, setT] = useState<Ticker | null>(null);
 
   useEffect(() => {
     let alive = true;
-    const load = () =>
+    const load = () => {
+      if (document.hidden) return;
       fetch("/api/ticker")
         .then((r) => r.json())
         .then((j) => { if (alive && j?.data) setT(j.data); })
         .catch(() => {});
+    };
     load();
     const id = setInterval(load, 60_000);
-    return () => { alive = false; clearInterval(id); };
+    const onVis = () => { if (!document.hidden) load(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      alive = false;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, []);
 
   if (!t) return null;
