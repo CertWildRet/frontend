@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { WalletButton } from "@/components/WalletButton";
 import { MobileNav } from "@/components/MobileNav";
 import { HeaderTicker } from "@/components/HeaderTicker";
-import { NAV_ITEMS, isActiveRoute } from "@/lib/nav";
+import { NavLinkLabel } from "@/components/NavLinkLabel";
+import { NAV_ITEMS, isNavItemActive } from "@/lib/nav";
 import {
   tabActiveClass,
   tabActiveGlow,
@@ -34,6 +35,7 @@ const chromeStyle = {
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   return (
     <div
@@ -75,7 +77,7 @@ export function SiteHeader() {
             </Link>
             <nav className="hidden min-w-0 items-center gap-1 overflow-x-auto sm:flex [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {NAV_ITEMS.map((l) => {
-                const active = isActiveRoute(pathname, l.href);
+                const active = isNavItemActive(pathname, searchParams, l);
                 return (
                   <Link
                     key={l.href}
@@ -87,7 +89,7 @@ export function SiteHeader() {
                         : `${tabIdleClass} shrink-0 px-3 py-1.5 text-[14px]`
                     }
                   >
-                    {l.label}
+                    <NavLinkLabel item={l} />
                   </Link>
                 );
               })}

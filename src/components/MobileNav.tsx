@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { NAV_ITEMS, isActiveRoute } from "@/lib/nav";
+import { usePathname, useSearchParams } from "next/navigation";
+import { NAV_ITEMS, isNavItemActive } from "@/lib/nav";
+import { NavLinkLabel } from "@/components/NavLinkLabel";
 import {
   tabActiveClass,
   tabActiveGlow,
@@ -32,6 +33,7 @@ export function MobileNav() {
   const [top, setTop] = useState(0);
   const btnRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => setMounted(true), []);
 
@@ -117,7 +119,7 @@ export function MobileNav() {
                   >
                     <nav className="mx-auto flex max-w-6xl flex-col gap-1 px-6 py-3">
                       {NAV_ITEMS.map((l) => {
-                        const active = isActiveRoute(pathname, l.href);
+                        const active = isNavItemActive(pathname, searchParams, l);
                         return (
                           <Link
                             key={l.href}
@@ -130,7 +132,7 @@ export function MobileNav() {
                                 : `${tabIdleClass} px-3 py-2.5 text-sm`
                             }
                           >
-                            {l.label}
+                            <NavLinkLabel item={l} />
                           </Link>
                         );
                       })}
