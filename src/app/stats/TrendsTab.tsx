@@ -4,21 +4,22 @@ import { useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { TileSkeleton, Refreshing } from "@/components/primitives/Skeleton";
-import { ChartCard, type Pt } from "@/components/stats/Charts";
+import { ChartCard, AreaLine, type Pt } from "@/components/stats/Charts";
 import { DualLine, CostEvChart, BarsLine, PopBars, ORE_COLOR, type TPt } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
 import {
-  fetchOreTrends, fetchOreYields, fetchOreDominance,
+  fetchOreTrends, fetchOreYields, fetchOreDominance, fetchOreSeries,
   expectedPopOre,
   type OreTrendPoint,
+  type OreSeriesPoint,
 } from "@/lib/oreStats";
 import { formatNum } from "@/lib/format";
 import { Caveats } from "./shared";
 
 // ── Trends: the miner-actionable dashboard (quant layout spec, ORE_PC v2) ─────
 // Charts answering "should I deploy right now": prices, production cost vs
-// market with the EV gap, activity, yields/dominance, and motherlode pop value.
-// Protocol internals and Ecosystem live in their own tabs.
+// market with the EV gap, activity, yields/dominance, motherlode pop value,
+// and winners per round. Ecosystem metrics live in their own tab.
 const RANGES: { id: string; label: string }[] = [
   { id: "24h", label: "24H" }, { id: "7d", label: "7D" }, { id: "30d", label: "30D" }, { id: "90d", label: "90D" }, { id: "all", label: "All" },
 ];
@@ -68,6 +69,8 @@ function indexByTs<T extends { hour_ts?: number; day_ts?: number }>(
 export function TrendsTab() {
   const [range, setRange] = useState("30d");
   const trends = usePolled(() => fetchOreTrends(range), 60_000, [range]);
+  const seriesRange = range === "24h" ? "7d" : range;
+  const series = usePolled(() => fetchOreSeries(seriesRange), 60_000, [seriesRange]);
   const yields = usePolled(() => fetchOreYields(), 120_000, []);
   const dominance = usePolled(() => fetchOreDominance(), 300_000, []);
   const tp = trends.data?.points ?? [];
@@ -93,6 +96,11 @@ export function TrendsTab() {
     const dt = new Date(ts * 1000);
     if (range === "24h") return `${dt.getHours()}:${String(dt.getMinutes()).padStart(2, "0")}`;
     return `${dt.getMonth() + 1}/${dt.getDate()}`;
+  };
+  const seriesPts = series.data?.points ?? [];
+  const seriesLbl = (p: OreSeriesPoint) => {
+    const dt = new Date(Number(p.bucket_ts) * 1000);
+    return seriesRange === "7d" ? `${dt.getMonth() + 1}/${dt.getDate()} ${dt.getHours()}:00` : `${dt.getMonth() + 1}/${dt.getDate()}`;
   };
   const mkT = (pick: (p: OreTrendPoint) => number | null): TPt[] =>
     tp.map((p) => ({ label: dayLbl(p.day_ts), value: pick(p) }));
@@ -124,7 +132,7 @@ export function TrendsTab() {
       <div className="flex flex-wrap items-center justify-between gap-y-2">
         <div className="section-label">
           Showing {trends.loading ? range : trends.data?.range ?? range} of data
-          <Refreshing active={trends.fetching && !!trends.data} />
+          <Refreshing active={(trends.fetching && !!trends.data) || (series.fetching && !!series.data)} />
         </div>
         <SegmentedControl aria-label="Time range" items={RANGES} value={range} onChange={setRange} />
       </div>
@@ -227,6 +235,18 @@ export function TrendsTab() {
               loading={dominance.loading || yields.loading} />
           </ChartCard>
         </div>
+        {/* (7) winners per round */}
+        <ChartCard variant="dispersion" cutCorner="bl" title="Winners / round"
+          subtitle="Avg miners rewarded per round (reset-event count).">
+          <AreaLine
+            spectral
+            fill
+            points={seriesPts.filter((p) => p.avg_winners != null).map((p) => ({ label: seriesLbl(p), value: Number(p.avg_winners) }))}
+            height={205}
+            zeroBaseline={false}
+            fmt={(v) => formatNum(v, 0)}
+            loading={series.loading} />
+        </ChartCard>
         {/* (4) motherlode — full width */}
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="bl" title="Motherlode pop value"
@@ -251,7 +271,7 @@ export function TrendsTab() {
         </div>
       </div>
 
-      <Caveats provenance={trends.provenance} error={trends.error} onRetry={trends.refresh} />
+      <Caveats provenance={trends.provenance ?? series.provenance} error={trends.error ?? series.error} onRetry={() => { trends.refresh(); series.refresh(); }} />
     </div>
   );
 }

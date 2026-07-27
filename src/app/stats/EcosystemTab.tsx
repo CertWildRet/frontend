@@ -10,7 +10,7 @@ import { StatTile } from "@/components/primitives/Stat";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { TileSkeleton, Refreshing } from "@/components/primitives/Skeleton";
 import { AreaLine, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
-import { DualLine, BarsLine, SOL_COLOR, ORE_COLOR, type TPt } from "@/components/stats/TrendCharts";
+import { DualLine, BarsLine, type TPt } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
 import { fetchOreEcosystem, fetchOreTrends, type OreEcoPoint } from "@/lib/oreStats";
 import { formatSol, formatNum } from "@/lib/format";
@@ -104,14 +104,6 @@ export function EcosystemTab() {
           <AreaLine fill points={mkP((p) => p.top10_share_pct)} height={200} zeroBaseline={false} color="#E8881A"
             fmt={(v) => formatNum(v, 1) + "%"} yFmt={(v) => formatNum(v, 0) + "%"} loading={eco.loading} />
         </ChartCard>
-        <div className="lg:col-span-2">
-          <ChartCard variant="dispersion" cutCorner="bl" title="Claims flow"
-            subtitle="What miners cash out per day: SOL winnings vs ORE claims. Falling ORE claims = holders letting the pile refine.">
-            <DualLine a={mkN((p) => p.claims_sol)} b={mkN((p) => p.claims_ore)} aName="SOL claimed" bName="ORE claimed"
-              aColor={SOL_COLOR} bColor={ORE_COLOR} height={210}
-              aFmt={(v) => formatNum(v, 0)} bFmt={(v) => formatNum(v, 0)} loading={eco.loading} />
-          </ChartCard>
-        </div>
       </div>
       <Caveats provenance={eco.provenance} error={eco.error} onRetry={eco.refresh} />
     </div>
