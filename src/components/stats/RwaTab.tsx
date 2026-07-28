@@ -95,7 +95,10 @@ export function RwaTab() {
     prices.data?.quotes.find((q) => q.feedId === feedId) ?? null;
 
   const orePoints = trends.data?.points ?? [];
-  const useHourLabels = range === "24h" || (orePoints.length > 1 && (orePoints[1]?.day_ts - orePoints[0]?.day_ts) < 48 * 3600);
+  // Hour labels only for sub-daily buckets (24h). Daily ORE points sit at
+  // midnight UTC (~86400s apart) which is still < 48h — the old check made
+  // every 7d/30d tick read "00:00".
+  const useHourLabels = range === "24h";
   const lbl = (ts: number) => (useHourLabels ? hourLbl(ts) : dayLbl(ts));
 
   const chart = useMemo(() => {
