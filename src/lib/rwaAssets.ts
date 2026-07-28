@@ -1,9 +1,9 @@
 /**
- * RWA / Crypto comparison benchmarks (Autonom oracle feeds).
+ * RWA comparison benchmarks (Autonom oracle feeds).
  * ORE is the fixed comparison asset (from analytics); these are the selectable peers.
  */
 
-export type RwaAssetClass = "Crypto" | "Commodity" | "Equity" | "Rates";
+export type RwaAssetClass = "Commodity" | "Equity" | "Rates";
 
 /** How a price quote should be labelled in the UI (never present stale as live). */
 export type FreshnessLabel = "live" | "market_closed" | "last_close" | "stale";
@@ -21,9 +21,6 @@ export type RwaAsset = {
 };
 
 export const RWA_ASSETS: readonly RwaAsset[] = [
-  { feedId: 3001, symbol: "BTC", name: "Bitcoin", assetClass: "Crypto", marketHours: "24/7" },
-  { feedId: 3002, symbol: "ETH", name: "Ethereum", assetClass: "Crypto", marketHours: "24/7" },
-  { feedId: 3005, symbol: "SOL", name: "Solana", assetClass: "Crypto", marketHours: "24/7" },
   { feedId: 2056, symbol: "XAU", name: "Gold", assetClass: "Commodity", marketHours: "24/5" },
   { feedId: 2069, symbol: "XAG", name: "Silver", assetClass: "Commodity", marketHours: "24/5" },
   { feedId: 2003, symbol: "CL1", name: "Crude WTI", assetClass: "Commodity", marketHours: "24/5" },
@@ -33,7 +30,7 @@ export const RWA_ASSETS: readonly RwaAsset[] = [
   { feedId: 7007, symbol: "T3MO_Y", name: "3-month T-Bill", assetClass: "Rates", marketHours: "24/5" },
 ] as const;
 
-export const DEFAULT_RWA_FEED_ID = 3001; // BTC
+export const DEFAULT_RWA_FEED_ID = 2056; // Gold
 
 export const RWA_RANGES = [
   { id: "24h", label: "24H" },
@@ -45,7 +42,7 @@ export const RWA_RANGES = [
 
 export type RwaRange = (typeof RWA_RANGES)[number]["id"];
 
-export const RWA_ASSET_CLASSES: RwaAssetClass[] = ["Crypto", "Commodity", "Equity", "Rates"];
+export const RWA_ASSET_CLASSES: RwaAssetClass[] = ["Commodity", "Equity", "Rates"];
 
 export function rwaAssetByFeedId(feedId: number): RwaAsset | undefined {
   return RWA_ASSETS.find((a) => a.feedId === feedId);

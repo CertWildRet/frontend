@@ -1,5 +1,5 @@
 /**
- * Client fetchers for the RWA / Crypto stats tab.
+ * Client fetchers for the RWA stats tab.
  * Calls same-origin `/api/rwa/*` only — Autonom keys stay server-side.
  */
 import type { OreEnvelope, OreProvenance } from "@/lib/oreStats";

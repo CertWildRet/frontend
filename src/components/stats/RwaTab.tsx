@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * RWA / Crypto tab — compare ORE USD performance against Autonom oracle
- * benchmarks (BTC, ETH, SOL, gold, silver, crude, equities, T-bills).
- * ORE is fixed; the user picks one peer. Chart defaults to normalized %.
+ * RWA tab — compare ORE USD performance against Autonom oracle benchmarks
+ * (gold, silver, crude, equities, T-bills). ORE is fixed; the user picks one
+ * peer. Chart defaults to normalized %.
  */
 import { useMemo, useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
@@ -136,9 +136,9 @@ export function RwaTab() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-lg font-semibold tracking-wide text-white">RWA / Crypto</h2>
+          <h2 className="font-display text-lg font-semibold tracking-wide text-white">RWA</h2>
           <p className="mt-1 max-w-2xl text-sm text-fog-muted">
-            Compare ORE&apos;s USD performance against major crypto, commodity, equity, and rates benchmarks.
+            Compare ORE&apos;s USD performance against commodity, equity, and rates benchmarks.
             Chart shows normalized % from the start of the selected range.
           </p>
         </div>

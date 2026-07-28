@@ -33,7 +33,7 @@ export const TABS: { id: Tab; label: ReactNode }[] = [
   { id: "motherlode", label: "Motherlode" },
   { id: "rounds", label: "Rounds" },
   { id: "cohort", label: "Cohort" },
-  { id: "rwa", label: "RWA / Crypto" },
+  { id: "rwa", label: "RWA" },
 ];
 
 export const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "·");
