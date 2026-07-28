@@ -26,6 +26,7 @@ export type TabItem<T extends string = string> = {
   id: T;
   label: ReactNode;
   title?: string;
+  className?: string;
 };
 
 type CommonProps<T extends string> = {
@@ -58,12 +59,13 @@ function TabButton<T extends string>({
     <button
       type="button"
       title={item.title}
+      aria-label={item.title}
       onClick={onSelect}
       style={active ? { ...tabDisplayFont, ...tabActiveGlow } : tabDisplayFont}
       className={
         active
-          ? `${tabActiveClass} inline-flex items-center ${pad}`
-          : `${idleClass} inline-flex items-center ${pad}`
+          ? `${tabActiveClass} inline-flex items-center ${pad}${item.className ? ` ${item.className}` : ""}`
+          : `${idleClass} inline-flex items-center ${pad}${item.className ? ` ${item.className}` : ""}`
       }
     >
       {item.label}

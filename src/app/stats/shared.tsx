@@ -16,24 +16,21 @@ export type Tab = "trends" | "ecosystem" | "round_analysis" | "rankings" | "mine
 export type MinerSeed = { pubkey: string; n: number };
 export const MinerNavContext = createContext<(pubkey: string) => void>(() => {});
 
-export const TABS: { id: Tab; label: ReactNode }[] = [
+export const TABS: { id: Tab; label: ReactNode; title?: string; className?: string }[] = [
   { id: "trends", label: "Trends" },
   { id: "ecosystem", label: "Ecosystem" },
   { id: "round_analysis", label: "Round Analysis" },
   { id: "rankings", label: "Miner Rankings" },
-  {
-    id: "miners",
-    label: (
-      <span className="inline-flex items-center gap-1.5">
-        <IconSearch size={15} stroke={1.75} aria-hidden />
-        Search Miners
-      </span>
-    ),
-  },
   { id: "motherlode", label: "Motherlode" },
   { id: "rounds", label: "Rounds" },
   { id: "cohort", label: "Cohort" },
   { id: "rwa", label: "RWA" },
+  {
+    id: "miners",
+    title: "Search Miners",
+    className: "ml-auto",
+    label: <IconSearch size={15} stroke={1.75} aria-hidden />,
+  },
 ];
 
 export const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "·");
