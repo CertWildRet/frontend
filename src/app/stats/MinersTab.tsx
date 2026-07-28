@@ -4,12 +4,12 @@
  * Search Miners — address lookup (search box + results / MinerDetail).
  * Census leaderboard lives on Miner Rankings.
  */
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { Refreshing } from "@/components/primitives/Skeleton";
 import { ChartCard } from "@/components/stats/Charts";
 import { MinerDetail } from "@/components/stats/MinerDetail";
-import { usePolled } from "@/hooks/useOreStats";
+import { PolledActiveContext, usePolled } from "@/hooks/useOreStats";
 import { fetchOreMiners, type OreEnvelope, type OreProvenance } from "@/lib/oreStats";
 import { formatNum } from "@/lib/format";
 import {
@@ -50,8 +50,19 @@ export function MinersTab({
   const [q, setQ] = useState("");
   const [offset, setOffset] = useState(0);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const tabActive = useContext(PolledActiveContext);
   const onQueryChangeRef = useRef(onQueryChange);
   useEffect(() => { onQueryChangeRef.current = onQueryChange; }, [onQueryChange]);
+  // Focus the search box whenever this tab is shown so users can paste immediately.
+  // Defer a frame: the parent keeps the tab mounted under `hidden` until active.
+  useEffect(() => {
+    if (!tabActive) return;
+    const id = requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [tabActive]);
   useEffect(() => {
     const t = setTimeout(() => {
       const next = qInput.trim();
@@ -140,6 +151,7 @@ export function MinersTab({
           : "Look up any ORE miner by Solana wallet address"}>
         <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] text-fog-muted">
           <input
+            ref={inputRef}
             value={qInput}
             onChange={(e) => setQInput(e.target.value)}
             placeholder="paste Solana wallet address…"
