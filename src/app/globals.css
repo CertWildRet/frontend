@@ -4,6 +4,21 @@
 
 :root {
   color-scheme: dark;
+  /* Chart series palette — keep in sync with src/lib/chartColors.ts */
+  --chart-cyan: #22E0E6;
+  --chart-blue: #5B6CFF;
+  --chart-violet: #9A6BFF;
+  --chart-pink: #FF5AC8;
+  --chart-amber: #E8881A;
+  --chart-steel: #9DB7D8;
+  --chart-green: #4ADE80;
+  --chart-red: #F87171;
+  --chart-teal: #2DD4BF;
+  --chart-sky: #38BDF8;
+  --chart-indigo: #818CF8;
+  --chart-rose: #FB7185;
+  --chart-lime: #A3E635;
+  --chart-orange: #FB923C;
 }
 
 @layer base {
@@ -141,6 +156,15 @@
 }
 
 @layer components {
+  /* Sticky site header chrome — blur is class-based so mobile diet can kill it. */
+  .site-chrome {
+    background: linear-gradient(180deg, rgba(14, 18, 34, 0.85), rgba(7, 9, 18, 0.75));
+    backdrop-filter: blur(22px) saturate(120%);
+    -webkit-backdrop-filter: blur(22px) saturate(120%);
+    box-shadow: 0 8px 32px -12px rgba(0, 0, 0, 0.6);
+    contain: paint;
+    transform: translateZ(0);
+  }
   .card {
     @apply relative rounded-xl p-5 backdrop-blur-sm;
     background:
@@ -478,9 +502,12 @@
   }
 }
 @media (max-width: 768px) {
-  .card, .panel, .chip, .btn-outline {
+  .card, .panel, .chip, .btn-outline, .site-chrome {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+  }
+  .site-chrome {
+    background: rgba(7, 9, 18, 0.96);
   }
   .card { background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01) 30%, rgba(7,9,18,0.2)), rgba(14, 18, 34, 0.94); }
   .panel { background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.008) 30%, rgba(7,9,18,0.18)), rgba(14, 18, 34, 0.92); }

@@ -11,11 +11,9 @@
 import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
 import { useFillHeight } from "@/hooks/useFillHeight";
 import styles from "@/app/dispersion.module.css";
-import { SPECTRAL_CHART, spectralChartAreaUrl, spectralChartLineUrl } from "@/lib/spectral";
-import { SpectralChartDefs } from "@/lib/SpectralChartDefs";
+import { CHART } from "@/lib/chartColors";
 import { ChartSkeleton } from "@/components/primitives/Skeleton";
 
-const STEEL = "#9DB7D8";
 const GRID = "rgba(255,255,255,0.06)";
 const AXIS = "#B7BDD2"; // lightened for axis legibility (was fog-muted #9094A0)
 const SURFACE = "#0E1222"; // ink-800 (tooltip bg)
@@ -203,13 +201,12 @@ export const compactNum = (v: number): string => {
  */
 export function AreaLine({
   points,
-  color = STEEL,
+  color = CHART.steel,
   height = 210,
   fmt = (v) => v.toLocaleString(),
   yFmt,
   yLabel,
   zeroBaseline = true,
-  spectral = false,
   loading = false,
   fill = false,
 }: {
@@ -220,8 +217,6 @@ export function AreaLine({
   yFmt?: (v: number) => string;
   yLabel?: string;
   zeroBaseline?: boolean;
-  /** Home-page APY chart look: cyan→blue→pink stroke + purple gradient fill. */
-  spectral?: boolean;
   /** First fetch still in flight — renders a skeleton instead of "no data yet". */
   loading?: boolean;
   /** Grow to fill a grid-stretched card's leftover height (paired rows). `height`
@@ -280,11 +275,7 @@ export function AreaLine({
 
   const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(" ");
   const area = `${line} L${x(n - 1).toFixed(1)},${plotB.toFixed(1)} L${x(0).toFixed(1)},${plotB.toFixed(1)} Z`;
-  const areaGid = spectral ? `spectral-area-${uid}` : `g-${color.replace(/[^a-z0-9]/gi, "")}-${uid}`;
-  const lineGid = `spectral-line-${uid}`;
-  const markColor = spectral ? SPECTRAL_CHART.mark : color;
-  const markGlow = spectral ? SPECTRAL_CHART.markGlow : undefined;
-  const lineGlow = spectral ? SPECTRAL_CHART.lineGlow : undefined;
+  const areaGid = `g-${color.replace(/[^a-z0-9]/gi, "")}-${uid}`;
 
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -312,14 +303,10 @@ export function AreaLine({
         onPointerLeave={() => setHover(null)}
       >
         <defs>
-          {spectral ? (
-            <SpectralChartDefs lineId={lineGid} areaId={areaGid} />
-          ) : (
-            <linearGradient id={areaGid} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity="0.24" />
-              <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-            </linearGradient>
-          )}
+          <linearGradient id={areaGid} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.24" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+          </linearGradient>
         </defs>
         {gy.map((g, gi) => {
           const yy = padT + g * (plotB - padT);
@@ -331,24 +318,22 @@ export function AreaLine({
             </g>
           );
         })}
-        <path d={area} fill={spectral ? spectralChartAreaUrl(areaGid) : `url(#${areaGid})`} />
+        <path d={area} fill={`url(#${areaGid})`} />
         <path
           d={line}
           fill="none"
-          stroke={spectral ? spectralChartLineUrl(lineGid) : color}
+          stroke={color}
           strokeWidth={2}
           strokeLinejoin="round"
           strokeLinecap="round"
-          style={lineGlow ? { filter: lineGlow } : undefined}
         />
         <circle
           cx={x(n - 1)}
           cy={y(points[n - 1].value)}
           r={3.5}
-          fill={markColor}
+          fill={color}
           stroke={SURFACE}
           strokeWidth={1.5}
-          style={markGlow ? { filter: markGlow } : undefined}
         />
         {xt.map((idx, ti) => (
           <text key={ti} x={x(idx)} y={H - 8} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily="monospace"
@@ -357,7 +342,7 @@ export function AreaLine({
         {hover != null && (
           <g>
             <line x1={x(hover)} y1={padT} x2={x(hover)} y2={plotB} stroke={AXIS} strokeWidth={1} strokeDasharray="3 3" />
-            <circle cx={x(hover)} cy={y(points[hover].value)} r={4} fill={markColor} stroke={SURFACE} strokeWidth={1.5} style={markGlow ? { filter: markGlow } : undefined} />
+            <circle cx={x(hover)} cy={y(points[hover].value)} r={4} fill={color} stroke={SURFACE} strokeWidth={1.5} />
             <Tooltip x={x(hover)} y={y(points[hover].value)} W={W} lines={[points[hover].label, fmt(points[hover].value)]} />
           </g>
         )}
@@ -369,7 +354,7 @@ export function AreaLine({
 /** Categorical bars with an optional expected reference line + hover tooltip. */
 export function Bars({
   bars,
-  color = STEEL,
+  color = CHART.steel,
   height = 190,
   fmt = (v) => v.toLocaleString(),
   expected,
@@ -455,7 +440,7 @@ export function Bars({
 /** Horizontal percentile-band bars (leaderboard ROI bands). */
 export function HBars({
   rows,
-  color = STEEL,
+  color = CHART.steel,
   fmt = (v) => v.toFixed(2) + "×",
 }: {
   rows: { label: string; value: number }[];

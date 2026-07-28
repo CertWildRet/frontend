@@ -8,7 +8,7 @@ import { oreGramsToOre, lamportsToSol, type OreMotherlodeHit } from "@/lib/oreSt
 import { formatNum, formatPct } from "@/lib/format";
 import styles from "./stats.module.css";
 
-export type Tab = "trends" | "ecosystem" | "round_analysis" | "miners" | "motherlode" | "rounds" | "cohort" | "rwa";
+export type Tab = "trends" | "ecosystem" | "round_analysis" | "rankings" | "miners" | "motherlode" | "rounds" | "cohort" | "rwa";
 
 // Cross-tab jump: any row (e.g. a motherlode sharer) can send a pubkey to the
 // Search Miners tab and pre-fill its search bar. `n` bumps each call so re-clicking
@@ -20,6 +20,7 @@ export const TABS: { id: Tab; label: ReactNode }[] = [
   { id: "trends", label: "Trends" },
   { id: "ecosystem", label: "Ecosystem" },
   { id: "round_analysis", label: "Round Analysis" },
+  { id: "rankings", label: "Miner Rankings" },
   {
     id: "miners",
     label: (

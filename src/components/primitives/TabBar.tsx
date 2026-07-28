@@ -51,7 +51,7 @@ function TabButton<T extends string>({
 }) {
   const pad =
     size === "lg"
-      ? "px-3.5 py-1.5 text-[14px]"
+      ? "px-3.5 py-2 text-[14px]"
       : "px-2.5 py-1 text-[13px]";
 
   return (
@@ -62,8 +62,8 @@ function TabButton<T extends string>({
       style={active ? { ...tabDisplayFont, ...tabActiveGlow } : tabDisplayFont}
       className={
         active
-          ? `${tabActiveClass} ${pad}`
-          : `${idleClass} ${pad}`
+          ? `${tabActiveClass} inline-flex items-center ${pad}`
+          : `${idleClass} inline-flex items-center ${pad}`
       }
     >
       {item.label}

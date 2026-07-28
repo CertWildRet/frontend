@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { WalletButton } from "@/components/WalletButton";
 import { MobileNav } from "@/components/MobileNav";
 import { HeaderTicker } from "@/components/HeaderTicker";
-import { NAV_ITEMS, isActiveRoute } from "@/lib/nav";
+import { NavLinkLabel } from "@/components/NavLinkLabel";
+import { NAV_ITEMS, isNavItemActive } from "@/lib/nav";
 import {
   tabActiveClass,
   tabActiveGlow,
@@ -22,24 +23,16 @@ const activeStyle = { ...tabDisplayFont, ...tabActiveGlow } as const;
  * The single, app-wide top bar - dispersion/glass theme. Renders the prism
  * logo, inline nav with an active-route glass pill, wallet button, and the
  * live market ticker beneath the navbar row.
+ *
+ * Glass blur lives in `.site-chrome` (globals.css) so the mobile compositing
+ * diet can disable backdrop-filter — inline styles cannot be overridden.
  */
-const chromeStyle = {
-  background: "linear-gradient(180deg, rgba(14,18,34,0.85), rgba(7,9,18,0.75))",
-  backdropFilter: "blur(22px) saturate(120%)",
-  WebkitBackdropFilter: "blur(22px) saturate(120%)",
-  boxShadow: "0 8px 32px -12px rgba(0,0,0,0.6)",
-  contain: "paint",
-  transform: "translateZ(0)",
-} as const;
-
 export function SiteHeader() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   return (
-    <div
-      className="sticky top-0 z-30 border-b border-white/[0.06]"
-      style={chromeStyle}
-    >
+    <div className="site-chrome sticky top-0 z-30 border-b border-white/[0.06]">
       {/* spectral gradient def for the prism mark */}
       <svg width="0" height="0" className="absolute" aria-hidden>
         <defs>
@@ -75,7 +68,7 @@ export function SiteHeader() {
             </Link>
             <nav className="hidden min-w-0 items-center gap-1 overflow-x-auto sm:flex [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {NAV_ITEMS.map((l) => {
-                const active = isActiveRoute(pathname, l.href);
+                const active = isNavItemActive(pathname, searchParams, l);
                 return (
                   <Link
                     key={l.href}
@@ -83,11 +76,11 @@ export function SiteHeader() {
                     style={active ? activeStyle : tabDisplayFont}
                     className={
                       active
-                        ? `${tabActiveClass} shrink-0 px-3.5 py-1.5 text-[14px]`
-                        : `${tabIdleClass} shrink-0 px-3 py-1.5 text-[14px]`
+                        ? `${tabActiveClass} inline-flex items-center shrink-0 px-3.5 py-2 text-[14px]`
+                        : `${tabIdleClass} inline-flex items-center shrink-0 px-3 py-2 text-[14px]`
                     }
                   >
-                    {l.label}
+                    <NavLinkLabel item={l} />
                   </Link>
                 );
               })}

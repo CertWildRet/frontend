@@ -32,6 +32,23 @@ const config: Config = {
         bg: { DEFAULT: "#050506", surface: "#0A0A0C", elevated: "#17171C", border: "#1C1C20" },
         accent: { simple: "#9DB7D8", refined: "#E8881A", ultra: "#FF5C66", info: "#9DB7D8" },
         muted: "#9094A0",
+        // Chart series palette — keep in sync with src/lib/chartColors.ts (canonical for SVG).
+        chart: {
+          cyan: "#22E0E6",
+          blue: "#5B6CFF",
+          violet: "#9A6BFF",
+          pink: "#FF5AC8",
+          amber: "#E8881A",
+          steel: "#9DB7D8",
+          green: "#4ADE80",
+          red: "#F87171",
+          teal: "#2DD4BF",
+          sky: "#38BDF8",
+          indigo: "#818CF8",
+          rose: "#FB7185",
+          lime: "#A3E635",
+          orange: "#FB923C",
+        },
       },
       fontFamily: {
         display: ['"Chakra Petch"', "ui-sans-serif", "system-ui", "sans-serif"],

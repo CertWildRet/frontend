@@ -5,7 +5,7 @@
  * Joins /ore/trends market_ratio_sol onto daily ecosystem points for the
  * Buyback pressure dual-axis chart.
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { TileSkeleton, Refreshing } from "@/components/primitives/Skeleton";
@@ -13,10 +13,12 @@ import { AreaLine, ChartCard, compactNum, type Pt } from "@/components/stats/Cha
 import { DualLine, BarsLine, type TPt } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
 import { fetchOreEcosystem, fetchOreTrends, type OreEcoPoint } from "@/lib/oreStats";
+import { completeUtcDays, type CompleteUtcDayRange } from "@/lib/completeUtcDays";
+import { CHART } from "@/lib/chartColors";
 import { formatSol, formatNum } from "@/lib/format";
 import { Caveats } from "./shared";
 
-const ECO_RANGES: { id: string; label: string }[] = [
+const ECO_RANGES: { id: CompleteUtcDayRange; label: string }[] = [
   { id: "30d", label: "30D" }, { id: "90d", label: "90D" }, { id: "all", label: "All" },
 ];
 
@@ -25,12 +27,19 @@ function indexByTs<T extends { day_ts?: number }>(rows: T[], key: "day_ts"): Map
 }
 
 export function EcosystemTab() {
-  const [range, setRange] = useState("90d");
+  const [range, setRange] = useState<CompleteUtcDayRange>("90d");
   const eco = usePolled(() => fetchOreEcosystem(range), 60_000, [range]);
   const trends = usePolled(() => fetchOreTrends(range), 60_000, [range]);
-  const pts = eco.data?.points ?? [];
+  const pts = useMemo(
+    () => completeUtcDays(eco.data?.points ?? [], range),
+    [eco.data?.points, range],
+  );
+  const kept = useMemo(() => new Set(pts.map((p) => p.day_ts)), [pts]);
   const sum = eco.data?.summary;
-  const marketByDay = indexByTs(trends.data?.points ?? [], "day_ts");
+  const marketByDay = useMemo(
+    () => indexByTs((trends.data?.points ?? []).filter((p) => kept.has(p.day_ts)), "day_ts"),
+    [trends.data?.points, kept],
+  );
   const dayLbl = (ts: number) => { const dt = new Date(ts * 1000); return `${dt.getMonth() + 1}/${dt.getDate()}`; };
   const mkP = (pick: (p: OreEcoPoint) => number | null): Pt[] =>
     pts.filter((p) => pick(p) != null).map((p) => ({ label: dayLbl(p.day_ts), value: pick(p)! }));
@@ -46,7 +55,7 @@ export function EcosystemTab() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-y-2">
         <div className="section-label">
-          Ecosystem · supply, buybacks &amp; market structure
+          Ecosystem · supply, buybacks &amp; market structure · through yesterday (UTC)
           <Refreshing active={eco.fetching && !!eco.data} />
         </div>
         <SegmentedControl aria-label="Time range" items={ECO_RANGES} value={range} onChange={setRange} />
@@ -74,7 +83,7 @@ export function EcosystemTab() {
         </div>
         <ChartCard variant="dispersion" cutCorner="bl" title="Cumulative net issuance"
           subtitle="Running minted − burned over the window. Falling = deflationary stretch.">
-          <AreaLine spectral fill points={mkP((p) => p.cum_net_ore)} height={200} zeroBaseline={false}
+          <AreaLine fill color={CHART.teal} points={mkP((p) => p.cum_net_ore)} height={200} zeroBaseline={false}
             fmt={(v) => formatNum(v, 0) + " ORE"} yFmt={compactNum} loading={eco.loading} />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="tr" title="Buyback pressure"

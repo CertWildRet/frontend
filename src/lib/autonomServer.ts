@@ -103,12 +103,27 @@ function str(v: unknown): string | null {
   return typeof v === "string" && v.length ? v : null;
 }
 
+function tsToIso(v: unknown): string | null {
+  if (typeof v === "string" && v.length) {
+    const asNum = Number(v);
+    if (Number.isFinite(asNum) && /^\d+(\.\d+)?$/.test(v.trim())) {
+      const ms = asNum > 1e12 ? asNum : asNum * 1000;
+      return new Date(ms).toISOString();
+    }
+    return v;
+  }
+  const n = num(v);
+  if (n == null) return null;
+  const ms = n > 1e12 ? n : n * 1000;
+  return new Date(ms).toISOString();
+}
+
 /** Extract price + timestamp from a single-feed Autonom price payload. */
 export function parsePricePayload(json: unknown): { price: number | null; ts: string | null } {
   const root = asRecord(json);
   if (!root) return { price: null, ts: null };
   const data = asRecord(root.data) ?? root;
-  const price =
+  let price =
     num(data.price) ??
     num(data.last) ??
     num(data.close) ??
@@ -116,13 +131,18 @@ export function parsePricePayload(json: unknown): { price: number | null; ts: st
     num(data.mid) ??
     num(asRecord(data.price)?.value) ??
     null;
+  // Pyth-style scaled integer: price * 10^expo
+  const expo = num(data.expo) ?? num(data.exponent);
+  if (price != null && expo != null) {
+    price = price * Math.pow(10, expo);
+  }
   const ts =
-    str(data.ts) ??
-    str(data.timestamp) ??
-    str(data.updated_at) ??
-    str(data.as_of) ??
-    str(data.time) ??
-    (num(data.ts) != null ? new Date(num(data.ts)! > 1e12 ? num(data.ts)! : num(data.ts)! * 1000).toISOString() : null);
+    tsToIso(data.ts) ??
+    tsToIso(data.timestamp) ??
+    tsToIso(data.updated_at) ??
+    tsToIso(data.as_of) ??
+    tsToIso(data.time) ??
+    tsToIso(data.served_at);
   return { price, ts };
 }
 
@@ -170,6 +190,23 @@ export function parseBatchPrices(json: unknown): Map<number, { price: number | n
 
 export function parseBarsPayload(json: unknown): AutonomBarPoint[] {
   const root = asRecord(json);
+
+  // TradingView / UDF style: { s: "ok", t: [...], c: [...], ... }
+  if (root && Array.isArray(root.t) && Array.isArray(root.c)) {
+    const times = root.t as unknown[];
+    const closes = root.c as unknown[];
+    const points: AutonomBarPoint[] = [];
+    const n = Math.min(times.length, closes.length);
+    for (let i = 0; i < n; i++) {
+      const t = num(times[i]);
+      const close = num(closes[i]);
+      if (t == null || close == null) continue;
+      points.push({ t: t > 1e12 ? t : t * 1000, close });
+    }
+    points.sort((a, b) => a.t - b.t);
+    return points;
+  }
+
   let rows: unknown = json;
   if (root) {
     rows =
@@ -417,11 +454,13 @@ export async function fetchAutonomBars(feedId: number, range: RwaRange): Promise
   const { resolution, lookbackMs } = rangeToBarsParams(range);
   const end = Date.now();
   const start = end - lookbackMs;
-  // Try several common query shapes; first success with points wins.
+  const fromSec = Math.floor(start / 1000);
+  const toSec = Math.floor(end / 1000);
+  // Autonom bars require from/to in unix seconds (TradingView UDF shape).
   const queries = [
-    `/api/v1/bars?feed_id=${feedId}&resolution=${resolution}&start=${Math.floor(start / 1000)}&end=${Math.floor(end / 1000)}`,
+    `/api/v1/bars?feed_id=${feedId}&resolution=${resolution}&from=${fromSec}&to=${toSec}`,
     `/api/v1/bars?feed_id=${feedId}&resolution=${resolution}&from=${start}&to=${end}`,
-    `/api/v1/bars?feed_id=${feedId}&resolution=${resolution}&start_ms=${start}&end_ms=${end}`,
+    `/api/v1/bars?feed_id=${feedId}&resolution=${resolution}&start=${fromSec}&end=${toSec}`,
     `/api/v1/bars?feed_id=${feedId}&resolution=${resolution}`,
   ];
 

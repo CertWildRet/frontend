@@ -12,6 +12,7 @@ import {
   motherlodeOdds, oreGramsToOre,
 } from "@/lib/oreStats";
 import { formatNum, formatPct } from "@/lib/format";
+import { CHART } from "@/lib/chartColors";
 import {
   PAGE, POP_PAGE, Pager, SkeletonRows, Caveats, solOf, short, netTone,
   tableWrap, theadRow, th, td, bodyRow, oursRow,
@@ -155,7 +156,7 @@ export function MotherlodeTab() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <ChartCard variant="dispersion" cutCorner="tr" title="Motherlode payouts" subtitle="Last 50 hits: ORE paid per round.">
           <AreaLine
-            spectral
+            color={CHART.lime}
             points={mlChartPts}
             height={240}
             zeroBaseline={false}
