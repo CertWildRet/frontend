@@ -281,14 +281,12 @@ export function RwaTab() {
 
       {/* Compact quote table for all assets */}
       <div className="overflow-x-auto rounded-lg border border-line">
-        <table className="w-full min-w-[640px] border-collapse font-mono text-[12.5px]">
+        <table className="w-full min-w-[480px] border-collapse font-mono text-[12.5px]">
           <thead>
             <tr className="border-b border-line bg-ink-800/60 text-left text-fog-muted">
               <th className="px-3 py-2 font-bold">Asset</th>
               <th className="px-3 py-2 font-bold">Class</th>
               <th className="px-3 py-2 font-bold">Price</th>
-              <th className="px-3 py-2 font-bold">Status</th>
-              <th className="px-3 py-2 font-bold">Freshness</th>
               <th className="px-3 py-2 font-bold">Updated</th>
             </tr>
           </thead>
@@ -311,24 +309,6 @@ export function RwaTab() {
                   <td className="px-3 py-2 text-fog-muted">{a.assetClass}</td>
                   <td className="px-3 py-2 text-white">
                     {pricesLoading ? "···" : formatUsdPrice(q?.price ?? null, a.symbol)}
-                  </td>
-                  <td className="px-3 py-2 text-fog-muted">
-                    {q?.tradable == null
-                      ? a.marketHours === "24/7"
-                        ? "24/7"
-                        : "—"
-                      : q.tradable
-                        ? "Open"
-                        : "Closed"}
-                  </td>
-                  <td className="px-3 py-2">
-                    {q ? (
-                      <span className={`rounded border px-1.5 py-0.5 text-[11px] font-bold ${freshnessTone(q.freshness)}`}>
-                        {freshnessLabelText(q.freshness)}
-                      </span>
-                    ) : (
-                      <span className="text-fog-muted">—</span>
-                    )}
                   </td>
                   <td className="px-3 py-2 text-fog-muted">{timeAgo(q?.ts)}</td>
                 </tr>
