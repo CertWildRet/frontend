@@ -2,40 +2,28 @@
 
 /**
  * Tile Modes tab — solo vs split ORE payout for the most recent 20 rounds.
- * Mask is a pure function of round_id (keccak + Fisher–Yates). Click a round
- * to load per-tile SOL and see whether deploys lean solo or split.
+ * Mask is pure (keccak + Fisher–Yates). Round list + per-tile SOL come from
+ * live Board/Round PDAs (same source hawg uses), not lagged analytics.
  */
-import { Fragment, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
+import { useConnection } from "@solana/wallet-adapter-react";
 import { ChartCard } from "@/components/stats/Charts";
 import { RowsSkeleton } from "@/components/primitives/Skeleton";
-import { usePolled } from "@/hooks/useOreStats";
 import {
-  fetchOreSummary, fetchOreRound, lamportsToSol,
-  type OreRoundDetail,
-} from "@/lib/oreStats";
-import {
-  recentRoundTileModes, soloSplitDeployStats, SOLO_TILE_SHARE, TILE_COUNT,
+  recentRoundTileModes, soloSplitDeployStats, SOLO_TILE_SHARE,
   type RoundTileModes, type TileMode, type SoloSplitDeployStats,
 } from "@/lib/distributionMask";
+import { fetchBoardRoundId, fetchOnchainRoundTiles, type OnchainRoundTiles } from "@/lib/oreRoundOnchain";
 import { formatNum, formatSol, formatPct } from "@/lib/format";
 import { CHART } from "@/lib/chartColors";
-import { Caveats, tableWrap, theadRow, th, td, bodyRow } from "./shared";
+import { tableWrap, theadRow, th, td, bodyRow } from "./shared";
 
 const WINDOW = 20;
+const BOARD_POLL_MS = 30_000;
 
-const MODE_STYLE: Record<TileMode, { fill: string; glow: string; fg: string; label: string }> = {
-  solo: {
-    fill: "232,136,26",
-    glow: CHART.amber,
-    fg: CHART.amber,
-    label: "Solo",
-  },
-  split: {
-    fill: "91,108,255",
-    glow: CHART.blue,
-    fg: CHART.blue,
-    label: "Split",
-  },
+const MODE_STYLE: Record<TileMode, { fill: string; fg: string; label: string }> = {
+  solo: { fill: "232,136,26", fg: CHART.amber, label: "Solo" },
+  split: { fill: "91,108,255", fg: CHART.blue, label: "Split" },
 };
 
 function TileBoard({ modes }: { modes: TileMode[] }) {
@@ -66,16 +54,6 @@ function fmtTiles(tiles: number[]) {
   return tiles.map((t) => t + 1).join(", ");
 }
 
-function tileDeploys(round: OreRoundDetail): { sol: number[]; counts: number[] } {
-  const sol: number[] = [];
-  const counts: number[] = [];
-  for (let i = 0; i < TILE_COUNT; i++) {
-    sol.push(lamportsToSol(round[`deployed_${i}`]));
-    counts.push(Number(round[`count_${i}`] ?? 0) || 0);
-  }
-  return { sol, counts };
-}
-
 /** Compact avg-SOL/tile strip — density when totals are close. */
 function AvgStrip({ stats }: { stats: SoloSplitDeployStats }) {
   const maxAvg = Math.max(stats.soloAvgSol, stats.splitAvgSol, 1e-9);
@@ -88,25 +66,19 @@ function AvgStrip({ stats }: { stats: SoloSplitDeployStats }) {
         <div className="flex min-w-0 items-center gap-2">
           <span className="w-10 shrink-0" style={{ color: CHART.amber }}>Solo</span>
           <div className="h-1.5 min-w-0 flex-1 rounded-full bg-white/[0.06]">
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${soloW}%`, background: CHART.amber }}
-            />
+            <div className="h-full rounded-full" style={{ width: `${soloW}%`, background: CHART.amber }} />
           </div>
           <span className="num w-[4.5rem] shrink-0 text-right text-white">
-            {formatSol(stats.soloAvgSol, 3)}
+            {formatSol(stats.soloAvgSol, 4)}
           </span>
         </div>
         <div className="flex min-w-0 items-center gap-2">
           <span className="w-10 shrink-0" style={{ color: CHART.blue }}>Split</span>
           <div className="h-1.5 min-w-0 flex-1 rounded-full bg-white/[0.06]">
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${splitW}%`, background: CHART.blue }}
-            />
+            <div className="h-full rounded-full" style={{ width: `${splitW}%`, background: CHART.blue }} />
           </div>
           <span className="num w-[4.5rem] shrink-0 text-right text-white">
-            {formatSol(stats.splitAvgSol, 3)}
+            {formatSol(stats.splitAvgSol, 4)}
           </span>
         </div>
       </div>
@@ -147,8 +119,10 @@ function DeployHeatBoard({
               won ? "border-gold/70 shadow-[0_0_10px_-2px_rgba(232,136,26,0.55)]" : "border-transparent"
             }`}
             style={{
-              background: `rgba(${s.fill},${alpha})`,
-              color: intensity > 0.55 ? "#fff" : s.fg,
+              background: won
+                ? `rgba(232,136,26,${(0.35 + intensity * 0.45).toFixed(3)})`
+                : `rgba(${s.fill},${alpha})`,
+              color: won || intensity > 0.55 ? "#fff" : s.fg,
             }}
           >
             <span className="absolute left-1 top-0.5 text-[9px] text-white/45 sm:left-1.5 sm:top-1 sm:text-[10px]">
@@ -160,7 +134,7 @@ function DeployHeatBoard({
               </span>
             )}
             <span className="num text-[10px] leading-none sm:text-[11px]">
-              {formatSol(sol, sol >= 1 ? 2 : 3)}
+              {formatSol(sol, 4)}
             </span>
           </div>
         );
@@ -184,63 +158,108 @@ function BiasHeadline({ stats }: { stats: SoloSplitDeployStats }) {
         <span>
           <span style={{ color: CHART.amber }}>Solo</span>{" "}
           <span className="text-white">{formatPct(stats.soloShare, 1)}</span>
-          <span className="text-fog-muted"> · {formatSol(stats.soloSol, 2)} SOL</span>
+          <span className="text-fog-muted"> · {formatSol(stats.soloSol, 3)} SOL</span>
         </span>
         <span>
           <span style={{ color: CHART.blue }}>Split</span>{" "}
           <span className="text-white">{formatPct(stats.splitShare, 1)}</span>
-          <span className="text-fog-muted"> · {formatSol(stats.splitSol, 2)} SOL</span>
+          <span className="text-fog-muted"> · {formatSol(stats.splitSol, 3)} SOL</span>
         </span>
-        <span className="text-fog-muted">total {formatSol(stats.totalSol, 2)} SOL</span>
+        <span className="text-fog-muted">total {formatSol(stats.totalSol, 3)} SOL</span>
       </div>
       <div className="font-mono text-[12px] text-fog-muted">{lean}</div>
     </div>
   );
 }
 
-function RoundDeployDrilldown({ modes }: { modes: RoundTileModes }) {
-  const detail = usePolled(() => fetchOreRound(modes.roundId), 0, [modes.roundId]);
-  const round = detail.data?.round ?? null;
+function shortKey(a?: string | null) {
+  return a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "·";
+}
 
-  if (detail.loading && !round) {
-    return <div className="px-3 py-4 text-[12px] text-gray-400">Loading tile deploys…</div>;
+function RoundDeployDrilldown({ modes }: { modes: RoundTileModes }) {
+  const { connection } = useConnection();
+  const [tiles, setTiles] = useState<OnchainRoundTiles | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const next = await fetchOnchainRoundTiles(connection, modes.roundId);
+      setTiles(next);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setTiles(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [connection, modes.roundId]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  if (loading && !tiles) {
+    return <div className="px-3 py-4 text-[12px] text-gray-400">Loading on-chain tile deploys…</div>;
   }
-  if (detail.error && !round) {
+  if (error && !tiles) {
     return (
       <div className="flex flex-wrap items-center gap-3 px-3 py-4 font-mono text-[12px] text-amber">
-        <span>{detail.error}</span>
-        <button type="button" onClick={detail.refresh} className="rounded border border-amber/40 px-2 py-0.5 hover:border-amber">
+        <span>{error}</span>
+        <button type="button" onClick={() => void load()} className="rounded border border-amber/40 px-2 py-0.5 hover:border-amber">
           Retry
         </button>
       </div>
     );
   }
-  if (!round) {
-    return <div className="px-3 py-4 text-[12px] text-gray-400">No deploy data for this round.</div>;
+  if (!tiles || tiles.missing) {
+    return (
+      <div className="px-3 py-4 text-[12px] text-gray-400">
+        Round PDA no longer on-chain (accounts are reclaimed ~24h after close). Pick a more recent round.
+      </div>
+    );
   }
 
-  const { sol, counts } = tileDeploys(round);
-  const hasData = sol.some((v) => v > 0);
+  const hasData = tiles.perTileSol.some((v) => v > 0);
   if (!hasData) {
     return <div className="px-3 py-4 text-[12px] text-gray-400">No SOL deployed on this round yet.</div>;
   }
 
-  const stats = soloSplitDeployStats(modes.tileModes, sol);
-  const winningTile = round.winning_tile ?? null;
+  const stats = soloSplitDeployStats(modes.tileModes, tiles.perTileSol);
+  const winningTile = tiles.winningTile;
+  const splitWinner = tiles.topMiner?.startsWith("SpLiT1111111111111111111111111111111111111") ?? false;
 
   return (
     <div className="space-y-4 px-3 py-4 sm:px-4">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[12px] text-fog-muted">
+        <span>
+          Deployed{" "}
+          <span className="text-white">{formatSol(tiles.totalDeployedSol, 3)} SOL</span>
+        </span>
+        {winningTile != null && (
+          <span>
+            Win{" "}
+            <span className="text-gold">#{winningTile + 1}</span>
+            {tiles.topMiner && !splitWinner && (
+              <> · {shortKey(tiles.topMiner)}</>
+            )}
+            {splitWinner && <> · split ORE</>}
+          </span>
+        )}
+        {tiles.totalMiners > 0 && (
+          <span>{formatNum(tiles.totalMiners)} miners</span>
+        )}
+      </div>
       <BiasHeadline stats={stats} />
       <AvgStrip stats={stats} />
       <DeployHeatBoard
         modes={modes.tileModes}
-        perTileSol={sol}
-        perTileCount={counts}
+        perTileSol={tiles.perTileSol}
+        perTileCount={tiles.perTileCount}
         winningTile={winningTile}
       />
       <p className="font-mono text-[11px] leading-snug text-fog-muted">
-        Cell color = solo/split mode; intensity = SOL on that tile.
-        {winningTile != null ? ` Winning tile marked #${winningTile + 1}.` : " Round not settled yet."}
+        On-chain Round PDA · cell color = solo/split · intensity = SOL
+        {winningTile != null ? ` · winning tile #${winningTile + 1}` : " · round not settled yet"}.
       </p>
     </div>
   );
@@ -300,18 +319,41 @@ function RoundRow({
 }
 
 export function TileModesTab() {
+  const { connection } = useConnection();
   const [openRound, setOpenRound] = useState<number | null>(null);
-  const summary = usePolled(() => fetchOreSummary(), 60_000);
-  const latest = summary.data?.latest_round?.round_id ?? null;
-  const rows = latest != null ? recentRoundTileModes(Number(latest), WINDOW) : [];
+  const [latest, setLatest] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refreshBoard = useCallback(async () => {
+    try {
+      const id = await fetchBoardRoundId(connection);
+      setLatest(id);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [connection]);
+
+  useEffect(() => {
+    void refreshBoard();
+    const t = setInterval(() => { void refreshBoard(); }, BOARD_POLL_MS);
+    return () => clearInterval(t);
+  }, [refreshBoard]);
+
+  const rows = latest != null ? recentRoundTileModes(latest, WINDOW) : [];
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[13px] text-fog-muted">
         <span>
           {latest != null
-            ? `Official solo/split mask for the last ${formatNum(rows.length)} rounds (through #${formatNum(Number(latest))}). Tap a round for per-tile SOL.`
-            : "Loading latest round…"}
+            ? `Official solo/split mask for the last ${formatNum(rows.length)} rounds (through #${formatNum(latest)} on-chain). Tap a round for per-tile SOL.`
+            : loading
+              ? "Loading live board…"
+              : "Could not read ORE board."}
         </span>
         <span className="inline-flex items-center gap-3">
           <span className="inline-flex items-center gap-1.5">
@@ -327,10 +369,17 @@ export function TileModesTab() {
 
       <ChartCard
         title="Solo / Split by round"
-        subtitle="Deterministic from round id (keccak + Fisher–Yates). Expand a round to compare SOL deployed on solo vs split tiles."
+        subtitle="Mask from round id; tile SOL + winning square from the live Round PDA (matches hawg)."
       >
-        {summary.loading && !summary.data ? (
+        {loading && latest == null ? (
           <RowsSkeleton rows={6} />
+        ) : error && latest == null ? (
+          <div className="flex flex-wrap items-center gap-3 font-mono text-sm text-amber">
+            <span>{error}</span>
+            <button type="button" onClick={() => void refreshBoard()} className="rounded border border-amber/40 px-2 py-0.5 hover:border-amber">
+              Retry
+            </button>
+          </div>
         ) : rows.length === 0 ? (
           <div className="font-mono text-sm text-fog-muted">No rounds available yet.</div>
         ) : (
@@ -363,7 +412,9 @@ export function TileModesTab() {
         )}
       </ChartCard>
 
-      <Caveats provenance={summary.provenance} error={summary.error} onRetry={summary.refresh} />
+      <p className="font-mono text-[12px] text-fog-muted">
+        Live from ORE Board/Round PDAs via RPC · round accounts are reclaimed ~24h after close.
+      </p>
     </div>
   );
 }
