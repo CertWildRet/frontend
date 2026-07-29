@@ -6,7 +6,6 @@
  * live Board/Round PDAs (same source hawg uses), not lagged analytics.
  */
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { useConnection } from "@solana/wallet-adapter-react";
 import { ChartCard } from "@/components/stats/Charts";
 import { RowsSkeleton } from "@/components/primitives/Skeleton";
 import {
@@ -14,6 +13,7 @@ import {
   type RoundTileModes, type TileMode, type SoloSplitDeployStats,
 } from "@/lib/distributionMask";
 import { fetchBoardRoundId, fetchOnchainRoundTiles, type OnchainRoundTiles } from "@/lib/oreRoundOnchain";
+import { useReadonlyRpc } from "@/hooks/useReadonlyRpc";
 import { formatNum, formatSol, formatPct } from "@/lib/format";
 import { CHART } from "@/lib/chartColors";
 import { tableWrap, theadRow, th, td, bodyRow } from "./shared";
@@ -177,7 +177,7 @@ function shortKey(a?: string | null) {
 }
 
 function RoundDeployDrilldown({ modes }: { modes: RoundTileModes }) {
-  const { connection } = useConnection();
+  const connection = useReadonlyRpc();
   const [tiles, setTiles] = useState<OnchainRoundTiles | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -319,7 +319,7 @@ function RoundRow({
 }
 
 export function TileModesTab() {
-  const { connection } = useConnection();
+  const connection = useReadonlyRpc();
   const [openRound, setOpenRound] = useState<number | null>(null);
   const [latest, setLatest] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
