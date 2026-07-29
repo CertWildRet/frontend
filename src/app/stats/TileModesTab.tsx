@@ -55,30 +55,33 @@ function fmtTiles(tiles: number[]) {
 }
 
 /** Compact avg-SOL/tile strip — density when totals are close. */
-function AvgStrip({ stats }: { stats: SoloSplitDeployStats }) {
+function AvgStrip({ stats, compact = false }: { stats: SoloSplitDeployStats; compact?: boolean }) {
   const maxAvg = Math.max(stats.soloAvgSol, stats.splitAvgSol, 1e-9);
   const soloW = Math.max(4, (stats.soloAvgSol / maxAvg) * 100);
   const splitW = Math.max(4, (stats.splitAvgSol / maxAvg) * 100);
+  const label = compact ? "text-[10px]" : "text-[12px]";
+  const bar = compact ? "h-1" : "h-1.5";
+  const numW = compact ? "w-[3.75rem]" : "w-[4.5rem]";
   return (
-    <div className="flex flex-col gap-1.5 font-mono text-[12px]">
-      <div className="text-fog-muted">Avg SOL / tile</div>
-      <div className="grid gap-1.5 sm:grid-cols-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="w-10 shrink-0" style={{ color: CHART.amber }}>Solo</span>
-          <div className="h-1.5 min-w-0 flex-1 rounded-full bg-white/[0.06]">
+    <div className={`flex flex-col gap-1 font-mono ${label}`}>
+      {!compact && <div className="text-fog-muted">Avg SOL / tile</div>}
+      <div className={`grid gap-1 ${compact ? "" : "gap-1.5 sm:grid-cols-2"}`}>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className="w-8 shrink-0 sm:w-10" style={{ color: CHART.amber }}>Solo</span>
+          <div className={`${bar} min-w-0 flex-1 rounded-full bg-white/[0.06]`}>
             <div className="h-full rounded-full" style={{ width: `${soloW}%`, background: CHART.amber }} />
           </div>
-          <span className="num w-[4.5rem] shrink-0 text-right text-white">
-            {formatSol(stats.soloAvgSol, 4)}
+          <span className={`num ${numW} shrink-0 text-right text-white`}>
+            {formatSol(stats.soloAvgSol, compact ? 3 : 4)}
           </span>
         </div>
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="w-10 shrink-0" style={{ color: CHART.blue }}>Split</span>
-          <div className="h-1.5 min-w-0 flex-1 rounded-full bg-white/[0.06]">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className="w-8 shrink-0 sm:w-10" style={{ color: CHART.blue }}>Split</span>
+          <div className={`${bar} min-w-0 flex-1 rounded-full bg-white/[0.06]`}>
             <div className="h-full rounded-full" style={{ width: `${splitW}%`, background: CHART.blue }} />
           </div>
-          <span className="num w-[4.5rem] shrink-0 text-right text-white">
-            {formatSol(stats.splitAvgSol, 4)}
+          <span className={`num ${numW} shrink-0 text-right text-white`}>
+            {formatSol(stats.splitAvgSol, compact ? 3 : 4)}
           </span>
         </div>
       </div>
@@ -176,28 +179,19 @@ function shortKey(a?: string | null) {
   return a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "·";
 }
 
-function RoundDeployDrilldown({ modes }: { modes: RoundTileModes }) {
-  const connection = useReadonlyRpc();
-  const [tiles, setTiles] = useState<OnchainRoundTiles | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const next = await fetchOnchainRoundTiles(connection, modes.roundId);
-      setTiles(next);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setTiles(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [connection, modes.roundId]);
-
-  useEffect(() => { void load(); }, [load]);
-
+function RoundDeployDrilldown({
+  modes,
+  tiles,
+  error,
+  loading,
+  onRetry,
+}: {
+  modes: RoundTileModes;
+  tiles: OnchainRoundTiles | null;
+  error: string | null;
+  loading: boolean;
+  onRetry: () => void;
+}) {
   if (loading && !tiles) {
     return <div className="px-3 py-4 text-[12px] text-gray-400">Loading on-chain tile deploys…</div>;
   }
@@ -205,7 +199,7 @@ function RoundDeployDrilldown({ modes }: { modes: RoundTileModes }) {
     return (
       <div className="flex flex-wrap items-center gap-3 px-3 py-4 font-mono text-[12px] text-amber">
         <span>{error}</span>
-        <button type="button" onClick={() => void load()} className="rounded border border-amber/40 px-2 py-0.5 hover:border-amber">
+        <button type="button" onClick={onRetry} className="rounded border border-amber/40 px-2 py-0.5 hover:border-amber">
           Retry
         </button>
       </div>
@@ -251,12 +245,15 @@ function RoundDeployDrilldown({ modes }: { modes: RoundTileModes }) {
       </div>
       <BiasHeadline stats={stats} />
       <AvgStrip stats={stats} />
-      <DeployHeatBoard
-        modes={modes.tileModes}
-        perTileSol={tiles.perTileSol}
-        perTileCount={tiles.perTileCount}
-        winningTile={winningTile}
-      />
+      {/* Half-width heat grid on laptop+; full width on phones */}
+      <div className="w-full sm:w-1/2 sm:max-w-md">
+        <DeployHeatBoard
+          modes={modes.tileModes}
+          perTileSol={tiles.perTileSol}
+          perTileCount={tiles.perTileCount}
+          winningTile={winningTile}
+        />
+      </div>
       <p className="font-mono text-[11px] leading-snug text-fog-muted">
         On-chain Round PDA · cell color = solo/split · intensity = SOL
         {winningTile != null ? ` · winning tile #${winningTile + 1}` : " · round not settled yet"}.
@@ -274,25 +271,56 @@ function RoundRow({
   open: boolean;
   onToggle: () => void;
 }) {
+  const connection = useReadonlyRpc();
+  const [tiles, setTiles] = useState<OnchainRoundTiles | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const next = await fetchOnchainRoundTiles(connection, row.roundId);
+      setTiles(next);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setTiles(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [connection, row.roundId]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const collapsedStats =
+    tiles && !tiles.missing && tiles.perTileSol.some((v) => v > 0)
+      ? soloSplitDeployStats(row.tileModes, tiles.perTileSol)
+      : null;
+
   return (
     <Fragment>
       <tr className={`${bodyRow} cursor-pointer`} onClick={onToggle}>
-        <td className={`${td} whitespace-nowrap text-white`}>
-          <span className="inline-flex items-center gap-1">
+        <td className={`${td} whitespace-nowrap align-top text-white`}>
+          <span className="inline-flex items-center gap-1 pt-0.5">
             <span className="inline-block w-[9px] text-gray-500">{open ? "▾" : "▸"}</span>
             #{formatNum(row.roundId)}
           </span>
         </td>
-        <td className={`${td} w-[9.5rem] sm:w-[11rem]`}>
+        <td className={`${td} w-[11rem] align-top sm:w-[14rem]`}>
           <div
             aria-hidden={open}
-            className={`origin-left overflow-hidden transition-[opacity,transform,max-height] duration-300 ease-out ${
+            className={`origin-left space-y-2 overflow-hidden transition-[opacity,transform,max-height] duration-300 ease-out ${
               open
                 ? "pointer-events-none max-h-0 scale-95 opacity-0"
-                : "max-h-28 scale-100 opacity-100"
+                : "max-h-40 scale-100 opacity-100"
             }`}
           >
             <TileBoard modes={row.tileModes} />
+            {collapsedStats ? (
+              <AvgStrip stats={collapsedStats} compact />
+            ) : loading ? (
+              <div className="h-6 animate-pulse rounded bg-white/[0.04]" />
+            ) : null}
           </div>
         </td>
         <td className={`${td} hidden align-top text-gray-300 sm:table-cell`}>
@@ -309,7 +337,13 @@ function RoundRow({
         <tr className="bg-black/20">
           <td colSpan={5} className="p-0">
             <div className="w-0 min-w-full">
-              <RoundDeployDrilldown modes={row} />
+              <RoundDeployDrilldown
+                modes={row}
+                tiles={tiles}
+                error={error}
+                loading={loading}
+                onRetry={() => void load()}
+              />
             </div>
           </td>
         </tr>
