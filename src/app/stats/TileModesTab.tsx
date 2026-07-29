@@ -265,7 +265,16 @@ function RoundRow({
           </span>
         </td>
         <td className={`${td} w-[9.5rem] sm:w-[11rem]`}>
-          <TileBoard modes={row.tileModes} />
+          <div
+            aria-hidden={open}
+            className={`origin-left overflow-hidden transition-[opacity,transform,max-height] duration-300 ease-out ${
+              open
+                ? "pointer-events-none max-h-0 scale-95 opacity-0"
+                : "max-h-28 scale-100 opacity-100"
+            }`}
+          >
+            <TileBoard modes={row.tileModes} />
+          </div>
         </td>
         <td className={`${td} hidden align-top text-gray-300 sm:table-cell`}>
           <span className="text-[12px]" style={{ color: CHART.amber }}>{fmtTiles(row.soloTiles)}</span>
