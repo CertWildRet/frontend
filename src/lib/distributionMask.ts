@@ -97,3 +97,54 @@ export function recentRoundTileModes(latestRoundId: number, count = 20): RoundTi
   }
   return out;
 }
+
+/** Fair SOL share if deploys were uniform across tiles (10 solo / 25). */
+export const SOLO_TILE_SHARE = SOLO_TILE_BITS / TILE_COUNT;
+
+export type SoloSplitDeployStats = {
+  soloSol: number;
+  splitSol: number;
+  totalSol: number;
+  /** Fraction of total SOL on solo tiles (0..1). */
+  soloShare: number;
+  splitShare: number;
+  soloAvgSol: number;
+  splitAvgSol: number;
+  /** soloShare − SOLO_TILE_SHARE; >0 means SOL overweight on solos. */
+  biasVsTileShare: number;
+};
+
+/** Aggregate SOL on solo vs split tiles for one round. */
+export function soloSplitDeployStats(
+  tileModes: TileMode[],
+  perTileSol: number[],
+): SoloSplitDeployStats {
+  let soloSol = 0;
+  let splitSol = 0;
+  let soloN = 0;
+  let splitN = 0;
+  const n = Math.min(TILE_COUNT, tileModes.length, perTileSol.length);
+  for (let i = 0; i < n; i++) {
+    const sol = perTileSol[i] ?? 0;
+    if (tileModes[i] === "solo") {
+      soloSol += sol;
+      soloN += 1;
+    } else {
+      splitSol += sol;
+      splitN += 1;
+    }
+  }
+  const totalSol = soloSol + splitSol;
+  const soloShare = totalSol > 0 ? soloSol / totalSol : 0;
+  const splitShare = totalSol > 0 ? splitSol / totalSol : 0;
+  return {
+    soloSol,
+    splitSol,
+    totalSol,
+    soloShare,
+    splitShare,
+    soloAvgSol: soloN > 0 ? soloSol / soloN : 0,
+    splitAvgSol: splitN > 0 ? splitSol / splitN : 0,
+    biasVsTileShare: soloShare - SOLO_TILE_SHARE,
+  };
+}
