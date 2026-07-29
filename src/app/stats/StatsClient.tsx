@@ -19,6 +19,7 @@ import { MinerRankingsTab } from "./MinerRankingsTab";
 import { MinersTab } from "./MinersTab";
 import { MotherlodeTab } from "./MotherlodeTab";
 import { RoundsTab } from "./RoundsTab";
+import { TileModesTab } from "./TileModesTab";
 import {
   TABS,
   MinerNavContext,
@@ -37,6 +38,7 @@ const tabFromQuery = (raw: string | null): Tab => {
   if (normalized === "search_miners" || normalized === "miner") return "miners";
   if (normalized === "miner_rankings") return "rankings";
   if (normalized === "protocol" || normalized === "protocol_internals") return "trends";
+  if (normalized === "solo_split" || normalized === "split_solo" || normalized === "tilemodes") return "tile_modes";
   return TAB_IDS.has(normalized as Tab) ? normalized as Tab : "trends";
 };
 
@@ -142,6 +144,7 @@ export function StatsClient() {
                  t.id === "miners" ? <MinersTab seed={minerSeed} onQueryChange={syncMinerQuery} /> :
                  t.id === "motherlode" ? <MotherlodeTab /> :
                  t.id === "rounds" ? <RoundsTab /> :
+                 t.id === "tile_modes" ? <TileModesTab /> :
                  t.id === "cohort" ? <CohortTab /> : <RwaTab />}
               </div>
             </PolledActiveContext.Provider>
