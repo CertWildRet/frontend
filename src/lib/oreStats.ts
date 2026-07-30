@@ -487,6 +487,16 @@ export const expectedPopOre = (roundId: number): number => 0.2 * motherlodeOdds(
 export const fetchOreYields = () => get<OreYields>(`/ore/yields`);
 export const fetchOreDominance = () => get<OreDominance>(`/ore/dominance`);
 
+/** v4 solo-vs-split over time: deploy lean (behaviour) + outcome rate (luck),
+ *  both as a `% solo` share, against the fixed 40% (10/25) expected baseline. */
+export type OreSoloSplitSeries = {
+  range: string;
+  expected_solo_share: number;
+  v4_first_round: number;
+  points: { ts: number; solo_deploy_share: number | null; solo_outcome_rate: number | null; rounds: number }[];
+};
+export const fetchOreSoloSplitSeries = (range = "7d") => get<OreSoloSplitSeries>(`/ore/solo-split-series?range=${range}`);
+
 // ── /ore/cohorts : ORE holder-size distribution + cohort balance changes ──────
 // v1 is MINER-SIDE ORE only (unclaimed + live refined) — not a true token-holder
 // distribution. cohort 1..5 = Plankton/Shrimp/Fish/Shark/Whale.

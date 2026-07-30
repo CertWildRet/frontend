@@ -125,6 +125,7 @@ export function DualLine({
    *  shared Yields chart) instead of matching each series stroke. */
   neutralAxes = false,
   band,
+  refLine,
   emptyText,
   fill = false,
 }: {
@@ -140,6 +141,9 @@ export function DualLine({
   /** shared-mode only: fill the gap between the lines, green where a > b and
    *  red where a < b, and name it in the legend + tooltip (the "carry"). */
   band?: { name: string };
+  /** shared-mode only: a dashed horizontal reference line (e.g. an "expected"
+   *  baseline). Its value is folded into the y-scale so it's always in view. */
+  refLine?: { value: number; name?: string; color?: string };
   /** Copy shown when there are no points yet (and not loading). */
   emptyText?: string;
   /** Grow to fill a grid-stretched card's leftover height (paired rows). `height`
@@ -155,7 +159,7 @@ export function DualLine({
   if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} text={emptyText} /></div>;
 
   const sa = shared
-    ? scaleOf([...a.map((p) => p.value), ...b.map((p) => p.value)])
+    ? scaleOf([...a.map((p) => p.value), ...b.map((p) => p.value), ...(refLine ? [refLine.value] : [])])
     : scaleOf(a.map((p) => p.value));
   const sb = shared ? sa : scaleOf(b.map((p) => p.value));
   const plotR = W - padR, plotB = H - padB;
@@ -180,6 +184,9 @@ export function DualLine({
         {shared && band && (
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: "#4ADE80", opacity: 0.5 }} /> {band.name}</span>
         )}
+        {shared && refLine?.name && (
+          <span className="flex items-center gap-1.5"><span className="w-4" style={{ borderTop: `2px dashed ${refLine.color ?? AXIS}` }} /> {refLine.name}</span>
+        )}
       </div>
       <svg ref={svgFillRef} width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${aName} and ${bName}`}
         style={{ display: "block", maxWidth: "100%", overflow: "visible", touchAction: "pan-y" }} onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)}>
@@ -195,6 +202,9 @@ export function DualLine({
             </g>
           );
         })}
+        {shared && refLine && (
+          <line x1={padL} y1={ya(refLine.value)} x2={plotR} y2={ya(refLine.value)} stroke={refLine.color ?? AXIS} strokeWidth={1.5} strokeDasharray="5 4" opacity={0.85} />
+        )}
         {shared && band && Array.from({ length: n - 1 }, (_, i) => i + 1).map((i) => {
           const a0 = a[i - 1].value, a1 = a[i].value, b0 = b[i - 1].value, b1 = b[i].value;
           if (a0 == null || a1 == null || b0 == null || b1 == null) return null;
