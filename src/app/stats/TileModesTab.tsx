@@ -50,10 +50,6 @@ function TileBoard({ modes }: { modes: TileMode[] }) {
   );
 }
 
-function fmtTiles(tiles: number[]) {
-  return tiles.map((t) => t + 1).join(", ");
-}
-
 /** Compact avg-SOL/tile strip — density when totals are close. */
 function AvgStrip({ stats, compact = false }: { stats: SoloSplitDeployStats; compact?: boolean }) {
   const maxAvg = Math.max(stats.soloAvgSol, stats.splitAvgSol, 1e-9);
@@ -330,19 +326,23 @@ function RoundRow({
             ) : null}
           </div>
         </td>
-        <td className={`${td} hidden align-top text-gray-300 sm:table-cell`}>
-          <span className="text-[12px]" style={{ color: CHART.amber }}>{fmtTiles(row.soloTiles)}</span>
-        </td>
-        <td className={`${td} hidden align-top text-gray-300 lg:table-cell`}>
-          <span className="text-[12px]" style={{ color: CHART.blue }}>{fmtTiles(row.splitTiles)}</span>
-        </td>
-        <td className={`${td} num hidden text-right text-fog-muted xl:table-cell`}>
-          0x{row.distributionMask.toString(16)}
+        <td className={`${td} align-top`}>
+          {collapsedStats ? (
+            <span className="num whitespace-nowrap text-[13px]">
+              <span style={{ color: CHART.amber }}>{formatPct(collapsedStats.soloShare, 0)}</span>
+              <span className="text-fog-muted"> / </span>
+              <span style={{ color: CHART.blue }}>{formatPct(collapsedStats.splitShare, 0)}</span>
+            </span>
+          ) : loading ? (
+            <span className="text-fog-muted">···</span>
+          ) : (
+            <span className="text-fog-muted">—</span>
+          )}
         </td>
       </tr>
       {open && (
         <tr className="bg-black/20">
-          <td colSpan={5} className="p-0">
+          <td colSpan={3} className="p-0">
             <div className="w-0 min-w-full">
               <RoundDeployDrilldown
                 modes={row}
@@ -430,9 +430,7 @@ export function TileModesTab() {
                 <tr className={theadRow}>
                   <th className={th}>Round</th>
                   <th className={th}>Board</th>
-                  <th className={`${th} hidden sm:table-cell`}>Solo tiles</th>
-                  <th className={`${th} hidden lg:table-cell`}>Split tiles</th>
-                  <th className={`${th} hidden text-right xl:table-cell`}>Mask</th>
+                  <th className={th}>Solo vs split</th>
                 </tr>
               </thead>
               <tbody>
