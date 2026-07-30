@@ -2,12 +2,13 @@
 
 /**
  * Solo / Split tab — the v4 per-tile reward mask (10 solo ✦ / 15 split) as a
- * paginated card gallery back to the v4 cutover (round 349,213, the first
- * solo/split round). The mask is pure (keccak + Fisher–Yates from round id, exact
- * for any round); the outcome (winning tile, split/solo) + per-tile SOL come from
- * the indexed rounds, so — unlike the live-PDA view — history isn't capped at ~20.
+ * paginated card gallery back to the v4 cutover (round 349,213). The mask is pure
+ * (keccak + Fisher–Yates from round id); the outcome + per-tile SOL come from the
+ * indexed rounds. Tapping a card opens the round detail in a modal so the grid
+ * never reflows.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ChartCard } from "@/components/stats/Charts";
 import { RowsSkeleton } from "@/components/primitives/Skeleton";
@@ -171,8 +172,8 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-/** Expanded round — round summary, per-tile SOL heat, deploy bias, + a Rounds jump.
- *  Per-tile deploys come from /ore/round/:id, fetched only when the card opens. */
+/** Round detail body — outcome stats, per-tile SOL heat, deploy bias, Rounds jump.
+ *  Per-tile deploys are fetched from /ore/round/:id when this mounts (modal open). */
 function RoundDetail({ round, modes }: { round: OreRound; modes: TileMode[] }) {
   const [detail, setDetail] = useState<OreRoundDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -182,6 +183,7 @@ function RoundDetail({ round, modes }: { round: OreRound; modes: TileMode[] }) {
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setDetail(null);
     fetchOreRound(round.round_id)
       .then((d) => { if (!cancelled) setDetail(d.data.round); })
       .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : String(e)); })
@@ -198,14 +200,8 @@ function RoundDetail({ round, modes }: { round: OreRound; modes: TileMode[] }) {
   const hasData = perTileSol.some((v) => v > 0);
   const stats = hasData ? soloSplitDeployStats(modes, perTileSol) : null;
 
-  const jump = (
-    <Link href="/stats?section=rounds" className="inline-flex items-center gap-1 font-mono text-[12px] text-steel transition-colors hover:text-white">
-      Open in Rounds <span aria-hidden>↗</span>
-    </Link>
-  );
-
   return (
-    <div className="space-y-4 border-t border-line px-3 py-4 sm:px-4">
+    <div className="space-y-4 px-4 py-4">
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
         <Stat label="Result">{resultMode ? <ResultBadge mode={resultMode} /> : <span className="text-fog-muted">in progress</span>}</Stat>
         <Stat label="Deployed">{formatSol(lamToSol(round.total_deployed), 2)} <span className="text-fog-muted">SOL</span></Stat>
@@ -241,48 +237,125 @@ function RoundDetail({ round, modes }: { round: OreRound; modes: TileMode[] }) {
         <div className="text-[12px] text-fog-muted">Per-tile deploys not indexed for this round.</div>
       )}
 
-      <div className="flex justify-end pt-1">{jump}</div>
+      <div className="flex justify-end pt-1">
+        <Link href="/stats?section=rounds" className="inline-flex items-center gap-1 font-mono text-[12px] text-steel transition-colors hover:text-white">
+          Open in Rounds <span aria-hidden>↗</span>
+        </Link>
+      </div>
     </div>
   );
 }
 
-/** One round card: header (id + outcome), the mask board (winning tile ringed), a
- *  compact deploy line; tap to expand into RoundDetail (spans the full grid row). */
-function RoundCard({ round, open, onToggle }: { round: OreRound; open: boolean; onToggle: () => void }) {
+/** Round detail in a portal modal — grid stays frozen behind it. Fades + scales
+ *  in/out (reduced-motion aware); Escape / backdrop / ✕ to close. No body
+ *  scroll-lock (it detaches the page's sticky header). */
+function RoundModal({ round, onClose }: { round: OreRound | null; onClose: () => void }) {
+  const [render, setRender] = useState(!!round);
+  const [shown, setShown] = useState(false);
+  const [shownRound, setShownRound] = useState<OreRound | null>(round);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const lastFocus = useRef<Element | null>(null);
+
+  useEffect(() => { if (round) setShownRound(round); }, [round]);
+
+  useEffect(() => {
+    if (round) {
+      lastFocus.current = document.activeElement;
+      setRender(true);
+      let r2 = 0;
+      const r1 = requestAnimationFrame(() => { r2 = requestAnimationFrame(() => setShown(true)); });
+      return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); };
+    }
+    setShown(false);
+    const t = setTimeout(() => {
+      setRender(false);
+      (lastFocus.current as HTMLElement | null)?.focus?.();
+    }, 200);
+    return () => clearTimeout(t);
+  }, [round]);
+
+  useEffect(() => {
+    if (!render) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [render, onClose]);
+
+  useEffect(() => { if (shown) closeRef.current?.focus(); }, [shown]);
+
+  if (!render || typeof document === "undefined" || !shownRound) return null;
+  const rid = Number(shownRound.round_id);
+  const resultMode: TileMode | null = shownRound.winning_tile == null ? null : shownRound.is_split ? "split" : "solo";
+
+  return createPortal(
+    <div
+      className={`fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "pointer-events-none opacity-0"}`}
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Round #${formatNum(rid)} solo/split detail`}
+    >
+      <div
+        className={`my-8 w-full max-w-2xl origin-top rounded-2xl border border-line bg-ink-900 shadow-2xl transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-4 border-b border-line px-4 py-3">
+          <span className="num flex items-center gap-2 text-[15px] font-bold text-white">
+            #{formatNum(rid)}
+            {resultMode ? <ResultBadge mode={resultMode} /> : <span className="text-[11px] font-normal text-fog-muted">in progress</span>}
+          </span>
+          <button
+            ref={closeRef}
+            onClick={onClose}
+            aria-label="Close"
+            className="-mr-1 rounded-md px-2 py-1 text-fog-muted transition-colors hover:bg-white/5 hover:text-fog focus:outline-none focus-visible:ring-1 focus-visible:ring-white/30"
+          >
+            ✕
+          </button>
+        </div>
+        <RoundDetail round={shownRound} modes={roundTileModes(rid).tileModes} />
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/** One round card — the mask board (winning tile ringed) + a compact deploy line.
+ *  The whole card is a button; tapping opens the detail modal (no grid reflow). */
+function RoundCard({ round, onOpen }: { round: OreRound; onOpen: () => void }) {
   const rid = Number(round.round_id);
   const modes = roundTileModes(rid).tileModes;
   const wt = round.winning_tile;
   const resultMode: TileMode | null = wt == null ? null : round.is_split ? "split" : "solo";
 
   return (
-    <div className={`overflow-hidden rounded-xl border bg-ink-800/40 transition-colors ${open ? "col-span-full border-steel/40" : "border-line hover:border-white/15"}`}>
-      <button type="button" onClick={onToggle} aria-expanded={open} className="flex w-full items-center justify-between gap-2 px-3 pt-3 text-left">
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group flex w-full flex-col overflow-hidden rounded-xl border border-line bg-ink-800/40 text-left transition-colors hover:border-white/20"
+    >
+      <div className="flex items-center justify-between gap-2 px-3 pt-3">
         <span className="num text-[13px] font-semibold text-white">#{formatNum(rid)}</span>
         <span className="flex items-center gap-2">
           {resultMode ? <ResultBadge mode={resultMode} /> : <span className="text-[11px] text-fog-muted">in progress</span>}
-          <span className="text-[11px] text-gray-500">{open ? "▾" : "▸"}</span>
+          <span className="text-[11px] text-gray-500 transition-colors group-hover:text-fog" aria-hidden>↗</span>
         </span>
-      </button>
-
-      {!open && (
-        <div className="space-y-2.5 px-3 pb-3 pt-2.5">
-          <TileBoard modes={modes} winningTile={wt} />
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 font-mono text-[11px] text-fog-muted">
-            <span className="num text-white">{formatSol(lamToSol(round.total_deployed), 2)}</span> SOL
-            <span className="num text-white">{round.total_miners != null ? formatNum(Number(round.total_miners)) : "—"}</span> miners
-            {wt != null && <span className="ml-auto" style={{ color: WIN }}>win #{wt + 1}</span>}
-          </div>
+      </div>
+      <div className="space-y-2.5 px-3 pb-3 pt-2.5">
+        <TileBoard modes={modes} winningTile={wt} />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 font-mono text-[11px] text-fog-muted">
+          <span className="num text-white">{formatSol(lamToSol(round.total_deployed), 2)}</span> SOL
+          <span className="num text-white">{round.total_miners != null ? formatNum(Number(round.total_miners)) : "—"}</span> miners
+          {wt != null && <span className="ml-auto" style={{ color: WIN }}>win #{wt + 1}</span>}
         </div>
-      )}
-
-      {open && <RoundDetail round={round} modes={modes} />}
-    </div>
+      </div>
+    </button>
   );
 }
 
 export function TileModesTab() {
   const [offset, setOffset] = useState(0);
-  const [openRound, setOpenRound] = useState<number | null>(null);
+  const [modalRound, setModalRound] = useState<OreRound | null>(null);
   const page = usePolled(() => fetchOreRounds(PAGE, offset), 20_000, [offset]);
 
   const all = page.data?.rounds ?? [];
@@ -333,14 +406,12 @@ export function TileModesTab() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {rounds.map((round) => {
-                const rid = Number(round.round_id);
-                const open = openRound === rid;
-                return <RoundCard key={round.round_id} round={round} open={open} onToggle={() => setOpenRound(open ? null : rid)} />;
-              })}
+              {rounds.map((round) => (
+                <RoundCard key={round.round_id} round={round} onOpen={() => setModalRound(round)} />
+              ))}
             </div>
             <div className="mt-4">
-              <Pager offset={offset} total={v4Total} onPage={(o) => { setOpenRound(null); setOffset(o); }} unit="rounds" loading={page.fetching && !!page.data} />
+              <Pager offset={offset} total={v4Total} onPage={(o) => { setModalRound(null); setOffset(o); }} unit="rounds" loading={page.fetching && !!page.data} />
             </div>
           </>
         )}
@@ -349,6 +420,8 @@ export function TileModesTab() {
       <p className="font-mono text-[12px] text-fog-muted">
         Solo/split assignment is derived from the round id alone, so it&apos;s exact for every round since the v4 cutover (#{formatNum(V4_FIRST_ROUND)}).
       </p>
+
+      <RoundModal round={modalRound} onClose={() => setModalRound(null)} />
     </div>
   );
 }
