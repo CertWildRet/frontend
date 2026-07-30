@@ -39,9 +39,19 @@ function TileBoard({ modes }: { modes: TileMode[] }) {
           <div
             key={i}
             title={`Tile ${i + 1}: ${s.label}`}
-            className="flex aspect-square items-center justify-center rounded-[3px] font-mono text-[9px] leading-none sm:text-[10px]"
+            className="relative flex aspect-square items-center justify-center rounded-[3px] font-mono text-[9px] leading-none sm:text-[10px]"
             style={{ background: `rgba(${s.fill},0.28)`, color: s.fg }}
           >
+            {/* solo tiles carry the four-point star, matching the on-chain board convention */}
+            {mode === "solo" && (
+              <span
+                className="pointer-events-none absolute right-[1px] top-[1px] text-[7px] leading-none sm:text-[8px]"
+                style={{ color: MODE_STYLE.solo.fg }}
+                aria-hidden
+              >
+                ✦
+              </span>
+            )}
             {i + 1}
           </div>
         );
@@ -130,6 +140,9 @@ function DeployHeatBoard({
           >
             <span className="absolute left-1 top-0.5 text-[9px] text-white/45 sm:left-1.5 sm:top-1 sm:text-[10px]">
               #{i + 1}
+              {mode === "solo" && (
+                <span className="ml-0.5" style={{ color: MODE_STYLE.solo.fg }} aria-hidden>✦</span>
+              )}
             </span>
             {won && (
               <span
@@ -399,7 +412,7 @@ export function TileModesTab() {
         <span className="inline-flex items-center gap-3">
           <span className="inline-flex items-center gap-1.5">
             <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: `rgba(${MODE_STYLE.solo.fill},0.28)` }} />
-            <span style={{ color: CHART.amber }}>Solo · 10 tiles</span>
+            <span style={{ color: CHART.amber }}>Solo ✦ · 10 tiles</span>
           </span>
           <span className="inline-flex items-center gap-1.5">
             <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: `rgba(${MODE_STYLE.split.fill},0.28)` }} />
