@@ -1,53 +1,44 @@
 "use client";
 
 /**
- * Solo / Split tab — the v4 per-tile reward mask (10 solo ✦ / 15 split) for the
- * most recent 20 rounds, shown as a responsive card gallery. The mask is pure
- * (keccak + Fisher–Yates from round id); the round list, per-tile SOL, winning
- * tile and outcome come from live Board/Round PDAs (same source hawg uses).
+ * Solo / Split tab — the v4 per-tile reward mask (10 solo ✦ / 15 split) as a
+ * paginated card gallery back to the v4 cutover (round 349,213, the first
+ * solo/split round). The mask is pure (keccak + Fisher–Yates from round id, exact
+ * for any round); the outcome (winning tile, split/solo) + per-tile SOL come from
+ * the indexed rounds, so — unlike the live-PDA view — history isn't capped at ~20.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChartCard } from "@/components/stats/Charts";
 import { RowsSkeleton } from "@/components/primitives/Skeleton";
+import { usePolled } from "@/hooks/useOreStats";
 import {
-  recentRoundTileModes, soloSplitDeployStats,
-  type RoundTileModes, type TileMode, type SoloSplitDeployStats,
+  roundTileModes, soloSplitDeployStats,
+  type TileMode, type SoloSplitDeployStats,
 } from "@/lib/distributionMask";
-import { fetchBoardRoundId, fetchOnchainRoundTiles, type OnchainRoundTiles } from "@/lib/oreRoundOnchain";
-import { useReadonlyRpc } from "@/hooks/useReadonlyRpc";
+import { fetchOreRounds, fetchOreRound, type OreRound, type OreRoundDetail } from "@/lib/oreStats";
 import { formatNum, formatSol, formatPct } from "@/lib/format";
+import { Pager, PAGE } from "./shared";
 
-const WINDOW = 20;
-const BOARD_POLL_MS = 30_000;
+const V4_FIRST_ROUND = 349_213; // validated cutover: first round the solo/split mask governs
 const WIN = "#FF5AC8"; // winning-tile highlight
 const SPLIT_SENTINEL = "SpLiT1111111111111111111111111111111111111";
 
-// Categorical solo/split palette — validated (dataviz): worst-adjacent CVD ΔE 32,
-// contrast + lightness pass on the dark surface. `rgb` = the fill mark, `ink` = the
-// legible text tint on dark.
+// Categorical solo/split palette — validated (dataviz): gold (solo) vs blue (split),
+// worst-adjacent CVD ΔE 32. `rgb` = fill mark, `ink` = legible text tint on dark.
 const MODE: Record<TileMode, { rgb: string; ink: string; label: string }> = {
-  solo: { rgb: "251,191,36", ink: "#FDE08A", label: "Solo" }, // gold — stays clean (not brown) when darkened at low alpha
+  solo: { rgb: "251,191,36", ink: "#FDE08A", label: "Solo" },
   split: { rgb: "59,130,246", ink: "#93C5FD", label: "Split" },
 };
 
 const shortKey = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "·");
 const isSplitWinner = (topMiner?: string | null) => topMiner?.startsWith(SPLIT_SENTINEL) ?? false;
+const lamToSol = (s?: string | null) => Number(s ?? 0) / 1e9;
 
 /** The 25-tile mask. Solo carries the ✦; the winning tile gets a pink ring. */
-function TileBoard({
-  modes,
-  winningTile,
-  size = "sm",
-}: {
-  modes: TileMode[];
-  winningTile?: number | null;
-  size?: "sm" | "lg";
-}) {
-  const txt = size === "lg" ? "text-[11px] sm:text-[13px]" : "text-[10px]";
-  const star = size === "lg" ? "text-[9px] sm:text-[11px]" : "text-[8px]";
+function TileBoard({ modes, winningTile }: { modes: TileMode[]; winningTile?: number | null }) {
   return (
-    <div className={`grid grid-cols-5 ${size === "lg" ? "gap-1.5" : "gap-1"}`} role="img" aria-label="25-tile solo/split board">
+    <div className="grid grid-cols-5 gap-1" role="img" aria-label="25-tile solo/split board">
       {modes.map((mode, i) => {
         const m = MODE[mode];
         const won = winningTile === i;
@@ -55,7 +46,7 @@ function TileBoard({
           <div
             key={i}
             title={`Tile ${i + 1}: ${m.label}${won ? " · winning tile" : ""}`}
-            className={`relative flex aspect-square items-center justify-center rounded-[4px] border font-mono font-semibold leading-none ${txt}`}
+            className="relative flex aspect-square items-center justify-center rounded-[4px] border font-mono text-[10px] font-semibold leading-none"
             style={{
               background: `rgba(${m.rgb},0.14)`,
               borderColor: won ? WIN : `rgba(${m.rgb},0.62)`,
@@ -64,11 +55,7 @@ function TileBoard({
             }}
           >
             {mode === "solo" && (
-              <span
-                className={`pointer-events-none absolute right-[2px] top-[1px] leading-none ${star}`}
-                style={{ color: won ? "#fff" : m.ink }}
-                aria-hidden
-              >
+              <span className="pointer-events-none absolute right-[2px] top-[1px] text-[8px] leading-none" style={{ color: won ? "#fff" : m.ink }} aria-hidden>
                 ✦
               </span>
             )}
@@ -80,33 +67,23 @@ function TileBoard({
   );
 }
 
-/** Slim solo-vs-split share bar (fraction of deployed SOL on each tile mode). */
-function BiasBar({ stats }: { stats: SoloSplitDeployStats }) {
-  const solo = Math.max(0, Math.min(1, stats.soloShare));
-  return (
-    <div className="space-y-1">
-      <div className="flex items-baseline justify-between font-mono text-[11px]">
-        <span style={{ color: MODE.solo.ink }}>Solo {formatPct(stats.soloShare, 0)}</span>
-        <span className="text-fog-muted">deploy split</span>
-        <span style={{ color: MODE.split.ink }}>{formatPct(stats.splitShare, 0)} Split</span>
-      </div>
-      <div className="flex h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
-        <div style={{ width: `${solo * 100}%`, background: `rgb(${MODE.solo.rgb})` }} />
-        <div style={{ width: `${(1 - solo) * 100}%`, background: `rgb(${MODE.split.rgb})` }} />
-      </div>
-    </div>
-  );
-}
-
-/** Avg SOL/tile for solo vs split — where the money actually leaned. */
+/** Avg SOL/tile for solo vs split — where the money leaned. */
 function AvgStrip({ stats }: { stats: SoloSplitDeployStats }) {
   const maxAvg = Math.max(stats.soloAvgSol, stats.splitAvgSol, 1e-9);
-  const rows: Array<{ label: string; ink: string; rgb: string; avg: number }> = [
+  const rows = [
     { label: "Solo", ink: MODE.solo.ink, rgb: MODE.solo.rgb, avg: stats.soloAvgSol },
     { label: "Split", ink: MODE.split.ink, rgb: MODE.split.rgb, avg: stats.splitAvgSol },
   ];
   return (
     <div className="space-y-1.5 font-mono text-[12px]">
+      <div className="flex items-baseline justify-between text-fog-muted">
+        <span>Deploy split</span>
+        <span>
+          <span style={{ color: MODE.solo.ink }}>{formatPct(stats.soloShare, 0)}</span>
+          {" / "}
+          <span style={{ color: MODE.split.ink }}>{formatPct(stats.splitShare, 0)}</span>
+        </span>
+      </div>
       <div className="text-fog-muted">Avg SOL / tile</div>
       {rows.map((r) => (
         <div key={r.label} className="flex min-w-0 items-center gap-2">
@@ -194,59 +171,45 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-/** The expanded round — a proper detail panel: outcome, deploy stats, per-tile
- *  SOL heat, plus a jump into the full Rounds view. */
-function RoundDetail({
-  row,
-  tiles,
-  error,
-  loading,
-  onRetry,
-}: {
-  row: RoundTileModes;
-  tiles: OnchainRoundTiles | null;
-  error: string | null;
-  loading: boolean;
-  onRetry: () => void;
-}) {
-  const roundsHref = `/stats?section=rounds`;
+/** Expanded round — round summary, per-tile SOL heat, deploy bias, + a Rounds jump.
+ *  Per-tile deploys come from /ore/round/:id, fetched only when the card opens. */
+function RoundDetail({ round, modes }: { round: OreRound; modes: TileMode[] }) {
+  const [detail, setDetail] = useState<OreRoundDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetchOreRound(round.round_id)
+      .then((d) => { if (!cancelled) setDetail(d.data.round); })
+      .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : String(e)); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [round.round_id]);
+
+  const wt = round.winning_tile;
+  const splitWin = isSplitWinner(round.top_miner);
+  const resultMode: TileMode | null = wt == null ? null : round.is_split ? "split" : "solo";
+  const dRec = detail as unknown as Record<string, string | undefined> | null;
+  const perTileSol = dRec ? Array.from({ length: 25 }, (_, i) => lamToSol(dRec[`deployed_${i}`])) : [];
+  const perTileCount = dRec ? Array.from({ length: 25 }, (_, i) => Number(dRec[`count_${i}`] ?? 0)) : [];
+  const hasData = perTileSol.some((v) => v > 0);
+  const stats = hasData ? soloSplitDeployStats(modes, perTileSol) : null;
+
   const jump = (
-    <Link href={roundsHref} className="inline-flex items-center gap-1 font-mono text-[12px] text-steel transition-colors hover:text-white">
+    <Link href="/stats?section=rounds" className="inline-flex items-center gap-1 font-mono text-[12px] text-steel transition-colors hover:text-white">
       Open in Rounds <span aria-hidden>↗</span>
     </Link>
   );
 
-  if (loading && !tiles) return <div className="border-t border-line px-3 py-4 text-[12px] text-fog-muted">Loading on-chain tile deploys…</div>;
-  if (error && !tiles) {
-    return (
-      <div className="flex flex-wrap items-center gap-3 border-t border-line px-3 py-4 font-mono text-[12px] text-amber">
-        <span>{error}</span>
-        <button type="button" onClick={onRetry} className="rounded border border-amber/40 px-2 py-0.5 hover:border-amber">Retry</button>
-      </div>
-    );
-  }
-  if (!tiles || tiles.missing) {
-    return (
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-3 py-4 text-[12px] text-fog-muted">
-        <span>Round PDA reclaimed (~24h after close). Pick a more recent round.</span>
-        {jump}
-      </div>
-    );
-  }
-
-  const hasData = tiles.perTileSol.some((v) => v > 0);
-  const stats = hasData ? soloSplitDeployStats(row.tileModes, tiles.perTileSol) : null;
-  const wt = tiles.winningTile;
-  const splitWin = isSplitWinner(tiles.topMiner);
-  const resultMode: TileMode | null = wt == null ? null : splitWin ? "split" : "solo";
-
   return (
     <div className="space-y-4 border-t border-line px-3 py-4 sm:px-4">
-      {/* round summary — the "details like Rounds" the header hints at */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
         <Stat label="Result">{resultMode ? <ResultBadge mode={resultMode} /> : <span className="text-fog-muted">in progress</span>}</Stat>
-        <Stat label="Deployed">{formatSol(tiles.totalDeployedSol, 2)} <span className="text-fog-muted">SOL</span></Stat>
-        <Stat label="Miners">{formatNum(tiles.totalMiners)}</Stat>
+        <Stat label="Deployed">{formatSol(lamToSol(round.total_deployed), 2)} <span className="text-fog-muted">SOL</span></Stat>
+        <Stat label="Miners">{round.total_miners != null ? formatNum(Number(round.total_miners)) : "—"}</Stat>
         <Stat label="Winning tile">
           {wt != null ? <span style={{ color: WIN }}>#{wt + 1}{resultMode === "solo" ? " ✦" : ""}</span> : <span className="text-fog-muted">—</span>}
         </Stat>
@@ -257,21 +220,25 @@ function RoundDetail({
           {splitWin ? (
             <>Split tile won — the ~1 ORE base is <span className="text-white">shared pro-rata</span> across the winning tile&apos;s stakers.</>
           ) : (
-            <>Solo tile won — the full <span className="text-white">~1 ORE</span> goes to <span className="text-white">{shortKey(tiles.topMiner)}</span>.</>
+            <>Solo tile won — the full <span className="text-white">~1 ORE</span> goes to <span className="text-white">{shortKey(round.top_miner)}</span>.</>
           )}
         </p>
       )}
 
-      {hasData ? (
+      {loading && !detail ? (
+        <div className="text-[12px] text-fog-muted">Loading per-tile deploys…</div>
+      ) : error ? (
+        <div className="text-[12px] text-amber">{error}</div>
+      ) : hasData ? (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
           <div className="w-full max-w-md">
-            <DeployHeatBoard modes={row.tileModes} perTileSol={tiles.perTileSol} perTileCount={tiles.perTileCount} winningTile={wt} />
+            <DeployHeatBoard modes={modes} perTileSol={perTileSol} perTileCount={perTileCount} winningTile={wt} />
             <p className="mt-1.5 font-mono text-[11px] leading-snug text-fog-muted">Cell hue = solo/split · intensity = SOL deployed.</p>
           </div>
           {stats && <AvgStrip stats={stats} />}
         </div>
       ) : (
-        <div className="text-[12px] text-fog-muted">No SOL deployed on this round yet.</div>
+        <div className="text-[12px] text-fog-muted">Per-tile deploys not indexed for this round.</div>
       )}
 
       <div className="flex justify-end pt-1">{jump}</div>
@@ -279,112 +246,71 @@ function RoundDetail({
   );
 }
 
-/** One round as a card: header (id + outcome), the mask board (winning tile ringed),
- *  the deploy-split bar; tap to expand into RoundDetail (spans the full grid row). */
-function RoundCard({ row, open, onToggle }: { row: RoundTileModes; open: boolean; onToggle: () => void }) {
-  const connection = useReadonlyRpc();
-  const [tiles, setTiles] = useState<OnchainRoundTiles | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setTiles(await fetchOnchainRoundTiles(connection, row.roundId));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setTiles(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [connection, row.roundId]);
-
-  useEffect(() => { void load(); }, [load]);
-
-  const live = tiles && !tiles.missing ? tiles : null;
-  const winningTile = live?.winningTile ?? null;
-  const resultMode: TileMode | null = winningTile == null ? null : isSplitWinner(live?.topMiner) ? "split" : "solo";
-  const stats = live && live.perTileSol.some((v) => v > 0) ? soloSplitDeployStats(row.tileModes, live.perTileSol) : null;
+/** One round card: header (id + outcome), the mask board (winning tile ringed), a
+ *  compact deploy line; tap to expand into RoundDetail (spans the full grid row). */
+function RoundCard({ round, open, onToggle }: { round: OreRound; open: boolean; onToggle: () => void }) {
+  const rid = Number(round.round_id);
+  const modes = roundTileModes(rid).tileModes;
+  const wt = round.winning_tile;
+  const resultMode: TileMode | null = wt == null ? null : round.is_split ? "split" : "solo";
 
   return (
-    <div
-      className={`overflow-hidden rounded-xl border bg-ink-800/40 transition-colors ${open ? "col-span-full border-steel/40" : "border-line hover:border-white/15"}`}
-    >
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        className="flex w-full items-center justify-between gap-2 px-3 pt-3 text-left"
-      >
-        <span className="num text-[13px] font-semibold text-white">#{formatNum(row.roundId)}</span>
+    <div className={`overflow-hidden rounded-xl border bg-ink-800/40 transition-colors ${open ? "col-span-full border-steel/40" : "border-line hover:border-white/15"}`}>
+      <button type="button" onClick={onToggle} aria-expanded={open} className="flex w-full items-center justify-between gap-2 px-3 pt-3 text-left">
+        <span className="num text-[13px] font-semibold text-white">#{formatNum(rid)}</span>
         <span className="flex items-center gap-2">
-          {resultMode ? <ResultBadge mode={resultMode} /> : loading ? <span className="text-[11px] text-fog-muted">···</span> : <span className="text-[11px] text-fog-muted">live</span>}
+          {resultMode ? <ResultBadge mode={resultMode} /> : <span className="text-[11px] text-fog-muted">in progress</span>}
           <span className="text-[11px] text-gray-500">{open ? "▾" : "▸"}</span>
         </span>
       </button>
 
       {!open && (
         <div className="space-y-2.5 px-3 pb-3 pt-2.5">
-          <TileBoard modes={row.tileModes} winningTile={winningTile} />
-          {stats ? (
-            <BiasBar stats={stats} />
-          ) : loading ? (
-            <div className="h-6 animate-pulse rounded bg-white/[0.04]" />
-          ) : (
-            <div className="font-mono text-[11px] text-fog-muted">No deploys read yet.</div>
-          )}
+          <TileBoard modes={modes} winningTile={wt} />
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 font-mono text-[11px] text-fog-muted">
+            <span className="num text-white">{formatSol(lamToSol(round.total_deployed), 2)}</span> SOL
+            <span className="num text-white">{round.total_miners != null ? formatNum(Number(round.total_miners)) : "—"}</span> miners
+            {wt != null && <span className="ml-auto" style={{ color: WIN }}>win #{wt + 1}</span>}
+          </div>
         </div>
       )}
 
-      {open && <RoundDetail row={row} tiles={tiles} error={error} loading={loading} onRetry={() => void load()} />}
+      {open && <RoundDetail round={round} modes={modes} />}
     </div>
   );
 }
 
 export function TileModesTab() {
-  const connection = useReadonlyRpc();
+  const [offset, setOffset] = useState(0);
   const [openRound, setOpenRound] = useState<number | null>(null);
-  const [latest, setLatest] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const page = usePolled(() => fetchOreRounds(PAGE, offset), 20_000, [offset]);
 
-  const refreshBoard = useCallback(async () => {
-    try {
-      setLatest(await fetchBoardRoundId(connection));
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  }, [connection]);
-
-  useEffect(() => {
-    void refreshBoard();
-    const t = setInterval(() => { void refreshBoard(); }, BOARD_POLL_MS);
-    return () => clearInterval(t);
-  }, [refreshBoard]);
-
-  const rows = latest != null ? recentRoundTileModes(latest, WINDOW) : [];
+  const all = page.data?.rounds ?? [];
+  // Only v4 rounds have a solo/split mask — cap at the cutover client-side (the
+  // list endpoint has no from_round). Rounds are contiguous + newest-first, so the
+  // tip = first row's id + offset, and the v4 window is [349,213 .. tip].
+  const rounds = all.filter((r) => Number(r.round_id) >= V4_FIRST_ROUND);
+  const tip = all.length ? Number(all[0].round_id) + offset : null;
+  const v4Total = tip != null ? Math.max(0, tip - V4_FIRST_ROUND + 1) : 0;
+  const loading = page.loading && !page.data;
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 font-mono text-[13px] text-fog-muted">
         <span>
-          {latest != null
-            ? `v4 solo/split mask for the last ${formatNum(rows.length)} rounds (through #${formatNum(latest)}). Tap a round for per-tile SOL + the outcome.`
+          {tip != null
+            ? `v4 solo/split mask, every round back to the first (#${formatNum(V4_FIRST_ROUND)}). Tap a round for per-tile SOL + the outcome.`
             : loading
-              ? "Loading live board…"
-              : "Could not read ORE board."}
+              ? "Loading rounds…"
+              : "Could not load rounds."}
         </span>
         <span className="inline-flex items-center gap-3">
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-2.5 rounded-sm border" style={{ background: `rgba(${MODE.solo.rgb},0.18)`, borderColor: `rgba(${MODE.solo.rgb},0.5)` }} />
+            <span className="inline-block h-2.5 w-2.5 rounded-sm border" style={{ background: `rgba(${MODE.solo.rgb},0.18)`, borderColor: `rgba(${MODE.solo.rgb},0.6)` }} />
             <span style={{ color: MODE.solo.ink }}>Solo ✦ · 10</span>
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-2.5 rounded-sm border" style={{ background: `rgba(${MODE.split.rgb},0.18)`, borderColor: `rgba(${MODE.split.rgb},0.5)` }} />
+            <span className="inline-block h-2.5 w-2.5 rounded-sm border" style={{ background: `rgba(${MODE.split.rgb},0.18)`, borderColor: `rgba(${MODE.split.rgb},0.6)` }} />
             <span style={{ color: MODE.split.ink }}>Split · 15</span>
           </span>
           <span className="inline-flex items-center gap-1.5">
@@ -394,28 +320,34 @@ export function TileModesTab() {
         </span>
       </div>
 
-      <ChartCard title="Solo / Split by round" subtitle="Mask is derived from the round id (keccak + Fisher–Yates); tile SOL, winning square + outcome from the live Round PDA (matches hawg).">
-        {loading && latest == null ? (
+      <ChartCard title="Solo / Split by round" subtitle="Mask is exact (keccak + Fisher–Yates from the round id); outcome + per-tile SOL from the indexed rounds. Solo/split went live at round 349,213.">
+        {loading ? (
           <RowsSkeleton rows={6} />
-        ) : error && latest == null ? (
+        ) : page.error && !page.data ? (
           <div className="flex flex-wrap items-center gap-3 font-mono text-sm text-amber">
-            <span>{error}</span>
-            <button type="button" onClick={() => void refreshBoard()} className="rounded border border-amber/40 px-2 py-0.5 hover:border-amber">Retry</button>
+            <span>{page.error}</span>
+            <button type="button" onClick={page.refresh} className="rounded border border-amber/40 px-2 py-0.5 hover:border-amber">Retry</button>
           </div>
-        ) : rows.length === 0 ? (
+        ) : rounds.length === 0 ? (
           <div className="font-mono text-sm text-fog-muted">No rounds available yet.</div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {rows.map((row) => {
-              const open = openRound === row.roundId;
-              return <RoundCard key={row.roundId} row={row} open={open} onToggle={() => setOpenRound(open ? null : row.roundId)} />;
-            })}
-          </div>
+          <>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {rounds.map((round) => {
+                const rid = Number(round.round_id);
+                const open = openRound === rid;
+                return <RoundCard key={round.round_id} round={round} open={open} onToggle={() => setOpenRound(open ? null : rid)} />;
+              })}
+            </div>
+            <div className="mt-4">
+              <Pager offset={offset} total={v4Total} onPage={(o) => { setOpenRound(null); setOffset(o); }} unit="rounds" loading={page.fetching && !!page.data} />
+            </div>
+          </>
         )}
       </ChartCard>
 
       <p className="font-mono text-[12px] text-fog-muted">
-        Live from ORE Board/Round PDAs via RPC · round accounts are reclaimed ~24h after close.
+        Solo/split assignment is derived from the round id alone, so it&apos;s exact for every round since the v4 cutover (#{formatNum(V4_FIRST_ROUND)}).
       </p>
     </div>
   );
