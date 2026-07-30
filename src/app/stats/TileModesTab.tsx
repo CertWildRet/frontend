@@ -118,12 +118,16 @@ function DeployHeatBoard({
           <div
             key={i}
             title={`Tile ${i + 1}: ${s.label} · ${formatSol(sol, 4)} SOL · ${count} miners`}
-            className={`relative flex aspect-square flex-col items-center justify-center rounded-md border px-0.5 font-mono ${
-              won ? "border-gold/70 shadow-[0_0_10px_-2px_rgba(232,136,26,0.55)]" : "border-transparent"
+            className={`relative flex aspect-square flex-col items-center justify-center rounded-md border-2 px-0.5 font-mono ${
+              won ? "" : "border-transparent"
             }`}
             style={{
+              borderColor: won ? CHART.pink : undefined,
+              boxShadow: won
+                ? `0 0 14px -2px ${CHART.pink}99, 0 0 0 1px ${CHART.violet}66`
+                : undefined,
               background: won
-                ? `rgba(232,136,26,${(0.35 + intensity * 0.45).toFixed(3)})`
+                ? `rgba(255,90,200,${(0.28 + intensity * 0.4).toFixed(3)})`
                 : `rgba(${s.fill},${alpha})`,
               color: won || intensity > 0.55 ? "#fff" : s.fg,
             }}
@@ -132,7 +136,10 @@ function DeployHeatBoard({
               #{i + 1}
             </span>
             {won && (
-              <span className="absolute right-1 top-0.5 text-[8px] text-gold sm:right-1.5 sm:top-1 sm:text-[9px]">
+              <span
+                className="absolute right-1 top-0.5 text-[8px] font-bold sm:right-1.5 sm:top-1 sm:text-[9px]"
+                style={{ color: CHART.pink }}
+              >
                 win
               </span>
             )}
@@ -232,7 +239,7 @@ function RoundDeployDrilldown({
         {winningTile != null && (
           <span>
             Win{" "}
-            <span className="text-gold">#{winningTile + 1}</span>
+            <span className="font-bold" style={{ color: CHART.pink }}>#{winningTile + 1}</span>
             {tiles.topMiner && !splitWinner && (
               <> · {shortKey(tiles.topMiner)}</>
             )}
