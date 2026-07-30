@@ -1,52 +1,72 @@
 "use client";
 
 /**
- * Tile Modes tab — solo vs split ORE payout for the most recent 20 rounds.
- * Mask is pure (keccak + Fisher–Yates). Round list + per-tile SOL come from
- * live Board/Round PDAs (same source hawg uses), not lagged analytics.
+ * Solo / Split tab — the v4 per-tile reward mask (10 solo ✦ / 15 split) for the
+ * most recent 20 rounds, shown as a responsive card gallery. The mask is pure
+ * (keccak + Fisher–Yates from round id); the round list, per-tile SOL, winning
+ * tile and outcome come from live Board/Round PDAs (same source hawg uses).
  */
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { ChartCard } from "@/components/stats/Charts";
 import { RowsSkeleton } from "@/components/primitives/Skeleton";
 import {
-  recentRoundTileModes, soloSplitDeployStats, SOLO_TILE_SHARE,
+  recentRoundTileModes, soloSplitDeployStats,
   type RoundTileModes, type TileMode, type SoloSplitDeployStats,
 } from "@/lib/distributionMask";
 import { fetchBoardRoundId, fetchOnchainRoundTiles, type OnchainRoundTiles } from "@/lib/oreRoundOnchain";
 import { useReadonlyRpc } from "@/hooks/useReadonlyRpc";
 import { formatNum, formatSol, formatPct } from "@/lib/format";
-import { CHART } from "@/lib/chartColors";
-import { tableWrap, theadRow, th, td, bodyRow } from "./shared";
 
 const WINDOW = 20;
 const BOARD_POLL_MS = 30_000;
+const WIN = "#FF5AC8"; // winning-tile highlight
+const SPLIT_SENTINEL = "SpLiT1111111111111111111111111111111111111";
 
-const MODE_STYLE: Record<TileMode, { fill: string; fg: string; label: string }> = {
-  solo: { fill: "232,136,26", fg: CHART.amber, label: "Solo" },
-  split: { fill: "91,108,255", fg: CHART.blue, label: "Split" },
+// Categorical solo/split palette — validated (dataviz): worst-adjacent CVD ΔE 32,
+// contrast + lightness pass on the dark surface. `rgb` = the fill mark, `ink` = the
+// legible text tint on dark.
+const MODE: Record<TileMode, { rgb: string; ink: string; label: string }> = {
+  solo: { rgb: "251,191,36", ink: "#FDE08A", label: "Solo" }, // gold — stays clean (not brown) when darkened at low alpha
+  split: { rgb: "59,130,246", ink: "#93C5FD", label: "Split" },
 };
 
-function TileBoard({ modes }: { modes: TileMode[] }) {
+const shortKey = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "·");
+const isSplitWinner = (topMiner?: string | null) => topMiner?.startsWith(SPLIT_SENTINEL) ?? false;
+
+/** The 25-tile mask. Solo carries the ✦; the winning tile gets a pink ring. */
+function TileBoard({
+  modes,
+  winningTile,
+  size = "sm",
+}: {
+  modes: TileMode[];
+  winningTile?: number | null;
+  size?: "sm" | "lg";
+}) {
+  const txt = size === "lg" ? "text-[11px] sm:text-[13px]" : "text-[10px]";
+  const star = size === "lg" ? "text-[9px] sm:text-[11px]" : "text-[8px]";
   return (
-    <div
-      className="grid grid-cols-5 gap-0.5"
-      role="img"
-      aria-label="25-tile solo/split board"
-    >
+    <div className={`grid grid-cols-5 ${size === "lg" ? "gap-1.5" : "gap-1"}`} role="img" aria-label="25-tile solo/split board">
       {modes.map((mode, i) => {
-        const s = MODE_STYLE[mode];
+        const m = MODE[mode];
+        const won = winningTile === i;
         return (
           <div
             key={i}
-            title={`Tile ${i + 1}: ${s.label}`}
-            className="relative flex aspect-square items-center justify-center rounded-[3px] font-mono text-[9px] leading-none sm:text-[10px]"
-            style={{ background: `rgba(${s.fill},0.28)`, color: s.fg }}
+            title={`Tile ${i + 1}: ${m.label}${won ? " · winning tile" : ""}`}
+            className={`relative flex aspect-square items-center justify-center rounded-[4px] border font-mono font-semibold leading-none ${txt}`}
+            style={{
+              background: `rgba(${m.rgb},0.14)`,
+              borderColor: won ? WIN : `rgba(${m.rgb},0.62)`,
+              boxShadow: won ? `0 0 0 1px ${WIN}, 0 0 12px -3px ${WIN}` : undefined,
+              color: won ? "#fff" : m.ink,
+            }}
           >
-            {/* solo tiles carry the four-point star, matching the on-chain board convention */}
             {mode === "solo" && (
               <span
-                className="pointer-events-none absolute right-[1px] top-[1px] text-[7px] leading-none sm:text-[8px]"
-                style={{ color: MODE_STYLE.solo.fg }}
+                className={`pointer-events-none absolute right-[2px] top-[1px] leading-none ${star}`}
+                style={{ color: won ? "#fff" : m.ink }}
                 aria-hidden
               >
                 ✦
@@ -60,41 +80,48 @@ function TileBoard({ modes }: { modes: TileMode[] }) {
   );
 }
 
-/** Compact avg-SOL/tile strip — density when totals are close. */
-function AvgStrip({ stats, compact = false }: { stats: SoloSplitDeployStats; compact?: boolean }) {
-  const maxAvg = Math.max(stats.soloAvgSol, stats.splitAvgSol, 1e-9);
-  const soloW = Math.max(4, (stats.soloAvgSol / maxAvg) * 100);
-  const splitW = Math.max(4, (stats.splitAvgSol / maxAvg) * 100);
-  const label = compact ? "text-[10px]" : "text-[12px]";
-  const bar = compact ? "h-1" : "h-1.5";
-  const numW = compact ? "w-[3.75rem]" : "w-[4.5rem]";
+/** Slim solo-vs-split share bar (fraction of deployed SOL on each tile mode). */
+function BiasBar({ stats }: { stats: SoloSplitDeployStats }) {
+  const solo = Math.max(0, Math.min(1, stats.soloShare));
   return (
-    <div className={`flex flex-col gap-1 font-mono ${label}`}>
-      {!compact && <div className="text-fog-muted">Avg SOL / tile</div>}
-      <div className={`grid gap-1 ${compact ? "" : "gap-1.5 sm:grid-cols-2"}`}>
-        <div className="flex min-w-0 items-center gap-1.5">
-          <span className="w-8 shrink-0 sm:w-10" style={{ color: CHART.amber }}>Solo</span>
-          <div className={`${bar} min-w-0 flex-1 rounded-full bg-white/[0.06]`}>
-            <div className="h-full rounded-full" style={{ width: `${soloW}%`, background: CHART.amber }} />
-          </div>
-          <span className={`num ${numW} shrink-0 text-right text-white`}>
-            {formatSol(stats.soloAvgSol, compact ? 3 : 4)}
-          </span>
-        </div>
-        <div className="flex min-w-0 items-center gap-1.5">
-          <span className="w-8 shrink-0 sm:w-10" style={{ color: CHART.blue }}>Split</span>
-          <div className={`${bar} min-w-0 flex-1 rounded-full bg-white/[0.06]`}>
-            <div className="h-full rounded-full" style={{ width: `${splitW}%`, background: CHART.blue }} />
-          </div>
-          <span className={`num ${numW} shrink-0 text-right text-white`}>
-            {formatSol(stats.splitAvgSol, compact ? 3 : 4)}
-          </span>
-        </div>
+    <div className="space-y-1">
+      <div className="flex items-baseline justify-between font-mono text-[11px]">
+        <span style={{ color: MODE.solo.ink }}>Solo {formatPct(stats.soloShare, 0)}</span>
+        <span className="text-fog-muted">deploy split</span>
+        <span style={{ color: MODE.split.ink }}>{formatPct(stats.splitShare, 0)} Split</span>
+      </div>
+      <div className="flex h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
+        <div style={{ width: `${solo * 100}%`, background: `rgb(${MODE.solo.rgb})` }} />
+        <div style={{ width: `${(1 - solo) * 100}%`, background: `rgb(${MODE.split.rgb})` }} />
       </div>
     </div>
   );
 }
 
+/** Avg SOL/tile for solo vs split — where the money actually leaned. */
+function AvgStrip({ stats }: { stats: SoloSplitDeployStats }) {
+  const maxAvg = Math.max(stats.soloAvgSol, stats.splitAvgSol, 1e-9);
+  const rows: Array<{ label: string; ink: string; rgb: string; avg: number }> = [
+    { label: "Solo", ink: MODE.solo.ink, rgb: MODE.solo.rgb, avg: stats.soloAvgSol },
+    { label: "Split", ink: MODE.split.ink, rgb: MODE.split.rgb, avg: stats.splitAvgSol },
+  ];
+  return (
+    <div className="space-y-1.5 font-mono text-[12px]">
+      <div className="text-fog-muted">Avg SOL / tile</div>
+      {rows.map((r) => (
+        <div key={r.label} className="flex min-w-0 items-center gap-2">
+          <span className="w-9 shrink-0" style={{ color: r.ink }}>{r.label}</span>
+          <div className="h-1.5 min-w-0 flex-1 rounded-full bg-white/[0.05]">
+            <div className="h-full rounded-full" style={{ width: `${Math.max(4, (r.avg / maxAvg) * 100)}%`, background: `rgb(${r.rgb})` }} />
+          </div>
+          <span className="num w-[4.5rem] shrink-0 text-right text-white">{formatSol(r.avg, 4)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Per-tile SOL heat over the mask — cell hue = solo/split, intensity = SOL. */
 function DeployHeatBoard({
   modes,
   perTileSol,
@@ -108,53 +135,36 @@ function DeployHeatBoard({
 }) {
   const maxSol = Math.max(1e-9, ...perTileSol);
   return (
-    <div
-      className="grid grid-cols-5 gap-1 sm:gap-1.5"
-      role="img"
-      aria-label="Per-tile SOL deploy board"
-    >
+    <div className="grid grid-cols-5 gap-1 sm:gap-1.5" role="img" aria-label="Per-tile SOL deploy board">
       {modes.map((mode, i) => {
+        const m = MODE[mode];
         const sol = perTileSol[i] ?? 0;
         const count = perTileCount[i] ?? 0;
         const intensity = sol / maxSol;
-        const s = MODE_STYLE[mode];
         const won = winningTile === i;
-        const alpha = (0.12 + intensity * 0.55).toFixed(3);
+        const alpha = (0.1 + intensity * 0.6).toFixed(3);
         return (
           <div
             key={i}
-            title={`Tile ${i + 1}: ${s.label} · ${formatSol(sol, 4)} SOL · ${count} miners`}
-            className={`relative flex aspect-square flex-col items-center justify-center rounded-md border-2 px-0.5 font-mono ${
-              won ? "" : "border-transparent"
-            }`}
+            title={`Tile ${i + 1}: ${m.label} · ${formatSol(sol, 4)} SOL · ${count} miners`}
+            className="relative flex aspect-square flex-col items-center justify-center rounded-md border-2 px-0.5 font-mono"
             style={{
-              borderColor: won ? CHART.pink : undefined,
-              boxShadow: won
-                ? `0 0 14px -2px ${CHART.pink}99, 0 0 0 1px ${CHART.violet}66`
-                : undefined,
-              background: won
-                ? `rgba(255,90,200,${(0.28 + intensity * 0.4).toFixed(3)})`
-                : `rgba(${s.fill},${alpha})`,
-              color: won || intensity > 0.55 ? "#fff" : s.fg,
+              borderColor: won ? WIN : "transparent",
+              boxShadow: won ? `0 0 14px -2px ${WIN}, 0 0 0 1px ${WIN}66` : undefined,
+              background: won ? `rgba(255,90,200,${(0.24 + intensity * 0.4).toFixed(3)})` : `rgba(${m.rgb},${alpha})`,
+              color: won || intensity > 0.55 ? "#fff" : m.ink,
             }}
           >
-            <span className="absolute left-1 top-0.5 text-[9px] text-white/45 sm:left-1.5 sm:top-1 sm:text-[10px]">
+            <span className="absolute left-1 top-0.5 flex items-center gap-0.5 text-[9px] text-white/50 sm:left-1.5 sm:top-1 sm:text-[10px]">
               #{i + 1}
-              {mode === "solo" && (
-                <span className="ml-0.5" style={{ color: MODE_STYLE.solo.fg }} aria-hidden>✦</span>
-              )}
+              {mode === "solo" && <span style={{ color: m.ink }} aria-hidden>✦</span>}
             </span>
             {won && (
-              <span
-                className="absolute right-1 top-0.5 text-[8px] font-bold sm:right-1.5 sm:top-1 sm:text-[9px]"
-                style={{ color: CHART.pink }}
-              >
+              <span className="absolute right-1 top-0.5 text-[8px] font-bold sm:right-1.5 sm:top-1 sm:text-[9px]" style={{ color: WIN }}>
                 win
               </span>
             )}
-            <span className="num text-[10px] leading-none sm:text-[11px]">
-              {formatSol(sol, 4)}
-            </span>
+            <span className="num text-[10px] leading-none sm:text-[11px]">{formatSol(sol, 3)}</span>
           </div>
         );
       })}
@@ -162,131 +172,116 @@ function DeployHeatBoard({
   );
 }
 
-function BiasHeadline({ stats }: { stats: SoloSplitDeployStats }) {
-  const bias = stats.biasVsTileShare;
-  const lean =
-    Math.abs(bias) < 0.005
-      ? "roughly even vs tile share"
-      : bias > 0
-        ? `overweight solos by ${formatPct(bias, 1)} vs ${formatPct(SOLO_TILE_SHARE, 0)} tile share`
-        : `overweight splits by ${formatPct(-bias, 1)} vs ${formatPct(1 - SOLO_TILE_SHARE, 0)} tile share`;
-
+function ResultBadge({ mode }: { mode: TileMode }) {
+  const m = MODE[mode];
   return (
-    <div className="space-y-1.5">
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[13px]">
-        <span>
-          <span style={{ color: CHART.amber }}>Solo</span>{" "}
-          <span className="text-white">{formatPct(stats.soloShare, 1)}</span>
-          <span className="text-fog-muted"> · {formatSol(stats.soloSol, 3)} SOL</span>
-        </span>
-        <span>
-          <span style={{ color: CHART.blue }}>Split</span>{" "}
-          <span className="text-white">{formatPct(stats.splitShare, 1)}</span>
-          <span className="text-fog-muted"> · {formatSol(stats.splitSol, 3)} SOL</span>
-        </span>
-        <span className="text-fog-muted">total {formatSol(stats.totalSol, 3)} SOL</span>
-      </div>
-      <div className="font-mono text-[12px] text-fog-muted">{lean}</div>
+    <span
+      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold"
+      style={{ background: `rgba(${m.rgb},0.16)`, color: m.ink, border: `1px solid rgba(${m.rgb},0.4)` }}
+    >
+      {mode === "solo" && <span aria-hidden>✦</span>}
+      {m.label}
+    </span>
+  );
+}
+
+function Stat({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <div className="section-label text-[10px]">{label}</div>
+      <div className="num mt-0.5 truncate text-[13px] text-white">{children}</div>
     </div>
   );
 }
 
-function shortKey(a?: string | null) {
-  return a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "·";
-}
-
-function RoundDeployDrilldown({
-  modes,
+/** The expanded round — a proper detail panel: outcome, deploy stats, per-tile
+ *  SOL heat, plus a jump into the full Rounds view. */
+function RoundDetail({
+  row,
   tiles,
   error,
   loading,
   onRetry,
 }: {
-  modes: RoundTileModes;
+  row: RoundTileModes;
   tiles: OnchainRoundTiles | null;
   error: string | null;
   loading: boolean;
   onRetry: () => void;
 }) {
-  if (loading && !tiles) {
-    return <div className="px-3 py-4 text-[12px] text-gray-400">Loading on-chain tile deploys…</div>;
-  }
+  const roundsHref = `/stats?section=rounds`;
+  const jump = (
+    <Link href={roundsHref} className="inline-flex items-center gap-1 font-mono text-[12px] text-steel transition-colors hover:text-white">
+      Open in Rounds <span aria-hidden>↗</span>
+    </Link>
+  );
+
+  if (loading && !tiles) return <div className="border-t border-line px-3 py-4 text-[12px] text-fog-muted">Loading on-chain tile deploys…</div>;
   if (error && !tiles) {
     return (
-      <div className="flex flex-wrap items-center gap-3 px-3 py-4 font-mono text-[12px] text-amber">
+      <div className="flex flex-wrap items-center gap-3 border-t border-line px-3 py-4 font-mono text-[12px] text-amber">
         <span>{error}</span>
-        <button type="button" onClick={onRetry} className="rounded border border-amber/40 px-2 py-0.5 hover:border-amber">
-          Retry
-        </button>
+        <button type="button" onClick={onRetry} className="rounded border border-amber/40 px-2 py-0.5 hover:border-amber">Retry</button>
       </div>
     );
   }
   if (!tiles || tiles.missing) {
     return (
-      <div className="px-3 py-4 text-[12px] text-gray-400">
-        Round PDA no longer on-chain (accounts are reclaimed ~24h after close). Pick a more recent round.
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-3 py-4 text-[12px] text-fog-muted">
+        <span>Round PDA reclaimed (~24h after close). Pick a more recent round.</span>
+        {jump}
       </div>
     );
   }
 
   const hasData = tiles.perTileSol.some((v) => v > 0);
-  if (!hasData) {
-    return <div className="px-3 py-4 text-[12px] text-gray-400">No SOL deployed on this round yet.</div>;
-  }
-
-  const stats = soloSplitDeployStats(modes.tileModes, tiles.perTileSol);
-  const winningTile = tiles.winningTile;
-  const splitWinner = tiles.topMiner?.startsWith("SpLiT1111111111111111111111111111111111111") ?? false;
+  const stats = hasData ? soloSplitDeployStats(row.tileModes, tiles.perTileSol) : null;
+  const wt = tiles.winningTile;
+  const splitWin = isSplitWinner(tiles.topMiner);
+  const resultMode: TileMode | null = wt == null ? null : splitWin ? "split" : "solo";
 
   return (
-    <div className="space-y-4 px-3 py-4 sm:px-4">
-      <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[12px] text-fog-muted">
-        <span>
-          Deployed{" "}
-          <span className="text-white">{formatSol(tiles.totalDeployedSol, 3)} SOL</span>
-        </span>
-        {winningTile != null && (
-          <span>
-            Win{" "}
-            <span className="font-bold" style={{ color: CHART.pink }}>#{winningTile + 1}</span>
-            {tiles.topMiner && !splitWinner && (
-              <> · {shortKey(tiles.topMiner)}</>
-            )}
-            {splitWinner && <> · split ORE</>}
-          </span>
-        )}
-        {tiles.totalMiners > 0 && (
-          <span>{formatNum(tiles.totalMiners)} miners</span>
-        )}
+    <div className="space-y-4 border-t border-line px-3 py-4 sm:px-4">
+      {/* round summary — the "details like Rounds" the header hints at */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+        <Stat label="Result">{resultMode ? <ResultBadge mode={resultMode} /> : <span className="text-fog-muted">in progress</span>}</Stat>
+        <Stat label="Deployed">{formatSol(tiles.totalDeployedSol, 2)} <span className="text-fog-muted">SOL</span></Stat>
+        <Stat label="Miners">{formatNum(tiles.totalMiners)}</Stat>
+        <Stat label="Winning tile">
+          {wt != null ? <span style={{ color: WIN }}>#{wt + 1}{resultMode === "solo" ? " ✦" : ""}</span> : <span className="text-fog-muted">—</span>}
+        </Stat>
       </div>
-      <BiasHeadline stats={stats} />
-      <AvgStrip stats={stats} />
-      {/* Half-width heat grid on laptop+; full width on phones */}
-      <div className="w-full sm:w-1/2 sm:max-w-md">
-        <DeployHeatBoard
-          modes={modes.tileModes}
-          perTileSol={tiles.perTileSol}
-          perTileCount={tiles.perTileCount}
-          winningTile={winningTile}
-        />
-      </div>
-      <p className="font-mono text-[11px] leading-snug text-fog-muted">
-        On-chain Round PDA · cell color = solo/split · intensity = SOL
-        {winningTile != null ? ` · winning tile #${winningTile + 1}` : " · round not settled yet"}.
-      </p>
+
+      {wt != null && (
+        <p className="font-mono text-[12px] leading-snug text-fog-muted">
+          {splitWin ? (
+            <>Split tile won — the ~1 ORE base is <span className="text-white">shared pro-rata</span> across the winning tile&apos;s stakers.</>
+          ) : (
+            <>Solo tile won — the full <span className="text-white">~1 ORE</span> goes to <span className="text-white">{shortKey(tiles.topMiner)}</span>.</>
+          )}
+        </p>
+      )}
+
+      {hasData ? (
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
+          <div className="w-full max-w-md">
+            <DeployHeatBoard modes={row.tileModes} perTileSol={tiles.perTileSol} perTileCount={tiles.perTileCount} winningTile={wt} />
+            <p className="mt-1.5 font-mono text-[11px] leading-snug text-fog-muted">Cell hue = solo/split · intensity = SOL deployed.</p>
+          </div>
+          {stats && <AvgStrip stats={stats} />}
+        </div>
+      ) : (
+        <div className="text-[12px] text-fog-muted">No SOL deployed on this round yet.</div>
+      )}
+
+      <div className="flex justify-end pt-1">{jump}</div>
     </div>
   );
 }
 
-function RoundRow({
-  row,
-  open,
-  onToggle,
-}: {
-  row: RoundTileModes;
-  open: boolean;
-  onToggle: () => void;
-}) {
+/** One round as a card: header (id + outcome), the mask board (winning tile ringed),
+ *  the deploy-split bar; tap to expand into RoundDetail (spans the full grid row). */
+function RoundCard({ row, open, onToggle }: { row: RoundTileModes; open: boolean; onToggle: () => void }) {
   const connection = useReadonlyRpc();
   const [tiles, setTiles] = useState<OnchainRoundTiles | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -296,8 +291,7 @@ function RoundRow({
     setLoading(true);
     setError(null);
     try {
-      const next = await fetchOnchainRoundTiles(connection, row.roundId);
-      setTiles(next);
+      setTiles(await fetchOnchainRoundTiles(connection, row.roundId));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setTiles(null);
@@ -308,67 +302,43 @@ function RoundRow({
 
   useEffect(() => { void load(); }, [load]);
 
-  const collapsedStats =
-    tiles && !tiles.missing && tiles.perTileSol.some((v) => v > 0)
-      ? soloSplitDeployStats(row.tileModes, tiles.perTileSol)
-      : null;
+  const live = tiles && !tiles.missing ? tiles : null;
+  const winningTile = live?.winningTile ?? null;
+  const resultMode: TileMode | null = winningTile == null ? null : isSplitWinner(live?.topMiner) ? "split" : "solo";
+  const stats = live && live.perTileSol.some((v) => v > 0) ? soloSplitDeployStats(row.tileModes, live.perTileSol) : null;
 
   return (
-    <Fragment>
-      <tr className={`${bodyRow} cursor-pointer`} onClick={onToggle}>
-        <td className={`${td} whitespace-nowrap align-top text-white`}>
-          <span className="inline-flex items-center gap-1 pt-0.5">
-            <span className="inline-block w-[9px] text-gray-500">{open ? "▾" : "▸"}</span>
-            #{formatNum(row.roundId)}
-          </span>
-        </td>
-        <td className={`${td} w-[11rem] align-top sm:w-[14rem]`}>
-          <div
-            aria-hidden={open}
-            className={`origin-left space-y-2 overflow-hidden transition-[opacity,transform,max-height] duration-300 ease-out ${
-              open
-                ? "pointer-events-none max-h-0 scale-95 opacity-0"
-                : "max-h-40 scale-100 opacity-100"
-            }`}
-          >
-            <TileBoard modes={row.tileModes} />
-            {collapsedStats ? (
-              <AvgStrip stats={collapsedStats} compact />
-            ) : loading ? (
-              <div className="h-6 animate-pulse rounded bg-white/[0.04]" />
-            ) : null}
-          </div>
-        </td>
-        <td className={`${td} align-top`}>
-          {collapsedStats ? (
-            <span className="num whitespace-nowrap text-[13px]">
-              <span style={{ color: CHART.amber }}>{formatPct(collapsedStats.soloShare, 0)}</span>
-              <span className="text-fog-muted"> / </span>
-              <span style={{ color: CHART.blue }}>{formatPct(collapsedStats.splitShare, 0)}</span>
-            </span>
+    <div
+      className={`overflow-hidden rounded-xl border bg-ink-800/40 transition-colors ${open ? "col-span-full border-steel/40" : "border-line hover:border-white/15"}`}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-2 px-3 pt-3 text-left"
+      >
+        <span className="num text-[13px] font-semibold text-white">#{formatNum(row.roundId)}</span>
+        <span className="flex items-center gap-2">
+          {resultMode ? <ResultBadge mode={resultMode} /> : loading ? <span className="text-[11px] text-fog-muted">···</span> : <span className="text-[11px] text-fog-muted">live</span>}
+          <span className="text-[11px] text-gray-500">{open ? "▾" : "▸"}</span>
+        </span>
+      </button>
+
+      {!open && (
+        <div className="space-y-2.5 px-3 pb-3 pt-2.5">
+          <TileBoard modes={row.tileModes} winningTile={winningTile} />
+          {stats ? (
+            <BiasBar stats={stats} />
           ) : loading ? (
-            <span className="text-fog-muted">···</span>
+            <div className="h-6 animate-pulse rounded bg-white/[0.04]" />
           ) : (
-            <span className="text-fog-muted">—</span>
+            <div className="font-mono text-[11px] text-fog-muted">No deploys read yet.</div>
           )}
-        </td>
-      </tr>
-      {open && (
-        <tr className="bg-black/20">
-          <td colSpan={3} className="p-0">
-            <div className="w-0 min-w-full">
-              <RoundDeployDrilldown
-                modes={row}
-                tiles={tiles}
-                error={error}
-                loading={loading}
-                onRetry={() => void load()}
-              />
-            </div>
-          </td>
-        </tr>
+        </div>
       )}
-    </Fragment>
+
+      {open && <RoundDetail row={row} tiles={tiles} error={error} loading={loading} onRetry={() => void load()} />}
+    </div>
   );
 }
 
@@ -381,8 +351,7 @@ export function TileModesTab() {
 
   const refreshBoard = useCallback(async () => {
     try {
-      const id = await fetchBoardRoundId(connection);
-      setLatest(id);
+      setLatest(await fetchBoardRoundId(connection));
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -401,65 +370,46 @@ export function TileModesTab() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[13px] text-fog-muted">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 font-mono text-[13px] text-fog-muted">
         <span>
           {latest != null
-            ? `Official solo/split mask for the last ${formatNum(rows.length)} rounds (through #${formatNum(latest)} on-chain). Tap a round for per-tile SOL.`
+            ? `v4 solo/split mask for the last ${formatNum(rows.length)} rounds (through #${formatNum(latest)}). Tap a round for per-tile SOL + the outcome.`
             : loading
               ? "Loading live board…"
               : "Could not read ORE board."}
         </span>
         <span className="inline-flex items-center gap-3">
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: `rgba(${MODE_STYLE.solo.fill},0.28)` }} />
-            <span style={{ color: CHART.amber }}>Solo ✦ · 10 tiles</span>
+            <span className="inline-block h-2.5 w-2.5 rounded-sm border" style={{ background: `rgba(${MODE.solo.rgb},0.18)`, borderColor: `rgba(${MODE.solo.rgb},0.5)` }} />
+            <span style={{ color: MODE.solo.ink }}>Solo ✦ · 10</span>
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: `rgba(${MODE_STYLE.split.fill},0.28)` }} />
-            <span style={{ color: CHART.blue }}>Split · 15 tiles</span>
+            <span className="inline-block h-2.5 w-2.5 rounded-sm border" style={{ background: `rgba(${MODE.split.rgb},0.18)`, borderColor: `rgba(${MODE.split.rgb},0.5)` }} />
+            <span style={{ color: MODE.split.ink }}>Split · 15</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ boxShadow: `0 0 0 1px ${WIN}` }} />
+            <span style={{ color: WIN }}>won</span>
           </span>
         </span>
       </div>
 
-      <ChartCard
-        title="Solo / Split by round"
-        subtitle="Mask from round id; tile SOL + winning square from the live Round PDA (matches hawg)."
-      >
+      <ChartCard title="Solo / Split by round" subtitle="Mask is derived from the round id (keccak + Fisher–Yates); tile SOL, winning square + outcome from the live Round PDA (matches hawg).">
         {loading && latest == null ? (
           <RowsSkeleton rows={6} />
         ) : error && latest == null ? (
           <div className="flex flex-wrap items-center gap-3 font-mono text-sm text-amber">
             <span>{error}</span>
-            <button type="button" onClick={() => void refreshBoard()} className="rounded border border-amber/40 px-2 py-0.5 hover:border-amber">
-              Retry
-            </button>
+            <button type="button" onClick={() => void refreshBoard()} className="rounded border border-amber/40 px-2 py-0.5 hover:border-amber">Retry</button>
           </div>
         ) : rows.length === 0 ? (
           <div className="font-mono text-sm text-fog-muted">No rounds available yet.</div>
         ) : (
-          <div className={tableWrap}>
-            <table className="w-full font-mono text-[13px]">
-              <thead>
-                <tr className={theadRow}>
-                  <th className={th}>Round</th>
-                  <th className={th}>Board</th>
-                  <th className={th}>Solo vs split</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => {
-                  const open = openRound === row.roundId;
-                  return (
-                    <RoundRow
-                      key={row.roundId}
-                      row={row}
-                      open={open}
-                      onToggle={() => setOpenRound(open ? null : row.roundId)}
-                    />
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {rows.map((row) => {
+              const open = openRound === row.roundId;
+              return <RoundCard key={row.roundId} row={row} open={open} onToggle={() => setOpenRound(open ? null : row.roundId)} />;
+            })}
           </div>
         )}
       </ChartCard>
