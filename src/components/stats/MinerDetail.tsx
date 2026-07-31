@@ -16,7 +16,7 @@ import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { RefreshIconButton } from "@/components/primitives/RefreshIconButton";
 import { ServiceChip } from "@/components/primitives/ServiceChip";
 import { TileSkeleton, Refreshing } from "@/components/primitives/Skeleton";
-import { ChartCard } from "@/components/stats/Charts";
+import { ChartCard, ChartWatermarkContext } from "@/components/stats/Charts";
 import { HitRate } from "@/components/stats/HitRate";
 import { PnlChart, type TPt } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
@@ -142,49 +142,49 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const canExpandHistory = d.history.length > HISTORY_PREVIEW;
 
   return (
-    <ChartCard>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <h2
-            className="text-[19px] font-semibold tracking-tight text-[#EAECF6]"
-            style={{ fontFamily: "'Chakra Petch', sans-serif" }}
-          >
-            Miner <span className="text-[#B7BDD2]">{short(pubkey)}</span>
-          </h2>
-          <ServiceChip service={d.service} />
-          <CopyAddress address={pubkey} iconOnly className="text-fog-muted" />
-          <a
-            href={`https://solscan.io/account/${pubkey}`}
-            target="_blank"
-            rel="noreferrer"
-            title="View on Solscan"
-            aria-label="View on Solscan"
-            className={iconBtn}
-          >
-            <IconExternalLink size={15} stroke={1.75} aria-hidden />
-          </a>
-        </div>
-        <div className="subtext flex flex-wrap items-center gap-x-3 gap-y-1">
-          {firstTs && (
-            <span>
-              First seen <span className="font-semibold text-[#EAECF6]">{fmtSeen(firstTs)}</span>
-            </span>
-          )}
-          {lastTs && (
-            <span
-              className="flex items-center gap-1.5"
-              title={`${lastTs.toLocaleDateString()} ${lastTs.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+    <ChartWatermarkContext.Provider value={true}>
+    <div className="space-y-5">
+    <ChartCard
+      title={`Miner ${short(pubkey)}`}
+      right={
+        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2" data-no-capture="true">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <ServiceChip service={d.service} />
+            <CopyAddress address={pubkey} iconOnly className="text-fog-muted" />
+            <a
+              href={`https://solscan.io/account/${pubkey}`}
+              target="_blank"
+              rel="noreferrer"
+              title="View on Solscan"
+              aria-label="View on Solscan"
+              className={iconBtn}
             >
+              <IconExternalLink size={15} stroke={1.75} aria-hidden />
+            </a>
+          </div>
+          <div className="subtext flex flex-wrap items-center gap-x-3 gap-y-1">
+            {firstTs && (
+              <span>
+                First seen <span className="font-semibold text-[#EAECF6]">{fmtSeen(firstTs)}</span>
+              </span>
+            )}
+            {lastTs && (
               <span
-                className={`h-1.5 w-1.5 rounded-full ${Date.now() - lastTs.getTime() < 24 * 3600e3 ? "bg-[#22E0E6]" : "bg-white/25"}`}
-                aria-hidden
-              />
-              Last active <span className="font-semibold text-[#EAECF6]">{timeAgo(lastTs)}</span>
-            </span>
-          )}
-          <RefreshIconButton onClick={det.refresh} disabled={det.fetching} />
+                className="flex items-center gap-1.5"
+                title={`${lastTs.toLocaleDateString()} ${lastTs.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${Date.now() - lastTs.getTime() < 24 * 3600e3 ? "bg-[#22E0E6]" : "bg-white/25"}`}
+                  aria-hidden
+                />
+                Last active <span className="font-semibold text-[#EAECF6]">{timeAgo(lastTs)}</span>
+              </span>
+            )}
+            <RefreshIconButton onClick={det.refresh} disabled={det.fetching} />
+          </div>
         </div>
-      </div>
+      }
+    >
       {d.managed_by.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-2 font-mono text-[12.5px] text-[#B7BDD2]">
           managed by
@@ -314,7 +314,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
       </div>
 
       {/* Lifetime performance · on-chain totals */}
-      <div className="mt-16 space-y-3">
+      <div className="mt-8 space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
           <h3
             className="text-[18px] font-bold tracking-tight text-[#EAECF6]"
@@ -393,9 +393,11 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           This wallet last mined before that; the figures above are its lifetime on-chain census totals.
         </div>
       )}
+    </ChartCard>
 
       {d.series.length > 1 && (
         <MinerTrend
+          pubkey={pubkey}
           series={d.series}
           derived={dv}
           roundsWin={roundsWin}
@@ -406,21 +408,10 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
       )}
 
       {d.history.length > 0 && (
-      <div className="mt-16 space-y-3">
-        <div>
-          <h3
-            className="text-[18px] font-bold tracking-tight text-[#EAECF6]"
-            style={{ fontFamily: "var(--font-subtext)" }}
-          >
-            Recent rounds
-          </h3>
-          <p
-            className="mt-1 text-[12px] leading-snug text-[#8B93B4]"
-            style={{ fontFamily: "var(--font-subtext)" }}
-          >
-            Per-round deploy and outcome from the captured history.
-          </p>
-        </div>
+      <ChartCard
+        title={`${pubkey.slice(0, 4)}'s recent history`}
+        subtitle="Per-round deploy and outcome from the captured history."
+      >
         <div className="overflow-hidden rounded-xl border border-line bg-ink-800/80">
         <div className={`${tableWrap} border-0 bg-transparent`}>
         <table className="w-full font-mono text-[13px] sm:min-w-[560px]">
@@ -462,7 +453,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
         </table>
       </div>
       {canExpandHistory && (
-        <div className="border-t border-line px-4 py-3">
+        <div className="border-t border-line px-4 py-3" data-no-capture="true">
           <button
             type="button"
             onClick={() => setHistoryExpanded((v) => !v)}
@@ -476,9 +467,10 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
         </div>
       )}
       </div>
-      </div>
+      </ChartCard>
       )}
-    </ChartCard>
+    </div>
+    </ChartWatermarkContext.Provider>
   );
 }
 
@@ -655,7 +647,8 @@ function InfoDot() {
   );
 }
 
-function MinerTrend({ series, derived, roundsWin, setRoundsWin, refreshing, partial }: {
+function MinerTrend({ pubkey, series, derived, roundsWin, setRoundsWin, refreshing, partial }: {
+  pubkey: string;
   series: OreMinerDetail["series"];
   derived: OreMinerDetail["derived"];
   roundsWin: string; setRoundsWin: (v: string) => void; refreshing?: boolean; partial?: boolean;
@@ -695,35 +688,14 @@ function MinerTrend({ series, derived, roundsWin, setRoundsWin, refreshing, part
   if (worstUsd == null) worstUsd = derived?.worst_round?.net_usd ?? null;
 
   return (
-    <div className="mt-16 space-y-3">
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-        <div className="min-w-0">
-          <h3
-            className="flex flex-wrap items-center gap-1.5 text-[18px] font-bold tracking-tight text-[#EAECF6]"
-            style={{ fontFamily: "var(--font-subtext)" }}
-          >
-            Last {formatNum(nRounds)} round performance
-            <span
-              className="inline-flex text-[#8B93B4]"
-              title={partial
-                ? "Captured event window only — lifetime census may cover earlier rounds"
-                : "Play, consistency and P&L over the selected captured rounds"}
-              aria-label={partial
-                ? "Captured event window only — lifetime census may cover earlier rounds"
-                : "Play, consistency and P&L over the selected captured rounds"}
-            >
-              <InfoDot />
-            </span>
-            <Refreshing active={!!refreshing} />
-          </h3>
-          <p
-            className="mt-1 text-[12px] leading-snug text-[#8B93B4]"
-            style={{ fontFamily: "var(--font-subtext)" }}
-          >
-            Play, consistency and streaks in the captured window.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+    <ChartCard
+      title={`${pubkey.slice(0, 4)}'s last ${formatNum(nRounds)} rounds`}
+      subtitle={partial
+        ? "Captured event window only — lifetime census may cover earlier rounds."
+        : "Play, consistency and streaks in the captured window."}
+      right={
+        <div className="flex flex-wrap items-center gap-2" data-no-capture="true">
+          <Refreshing active={!!refreshing} />
           <div className="flex items-center gap-2">
             <span
               className="text-[12px] font-medium text-[#8B93B4]"
@@ -756,8 +728,9 @@ function MinerTrend({ series, derived, roundsWin, setRoundsWin, refreshing, part
             </div>
           )}
         </div>
-      </div>
-
+      }
+    >
+      <div className="space-y-3">
       <PnlChart points={pts} height={220}
         fmt={(v) => (cur === "usd" ? `$${formatNum(v, 2)}` : `${formatNum(v, 3)}`)}
         axisFmt={(v) => {
@@ -843,6 +816,7 @@ function MinerTrend({ series, derived, roundsWin, setRoundsWin, refreshing, part
             className="rounded-xl border border-line bg-[rgba(255,192,97,0.07)]"
           />
         </div>
-    </div>
+      </div>
+    </ChartCard>
   );
 }
