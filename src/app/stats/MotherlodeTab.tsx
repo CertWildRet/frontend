@@ -92,7 +92,7 @@ function PopDrilldown({ roundId }: { roundId: number }) {
                       </svg>
                     </button>
                     {s.is_solo_winner && <span title="also won the round's separate ~1-ORE base prize (one winner per round)" className="rounded bg-gold/15 px-1 text-[10px] text-gold">solo ORE</span>}
-                    <ServiceChip service={s.service} />
+                    <ServiceChip service={s.service} compact />
                   </span>
                 </td>
                 <td className={`${td} num hidden text-right text-gray-300 sm:table-cell`}>{s.tiles_covered}</td>
@@ -210,10 +210,15 @@ export function MotherlodeTab() {
                       <td className={td}>
                         {isSplit
                           ? <span className="rounded bg-white/5 px-1.5 py-0.5 text-[11px] text-gray-300">Split</span>
+                          : h.is_split == null && !h.top_miner
+                          // The on-chain ResetEvent only records the winner mode +
+                          // solo winner from ~round 292,600 (10 Jun 2026); earlier
+                          // events lack the fields entirely — say so, don't guess.
+                          ? <span className="text-[11px] text-gray-600" title="Winner mode and solo winner aren't recorded by the on-chain event before ~round 292,600 (10 Jun 2026)">unrecorded</span>
                           : (
                             <span className="text-[11px] text-gray-400">
-                              Solo<span className="hidden sm:inline"> · {short(h.top_miner)}</span>
-                              <ServiceChip service={h.top_miner_service} className="ml-1.5" />
+                              Solo{h.top_miner && <span className="hidden sm:inline"> · {short(h.top_miner)}</span>}
+                              <ServiceChip service={h.top_miner_service} compact className="ml-1.5" />
                             </span>
                           )}
                       </td>

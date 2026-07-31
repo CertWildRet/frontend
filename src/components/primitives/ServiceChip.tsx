@@ -11,12 +11,18 @@ export function ServiceChip({
   service,
   poolCrank,
   className = "",
+  compact = false,
 }: {
   service?: OreServiceTag | null;
   poolCrank?: string | null;
   className?: string;
+  /** Dense-table variant: matches the 10px sibling chips (won / solo ORE) so a
+   *  tagged row keeps exactly the same height as an untagged one. */
+  compact?: boolean;
 }) {
-  const base = "rounded border px-1.5 py-0.5 text-[12px] font-semibold uppercase tracking-[0.1em]";
+  const base = compact
+    ? "rounded border px-1 text-[10px] font-semibold uppercase leading-4 tracking-[0.06em]"
+    : "rounded border px-1.5 py-0.5 text-[12px] font-semibold uppercase tracking-[0.1em]";
   if (service) {
     return (
       <span
