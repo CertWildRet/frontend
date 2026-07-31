@@ -61,11 +61,14 @@ export function HeaderTicker() {
   if (!items.length) return null;
 
   return (
-    <div className="hidden min-w-0 items-center gap-4 overflow-hidden lg:flex" aria-label="live ORE market ticker">
+    <div
+      className="flex min-w-0 items-center gap-3 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-4 [&::-webkit-scrollbar]:hidden"
+      aria-label="live ORE market ticker"
+    >
       {items.map((it) => (
         <span key={it.label} className="flex shrink-0 items-baseline gap-1.5" title={it.title}>
-          <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#8b93b4]">{it.label}</span>
-          <span className="font-mono text-[12.5px] font-bold tabular-nums" style={{ color: it.color }}>{it.value}</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8b93b4] sm:text-[11px]">{it.label}</span>
+          <span className="font-mono text-[12px] font-bold tabular-nums sm:text-[12.5px]" style={{ color: it.color }}>{it.value}</span>
         </span>
       ))}
     </div>

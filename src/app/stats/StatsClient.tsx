@@ -4,8 +4,10 @@
  * Interactive Ore Data shell — TabBar + visited-tab mounting.
  * Keeps the last few visited tabs mounted (hidden) so recent switches are
  * instant; older tabs unmount to free chart/table memory.
+ *
+ * Miner lookup lives on /search; goToMiner navigates there.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TabBar } from "@/components/primitives/TabBar";
 import { ChartWatermarkContext } from "@/components/stats/Charts";
@@ -16,7 +18,6 @@ import { TrendsTab } from "./TrendsTab";
 import { EcosystemTab } from "./EcosystemTab";
 import { RoundAnalysisTab } from "./RoundAnalysisTab";
 import { MinerRankingsTab } from "./MinerRankingsTab";
-import { MinersTab } from "./MinersTab";
 import { MotherlodeTab } from "./MotherlodeTab";
 import { RoundsTab } from "./RoundsTab";
 import { TileModesTab } from "./TileModesTab";
@@ -24,7 +25,6 @@ import {
   TABS,
   MinerNavContext,
   type Tab,
-  type MinerSeed,
 } from "./shared";
 import styles from "./stats.module.css";
 
@@ -35,7 +35,6 @@ const TAB_IDS = new Set<Tab>(TABS.map((tab) => tab.id));
 const tabFromQuery = (raw: string | null): Tab => {
   if (!raw) return "trends";
   const normalized = raw.toLowerCase().replaceAll("-", "_");
-  if (normalized === "search_miners" || normalized === "miner") return "miners";
   if (normalized === "miner_rankings") return "rankings";
   if (normalized === "protocol" || normalized === "protocol_internals") return "trends";
   if (normalized === "solo_split" || normalized === "split_solo" || normalized === "tilemodes") return "tile_modes";
@@ -51,15 +50,11 @@ export function StatsClient() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const urlMiner = searchParams.get("miner")?.trim() || null;
-  // A miner deep link wins over a conflicting/missing section so
-  // /stats?miner=<address> is sufficient on its own.
-  const requestedTab: Tab = urlMiner ? "miners" : tabFromQuery(searchParams.get("section"));
+  const requestedTab: Tab = tabFromQuery(searchParams.get("section"));
   const [tab, setTab] = useState<Tab>(requestedTab);
   // LRU of visited tabs — capped so chart-heavy trees don't accumulate forever.
   const [visitedOrder, setVisitedOrder] = useState<Tab[]>(() => [requestedTab]);
   const visited = new Set(visitedOrder);
-  const [minerQuery, setMinerQuery] = useState(urlMiner ?? "");
   const setActiveTab = useCallback((next: Tab) => {
     setVisitedOrder((current) => pushVisited(current, next));
     setTab(next);
@@ -76,53 +71,20 @@ export function StatsClient() {
     setActiveTab(next);
     replaceQuery((params) => {
       params.set("section", next);
-      if (next === "miners" && minerQuery) params.set("miner", minerQuery);
-      else params.delete("miner");
+      params.delete("miner");
     });
-  }, [minerQuery, replaceQuery, setActiveTab]);
-
-  // Jump-to-miner: open the Search Miners tab with the wallet pre-filled.
-  const [minerSeed, setMinerSeed] = useState<MinerSeed | null>(
-    () => urlMiner ? { pubkey: urlMiner, n: 1 } : null,
-  );
-  const lastUrlMiner = useRef(urlMiner);
+  }, [replaceQuery, setActiveTab]);
 
   // Browser history and externally changed query strings drive the visible tab.
-  // Also canonicalize a bare/conflicting `miner=` link to section=miners.
   useEffect(() => {
     setActiveTab(requestedTab);
-    if (urlMiner && urlMiner !== lastUrlMiner.current) {
-      setMinerQuery(urlMiner);
-      setMinerSeed((seed) => ({ pubkey: urlMiner, n: (seed?.n ?? 0) + 1 }));
-    }
-    lastUrlMiner.current = urlMiner;
-    if (urlMiner && searchParams.get("section") !== "miners") {
-      replaceQuery((params) => params.set("section", "miners"));
-    }
-  }, [replaceQuery, requestedTab, searchParams, setActiveTab, urlMiner]);
+  }, [requestedTab, setActiveTab]);
 
   const goToMiner = useCallback((pubkey: string) => {
     const value = pubkey.trim();
     if (!value) return;
-    setMinerSeed((seed) => ({ pubkey: value, n: (seed?.n ?? 0) + 1 }));
-    setMinerQuery(value);
-    setActiveTab("miners");
-    replaceQuery((params) => {
-      params.set("section", "miners");
-      params.set("miner", value);
-    });
-  }, [replaceQuery, setActiveTab]);
-
-  const syncMinerQuery = useCallback((value: string) => {
-    const next = value.trim();
-    setMinerQuery(next);
-    if ((searchParams.get("miner") ?? "") === next && searchParams.get("section") === "miners") return;
-    replaceQuery((params) => {
-      params.set("section", "miners");
-      if (next) params.set("miner", next);
-      else params.delete("miner");
-    });
-  }, [replaceQuery, searchParams]);
+    router.push(`/search?q=${encodeURIComponent(value)}`);
+  }, [router]);
 
   return (
     <ChartWatermarkContext.Provider value={true}>
@@ -141,7 +103,6 @@ export function StatsClient() {
                  t.id === "ecosystem" ? <EcosystemTab /> :
                  t.id === "round_analysis" ? <RoundAnalysisTab /> :
                  t.id === "rankings" ? <MinerRankingsTab /> :
-                 t.id === "miners" ? <MinersTab seed={minerSeed} onQueryChange={syncMinerQuery} /> :
                  t.id === "motherlode" ? <MotherlodeTab /> :
                  t.id === "rounds" ? <RoundsTab /> :
                  t.id === "tile_modes" ? <TileModesTab /> :

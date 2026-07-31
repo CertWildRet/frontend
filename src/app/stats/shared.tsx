@@ -2,18 +2,14 @@
 
 /** Shared helpers for Ore Data tabs. */
 import { createContext, type ReactNode } from "react";
-import { IconSearch } from "@tabler/icons-react";
 import { compactNum } from "@/components/stats/Charts";
 import { oreGramsToOre, lamportsToSol, type OreMotherlodeHit } from "@/lib/oreStats";
 import { formatNum, formatPct } from "@/lib/format";
 import styles from "./stats.module.css";
 
-export type Tab = "trends" | "ecosystem" | "round_analysis" | "rankings" | "miners" | "motherlode" | "rounds" | "tile_modes" | "cohort" | "rwa";
+export type Tab = "trends" | "ecosystem" | "round_analysis" | "rankings" | "motherlode" | "rounds" | "tile_modes" | "cohort" | "rwa";
 
-// Cross-tab jump: any row (e.g. a motherlode sharer) can send a pubkey to the
-// Search Miners tab and pre-fill its search bar. `n` bumps each call so re-clicking
-// the same wallet still re-triggers the seed effect.
-export type MinerSeed = { pubkey: string; n: number };
+// Jump to /search?q=<pubkey> from any Ore Data row (motherlode sharer, round participant, …).
 export const MinerNavContext = createContext<(pubkey: string) => void>(() => {});
 
 export const TABS: { id: Tab; label: ReactNode; title?: string; className?: string }[] = [
@@ -26,12 +22,6 @@ export const TABS: { id: Tab; label: ReactNode; title?: string; className?: stri
   { id: "tile_modes", label: "Solo / Split" },
   { id: "cohort", label: "Cohort" },
   { id: "rwa", label: "RWA" },
-  {
-    id: "miners",
-    title: "Search Miners",
-    className: "ml-auto",
-    label: <IconSearch size={15} stroke={1.75} aria-hidden />,
-  },
 ];
 
 export const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "·");

@@ -1,6 +1,6 @@
 "use client";
 
-/** Shared miner table types + expandable rows for Rankings and Search tabs. */
+/** Shared miner table types + expandable rows for Miner Rankings. */
 import { Fragment } from "react";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { MinerDetail } from "@/components/stats/MinerDetail";
@@ -18,21 +18,6 @@ export const RANKING_SORTS: { id: string; label: string }[] = [
   { id: "ore", label: "ORE earned" },
   { id: "roi", label: "Gross ROI" },
 ];
-
-export const SEARCH_SORTS: { id: string; label: string }[] = [
-  { id: "net_sol", label: "Net SOL" },
-  { id: "lifetime_sol", label: "Lifetime SOL" },
-  { id: "lifetime_ore", label: "Lifetime ORE" },
-  { id: "unclaimed", label: "Unclaimed ORE" },
-  { id: "refined", label: "Refined ORE" },
-];
-
-/** Map UI sort ids onto /ore/miners when searching by address. */
-export const MINERS_SORT_FALLBACK: Record<string, string> = {
-  earned: "lifetime_sol",
-  ore: "lifetime_ore",
-  roi: "net_sol",
-};
 
 export const MIN_DEP = [0, 1, 10, 100];
 

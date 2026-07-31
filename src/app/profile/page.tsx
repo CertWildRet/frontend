@@ -4,8 +4,8 @@
  * /profile — the connected wallet's miner readout.
  *
  * No placeholders: stats render only once a wallet is connected, and they use
- * the SAME top-level MinerDetail panel that powers the Search Miners
- * chevron-expansion on /stats (extracted to components/stats/MinerDetail) —
+ * the SAME top-level MinerDetail panel that powers /search
+ * (extracted to components/stats/MinerDetail) —
  * lifetime census, event-window P&L, best/worst rounds, streaks, ORE cost,
  * cumulative P/L trend, exact round history.
  *
@@ -38,8 +38,8 @@ export default function ProfilePage() {
           <span className={styles.titleAccent}>Miner readout</span>
         </h1>
         <p className={styles.subtitle}>
-          Your ORE miner stats for the connected wallet — the same lens as Ore Data → Search
-          Miners, front and center.
+          Your ORE miner stats for the connected wallet — the same lens as Search Miner,
+          front and center.
         </p>
         <div className={styles.walletStrip}>
           <span className="text-[#9AA3C8]">Wallet</span>

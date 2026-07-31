@@ -7,7 +7,7 @@ export type NavItem = {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/stats", label: "Data" },
-  { href: "/stats?section=miners", label: "Search Miner", icon: "search" },
+  { href: "/search", label: "Search Miner", icon: "search" },
   { href: "/automine", label: "Automine" },
   { href: "/profile", label: "Profile" },
   // Hidden for now — restore when shipping these surfaces again:
@@ -22,30 +22,12 @@ export function isActiveRoute(pathname: string, href: string): boolean {
   return pathname === path || pathname.startsWith(path + "/");
 }
 
-function normalizeSection(raw: string | null): string | null {
-  if (!raw) return null;
-  return raw.toLowerCase().replaceAll("-", "_");
-}
-
-function isMinersStatsView(pathname: string, searchParams: URLSearchParams): boolean {
-  if (pathname !== "/stats") return false;
-  if (searchParams.get("miner")?.trim()) return true;
-  const section = normalizeSection(searchParams.get("section"));
-  return section === "miners" || section === "search_miners" || section === "miner";
-}
-
 /** Path + query aware active state for primary nav links. */
 export function isNavItemActive(
   pathname: string,
   searchParams: URLSearchParams,
   item: NavItem,
 ): boolean {
-  if (item.href === "/stats?section=miners") {
-    return isMinersStatsView(pathname, searchParams);
-  }
-  if (item.href === "/stats") {
-    if (pathname !== "/stats") return false;
-    return !isMinersStatsView(pathname, searchParams);
-  }
+  void searchParams;
   return isActiveRoute(pathname, item.href);
 }
