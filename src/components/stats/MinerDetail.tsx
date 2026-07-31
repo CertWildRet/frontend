@@ -213,7 +213,13 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
 
       {/* 1. Lifetime profitability glance */}
       <div className="grid grid-cols-1 items-stretch gap-2.5 md:grid-cols-3">
-        <div className="@container flex h-full flex-col rounded-xl border border-line bg-[rgba(91,108,255,0.07)] px-3.5 py-3 [container-type:size] md:col-span-2">
+        {/*
+          Desktop: size-container + cqh so the hero P&L scales to the stretched
+          card height beside Ore/Hit-rate. Mobile: never use container-type:size —
+          size containment ignores content height, collapses the card, and the
+          clamp'd value overflows over the label, footer, and next tiles.
+        */}
+        <div className="flex flex-col rounded-xl border border-line bg-[rgba(91,108,255,0.07)] px-3.5 py-3 md:col-span-2 md:h-full md:[container-type:size]">
           <div
             className="flex shrink-0 items-center gap-1.5 text-[13px] font-medium leading-none text-[#9AA3C8]"
             style={{ fontFamily: "var(--font-subtext)" }}
@@ -231,14 +237,14 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
               </svg>
             </span>
           </div>
-          <div className="flex min-h-0 flex-1 items-center py-0.5">
+          <div className="flex min-h-0 items-center py-2.5 md:flex-1 md:py-0.5">
             {totalNetUsd != null ? (
-              <span className={`num block text-[clamp(2.75rem,28cqh,4.25rem)] leading-[0.9] tracking-tight ${netTone(totalNetUsd)}`}>
+              <span className={`num block text-[2.75rem] leading-[0.9] tracking-tight md:text-[clamp(2.75rem,28cqh,4.25rem)] ${netTone(totalNetUsd)}`}>
                 {totalNetUsd >= 0 ? "+" : "-"}${formatNum(Math.abs(totalNetUsd), 2)}
               </span>
             ) : (
               <div className="flex items-baseline gap-2 whitespace-nowrap">
-                <span className={`num text-[clamp(2.75rem,28cqh,4.25rem)] leading-[0.9] tracking-tight ${netTone(net)}`}>
+                <span className={`num text-[2.75rem] leading-[0.9] tracking-tight md:text-[clamp(2.75rem,28cqh,4.25rem)] ${netTone(net)}`}>
                   {net > 0 ? "+" : ""}{formatSol(net, 2)}
                 </span>
                 <span
