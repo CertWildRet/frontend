@@ -54,6 +54,10 @@ const config: Config = {
         display: ['"Chakra Petch"', "ui-sans-serif", "system-ui", "sans-serif"],
         sans: ['"Sora Variable"', "Sora", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ['"JetBrains Mono Variable"', "ui-monospace", "SFMono-Regular", "monospace"],
+        subtext: ["var(--font-subtext)"],
+      },
+      fontSize: {
+        subtext: ["13px", { lineHeight: "1.625" }],
       },
       boxShadow: {
         "glow-gold": "0 0 0 1px rgba(157,183,216,.3), 0 0 30px -6px rgba(157,183,216,.5)",

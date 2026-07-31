@@ -15,6 +15,7 @@
     "@coral-xyz/anchor": "0.31.1",
     "@cwr/abi": "github:CertWildRet/abi#fab3fb7",
     "@cwr/sdk": "github:CertWildRet/sdk#8905897",
+    "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@fontsource-variable/sora": "^5.2.8",
     "@fontsource/chakra-petch": "^5.2.7",

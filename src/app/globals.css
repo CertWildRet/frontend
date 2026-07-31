@@ -4,6 +4,7 @@
 
 :root {
   color-scheme: dark;
+  --font-subtext: "Geist Variable", "Geist", ui-sans-serif, system-ui, sans-serif;
   /* Chart series palette — keep in sync with src/lib/chartColors.ts */
   --chart-cyan: #22E0E6;
   --chart-blue: #5B6CFF;
@@ -337,6 +338,14 @@
     @apply label text-white;
     font-size: 14.5px;
     font-weight: 700;
+  }
+
+  /* Secondary descriptive copy — Geist Sans at ChartCard subtitle size (13px). */
+  .subtext {
+    font-family: var(--font-subtext);
+    font-size: 13px;
+    line-height: 1.625;
+    color: #a8b0cc;
   }
 
   /* the secondary / withdraw action (Claim). One source of truth so the two

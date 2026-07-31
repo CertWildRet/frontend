@@ -9,7 +9,9 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { TabBar } from "@/components/primitives/TabBar";
+import { IconSearch } from "@tabler/icons-react";
+import { TabBar, tabBarIdleClass, tabDisplayFont } from "@/components/primitives/TabBar";
+import { useSearchMinerModal } from "@/components/SearchMinerModal";
 import { ChartWatermarkContext } from "@/components/stats/Charts";
 import { CohortTab } from "@/components/stats/CohortTab";
 import { RwaTab } from "@/components/stats/RwaTab";
@@ -86,11 +88,31 @@ export function StatsClient() {
     router.push(`/search?q=${encodeURIComponent(value)}`);
   }, [router]);
 
+  const { openSearchMiner } = useSearchMinerModal();
+
   return (
     <ChartWatermarkContext.Provider value={true}>
     <MinerNavContext.Provider value={goToMiner}>
       <div className={styles.tabDock}>
-        <TabBar aria-label="Ore Data sections" items={TABS} value={tab} onChange={openTab} />
+        <div className="flex items-center gap-2">
+          <TabBar
+            aria-label="Ore Data sections"
+            items={TABS}
+            value={tab}
+            onChange={openTab}
+            className="min-w-0 flex-1 border-b-0 pb-0"
+          />
+          <button
+            type="button"
+            onClick={openSearchMiner}
+            title="Search"
+            aria-label="Search"
+            style={tabDisplayFont}
+            className={`${tabBarIdleClass} inline-flex shrink-0 items-center justify-center px-2.5 py-2`}
+          >
+            <IconSearch size={15} stroke={1.75} aria-hidden />
+          </button>
+        </div>
       </div>
       <div className={styles.content}>
         {/* Recent tabs stay mounted (instant switching) but pollers PAUSE while

@@ -35,6 +35,7 @@ export function ChartCard({
   variant = "default",
   cutCorner = "tr",
   contentClassName,
+  compact = false,
 }: {
   title?: string;
   subtitle?: string;
@@ -46,13 +47,16 @@ export function ChartCard({
   cutCorner?: "tr" | "bl";
   /** Optional layout classes for the card body beneath its heading. */
   contentClassName?: string;
+  /** Tighter padding for compact toolbars (e.g. search-after-results). */
+  compact?: boolean;
 }) {
   const watermark = useContext(ChartWatermarkContext);
   const cutClass = cutCorner === "bl" ? styles.cutBL : styles.cutTR;
+  const pad = compact ? "px-4 py-3 sm:px-4 sm:py-3" : "px-5 py-5 sm:px-6 sm:py-6";
   const surfaceClass =
     variant === "dispersion"
-      ? `${styles.glass} ${styles.spectralEdge} ${cutClass} h-full overflow-hidden rounded-3xl px-5 py-5 sm:px-6 sm:py-6`
-      : `${styles.glass} ${styles.spectralEdge} ${cutClass} h-full overflow-hidden rounded-2xl px-5 py-5 sm:px-6 sm:py-6`;
+      ? `${styles.glass} ${styles.spectralEdge} ${cutClass} h-full overflow-hidden rounded-3xl ${pad}`
+      : `${styles.glass} ${styles.spectralEdge} ${cutClass} h-full overflow-hidden rounded-2xl ${pad}`;
   const wrapperClass = `${surfaceClass}${contentClassName ? " flex flex-col" : ""}`;
 
   const cardRef = useRef<HTMLDivElement>(null);
@@ -96,7 +100,7 @@ export function ChartCard({
   return (
     <div ref={cardRef} data-fillcard className={wrapperClass}>
       {(title || subtitle || right || watermark) && (
-        <div className="mb-3">
+        <div className={compact ? "mb-2" : "mb-3"}>
           {/* row 1: heading + branding/share ALWAYS share a line, so the mark stays
               top-right aligned with the title on mobile too (it just shrinks). Only
               rendered when there's a title or watermark to carry it. */}

@@ -45,12 +45,13 @@ export function SearchClient() {
   const exactAddress = ADDRESS_RE.test(q) ? q : null;
 
   return (
-    <div className="mt-[22px] space-y-5">
+    <div className="space-y-5">
       <SearchMinerBox
         value={qInput}
         onChange={setQInput}
         onClear={() => { setQInput(""); setQ(""); replaceQuery(""); }}
-        autoFocus
+        autoFocus={!exactAddress}
+        showingResults={!!exactAddress}
       />
 
       {exactAddress && <MinerDetail pubkey={exactAddress} />}

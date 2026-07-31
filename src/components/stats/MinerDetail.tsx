@@ -8,6 +8,7 @@
  * Shared by /search, /profile, and Miner Rankings row expand.
  * Visuals are shared via stats.module.css.
  */
+import Image from "next/image";
 import { useState } from "react";
 import { IconExternalLink } from "@tabler/icons-react";
 import { StatTile } from "@/components/primitives/Stat";
@@ -16,16 +17,45 @@ import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { RefreshIconButton } from "@/components/primitives/RefreshIconButton";
 import { TileSkeleton, Refreshing } from "@/components/primitives/Skeleton";
 import { ChartCard } from "@/components/stats/Charts";
+import { HitRate } from "@/components/stats/HitRate";
 import { PnlChart, type TPt } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
+import { useTicker } from "@/hooks/useTicker";
 import {
   fetchOreMiner,
   lamportsToSol,
   oreGramsToOre,
+  ORE_TILE_COUNT,
   type OreMinerDetail,
 } from "@/lib/oreStats";
 import { formatSol, formatNum, formatPct } from "@/lib/format";
 import styles from "@/app/stats/stats.module.css";
+
+/** Distinct tiles covered in a round from the deploy mask bitfield. */
+function tilesFromMask(mask: string | null | undefined): number {
+  let m = BigInt(mask ?? "0");
+  let n = 0;
+  while (m > 0n) {
+    n += Number(m & 1n);
+    m >>= 1n;
+  }
+  return n;
+}
+
+/** Avg tiles + fair expected hit rate (avgTiles / 25) over the newest N history rows. */
+function avgTilesExpected(
+  history: OreMinerDetail["history"],
+  n = 50,
+): { avgTiles: number; expectedRate: number; sampleRounds: number } | null {
+  const recent = history.slice(0, n);
+  if (recent.length === 0) return null;
+  const avgTiles = recent.reduce((a, h) => a + tilesFromMask(h.mask_union), 0) / recent.length;
+  return {
+    avgTiles,
+    expectedRate: avgTiles / ORE_TILE_COUNT,
+    sampleRounds: recent.length,
+  };
+}
 
 const fmtSeen = (d: Date) =>
   d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
@@ -52,6 +82,7 @@ function timeAgo(d: Date): string {
 
 export function MinerDetail({ pubkey }: { pubkey: string }) {
   const [roundsWin, setRoundsWin] = useState("1000");
+  const ticker = useTicker();
   // 60s (not 30): lifetime P&L barely moves round-to-round, and the in-flight
   // guard in usePolled already prevents a slow request from stacking.
   const det = usePolled(() => fetchOreMiner(pubkey, roundsWin === "all" ? "all" : Math.max(1000, Number(roundsWin))), 60_000, [pubkey, roundsWin]);
@@ -74,10 +105,9 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
     ? Number(d.hit_stats.won_sol) / 1e9 : lamportsToSol(c?.lifetime_rewards_sol ?? null);
   const net = returned - deployed;
   const oreLifetime = solOf(c?.lifetime_rewards_ore ?? null);
-  const unclaimed = solOf(c?.rewards_ore ?? null);
-  const refinedLive = solOf(c?.refined_live ?? null);
   const hs = d.hit_stats;
   const hitRate = hs && hs.rounds > 0 ? hs.hits / hs.rounds : null;
+  const tilesExpect = avgTilesExpected(d.history, 50);
   const firstTs = d.events?.first_ts ? new Date(Number(d.events.first_ts) * 1000) : null;
   const lastTs = d.events?.last_ts ? new Date(Number(d.events.last_ts) * 1000) : null;
   const dv = d.derived;
@@ -95,6 +125,12 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const partialHistory = coverageRatio != null && deployed > 1
     && coverageRatio < 0.9 && (deployed - (eventDepSol ?? 0)) > 0.5;
   const capturedPct = coverageRatio != null ? formatPct(Math.max(0, Math.min(1, coverageRatio))) : null;
+  // Same figure as Performance → Total net (USD): sum of round-time USD P/L over the series.
+  const hasUsd = d.series.some((p) => p.net_usd != null);
+  const totalNetUsd = hasUsd
+    ? d.series.reduce((a, p) => a + (p.net_usd ?? 0), 0)
+    : null;
+  const playedRounds = hs?.rounds ?? d.events?.rounds ?? null;
 
   return (
     <ChartCard>
@@ -118,7 +154,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
             <IconExternalLink size={15} stroke={1.75} aria-hidden />
           </a>
         </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[12.5px] text-[#B7BDD2]">
+        <div className="subtext flex flex-wrap items-center gap-x-3 gap-y-1">
           {firstTs && (
             <span>
               First seen <span className="font-semibold text-[#EAECF6]">{fmtSeen(firstTs)}</span>
@@ -158,28 +194,81 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
         </div>
       )}
 
-      {/* 1. At a glance — primary P&L answer */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        <StatTile variant="inset" label="Net SOL"
-          value={<span className={netTone(net)}>{formatSol(net, 2)}</span>} unit="SOL"
-          hint={censusMissing ? "won − deployed (captured)" : "returned − deployed (lifetime)"} />
-        <StatTile variant="inset" label="ORE earned" value={formatNum(oreLifetime, 2)} unit="ORE" tone="gold"
-          hint={unclaimed > 0 || refinedLive > 0 ? `unclaimed ${formatNum(unclaimed, 2)} · refined (live) ${formatNum(refinedLive, 2)}` : "all claimed"} />
-        {hasEvents && (
-          <StatTile variant="inset" label="Hit rate"
-            value={hitRate != null ? formatPct(hitRate) : "···"}
-            hint={hs ? `${formatNum(hs.hits)} of ${formatNum(hs.rounds)} rounds` : "captured rounds"} />
-        )}
-      </div>
-
-      {/* 2. Lifetime · on-chain */}
-      <div className="mt-5 space-y-3">
-        <div className="section-label" style={{ fontSize: 13 }}>
-          {censusMissing ? "Captured cashflow" : "Lifetime · on-chain"}
+      {/* 1. Lifetime profitability glance */}
+      <div className="grid grid-cols-1 items-stretch gap-2.5 md:grid-cols-3">
+        <div className="@container flex h-full flex-col rounded-lg border border-line bg-ink-800 px-3.5 py-3 [container-type:size] md:col-span-2">
+          <div className="label flex shrink-0 items-center gap-1.5">
+            Lifetime Net P&amp;L
+            <span
+              className="inline-flex text-fog-muted"
+              title={censusMissing ? "Won − deployed over captured rounds" : "Returned − deployed from on-chain lifetime census"}
+              aria-label={censusMissing ? "Won − deployed over captured rounds" : "Returned − deployed from on-chain lifetime census"}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+                <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M6 5.2V8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                <circle cx="6" cy="3.6" r="0.7" fill="currentColor" />
+              </svg>
+            </span>
+          </div>
+          <div className="flex min-h-0 flex-1 items-center py-0.5">
+            {totalNetUsd != null ? (
+              <span className={`num block text-[clamp(2.75rem,28cqh,4.25rem)] leading-[0.9] tracking-tight ${netTone(totalNetUsd)}`}>
+                {totalNetUsd >= 0 ? "+" : "-"}${formatNum(Math.abs(totalNetUsd), 2)}
+              </span>
+            ) : (
+              <div className="flex items-baseline gap-2 whitespace-nowrap">
+                <span className={`num text-[clamp(2.75rem,28cqh,4.25rem)] leading-[0.9] tracking-tight ${netTone(net)}`}>
+                  {net > 0 ? "+" : ""}{formatSol(net, 2)}
+                </span>
+                <span className="font-mono text-[15px] text-[#C6CCEC]">SOL</span>
+              </div>
+            )}
+          </div>
+          <div
+            className="shrink-0 border-t border-line pt-2 text-[14px] text-[#A8B0CC]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            {playedRounds != null ? (
+              <>Played <span className="font-semibold text-[#EAECF6]">{formatNum(playedRounds)} rounds</span></>
+            ) : (
+              <>Played <span className="font-semibold text-[#EAECF6]">·</span></>
+            )}
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <StatTile variant="inset" label={censusMissing ? "Deployed (captured)" : "Deployed"} value={formatSol(deployed, 2)} unit="SOL" />
-          <StatTile variant="inset" label={censusMissing ? "Won (captured)" : "Returned"} value={formatSol(returned, 2)} unit="SOL" />
+
+        <div className="flex flex-col gap-2.5">
+          <div className="rounded-lg border border-line bg-ink-800 px-3.5 py-2.5">
+            <div className="label">Unrefined Ore Mined</div>
+            <div className="mt-1.5 flex items-center gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line bg-ink-900/60">
+                <Image src="/ore-token.png" alt="" width={22} height={22} className="h-[22px] w-[22px] object-contain" />
+              </span>
+              <div className="min-w-0">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="num text-[22px] leading-none tracking-tight gradient-text">{formatNum(oreLifetime, 2)}</span>
+                  <span className="font-mono text-[12px] text-fog-muted">ORE</span>
+                </div>
+                {ticker?.uore_apr != null && (
+                  <div className="subtext mt-1">
+                    earning{" "}
+                    <span className="font-semibold text-[#FFC061]">{ticker.uore_apr.toFixed(1)}%</span>{" "}
+                    APY
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          {hasEvents && (
+            <HitRate
+              rate={hitRate}
+              hits={hs?.hits}
+              rounds={hs?.rounds}
+              expectedRate={tilesExpect?.expectedRate ?? null}
+              avgTiles={tilesExpect?.avgTiles ?? null}
+              sampleRounds={tilesExpect?.sampleRounds ?? null}
+            />
+          )}
         </div>
       </div>
 
@@ -191,7 +280,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
         </div>
       )}
 
-      {/* 3. Captured rounds · play & range — immediately above the trend */}
+      {/* 2. Captured rounds · play & range — immediately above the trend */}
       {hasEvents && (hs || dv) && (
         <div className="mt-5 space-y-3">
           <div className="section-label" style={{ fontSize: 13 }}>Captured rounds · play &amp; range</div>
@@ -286,7 +375,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
                 ? (stakeW * 0.99 + Number(h.total_winnings ?? "0") * (stakeW / dws)) / 1e9
                 : 0;
               const rowNet = won - dep;
-              const tiles = (() => { let m = BigInt(h.mask_union ?? "0"), n = 0; while (m > 0n) { n += Number(m & 1n); m >>= 1n; } return n; })();
+              const tiles = tilesFromMask(h.mask_union);
               return (
                 <tr key={h.round_id} className={bodyRow}>
                   <td className={`${td} text-white`}>#{formatNum(Number(h.round_id))}</td>
