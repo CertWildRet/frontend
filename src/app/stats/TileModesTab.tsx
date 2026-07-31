@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ChartCard } from "@/components/stats/Charts";
+import { RefreshIconButton } from "@/components/primitives/RefreshIconButton";
 import { RowsSkeleton } from "@/components/primitives/Skeleton";
 import { usePolled } from "@/hooks/useOreStats";
 import {
@@ -399,7 +400,7 @@ export function TileModesTab() {
         ) : page.error && !page.data ? (
           <div className="flex flex-wrap items-center gap-3 font-mono text-sm text-amber">
             <span>{page.error}</span>
-            <button type="button" onClick={page.refresh} className="rounded border border-amber/40 px-2 py-0.5 hover:border-amber">Retry</button>
+            <RefreshIconButton onClick={page.refresh} variant="amber" className="py-0.5" title="Retry" />
           </div>
         ) : rounds.length === 0 ? (
           <div className="font-mono text-sm text-fog-muted">No rounds available yet.</div>

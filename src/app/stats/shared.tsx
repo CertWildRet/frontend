@@ -3,6 +3,7 @@
 /** Shared helpers for Ore Data tabs. */
 import { createContext, type ReactNode } from "react";
 import { compactNum } from "@/components/stats/Charts";
+import { RefreshIconButton } from "@/components/primitives/RefreshIconButton";
 import { oreGramsToOre, lamportsToSol, type OreMotherlodeHit } from "@/lib/oreStats";
 import { formatNum, formatPct } from "@/lib/format";
 import styles from "./stats.module.css";
@@ -111,10 +112,7 @@ export function Caveats({ provenance, error, onRetry }: { provenance: any; error
       <div className="card flex flex-wrap items-center gap-x-3 gap-y-2 border-amber/30 px-4 py-3 font-mono text-[13px] text-amber">
         <span>{error} The ORE ingest may be disabled or the free-tier host may be waking up.</span>
         {onRetry && (
-          <button onClick={onRetry}
-            className="rounded border border-amber/40 px-2.5 py-1 text-[12px] text-amber transition-colors hover:border-amber hover:text-white">
-            retry
-          </button>
+          <RefreshIconButton onClick={onRetry} variant="amber" title="Retry" />
         )}
       </div>
     );

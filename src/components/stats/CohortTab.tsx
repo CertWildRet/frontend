@@ -12,6 +12,7 @@
 import { useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
 import { SegmentedControl } from "@/components/primitives/TabBar";
+import { RefreshIconButton } from "@/components/primitives/RefreshIconButton";
 import { Refreshing } from "@/components/primitives/Skeleton";
 import { ChartCard } from "@/components/stats/Charts";
 import { Donut, CohortBalanceBars, COHORTS } from "@/components/stats/CohortCharts";
@@ -356,9 +357,7 @@ export function CohortTab() {
           ? `${isHolder ? "holder sweep" : md.latest_estimated ? "Approx* cohort estimate" : "census snapshot"} ${timeAgo(md.updated_at)}`
           : polled.error ? "" : "loading…"}</span>
         {polled.error && (
-          <button onClick={polled.refresh} className="rounded border border-line px-2 py-1 text-fog-muted transition-colors hover:border-steel hover:text-white">
-            retry
-          </button>
+          <RefreshIconButton onClick={polled.refresh} title="Retry" />
         )}
       </div>
 

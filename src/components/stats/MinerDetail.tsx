@@ -12,6 +12,7 @@ import { useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
+import { RefreshIconButton } from "@/components/primitives/RefreshIconButton";
 import { TileSkeleton, Refreshing } from "@/components/primitives/Skeleton";
 import { ChartCard } from "@/components/stats/Charts";
 import { PnlChart, type TPt } from "@/components/stats/TrendCharts";
@@ -100,10 +101,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
             className="rounded border border-line px-2 py-1 font-mono text-[12px] text-fog-muted transition-colors hover:border-steel hover:text-white">
             solscan ↗
           </a>
-          <button type="button" onClick={det.refresh} disabled={det.fetching}
-            className="rounded border border-line px-2 py-1 font-mono text-[12px] text-fog-muted transition-colors hover:border-steel hover:text-white disabled:cursor-default disabled:opacity-50">
-            refresh
-          </button>
+          <RefreshIconButton onClick={det.refresh} disabled={det.fetching} />
         </span>
       }
     >

@@ -9,6 +9,7 @@
  * steel #9DB7D8 (primary), amber #E8881A (secondary), green #4ADE80.
  */
 import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
+import { IconRefresh } from "@tabler/icons-react";
 import { useFillHeight } from "@/hooks/useFillHeight";
 import styles from "@/app/dispersion.module.css";
 import { CHART } from "@/lib/chartColors";
@@ -132,7 +133,7 @@ export function ChartCard({
                       <span className="text-pos">copied</span>
                     </>
                   ) : share === "error" ? (
-                    <span className="text-amber">retry</span>
+                    <IconRefresh size={13} stroke={1.75} className="text-amber" aria-hidden />
                   ) : share === "working" ? (
                     <span className="opacity-70">…</span>
                   ) : (

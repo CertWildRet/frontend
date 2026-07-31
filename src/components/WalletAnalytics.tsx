@@ -7,6 +7,7 @@
  * into and exactly what each window won. Native units only.
  */
 import { useState } from "react";
+import { RefreshIconButton } from "@/components/primitives/RefreshIconButton";
 import { useWalletAnalytics } from "@/hooks/useWalletAnalytics";
 import {
   fetchCycleDetail,
@@ -37,7 +38,7 @@ export function WalletAnalytics({ pubkey }: { pubkey: string }) {
     return (
       <div className="card">
         <p className="font-mono text-[12px] text-red">{error}</p>
-        <button onClick={reload} className="mt-3 chip text-fog-muted hover:text-white">retry</button>
+        <RefreshIconButton onClick={reload} variant="chip" className="mt-3" title="Retry" />
       </div>
     );
   }
