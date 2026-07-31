@@ -50,6 +50,7 @@ export function MinerRankingsTab() {
       roi: m.roi,
       unclaimed: null,
       refined: null,
+      service: m.service ?? null,
     }));
     return {
       ...env,

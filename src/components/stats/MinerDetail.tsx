@@ -12,6 +12,7 @@ import { useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
+import { ServiceChip } from "@/components/primitives/ServiceChip";
 import { RefreshIconButton } from "@/components/primitives/RefreshIconButton";
 import { TileSkeleton, Refreshing } from "@/components/primitives/Skeleton";
 import { ChartCard } from "@/components/stats/Charts";
@@ -96,6 +97,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
       subtitle="Wallet P&L: lifetime on-chain census + event-exact round history"
       right={
         <span className="flex items-center gap-2">
+          <ServiceChip service={d.service} />
           <CopyAddress address={pubkey} className="font-mono text-[13px] text-fog-muted" />
           <a href={`https://solscan.io/account/${pubkey}`} target="_blank" rel="noreferrer"
             className="rounded border border-line px-2 py-1 font-mono text-[12px] text-fog-muted transition-colors hover:border-steel hover:text-white">
@@ -117,9 +119,16 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           <span className="flex flex-wrap items-center gap-2">
             managed by
             {d.managed_by.map((m) => (
-              <span key={m.pubkey} className="rounded border border-line px-1.5 py-0.5" title={m.pubkey}>
-                pool {short(m.pubkey)}
-              </span>
+              m.service ? (
+                <span key={m.pubkey} className="rounded border px-1.5 py-0.5" title={`${m.service.label} executor ${m.pubkey}`}
+                  style={{ color: m.service.color, borderColor: `${m.service.color}55`, backgroundColor: `${m.service.color}14` }}>
+                  {m.service.label} {short(m.pubkey)}
+                </span>
+              ) : (
+                <span key={m.pubkey} className="rounded border border-line px-1.5 py-0.5" title={m.pubkey}>
+                  pool {short(m.pubkey)}
+                </span>
+              )
             ))}
           </span>
         )}

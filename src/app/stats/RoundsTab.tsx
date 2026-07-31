@@ -3,6 +3,7 @@
 import { Fragment, useContext, useEffect, useState } from "react";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
+import { ServiceChip } from "@/components/primitives/ServiceChip";
 import { Refreshing } from "@/components/primitives/Skeleton";
 import { ChartCard } from "@/components/stats/Charts";
 import { usePolled } from "@/hooks/useOreStats";
@@ -85,6 +86,7 @@ function RoundParticipants({ roundId }: { roundId: number }) {
                     </button>
                     {p.won && <span title="staked on the winning tile" className="rounded bg-pos/15 px-1 text-[10px] text-pos">won</span>}
                     {p.is_solo_winner && <span title="also won the round's separate ~1-ORE base prize" className="rounded bg-gold/15 px-1 text-[10px] text-gold">solo ORE</span>}
+                    <ServiceChip service={p.service} />
                   </span>
                 </td>
                 <td className={`${td} num hidden text-right text-gray-300 sm:table-cell`}>{p.tiles_covered}</td>
@@ -186,7 +188,12 @@ export function RoundsTab() {
                   <td className={`${td} text-right text-gray-300`}>{r.total_miners ? formatNum(Number(r.total_miners)) : "·"}</td>
                   <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{r.winning_tile != null ? `#${r.winning_tile + 1}` : "·"}</td>
                   <td className={`${td} text-right text-gray-300`}>
-                    {r.is_split ? "split" : <CopyAddress address={r.top_miner} />}
+                    {r.is_split ? "split" : (
+                      <span className="inline-flex items-center gap-1.5">
+                        <CopyAddress address={r.top_miner} />
+                        <ServiceChip service={r.top_miner_service} />
+                      </span>
+                    )}
                   </td>
                   <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>
                     {(() => {
