@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import { ServiceChip } from "@/components/primitives/ServiceChip";
 import { ChartCard } from "@/components/stats/Charts";
 import { RefreshIconButton } from "@/components/primitives/RefreshIconButton";
 import { RowsSkeleton } from "@/components/primitives/Skeleton";
@@ -217,7 +218,7 @@ function RoundDetail({ round, modes }: { round: OreRound; modes: TileMode[] }) {
           {splitWin ? (
             <>Split tile won — the ~1 ORE base is <span className="text-white">shared pro-rata</span> across the winning tile&apos;s stakers.</>
           ) : (
-            <>Solo tile won — the full <span className="text-white">~1 ORE</span> goes to <span className="text-white">{shortKey(round.top_miner)}</span>.</>
+            <>Solo tile won — the full <span className="text-white">~1 ORE</span> goes to <span className="text-white">{shortKey(round.top_miner)}</span><ServiceChip service={round.top_miner_service} className="ml-1.5" />.</>
           )}
         </p>
       )}

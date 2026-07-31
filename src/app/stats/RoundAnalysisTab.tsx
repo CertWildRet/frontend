@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
+import { ServiceChip } from "@/components/primitives/ServiceChip";
 import { RowsSkeleton } from "@/components/primitives/Skeleton";
 import { ChartCard } from "@/components/stats/Charts";
 import { usePolled } from "@/hooks/useOreStats";
@@ -130,14 +131,7 @@ export function RoundAnalysisTab() {
                   <td className={`${td} text-fog-muted`}>{i + 1}</td>
                   <td className={`${td} ${r.is_ours ? "text-steel" : "text-white"}`}>
                     <CopyAddress address={r.authority} />{r.is_ours ? " ◆ ours" : ""}
-                    {r.via_pool && (
-                      <span
-                        className="ml-1.5 rounded border border-line px-1.5 py-0.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-[#B7BDD2]"
-                        title={`Managed by pool crank ${r.via_pool}`}
-                      >
-                        pool
-                      </span>
-                    )}
+                    <ServiceChip service={r.service} poolCrank={r.via_pool} className="ml-1.5" />
                   </td>
                   <td className={`${td} text-right text-gray-300`}>{r.rounds_active}/{n}</td>
                   <td className={`${td} num text-right text-gold`}>{formatSol(r.avg_sol, 3)}</td>

@@ -14,6 +14,7 @@ import { IconExternalLink } from "@tabler/icons-react";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { RefreshIconButton } from "@/components/primitives/RefreshIconButton";
+import { ServiceChip } from "@/components/primitives/ServiceChip";
 import { TileSkeleton, Refreshing } from "@/components/primitives/Skeleton";
 import { ChartCard } from "@/components/stats/Charts";
 import { HitRate } from "@/components/stats/HitRate";
@@ -150,6 +151,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           >
             Miner <span className="text-[#B7BDD2]">{short(pubkey)}</span>
           </h2>
+          <ServiceChip service={d.service} />
           <CopyAddress address={pubkey} iconOnly className="text-fog-muted" />
           <a
             href={`https://solscan.io/account/${pubkey}`}
@@ -187,9 +189,16 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
         <div className="mb-3 flex flex-wrap items-center gap-2 font-mono text-[12.5px] text-[#B7BDD2]">
           managed by
           {d.managed_by.map((m) => (
-            <span key={m.pubkey} className="rounded border border-line px-1.5 py-0.5" title={m.pubkey}>
-              pool {short(m.pubkey)}
-            </span>
+            m.service ? (
+              <span key={m.pubkey} className="rounded border px-1.5 py-0.5" title={`${m.service.label} executor ${m.pubkey}`}
+                style={{ color: m.service.color, borderColor: `${m.service.color}55`, backgroundColor: `${m.service.color}14` }}>
+                {m.service.label} {short(m.pubkey)}
+              </span>
+            ) : (
+              <span key={m.pubkey} className="rounded border border-line px-1.5 py-0.5" title={m.pubkey}>
+                pool {short(m.pubkey)}
+              </span>
+            )
           ))}
         </div>
       )}

@@ -3,8 +3,9 @@
 /** Shared miner table types + expandable rows for Miner Rankings. */
 import { Fragment } from "react";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
+import { ServiceChip } from "@/components/primitives/ServiceChip";
 import { MinerDetail } from "@/components/stats/MinerDetail";
-import { lamportsToSol, oreGramsToOre } from "@/lib/oreStats";
+import { lamportsToSol, oreGramsToOre, type OreServiceTag } from "@/lib/oreStats";
 import { formatSol, formatNum } from "@/lib/format";
 import {
   SkeletonRows, netTone,
@@ -31,6 +32,7 @@ export type MinerRow = {
   roi: number | null;
   unclaimed: string | null;
   refined: string | null;
+  service?: OreServiceTag | null;
 };
 
 export function MinerTable({
@@ -88,6 +90,7 @@ export function MinerTable({
                   </td>
                   <td className={`${td} ${m.is_ours ? "text-steel" : "text-white"}`}>
                     <CopyAddress address={m.authority} />{m.is_ours ? " ◆ ours" : ""}
+                    <ServiceChip service={m.service} compact className="ml-1.5" />
                   </td>
                   <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatSol(lamportsToSol(m.deployed), 1)}</td>
                   <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{formatSol(lamportsToSol(m.earned), 1)}</td>

@@ -37,6 +37,7 @@ export type OreRound = {
   num_winners: string | null;
   motherlode_paid: string | null;
   top_miner: string | null;
+  top_miner_service?: OreServiceTag | null;
   top_miner_reward: string | null;
   is_split: number | null;
   motherlode_hit: number | null;
@@ -118,6 +119,9 @@ export type OreSummary = {
   prices: { ts: string; sol_usd: number; ore_usd: number } | null;
 };
 
+/** Autominer service identity ({id,label,color}) attached to tagged wallets. */
+export type OreServiceTag = { id: string; label: string; color: string };
+
 export type OreBands = {
   n: number;
   avg_all: number;
@@ -132,6 +136,7 @@ export type OreLeaderRow = {
   net_sol: string;
   roi: number;
   is_ours: boolean;
+  service?: OreServiceTag | null;
 };
 export type OurPool = {
   rank: number;
@@ -212,6 +217,7 @@ export type OreMotherlodeHit = {
   winning_tile: number | null;
   is_split: number | null;
   top_miner: string | null;
+  top_miner_service?: OreServiceTag | null;
   sol_usd: number | null;
   ore_usd: number | null;
 };
@@ -239,6 +245,7 @@ export type OreMotherlodeSharer = {
   ml_ore: number; // ORE taken from the pool
   sol_return: number; // SOL from the winners' pot
   roi: number | null; // gross return / cost (USD), null if unpriced
+  service?: OreServiceTag | null;
 };
 
 export type OreMotherlodePop = {
@@ -269,6 +276,7 @@ export type OreRoundParticipant = {
   ore_won: number;      // total ORE won: ml_ore + the ~1 ORE base emission if solo winner
   roi: number | null;   // gross multiple (return / cost), USD-based; null if unpriced
   is_solo_winner: boolean;
+  service?: OreServiceTag | null;
 };
 
 export type OreParticipants = {
@@ -296,12 +304,13 @@ export type OreCompetition = {
     max_sol: number | null;
     avg_sol: number | null;
   }[];
-  /** via_pool = the managed-mining crank wallet signing this miner's deploys (null/absent = self-driven). */
-  regulars: { authority: string; is_ours: boolean; rounds_active: number; avg_sol: number; max_sol: number; via_pool?: string | null }[];
+  /** via_pool = the managed-mining crank wallet signing this miner's deploys (null/absent = self-driven);
+   *  service = the resolved autominer platform (Accumulana/Orestack/…) when fingerprinted. */
+  regulars: { authority: string; is_ours: boolean; rounds_active: number; avg_sol: number; max_sol: number; via_pool?: string | null; service?: OreServiceTag | null }[];
   latest: {
     round_id: number;
     coverage: number | null;
-    players: { rank: number; authority: string; is_ours: boolean; total_sol: string; deploys: number; tiles: number; max_single: string; via_pool?: string | null }[];
+    players: { rank: number; authority: string; is_ours: boolean; total_sol: string; deploys: number; tiles: number; max_single: string; via_pool?: string | null; service?: OreServiceTag | null }[];
   } | null;
   threshold_series: { round_id: number; rank10_sol: number }[];
   our_miner: string;
@@ -376,7 +385,9 @@ export type OreMinerDetail = {
   events: { deploys: number; rounds: number; deployed: string; first_ts: string | null; last_ts: string | null } | null;
   hit_stats: { rounds: number; hits: number; won_sol: string | null; dep_sol: string | null } | null;
   claims: { claim_type: number; amount: string; n: number }[];
-  managed_by: { pubkey: string; n: number }[];
+  managed_by: { pubkey: string; n: number; service?: OreServiceTag | null }[];
+  /** The autominer platform this wallet is fingerprinted to, if any. */
+  service?: OreServiceTag | null;
   history: {
     round_id: string; ts: string | null; deployed: string; mask_union: string; stake_w: string;
     winning_tile: number | null; total_winnings: string | null; deployed_winning_square: string | null;
