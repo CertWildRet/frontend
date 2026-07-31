@@ -11,6 +11,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Providers } from "@/components/Providers";
 import { StatTickerGate } from "@/components/StatTickerGate";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SearchMinerModalProvider } from "@/components/SearchMinerModal";
 
 export const metadata: Metadata = {
   title: "Diamond Pools · ORE protocol stats and pooling protocol",
@@ -35,13 +36,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="atmosphere-foil" />
         </div>
         <Providers>
-          {/* SiteHeader uses useSearchParams for Search Miner vs Data active state. */}
-          <Suspense fallback={null}>
-            <SiteHeader />
-          </Suspense>
-          <StatTickerGate />
-          <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
-          <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(7,9,18,0.5)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
+          <SearchMinerModalProvider>
+            {/* SiteHeader uses useSearchParams for Search Miner vs Data active state. */}
+            <Suspense fallback={null}>
+              <SiteHeader />
+            </Suspense>
+            <StatTickerGate />
+            <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
+            <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(7,9,18,0.5)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
             <div className="mx-auto max-w-6xl px-6 py-10">
               <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
                 <div className="max-w-xs">
@@ -78,7 +80,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </div>
               </div>
             </div>
-          </footer>
+            </footer>
+          </SearchMinerModalProvider>
         </Providers>
         <Analytics />
       </body>

@@ -9,6 +9,7 @@
  * Visuals are shared via stats.module.css.
  */
 import { useState } from "react";
+import { IconExternalLink } from "@tabler/icons-react";
 import { StatTile } from "@/components/primitives/Stat";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
@@ -25,6 +26,11 @@ import {
 } from "@/lib/oreStats";
 import { formatSol, formatNum, formatPct } from "@/lib/format";
 import styles from "@/app/stats/stats.module.css";
+
+const fmtSeen = (d: Date) =>
+  d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+const iconBtn =
+  "inline-flex items-center justify-center rounded border border-line px-2 py-1 text-fog-muted transition-colors hover:border-steel hover:text-white";
 
 const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "·");
 const tableWrap = styles.tableWrap;
@@ -91,39 +97,58 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const capturedPct = coverageRatio != null ? formatPct(Math.max(0, Math.min(1, coverageRatio))) : null;
 
   return (
-    <ChartCard
-      title={`Miner ${short(pubkey)}`}
-      subtitle="Wallet P&L: lifetime on-chain census + event-exact round history"
-      right={
-        <span className="flex items-center gap-2">
-          <CopyAddress address={pubkey} className="font-mono text-[13px] text-fog-muted" />
-          <a href={`https://solscan.io/account/${pubkey}`} target="_blank" rel="noreferrer"
-            className="rounded border border-line px-2 py-1 font-mono text-[12px] text-fog-muted transition-colors hover:border-steel hover:text-white">
-            solscan ↗
+    <ChartCard>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <h2
+            className="text-[19px] font-semibold tracking-tight text-[#EAECF6]"
+            style={{ fontFamily: "'Chakra Petch', sans-serif" }}
+          >
+            Miner <span className="text-[#B7BDD2]">{short(pubkey)}</span>
+          </h2>
+          <CopyAddress address={pubkey} iconOnly className="text-fog-muted" />
+          <a
+            href={`https://solscan.io/account/${pubkey}`}
+            target="_blank"
+            rel="noreferrer"
+            title="View on Solscan"
+            aria-label="View on Solscan"
+            className={iconBtn}
+          >
+            <IconExternalLink size={15} stroke={1.75} aria-hidden />
           </a>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[12.5px] text-[#B7BDD2]">
+          {firstTs && (
+            <span>
+              First seen <span className="font-semibold text-[#EAECF6]">{fmtSeen(firstTs)}</span>
+            </span>
+          )}
+          {lastTs && (
+            <span
+              className="flex items-center gap-1.5"
+              title={`${lastTs.toLocaleDateString()} ${lastTs.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${Date.now() - lastTs.getTime() < 24 * 3600e3 ? "bg-[#22E0E6]" : "bg-white/25"}`}
+                aria-hidden
+              />
+              Last active <span className="font-semibold text-[#EAECF6]">{timeAgo(lastTs)}</span>
+            </span>
+          )}
           <RefreshIconButton onClick={det.refresh} disabled={det.fetching} />
-        </span>
-      }
-    >
-      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[12.5px] text-[#B7BDD2]">
-        {firstTs && <span>first seen {firstTs.toLocaleDateString()}</span>}
-        {lastTs && (
-          <span className="flex items-center gap-1.5" title={`${lastTs.toLocaleDateString()} ${lastTs.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${Date.now() - lastTs.getTime() < 24 * 3600e3 ? "bg-[#22E0E6]" : "bg-white/25"}`} aria-hidden />
-            last active {timeAgo(lastTs)}
-          </span>
-        )}
-        {d.managed_by.length > 0 && (
-          <span className="flex flex-wrap items-center gap-2">
-            managed by
-            {d.managed_by.map((m) => (
-              <span key={m.pubkey} className="rounded border border-line px-1.5 py-0.5" title={m.pubkey}>
-                pool {short(m.pubkey)}
-              </span>
-            ))}
-          </span>
-        )}
+        </div>
       </div>
+      {d.managed_by.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 font-mono text-[12.5px] text-[#B7BDD2]">
+          managed by
+          {d.managed_by.map((m) => (
+            <span key={m.pubkey} className="rounded border border-line px-1.5 py-0.5" title={m.pubkey}>
+              pool {short(m.pubkey)}
+            </span>
+          ))}
+        </div>
+      )}
       {partialHistory && (
         <div className="mb-3 rounded-lg border border-amber/30 bg-amber/[0.06] px-3 py-2 font-mono text-[12px] leading-relaxed text-amber">
           <span className="text-white">Lifetime tiles are the authoritative on-chain totals.</span> The

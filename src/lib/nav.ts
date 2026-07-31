@@ -3,11 +3,13 @@ export type NavItem = {
   href: string;
   label: string;
   icon?: "search";
+  /** Opens a modal instead of navigating (href still used for active state). */
+  opensModal?: "search-miner";
 };
 
 export const NAV_ITEMS: NavItem[] = [
+  { href: "/search", label: "Search", icon: "search", opensModal: "search-miner" },
   { href: "/stats", label: "Data" },
-  { href: "/search", label: "Search Miner", icon: "search" },
   { href: "/automine", label: "Automine" },
   { href: "/profile", label: "Profile" },
   // Hidden for now — restore when shipping these surfaces again:
@@ -30,4 +32,8 @@ export function isNavItemActive(
 ): boolean {
   void searchParams;
   return isActiveRoute(pathname, item.href);
+}
+
+export function opensSearchMinerModal(item: NavItem): boolean {
+  return item.opensModal === "search-miner";
 }

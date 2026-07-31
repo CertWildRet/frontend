@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { NAV_ITEMS, isNavItemActive } from "@/lib/nav";
+import { NAV_ITEMS, isNavItemActive, opensSearchMinerModal } from "@/lib/nav";
+import { useSearchMinerModal } from "@/components/SearchMinerModal";
 import { NavLinkLabel } from "@/components/NavLinkLabel";
 import {
   tabActiveClass,
@@ -34,6 +35,7 @@ export function MobileNav() {
   const btnRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { openSearchMiner } = useSearchMinerModal();
 
   useEffect(() => setMounted(true), []);
 
@@ -120,17 +122,35 @@ export function MobileNav() {
                     <nav className="mx-auto flex max-w-6xl flex-col gap-1 px-6 py-3">
                       {NAV_ITEMS.map((l) => {
                         const active = isNavItemActive(pathname, searchParams, l);
+                        const className = active
+                          ? `${tabActiveClass} px-3 py-2.5 text-sm`
+                          : `${tabIdleClass} px-3 py-2.5 text-sm`;
+                        const style = active ? { ...tabDisplayFont, ...tabActiveGlow } : tabDisplayFont;
+
+                        if (opensSearchMinerModal(l)) {
+                          return (
+                            <button
+                              key={l.href}
+                              type="button"
+                              onClick={() => {
+                                setOpen(false);
+                                openSearchMiner();
+                              }}
+                              style={style}
+                              className={`${className} w-full text-left`}
+                            >
+                              <NavLinkLabel item={l} />
+                            </button>
+                          );
+                        }
+
                         return (
                           <Link
                             key={l.href}
                             href={l.href}
                             onClick={() => setOpen(false)}
-                            style={active ? { ...tabDisplayFont, ...tabActiveGlow } : tabDisplayFont}
-                            className={
-                              active
-                                ? `${tabActiveClass} px-3 py-2.5 text-sm`
-                                : `${tabIdleClass} px-3 py-2.5 text-sm`
-                            }
+                            style={style}
+                            className={className}
                           >
                             <NavLinkLabel item={l} />
                           </Link>

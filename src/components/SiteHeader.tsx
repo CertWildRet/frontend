@@ -7,7 +7,8 @@ import { WalletButton } from "@/components/WalletButton";
 import { MobileNav } from "@/components/MobileNav";
 import { HeaderTicker } from "@/components/HeaderTicker";
 import { NavLinkLabel } from "@/components/NavLinkLabel";
-import { NAV_ITEMS, isNavItemActive } from "@/lib/nav";
+import { NAV_ITEMS, isNavItemActive, opensSearchMinerModal } from "@/lib/nav";
+import { useSearchMinerModal } from "@/components/SearchMinerModal";
 import {
   tabActiveClass,
   tabActiveGlow,
@@ -30,6 +31,7 @@ const activeStyle = { ...tabDisplayFont, ...tabActiveGlow } as const;
 export function SiteHeader() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { openSearchMiner } = useSearchMinerModal();
 
   return (
     <div className="site-chrome sticky top-0 z-30 border-b border-white/[0.06]">
@@ -69,16 +71,31 @@ export function SiteHeader() {
             <nav className="hidden min-w-0 items-center gap-1 overflow-x-auto sm:flex [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {NAV_ITEMS.map((l) => {
                 const active = isNavItemActive(pathname, searchParams, l);
+                const className = active
+                  ? `${tabActiveClass} inline-flex items-center shrink-0 px-3.5 py-2 text-[14px]`
+                  : `${tabIdleClass} inline-flex items-center shrink-0 px-3 py-2 text-[14px]`;
+                const style = active ? activeStyle : tabDisplayFont;
+
+                if (opensSearchMinerModal(l)) {
+                  return (
+                    <button
+                      key={l.href}
+                      type="button"
+                      onClick={openSearchMiner}
+                      style={style}
+                      className={className}
+                    >
+                      <NavLinkLabel item={l} />
+                    </button>
+                  );
+                }
+
                 return (
                   <Link
                     key={l.href}
                     href={l.href}
-                    style={active ? activeStyle : tabDisplayFont}
-                    className={
-                      active
-                        ? `${tabActiveClass} inline-flex items-center shrink-0 px-3.5 py-2 text-[14px]`
-                        : `${tabIdleClass} inline-flex items-center shrink-0 px-3 py-2 text-[14px]`
-                    }
+                    style={style}
+                    className={className}
                   >
                     <NavLinkLabel item={l} />
                   </Link>

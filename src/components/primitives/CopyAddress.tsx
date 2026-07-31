@@ -3,22 +3,27 @@
 import { useState } from "react";
 
 /**
- * Renders a truncated wallet address with a copy-to-clipboard icon.
- * `address` is the full address (copied on click); displayed as `abcd…wxyz`.
+ * Renders a wallet address with a copy-to-clipboard icon.
+ * `address` is the full address (copied on click); displayed as `abcd…wxyz`
+ * unless `truncate={false}` shows the full string, or `iconOnly` shows just the button.
  * Pass `className` to style the wrapper span.
  */
 export function CopyAddress({
   address,
   className = "",
+  truncate = true,
+  iconOnly = false,
 }: {
   address: string | null | undefined;
   className?: string;
+  truncate?: boolean;
+  iconOnly?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
-  if (!address) return <span className={className}>·</span>;
+  if (!address) return iconOnly ? null : <span className={className}>·</span>;
 
-  const short = `${address.slice(0, 4)}…${address.slice(-4)}`;
+  const display = truncate ? `${address.slice(0, 4)}…${address.slice(-4)}` : address;
 
   function handleCopy(e: React.MouseEvent) {
     e.stopPropagation();
@@ -30,11 +35,16 @@ export function CopyAddress({
 
   return (
     <span className={`inline-flex items-center gap-1 ${className}`}>
-      <span title={address}>{short}</span>
+      {!iconOnly && (
+        <span title={address} className={truncate ? undefined : "min-w-0 break-all"}>
+          {display}
+        </span>
+      )}
       <button
         type="button"
         onClick={handleCopy}
         aria-label="Copy address"
+        title={copied ? "Copied" : "Copy address"}
         className="group -my-1 flex-shrink-0 rounded p-1.5 text-fog-muted transition hover:bg-white/[0.06] hover:text-white"
       >
         {copied ? (
