@@ -9,7 +9,7 @@
  * Visuals are shared via stats.module.css.
  */
 import Image from "next/image";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { IconExternalLink } from "@tabler/icons-react";
 import { StatTile } from "@/components/primitives/Stat";
 import { SegmentedControl } from "@/components/primitives/TabBar";
@@ -105,6 +105,8 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
     ? Number(d.hit_stats.won_sol) / 1e9 : lamportsToSol(c?.lifetime_rewards_sol ?? null);
   const net = returned - deployed;
   const oreLifetime = solOf(c?.lifetime_rewards_ore ?? null);
+  const unclaimed = solOf(c?.rewards_ore ?? null);
+  const refinedLive = solOf(c?.refined_live ?? null);
   const hs = d.hit_stats;
   const hitRate = hs && hs.rounds > 0 ? hs.hits / hs.rounds : null;
   const tilesExpect = avgTilesExpected(d.history, 50);
@@ -130,7 +132,10 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const totalNetUsd = hasUsd
     ? d.series.reduce((a, p) => a + (p.net_usd ?? 0), 0)
     : null;
-  const playedRounds = hs?.rounds ?? d.events?.rounds ?? null;
+  const nSeriesRounds = d.series.reduce((a, p) => a + (p.n ?? 1), 0);
+  const avgPerRoundUsd = totalNetUsd != null && nSeriesRounds > 0
+    ? totalNetUsd / nSeriesRounds
+    : null;
 
   return (
     <ChartCard>
@@ -229,10 +234,15 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
             className="shrink-0 border-t border-line pt-2 text-[14px] text-[#A8B0CC]"
             style={{ fontFamily: "var(--font-subtext)" }}
           >
-            {playedRounds != null ? (
-              <>Played <span className="font-semibold text-[#EAECF6]">{formatNum(playedRounds)} rounds</span></>
+            {avgPerRoundUsd != null ? (
+              <>
+                Average per round:{" "}
+                <span className={`font-semibold ${netTone(avgPerRoundUsd)}`}>
+                  {avgPerRoundUsd >= 0 ? "+" : "-"}${formatNum(Math.abs(avgPerRoundUsd), 2)}
+                </span>
+              </>
             ) : (
-              <>Played <span className="font-semibold text-[#EAECF6]">·</span></>
+              <>Average per round: <span className="font-semibold text-[#EAECF6]">·</span></>
             )}
           </div>
         </div>
@@ -272,6 +282,81 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
         </div>
       </div>
 
+      {/* Lifetime performance · on-chain totals */}
+      <div className="mt-5 space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+          <h3
+            className="text-[18px] font-bold tracking-tight text-[#EAECF6]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            Lifetime performance
+          </h3>
+          {firstTs && (
+            <div
+              className="text-[12px] leading-snug text-[#8B93B4]"
+              style={{ fontFamily: "var(--font-subtext)" }}
+            >
+              Since {fmtSeen(firstTs)}
+            </div>
+          )}
+        </div>
+        <div className="overflow-hidden rounded-xl border border-line bg-ink-800/80">
+          <div className="grid grid-cols-2 md:grid-cols-3">
+            <LifetimeCell
+              label="SOL deployed"
+              value={formatSol(deployed, 2)}
+              unit="SOL"
+              className="border-b border-line md:border-r"
+            />
+            <LifetimeCell
+              label="SOL returned"
+              value={formatSol(returned, 2)}
+              unit="SOL"
+              className="border-b border-line md:border-r"
+            />
+            <LifetimeCell
+              label="Net SOL"
+              value={
+                <span className={netTone(net)}>
+                  {net > 0 ? "+" : ""}{formatSol(net, 2)}
+                </span>
+              }
+              unit="SOL"
+              className="border-b border-line col-span-2 md:col-span-1"
+            />
+            <LifetimeCell
+              label="ORE earned"
+              value={formatNum(oreLifetime, 2)}
+              unit="ORE"
+              className="border-b border-line md:border-b-0 md:border-r"
+            />
+            <LifetimeCell
+              label={
+                <span className="inline-flex items-center gap-1">
+                  Refined ORE
+                  <span
+                    className="inline-flex text-[#8B93B4]"
+                    title="Live refined balance from the on-chain census"
+                    aria-label="Live refined balance from the on-chain census"
+                  >
+                    <InfoDot />
+                  </span>
+                </span>
+              }
+              value={formatNum(refinedLive, 2)}
+              unit="ORE"
+              className="border-b border-line md:border-b-0 md:border-r"
+            />
+            <LifetimeCell
+              label="Unclaimed ORE"
+              value={formatNum(unclaimed, 2)}
+              unit="ORE"
+              className="col-span-2 md:col-span-1"
+            />
+          </div>
+        </div>
+      </div>
+
       {!hasEvents && (
         <div className="mt-3 rounded-lg border border-line bg-white/[0.02] px-4 py-3 font-mono text-[13px] leading-relaxed text-[#B7BDD2]">
           No deploys in the covered event window
@@ -280,82 +365,35 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
         </div>
       )}
 
-      {/* 2. Captured rounds · play & range — immediately above the trend */}
-      {hasEvents && (hs || dv) && (
-        <div className="mt-5 space-y-3">
-          <div className="section-label" style={{ fontSize: 13 }}>Captured rounds · play &amp; range</div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-            {hs && (
-              <StatTile variant="inset" label="Rounds"
-                value={formatNum(hs.rounds)}
-                hint={hitRate != null ? `${formatPct(hitRate)} win rate` : "captured rounds"} />
-            )}
-            {hs && (
-              <StatTile variant="inset" label="Net (captured)"
-                value={<span className={netTone((Number(hs.won_sol ?? 0) - Number(hs.dep_sol ?? 0)) / 1e9)}>{formatSol((Number(hs.won_sol ?? 0) - Number(hs.dep_sol ?? 0)) / 1e9, 3)}</span>}
-                unit="SOL" hint="won − deployed" />
-            )}
-            {dv && (
-              <StatTile variant="inset" label="Avg bet" value={formatSol(dv.avg_bet_sol, 3)} unit="SOL" hint="per round" />
-            )}
-            {dv && (
-              <StatTile variant="inset" label="Streaks"
-                value={<span><span className="text-pos">{dv.longest_hit_streak}</span> / <span className="text-red">{dv.longest_miss_streak}</span></span>}
-                hint={`longest hit / miss · now ${dv.current_streak > 0 ? "+" : ""}${dv.current_streak}`} />
-            )}
-            {dv && (
-              <StatTile variant="inset" label="Best round"
-                value={dv.best_round?.net_usd != null ? (
-                  <span className={netTone(dv.best_round.net_usd)}>
-                    {dv.best_round.net_usd >= 0 ? "+" : "-"}${formatNum(Math.abs(dv.best_round.net_usd), 2)}
-                  </span>
-                ) : dv.best_round ? (
-                  <span className={netTone(dv.best_round.net_sol)}>{dv.best_round.net_sol >= 0 ? "+" : ""}{formatSol(dv.best_round.net_sol, 3)} SOL</span>
-                ) : <span className="text-pos">{dv.best_win_sol != null ? `+${formatSol(dv.best_win_sol, 3)} SOL` : "···"}</span>}
-                hint={dv.best_round
-                  ? `#${formatNum(dv.best_round.round_id)} · ${dv.best_round.net_sol >= 0 ? "+" : ""}${formatSol(dv.best_round.net_sol, 3)} SOL${dv.best_round.ore_won > 0.005 ? ` + ${formatNum(dv.best_round.ore_won, 2)} ORE` : ""}`
-                  : undefined} />
-            )}
-            {dv && (
-              <StatTile variant="inset" label="Worst round"
-                value={dv.worst_round?.net_usd != null ? (
-                  <span className={netTone(dv.worst_round.net_usd)}>
-                    {dv.worst_round.net_usd >= 0 ? "+" : "-"}${formatNum(Math.abs(dv.worst_round.net_usd), 2)}
-                  </span>
-                ) : dv.worst_round ? (
-                  <span className={netTone(dv.worst_round.net_sol)}>{formatSol(dv.worst_round.net_sol, 3)} SOL</span>
-                ) : <span className="text-red">{dv.worst_loss_sol != null ? `${formatSol(dv.worst_loss_sol, 3)} SOL` : "···"}</span>}
-                hint={dv.worst_round
-                  ? `#${formatNum(dv.worst_round.round_id)} · ${dv.worst_round.net_sol >= 0 ? "+" : ""}${formatSol(dv.worst_round.net_sol, 3)} SOL${dv.worst_round.ore_won > 0.005 ? ` + ${formatNum(dv.worst_round.ore_won, 2)} ORE` : ""}`
-                  : undefined} />
-            )}
-            {dv && (
-              <StatTile variant="inset" label="ORE won"
-                value={formatNum(dv.ore_won_realized ?? dv.ore_won_expected, 3)} unit="ORE"
-                hint={`realized, solo wins in full · last ${formatNum(dv.rounds)} rounds`} />
-            )}
-            {dv && (
-              <StatTile variant="inset" label="ORE cost"
-                value={dv.ore_cost_sol != null && dv.ore_cost_sol > 0
-                  ? formatNum(dv.ore_cost_sol, 3)
-                  : (dv.ore_won_realized ?? dv.ore_won_expected) > 0 ? <span className="text-pos">free</span> : "·"}
-                unit={dv.ore_cost_sol != null && dv.ore_cost_sol > 0 ? "SOL/ORE" : undefined}
-                hint={dv.ore_cost_sol != null && dv.ore_cost_sol > 0 ? "net SOL spent per ORE won" : (dv.ore_won_realized ?? dv.ore_won_expected) > 0 ? "mined at a net SOL profit" : "no ORE won in window"} />
-            )}
-          </div>
-        </div>
+      {d.series.length > 1 && (
+        <MinerTrend
+          series={d.series}
+          derived={dv}
+          roundsWin={roundsWin}
+          setRoundsWin={setRoundsWin}
+          refreshing={det.fetching && !!det.data}
+          partial={partialHistory}
+        />
       )}
 
-      {/* favorite-tiles section removed from the miner panel per request
-      {d.tiles && d.tiles.some((t) => t > 0) && <FavoriteSquares tiles={d.tiles} />}
-      */}
-
-      {d.series.length > 1 && <MinerTrend series={d.series} pricesNow={d.prices_now} roundsWin={roundsWin} setRoundsWin={setRoundsWin} refreshing={det.fetching && !!det.data} partial={partialHistory} />}
-
       {d.history.length > 0 && (<>
-      <div className="mt-5 space-y-3">
-        <div className="section-label" style={{ fontSize: 13 }}>Recent Rounds</div>
-        <div className={tableWrap}>
+      <div className="mt-10 space-y-3">
+        <div>
+          <h3
+            className="text-[18px] font-bold tracking-tight text-[#EAECF6]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            Recent rounds
+          </h3>
+          <p
+            className="mt-1 text-[12px] leading-snug text-[#8B93B4]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            Per-round deploy and outcome from the captured history.
+          </p>
+        </div>
+        <div className="overflow-hidden rounded-xl border border-line bg-ink-800/80">
+        <div className={`${tableWrap} border-0 bg-transparent`}>
         <table className="w-full font-mono text-[13px] sm:min-w-[560px]">
           <thead><tr className={theadRow}>
             <th className={th}>Round</th>
@@ -395,13 +433,184 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
         </table>
       </div>
       </div>
+      </div>
       </>)}
     </ChartCard>
   );
 }
 
-function MinerTrend({ series, pricesNow, roundsWin, setRoundsWin, refreshing, partial }: {
-  series: OreMinerDetail["series"]; pricesNow: OreMinerDetail["prices_now"];
+function DerivedMetricCell({
+  label,
+  value,
+  unit,
+  hint,
+  className = "",
+}: {
+  label: string;
+  value: ReactNode;
+  unit?: string;
+  hint?: string;
+  className?: string;
+}) {
+  return (
+    <div className={`min-w-0 flex-1 px-5 py-4 ${className}`}>
+      <div
+        className="text-[13px] font-medium leading-none text-[#9AA3C8]"
+        style={{ fontFamily: "var(--font-subtext)" }}
+      >
+        {label}
+      </div>
+      <div className="mt-2 flex items-baseline gap-1.5 whitespace-nowrap">
+        <span className="num text-[22px] font-semibold leading-none tracking-tight text-white">
+          {value}
+        </span>
+        {unit && (
+          <span
+            className="text-[13px] font-medium text-[#9AA3C8]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            {unit}
+          </span>
+        )}
+      </div>
+      {hint && (
+        <div
+          className="mt-1.5 text-[12px] leading-none text-[#8B93B4]"
+          style={{ fontFamily: "var(--font-subtext)" }}
+        >
+          {hint}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DerivedStreaksCell({
+  longestWin,
+  longestLoss,
+}: {
+  longestWin: number;
+  longestLoss: number;
+}) {
+  return (
+    <div className="min-w-0 flex-1 px-5 py-4">
+      <div className="space-y-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <span
+            className="text-[12px] text-[#8B93B4]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            Longest winning streak
+          </span>
+          <span className="num text-[15px] font-semibold leading-none text-pos">
+            {formatNum(longestWin)}
+          </span>
+        </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <span
+            className="text-[12px] text-[#8B93B4]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            Longest losing streak
+          </span>
+          <span className="num text-[15px] font-semibold leading-none text-red">
+            {formatNum(longestLoss)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DerivedRoundExtremesCell({
+  bestUsd,
+  worstUsd,
+}: {
+  bestUsd?: number | null;
+  worstUsd?: number | null;
+}) {
+  const fmtUsd = (v: number | null | undefined) =>
+    v != null ? `${v >= 0 ? "+" : "-"}$${formatNum(Math.abs(v), 2)}` : "·";
+
+  return (
+    <div className="min-w-0 flex-1 px-5 py-4">
+      <div className="space-y-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <span
+            className="text-[12px] text-[#8B93B4]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            Best round
+          </span>
+          <span className={`num text-[15px] font-semibold leading-none ${bestUsd != null ? netTone(bestUsd) : "text-fog-muted"}`}>
+            {fmtUsd(bestUsd)}
+          </span>
+        </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <span
+            className="text-[12px] text-[#8B93B4]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            Worst round
+          </span>
+          <span className={`num text-[15px] font-semibold leading-none ${worstUsd != null ? netTone(worstUsd) : "text-fog-muted"}`}>
+            {fmtUsd(worstUsd)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LifetimeCell({
+  label,
+  value,
+  unit,
+  className = "",
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  unit?: string;
+  className?: string;
+}) {
+  return (
+    <div className={`px-4 py-3 ${className}`}>
+      <div
+        className="text-[13px] font-medium leading-none text-[#9AA3C8]"
+        style={{ fontFamily: "var(--font-subtext)" }}
+      >
+        {label}
+      </div>
+      <div className="mt-2 flex items-baseline gap-1.5 whitespace-nowrap">
+        <span className="num text-[22px] font-semibold leading-none tracking-tight text-white">
+          {value}
+        </span>
+        {unit && (
+          <span
+            className="text-[13px] font-medium text-[#9AA3C8]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            {unit}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InfoDot() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+      <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M6 5.2V8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <circle cx="6" cy="3.6" r="0.7" fill="currentColor" />
+    </svg>
+  );
+}
+
+function MinerTrend({ series, derived, roundsWin, setRoundsWin, refreshing, partial }: {
+  series: OreMinerDetail["series"];
+  derived: OreMinerDetail["derived"];
   roundsWin: string; setRoundsWin: (v: string) => void; refreshing?: boolean; partial?: boolean;
 }) {
   const win = roundsWin;
@@ -410,57 +619,99 @@ function MinerTrend({ series, pricesNow, roundsWin, setRoundsWin, refreshing, pa
   // "all" -> the whole (possibly bucketed) series; each point may sum n rounds
   const slice = win === "all" ? series : series.slice(-Math.min(Number(win), series.length));
   const hasUsd = slice.some((p) => p.net_usd != null);
-  const solNow = pricesNow ? Number(pricesNow.sol_usd) : null;
-  const oreNow = pricesNow ? Number(pricesNow.ore_usd) : null;
-  const markNow = solNow != null && oreNow != null && solNow > 0;
   // cumulative recomputed over the visible window so it starts at 0.
-  // Prices are round-time (realized); today's-prices equivalent is the tile hint.
+  // Prices are round-time (realized) over the selected window.
   let cum = 0;
   const pts: TPt[] = slice.map((p) => {
     cum += cur === "usd" && p.net_usd != null ? p.net_usd : p.net_sol;
     return { label: `#${formatNum(p.round_id)}`, value: cum };
   });
   const nRounds = slice.reduce((a, p) => a + (p.n ?? 1), 0);
-  const wins = slice.reduce((a, p) => a + (p.hits ?? (p.hit ? 1 : 0)), 0);
   const oreWonWin = slice.reduce((a, p) => a + p.ore_won, 0);
   const netSolWin = slice.reduce((a, p) => a + p.net_sol, 0);
   const oreCostWin = oreWonWin > 0 && netSolWin < 0 ? -netSolWin / oreWonWin : null;
-  const nowUsd = markNow ? netSolWin * (solNow as number) + oreWonWin * (oreNow as number) : null;
+  const avgPerRound = nRounds > 0 ? cum / nRounds : 0;
+
+  // Best / worst in the visible chart window (prefer USD).
+  let bestUsd: number | null = null;
+  let worstUsd: number | null = null;
+  for (const p of slice) {
+    const v = p.net_usd ?? (hasUsd ? null : p.net_sol);
+    if (v == null) continue;
+    if (bestUsd == null || v > bestUsd) bestUsd = v;
+    if (worstUsd == null || v < worstUsd) worstUsd = v;
+  }
+  // Fall back to derived extremes when the slice has no USD.
+  if (bestUsd == null) bestUsd = derived?.best_round?.net_usd ?? null;
+  if (worstUsd == null) worstUsd = derived?.worst_round?.net_usd ?? null;
+
+  const streakLabel = derived
+    ? derived.current_streak > 0
+      ? `${derived.current_streak} win${derived.current_streak === 1 ? "" : "s"}`
+      : derived.current_streak < 0
+        ? `${Math.abs(derived.current_streak)} loss${Math.abs(derived.current_streak) === 1 ? "" : "es"}`
+        : "—"
+    : "—";
+  const streakTone = !derived || derived.current_streak === 0
+    ? "text-fog-muted"
+    : derived.current_streak > 0 ? "text-pos" : "text-red";
+
   return (
-    <div className="mt-5 space-y-3 border-t border-line pt-4">
-      <div className="flex flex-wrap items-center justify-between gap-y-2">
-        <div className="flex items-center gap-2">
-          <span className="section-label" style={{ fontSize: 13 }}>Performance</span>
-          <span className="section-label"><Refreshing active={!!refreshing} /></span>
+    <div className="mt-5 space-y-3">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0">
+          <h3
+            className="flex flex-wrap items-center gap-1.5 text-[18px] font-bold tracking-tight text-[#EAECF6]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            Last {formatNum(nRounds)} round performance
+            <span
+              className="inline-flex text-[#8B93B4]"
+              title={partial
+                ? "Captured event window only — lifetime census may cover earlier rounds"
+                : "Play, consistency and P&L over the selected captured rounds"}
+              aria-label={partial
+                ? "Captured event window only — lifetime census may cover earlier rounds"
+                : "Play, consistency and P&L over the selected captured rounds"}
+            >
+              <InfoDot />
+            </span>
+            <Refreshing active={!!refreshing} />
+          </h3>
+          <p
+            className="mt-1 text-[12px] leading-snug text-[#8B93B4]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            Play, consistency and streaks in the captured window.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {hasUsd && (
-            <SegmentedControl aria-label="Currency" variant="loose"
-              items={[{ id: "sol", label: "SOL" }, { id: "usd", label: "USD" }]}
-              value={cur} onChange={(id) => setCur(id as "sol" | "usd")} />
+            <select
+              aria-label="Currency"
+              value={cur}
+              onChange={(e) => setCur(e.target.value as "sol" | "usd")}
+              className="rounded-lg border border-line bg-ink-800 px-3 py-2 text-[12px] font-semibold text-[#EAECF6] transition-colors focus:border-steel focus:outline-none"
+              style={{ fontFamily: "var(--font-subtext)" }}
+            >
+              <option value="sol">SOL</option>
+              <option value="usd">USD</option>
+            </select>
           )}
-          <SegmentedControl aria-label="Rounds window" variant="loose"
-            items={[{ id: "100", label: "100" }, { id: "500", label: "500" }, { id: "1000", label: "1000" }, { id: "2500", label: "2500" }, { id: "5000", label: "5000" }, { id: "all", label: "All" }]}
-            value={win} onChange={setWin} />
+          <div className="flex items-center gap-2">
+            <span
+              className="text-[12px] font-medium text-[#8B93B4]"
+              style={{ fontFamily: "var(--font-subtext)" }}
+            >
+              Timeframe
+            </span>
+            <SegmentedControl aria-label="Timeframe" variant="loose"
+              items={[{ id: "100", label: "100" }, { id: "500", label: "500" }, { id: "1000", label: "1000" }, { id: "2500", label: "2500" }, { id: "5000", label: "5000" }, { id: "all", label: "All" }]}
+              value={win} onChange={setWin} />
+          </div>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <StatTile variant="inset" label="Rounds" value={formatNum(nRounds)} hint={win === "all" ? (partial ? "all captured rounds — see note" : "all captured rounds") : undefined} />
-        <StatTile variant="inset" label="Win rate" value={nRounds ? formatPct(wins / nRounds) : "···"} />
-        <StatTile variant="inset" label="Avg / round"
-          value={<span className={netTone(cum / Math.max(1, nRounds))}>{cur === "usd" ? "$" : ""}{formatNum(cum / Math.max(1, nRounds), cur === "usd" ? 2 : 4)}</span>} />
-        <StatTile variant="inset" label="Total net"
-          value={<span className={netTone(cum)}>{cum >= 0 ? "+" : ""}{cur === "usd" ? "$" : ""}{formatNum(cum, cur === "usd" ? 2 : 3)}</span>}
-          unit={cur === "sol" ? "SOL" : undefined}
-          hint={nowUsd != null ? (
-            <>at today&apos;s prices <span className={netTone(nowUsd)}>{nowUsd >= 0 ? "+" : "-"}${formatNum(Math.abs(nowUsd), 2)}</span></>
-          ) : undefined} />
-        <StatTile variant="inset" label="ORE cost"
-          value={oreCostWin != null ? formatNum(oreCostWin, 3)
-            : oreWonWin > 0 ? <span className="text-pos">free</span> : "·"}
-          unit={oreCostWin != null ? "SOL/ORE" : undefined}
-          hint={oreCostWin != null ? "this window" : oreWonWin > 0 ? "net SOL profit in window" : "no ORE won in window"} />
-      </div>
+
       <PnlChart points={pts} height={220}
         fmt={(v) => (cur === "usd" ? `$${formatNum(v, 2)}` : `${formatNum(v, 3)}`)}
         axisFmt={(v) => {
@@ -474,6 +725,50 @@ function MinerTrend({ series, pricesNow, roundsWin, setRoundsWin, refreshing, pa
           return `${sgn}${u}${c}`;
         }}
         emptyText="not enough round history yet" />
+
+      <div className="overflow-hidden rounded-xl border border-line bg-ink-800/80">
+        <div className="flex flex-col divide-y divide-line md:flex-row md:divide-x md:divide-y-0">
+          <DerivedMetricCell
+            label="ORE won"
+            value={formatNum(oreWonWin, 3)}
+            unit="ORE"
+          />
+          {derived && (
+            <DerivedMetricCell
+              label="Average bet"
+              value={formatSol(derived.avg_bet_sol, 4)}
+              unit="SOL"
+              hint="per round"
+            />
+          )}
+          {derived && (
+            <DerivedMetricCell
+              label="Current streak"
+              value={<span className={streakTone}>{streakLabel}</span>}
+            />
+          )}
+          {derived && (
+            <DerivedStreaksCell
+              longestWin={derived.longest_hit_streak}
+              longestLoss={derived.longest_miss_streak}
+            />
+          )}
+          <DerivedRoundExtremesCell bestUsd={bestUsd} worstUsd={worstUsd} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        <StatTile variant="inset" label="Avg / round"
+          value={<span className={netTone(avgPerRound)}>{cur === "usd" ? "$" : ""}{formatNum(avgPerRound, cur === "usd" ? 2 : 4)}</span>} />
+        <StatTile variant="inset" label="Total net"
+          value={<span className={netTone(cum)}>{cum >= 0 ? "+" : ""}{cur === "usd" ? "$" : ""}{formatNum(cum, cur === "usd" ? 2 : 3)}</span>}
+          unit={cur === "sol" ? "SOL" : undefined} />
+        <StatTile variant="inset" label="ORE cost"
+          value={oreCostWin != null ? formatNum(oreCostWin, 3)
+            : oreWonWin > 0 ? <span className="text-pos">FREE</span> : "·"}
+          unit={oreCostWin != null ? "SOL/ORE" : undefined}
+          hint={oreCostWin != null ? "this window" : oreWonWin > 0 ? "net profit" : "no ORE won"} />
+      </div>
     </div>
   );
 }
