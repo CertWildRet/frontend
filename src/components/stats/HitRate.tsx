@@ -49,8 +49,11 @@ export function HitRate({
   const tip = tipParts.join(". ");
 
   return (
-    <div className={`rounded-lg border border-line bg-ink-800 px-3.5 py-2.5 ${className}`}>
-      <div className="label flex items-center gap-1.5">
+    <div className={`rounded-xl border border-line px-3.5 py-2.5 ${className || "bg-ink-800"}`}>
+      <div
+        className="flex items-center gap-1.5 text-[13px] font-medium leading-none text-[#9AA3C8]"
+        style={{ fontFamily: "var(--font-subtext)" }}
+      >
         Hit rate
         <span
           className="inline-flex text-fog-muted"

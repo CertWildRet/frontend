@@ -18,6 +18,7 @@ const GRID = "rgba(255,255,255,0.06)";
 const AXIS = "#B7BDD2"; // lightened for axis legibility
 const SURFACE = "#0E1222";
 const FS = 12;
+const CHART_AXIS_FONT = "var(--font-subtext)";
 
 // Semantic series colors — the two ORE-economy assets, kept identical across every
 // chart so the eye learns them once. Chosen for maximum separation (the old cyan/
@@ -643,7 +644,7 @@ export function PnlChart({
           return (
             <g key={gi}>
               <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
-              <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={AXIS} textAnchor="start" fontFamily="monospace">{yfmt(max - g * (max - min))}</text>
+              <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={AXIS} textAnchor="start" fontFamily={CHART_AXIS_FONT}>{yfmt(max - g * (max - min))}</text>
             </g>
           );
         })}
@@ -654,10 +655,10 @@ export function PnlChart({
         <path d={line} fill="none" stroke={NEG} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" clipPath="url(#pnl-below)" />
         <g>
           <rect x={plotR + 4} y={y(last) - 10} width={padR - 8} height={20} rx={4} fill={last >= 0 ? POS : NEG} />
-          <text x={plotR + padR / 2} y={y(last) + 4} fontSize={12} fontWeight={700} fill="#070912" textAnchor="middle" fontFamily="monospace">{yfmt(last)}</text>
+          <text x={plotR + padR / 2} y={y(last) + 4} fontSize={12} fontWeight={700} fill="#070912" textAnchor="middle" fontFamily={CHART_AXIS_FONT}>{yfmt(last)}</text>
         </g>
         {xt.map((idx, ti) => (
-          <text key={ti} x={x(idx)} y={H - 8} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily="monospace"
+          <text key={ti} x={x(idx)} y={H - 8} fontSize={FS} fontWeight={700} fill={AXIS} fontFamily={CHART_AXIS_FONT}
             textAnchor={ti === 0 ? "start" : ti === xt.length - 1 ? "end" : "middle"}>{points[idx].label}</text>
         ))}
         {hover != null && (

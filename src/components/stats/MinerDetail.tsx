@@ -11,7 +11,6 @@
 import Image from "next/image";
 import { useState, type ReactNode } from "react";
 import { IconExternalLink } from "@tabler/icons-react";
-import { StatTile } from "@/components/primitives/Stat";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { RefreshIconButton } from "@/components/primitives/RefreshIconButton";
@@ -81,11 +80,11 @@ function timeAgo(d: Date): string {
 }
 
 export function MinerDetail({ pubkey }: { pubkey: string }) {
-  const [roundsWin, setRoundsWin] = useState("1000");
+  const [roundsWin, setRoundsWin] = useState("500");
+  const [historyExpanded, setHistoryExpanded] = useState(false);
   const ticker = useTicker();
-  // 60s (not 30): lifetime P&L barely moves round-to-round, and the in-flight
-  // guard in usePolled already prevents a slow request from stacking.
-  const det = usePolled(() => fetchOreMiner(pubkey, roundsWin === "all" ? "all" : Math.max(1000, Number(roundsWin))), 60_000, [pubkey, roundsWin]);
+  // Fetch on mount, pubkey/window change, and manual refresh only — no background poll.
+  const det = usePolled(() => fetchOreMiner(pubkey, roundsWin === "all" ? "all" : Math.max(1000, Number(roundsWin))), 0, [pubkey, roundsWin]);
   const d = det.data;
   if (det.loading && !d) {
     return <div className="grid grid-cols-2 gap-3 md:grid-cols-4"><TileSkeleton /><TileSkeleton /><TileSkeleton /><TileSkeleton /></div>;
@@ -136,6 +135,10 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const avgPerRoundUsd = totalNetUsd != null && nSeriesRounds > 0
     ? totalNetUsd / nSeriesRounds
     : null;
+
+  const HISTORY_PREVIEW = 10;
+  const historyRows = historyExpanded ? d.history : d.history.slice(0, HISTORY_PREVIEW);
+  const canExpandHistory = d.history.length > HISTORY_PREVIEW;
 
   return (
     <ChartCard>
@@ -201,8 +204,11 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
 
       {/* 1. Lifetime profitability glance */}
       <div className="grid grid-cols-1 items-stretch gap-2.5 md:grid-cols-3">
-        <div className="@container flex h-full flex-col rounded-lg border border-line bg-ink-800 px-3.5 py-3 [container-type:size] md:col-span-2">
-          <div className="label flex shrink-0 items-center gap-1.5">
+        <div className="@container flex h-full flex-col rounded-xl border border-line bg-[rgba(91,108,255,0.07)] px-3.5 py-3 [container-type:size] md:col-span-2">
+          <div
+            className="flex shrink-0 items-center gap-1.5 text-[13px] font-medium leading-none text-[#9AA3C8]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
             Lifetime Net P&amp;L
             <span
               className="inline-flex text-fog-muted"
@@ -226,7 +232,12 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
                 <span className={`num text-[clamp(2.75rem,28cqh,4.25rem)] leading-[0.9] tracking-tight ${netTone(net)}`}>
                   {net > 0 ? "+" : ""}{formatSol(net, 2)}
                 </span>
-                <span className="font-mono text-[15px] text-[#C6CCEC]">SOL</span>
+                <span
+                  className="text-[13px] font-medium text-[#9AA3C8]"
+                  style={{ fontFamily: "var(--font-subtext)" }}
+                >
+                  SOL
+                </span>
               </div>
             )}
           </div>
@@ -248,8 +259,13 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
         </div>
 
         <div className="flex flex-col gap-2.5">
-          <div className="rounded-lg border border-line bg-ink-800 px-3.5 py-2.5">
-            <div className="label">Unrefined Ore Mined</div>
+          <div className="rounded-xl border border-line bg-[rgba(255,192,97,0.07)] px-3.5 py-2.5">
+            <div
+              className="text-[13px] font-medium leading-none text-[#9AA3C8]"
+              style={{ fontFamily: "var(--font-subtext)" }}
+            >
+              Unrefined Ore Mined
+            </div>
             <div className="mt-1.5 flex items-center gap-2.5">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line bg-ink-900/60">
                 <Image src="/ore-token.png" alt="" width={22} height={22} className="h-[22px] w-[22px] object-contain" />
@@ -257,7 +273,12 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
               <div className="min-w-0">
                 <div className="flex items-baseline gap-1.5">
                   <span className="num text-[22px] leading-none tracking-tight gradient-text">{formatNum(oreLifetime, 2)}</span>
-                  <span className="font-mono text-[12px] text-fog-muted">ORE</span>
+                  <span
+                    className="text-[13px] font-medium text-[#9AA3C8]"
+                    style={{ fontFamily: "var(--font-subtext)" }}
+                  >
+                    ORE
+                  </span>
                 </div>
                 {ticker?.uore_apr != null && (
                   <div className="subtext mt-1">
@@ -277,13 +298,14 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
               expectedRate={tilesExpect?.expectedRate ?? null}
               avgTiles={tilesExpect?.avgTiles ?? null}
               sampleRounds={tilesExpect?.sampleRounds ?? null}
+              className="bg-[rgba(154,107,255,0.07)]"
             />
           )}
         </div>
       </div>
 
       {/* Lifetime performance · on-chain totals */}
-      <div className="mt-5 space-y-3">
+      <div className="mt-16 space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
           <h3
             className="text-[18px] font-bold tracking-tight text-[#EAECF6]"
@@ -300,19 +322,18 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
             </div>
           )}
         </div>
-        <div className="overflow-hidden rounded-xl border border-line bg-ink-800/80">
-          <div className="grid grid-cols-2 md:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
             <LifetimeCell
               label="SOL deployed"
               value={formatSol(deployed, 2)}
               unit="SOL"
-              className="border-b border-line md:border-r"
+              className="rounded-xl border border-line bg-[rgba(91,108,255,0.07)]"
             />
             <LifetimeCell
               label="SOL returned"
               value={formatSol(returned, 2)}
               unit="SOL"
-              className="border-b border-line md:border-r"
+              className="rounded-xl border border-line bg-[rgba(34,224,230,0.06)]"
             />
             <LifetimeCell
               label="Net SOL"
@@ -322,13 +343,13 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
                 </span>
               }
               unit="SOL"
-              className="border-b border-line col-span-2 md:col-span-1"
+              className="col-span-2 rounded-xl border border-line bg-[rgba(154,107,255,0.07)] md:col-span-1"
             />
             <LifetimeCell
               label="ORE earned"
               value={formatNum(oreLifetime, 2)}
               unit="ORE"
-              className="border-b border-line md:border-b-0 md:border-r"
+              className="rounded-xl border border-line bg-[rgba(255,192,97,0.07)]"
             />
             <LifetimeCell
               label={
@@ -345,16 +366,15 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
               }
               value={formatNum(refinedLive, 2)}
               unit="ORE"
-              className="border-b border-line md:border-b-0 md:border-r"
+              className="rounded-xl border border-line bg-[rgba(255,90,200,0.05)]"
             />
             <LifetimeCell
               label="Unclaimed ORE"
               value={formatNum(unclaimed, 2)}
               unit="ORE"
-              className="col-span-2 md:col-span-1"
+              className="col-span-2 rounded-xl border border-line bg-[rgba(74,222,128,0.05)] md:col-span-1"
             />
           </div>
-        </div>
       </div>
 
       {!hasEvents && (
@@ -376,8 +396,8 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
         />
       )}
 
-      {d.history.length > 0 && (<>
-      <div className="mt-10 space-y-3">
+      {d.history.length > 0 && (
+      <div className="mt-16 space-y-3">
         <div>
           <h3
             className="text-[18px] font-bold tracking-tight text-[#EAECF6]"
@@ -404,7 +424,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
             <th className={`${th} text-right`}>Net</th>
           </tr></thead>
           <tbody>
-            {d.history.map((h) => {
+            {historyRows.map((h) => {
               const dep = lamportsToSol(h.deployed);
               const stakeW = Number(h.stake_w ?? "0");
               const hit = stakeW > 0;
@@ -432,9 +452,23 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           </tbody>
         </table>
       </div>
+      {canExpandHistory && (
+        <div className="border-t border-line px-4 py-3">
+          <button
+            type="button"
+            onClick={() => setHistoryExpanded((v) => !v)}
+            className="w-full rounded-lg border border-line bg-white/[0.03] px-3 py-2 text-[13px] font-semibold text-[#EAECF6] transition-colors hover:bg-white/[0.06] focus:outline-none focus:border-steel"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            {historyExpanded
+              ? "Collapse"
+              : `Expand · ${formatNum(d.history.length - HISTORY_PREVIEW)} more`}
+          </button>
+        </div>
+      )}
       </div>
       </div>
-      </>)}
+      )}
     </ChartCard>
   );
 }
@@ -488,12 +522,14 @@ function DerivedMetricCell({
 function DerivedStreaksCell({
   longestWin,
   longestLoss,
+  className = "",
 }: {
   longestWin: number;
   longestLoss: number;
+  className?: string;
 }) {
   return (
-    <div className="min-w-0 flex-1 px-5 py-4">
+    <div className={`min-w-0 flex-1 px-5 py-4 ${className}`}>
       <div className="space-y-3">
         <div className="flex items-baseline justify-between gap-3">
           <span
@@ -525,15 +561,17 @@ function DerivedStreaksCell({
 function DerivedRoundExtremesCell({
   bestUsd,
   worstUsd,
+  className = "",
 }: {
   bestUsd?: number | null;
   worstUsd?: number | null;
+  className?: string;
 }) {
   const fmtUsd = (v: number | null | undefined) =>
     v != null ? `${v >= 0 ? "+" : "-"}$${formatNum(Math.abs(v), 2)}` : "·";
 
   return (
-    <div className="min-w-0 flex-1 px-5 py-4">
+    <div className={`min-w-0 flex-1 px-5 py-4 ${className}`}>
       <div className="space-y-3">
         <div className="flex items-baseline justify-between gap-3">
           <span
@@ -574,7 +612,7 @@ function LifetimeCell({
   className?: string;
 }) {
   return (
-    <div className={`px-4 py-3 ${className}`}>
+    <div className={`px-4 py-3.5 ${className}`}>
       <div
         className="text-[13px] font-medium leading-none text-[#9AA3C8]"
         style={{ fontFamily: "var(--font-subtext)" }}
@@ -627,6 +665,8 @@ function MinerTrend({ series, derived, roundsWin, setRoundsWin, refreshing, part
     return { label: `#${formatNum(p.round_id)}`, value: cum };
   });
   const nRounds = slice.reduce((a, p) => a + (p.n ?? 1), 0);
+  const hitsWin = slice.reduce((a, p) => a + (p.hits ?? (p.hit ? 1 : 0)), 0);
+  const hitRateWin = nRounds > 0 ? hitsWin / nRounds : null;
   const oreWonWin = slice.reduce((a, p) => a + p.ore_won, 0);
   const netSolWin = slice.reduce((a, p) => a + p.net_sol, 0);
   const oreCostWin = oreWonWin > 0 && netSolWin < 0 ? -netSolWin / oreWonWin : null;
@@ -645,19 +685,8 @@ function MinerTrend({ series, derived, roundsWin, setRoundsWin, refreshing, part
   if (bestUsd == null) bestUsd = derived?.best_round?.net_usd ?? null;
   if (worstUsd == null) worstUsd = derived?.worst_round?.net_usd ?? null;
 
-  const streakLabel = derived
-    ? derived.current_streak > 0
-      ? `${derived.current_streak} win${derived.current_streak === 1 ? "" : "s"}`
-      : derived.current_streak < 0
-        ? `${Math.abs(derived.current_streak)} loss${Math.abs(derived.current_streak) === 1 ? "" : "es"}`
-        : "—"
-    : "—";
-  const streakTone = !derived || derived.current_streak === 0
-    ? "text-fog-muted"
-    : derived.current_streak > 0 ? "text-pos" : "text-red";
-
   return (
-    <div className="mt-5 space-y-3">
+    <div className="mt-16 space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
           <h3
@@ -686,18 +715,6 @@ function MinerTrend({ series, derived, roundsWin, setRoundsWin, refreshing, part
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {hasUsd && (
-            <select
-              aria-label="Currency"
-              value={cur}
-              onChange={(e) => setCur(e.target.value as "sol" | "usd")}
-              className="rounded-lg border border-line bg-ink-800 px-3 py-2 text-[12px] font-semibold text-[#EAECF6] transition-colors focus:border-steel focus:outline-none"
-              style={{ fontFamily: "var(--font-subtext)" }}
-            >
-              <option value="sol">SOL</option>
-              <option value="usd">USD</option>
-            </select>
-          )}
           <div className="flex items-center gap-2">
             <span
               className="text-[12px] font-medium text-[#8B93B4]"
@@ -709,6 +726,26 @@ function MinerTrend({ series, derived, roundsWin, setRoundsWin, refreshing, part
               items={[{ id: "100", label: "100" }, { id: "500", label: "500" }, { id: "1000", label: "1000" }, { id: "2500", label: "2500" }, { id: "5000", label: "5000" }, { id: "all", label: "All" }]}
               value={win} onChange={setWin} />
           </div>
+          {hasUsd && (
+            <div className="flex items-center gap-2">
+              <span
+                className="text-[12px] font-medium text-[#8B93B4]"
+                style={{ fontFamily: "var(--font-subtext)" }}
+              >
+                Show
+              </span>
+              <select
+                aria-label="Show currency"
+                value={cur}
+                onChange={(e) => setCur(e.target.value as "sol" | "usd")}
+                className="rounded-lg border border-line bg-ink-800 px-3 py-2 text-[12px] font-semibold text-[#EAECF6] transition-colors focus:border-steel focus:outline-none"
+                style={{ fontFamily: "var(--font-subtext)" }}
+              >
+                <option value="sol">SOL</option>
+                <option value="usd">USD</option>
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
@@ -726,12 +763,12 @@ function MinerTrend({ series, derived, roundsWin, setRoundsWin, refreshing, part
         }}
         emptyText="not enough round history yet" />
 
-      <div className="overflow-hidden rounded-xl border border-line bg-ink-800/80">
-        <div className="flex flex-col divide-y divide-line md:flex-row md:divide-x md:divide-y-0">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
           <DerivedMetricCell
             label="ORE won"
             value={formatNum(oreWonWin, 3)}
             unit="ORE"
+            className="rounded-xl border border-line bg-[rgba(255,192,97,0.07)]"
           />
           {derived && (
             <DerivedMetricCell
@@ -739,36 +776,64 @@ function MinerTrend({ series, derived, roundsWin, setRoundsWin, refreshing, part
               value={formatSol(derived.avg_bet_sol, 4)}
               unit="SOL"
               hint="per round"
+              className="rounded-xl border border-line bg-[rgba(34,224,230,0.06)]"
             />
           )}
-          {derived && (
-            <DerivedMetricCell
-              label="Current streak"
-              value={<span className={streakTone}>{streakLabel}</span>}
-            />
-          )}
+          <DerivedMetricCell
+            label="Hit rate"
+            value={hitRateWin != null ? formatPct(hitRateWin) : "·"}
+            hint={hitRateWin != null ? `${formatNum(hitsWin)} / ${formatNum(nRounds)} rounds` : undefined}
+            className="rounded-xl border border-line bg-[rgba(154,107,255,0.07)]"
+          />
+        </div>
+
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+          <DerivedMetricCell
+            label="Avg per round"
+            value={
+              <span className={netTone(avgPerRound)}>
+                {cur === "usd" ? "$" : ""}{formatNum(avgPerRound, cur === "usd" ? 2 : 4)}
+              </span>
+            }
+            unit={cur === "sol" ? "SOL" : undefined}
+            className="rounded-xl border border-line bg-[rgba(91,108,255,0.07)]"
+          />
+          <DerivedMetricCell
+            label="Total net"
+            value={
+              <span className={netTone(cum)}>
+                {cum >= 0 ? "+" : ""}{cur === "usd" ? "$" : ""}{formatNum(cum, cur === "usd" ? 2 : 3)}
+              </span>
+            }
+            unit={cur === "sol" ? "SOL" : undefined}
+            className="rounded-xl border border-line bg-[rgba(74,222,128,0.05)]"
+          />
+          <DerivedMetricCell
+            label="ORE cost"
+            value={
+              oreCostWin != null ? formatNum(oreCostWin, 3)
+                : oreWonWin > 0 ? <span className="text-pos">FREE</span> : "·"
+            }
+            unit={oreCostWin != null ? "SOL/ORE" : undefined}
+            hint={oreCostWin != null ? "this window" : oreWonWin > 0 ? "net profit" : "no ORE won"}
+            className="rounded-xl border border-line bg-[rgba(255,90,200,0.05)]"
+          />
+        </div>
+
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           {derived && (
             <DerivedStreaksCell
               longestWin={derived.longest_hit_streak}
               longestLoss={derived.longest_miss_streak}
+              className="rounded-xl border border-line bg-[rgba(74,222,128,0.05)]"
             />
           )}
-          <DerivedRoundExtremesCell bestUsd={bestUsd} worstUsd={worstUsd} />
+          <DerivedRoundExtremesCell
+            bestUsd={bestUsd}
+            worstUsd={worstUsd}
+            className="rounded-xl border border-line bg-[rgba(255,192,97,0.07)]"
+          />
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        <StatTile variant="inset" label="Avg / round"
-          value={<span className={netTone(avgPerRound)}>{cur === "usd" ? "$" : ""}{formatNum(avgPerRound, cur === "usd" ? 2 : 4)}</span>} />
-        <StatTile variant="inset" label="Total net"
-          value={<span className={netTone(cum)}>{cum >= 0 ? "+" : ""}{cur === "usd" ? "$" : ""}{formatNum(cum, cur === "usd" ? 2 : 3)}</span>}
-          unit={cur === "sol" ? "SOL" : undefined} />
-        <StatTile variant="inset" label="ORE cost"
-          value={oreCostWin != null ? formatNum(oreCostWin, 3)
-            : oreWonWin > 0 ? <span className="text-pos">FREE</span> : "·"}
-          unit={oreCostWin != null ? "SOL/ORE" : undefined}
-          hint={oreCostWin != null ? "this window" : oreWonWin > 0 ? "net profit" : "no ORE won"} />
-      </div>
     </div>
   );
 }
