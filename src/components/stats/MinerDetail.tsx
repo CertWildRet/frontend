@@ -680,6 +680,26 @@ function MinerTrend({ pubkey, series, derived, roundsWin, setRoundsWin, refreshi
   const oreCostWin = oreWonWin > 0 && netSolWin < 0 ? -netSolWin / oreWonWin : null;
   const avgPerRound = nRounds > 0 ? cum / nRounds : 0;
 
+  // Avg win / avg loss over the visible window: mean net on hit rounds vs miss
+  // rounds. Bucketed points (n>1, large "all"/5k windows) only count when the
+  // bucket is pure hits or pure misses — mixed buckets can't split the net.
+  let winSum = 0, winRounds = 0, lossSum = 0, lossRounds = 0;
+  for (const p of slice) {
+    const net = cur === "usd" && p.net_usd != null ? p.net_usd : p.net_sol;
+    const n = p.n ?? 1;
+    const hits = p.hits ?? (p.hit ? 1 : 0);
+    if (n > 1 && hits > 0 && hits < n) continue;
+    if (hits === n) {
+      winSum += net;
+      winRounds += n;
+    } else if (hits === 0) {
+      lossSum += net;
+      lossRounds += n;
+    }
+  }
+  const avgWin = winRounds > 0 ? winSum / winRounds : null;
+  const avgLoss = lossRounds > 0 ? lossSum / lossRounds : null;
+
   // Best / worst in the visible chart window (prefer USD).
   let bestUsd: number | null = null;
   let worstUsd: number | null = null;
@@ -786,6 +806,35 @@ function MinerTrend({ pubkey, series, derived, roundsWin, setRoundsWin, refreshi
             unit={cur === "sol" ? "SOL" : undefined}
             className="rounded-xl border border-line bg-[rgba(91,108,255,0.07)]"
           />
+          <DerivedMetricCell
+            label="Avg win"
+            value={
+              avgWin != null ? (
+                <span className={netTone(avgWin)}>
+                  {avgWin >= 0 ? "+" : ""}{cur === "usd" ? "$" : ""}{formatNum(avgWin, cur === "usd" ? 2 : 4)}
+                </span>
+              ) : "·"
+            }
+            unit={avgWin != null && cur === "sol" ? "SOL" : undefined}
+            hint={winRounds > 0 ? `${formatNum(winRounds)} hit${winRounds === 1 ? "" : "s"}` : undefined}
+            className="rounded-xl border border-line bg-[rgba(74,222,128,0.05)]"
+          />
+          <DerivedMetricCell
+            label="Avg loss"
+            value={
+              avgLoss != null ? (
+                <span className={netTone(avgLoss)}>
+                  {avgLoss >= 0 ? "+" : ""}{cur === "usd" ? "$" : ""}{formatNum(avgLoss, cur === "usd" ? 2 : 4)}
+                </span>
+              ) : "·"
+            }
+            unit={avgLoss != null && cur === "sol" ? "SOL" : undefined}
+            hint={lossRounds > 0 ? `${formatNum(lossRounds)} miss${lossRounds === 1 ? "" : "es"}` : undefined}
+            className="rounded-xl border border-line bg-[rgba(255,90,200,0.05)]"
+          />
+        </div>
+
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           <DerivedMetricCell
             label="Total net"
             value={
