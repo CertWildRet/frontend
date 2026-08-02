@@ -225,17 +225,15 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
             style={{ fontFamily: "var(--font-subtext)" }}
           >
             Lifetime Net P&amp;L
-            <span
-              className="inline-flex text-fog-muted"
-              title={censusMissing ? "Won − deployed over captured rounds" : "Returned − deployed from on-chain lifetime census"}
-              aria-label={censusMissing ? "Won − deployed over captured rounds" : "Returned − deployed from on-chain lifetime census"}
-            >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-                <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" />
-                <path d="M6 5.2V8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                <circle cx="6" cy="3.6" r="0.7" fill="currentColor" />
-              </svg>
-            </span>
+            <InfoDot
+              title={
+                totalNetUsd != null
+                  ? "Sum of round-time USD P&L over captured rounds — same figure as Performance → Total net"
+                  : censusMissing
+                    ? "Won − deployed over captured rounds"
+                    : "Returned − deployed from on-chain lifetime census"
+              }
+            />
           </div>
           <div className="flex min-h-0 items-center py-2.5 md:flex-1 md:py-0.5">
             {totalNetUsd != null ? (
@@ -370,12 +368,8 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
               label={
                 <span className="inline-flex items-center gap-1">
                   Refined ORE
-                  <span
-                    className="inline-flex text-[#8B93B4]"
-                    title="Live refined balance from the on-chain census"
-                    aria-label="Live refined balance from the on-chain census"
-                  >
-                    <InfoDot />
+                  <span className="text-[#8B93B4]">
+                    <InfoDot title="Live refined balance from the on-chain census" />
                   </span>
                 </span>
               }
@@ -643,13 +637,19 @@ function LifetimeCell({
   );
 }
 
-function InfoDot() {
+function InfoDot({ title }: { title: string }) {
   return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-      <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" />
-      <path d="M6 5.2V8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-      <circle cx="6" cy="3.6" r="0.7" fill="currentColor" />
-    </svg>
+    <span
+      className="inline-flex cursor-help text-inherit"
+      title={title}
+      aria-label={title}
+    >
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+        <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" />
+        <path d="M6 5.2V8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+        <circle cx="6" cy="3.6" r="0.7" fill="currentColor" />
+      </svg>
+    </span>
   );
 }
 

@@ -55,12 +55,8 @@ export function HitRate({
         style={{ fontFamily: "var(--font-subtext)" }}
       >
         Hit rate
-        <span
-          className="inline-flex text-fog-muted"
-          title={tip}
-          aria-label={tip}
-        >
-          <InfoDot />
+        <span className="text-fog-muted">
+          <InfoDot title={tip} />
         </span>
       </div>
       <div className="mt-1.5 flex items-center gap-2.5">
@@ -150,12 +146,18 @@ export function HitRate({
   );
 }
 
-function InfoDot() {
+function InfoDot({ title }: { title: string }) {
   return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-      <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" />
-      <path d="M6 5.2V8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-      <circle cx="6" cy="3.6" r="0.7" fill="currentColor" />
-    </svg>
+    <span
+      className="inline-flex cursor-help text-inherit"
+      title={title}
+      aria-label={title}
+    >
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+        <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" />
+        <path d="M6 5.2V8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+        <circle cx="6" cy="3.6" r="0.7" fill="currentColor" />
+      </svg>
+    </span>
   );
 }
