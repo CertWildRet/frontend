@@ -1,6 +1,7 @@
 "use client";
 
 import { formatNum, formatPct } from "@/lib/format";
+import { InfoDot } from "@/components/primitives/InfoDot";
 
 /**
  * Hit-rate tile — circular progress ring + percent + wins/rounds caption.
@@ -55,9 +56,7 @@ export function HitRate({
         style={{ fontFamily: "var(--font-subtext)" }}
       >
         Hit rate
-        <span className="text-fog-muted">
-          <InfoDot title={tip} />
-        </span>
+        <InfoDot title={tip} className="text-fog-muted" />
       </div>
       <div className="mt-1.5 flex items-center gap-2.5">
         <svg
@@ -143,21 +142,5 @@ export function HitRate({
         </div>
       </div>
     </div>
-  );
-}
-
-function InfoDot({ title }: { title: string }) {
-  return (
-    <span
-      className="inline-flex cursor-help text-inherit"
-      title={title}
-      aria-label={title}
-    >
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-        <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" />
-        <path d="M6 5.2V8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-        <circle cx="6" cy="3.6" r="0.7" fill="currentColor" />
-      </svg>
-    </span>
   );
 }

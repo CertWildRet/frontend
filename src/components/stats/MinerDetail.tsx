@@ -13,6 +13,7 @@ import { useState, type ReactNode } from "react";
 import { IconExternalLink } from "@tabler/icons-react";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
+import { InfoDot } from "@/components/primitives/InfoDot";
 import { RefreshIconButton } from "@/components/primitives/RefreshIconButton";
 import { ServiceChip } from "@/components/primitives/ServiceChip";
 import { TileSkeleton, Refreshing } from "@/components/primitives/Skeleton";
@@ -206,6 +207,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           >
             Lifetime Net P&amp;L
             <InfoDot
+              className="text-fog-muted"
               title={
                 totalNetUsd != null
                   ? "Sum of round-time USD P&L over captured rounds — same figure as Performance → Total net"
@@ -348,9 +350,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
               label={
                 <span className="inline-flex items-center gap-1">
                   Refined ORE
-                  <span className="text-[#8B93B4]">
-                    <InfoDot title="Live refined balance from the on-chain census" />
-                  </span>
+                  <InfoDot className="text-[#8B93B4]" title="Live refined balance from the on-chain census" />
                 </span>
               }
               value={formatNum(refinedLive, 2)}
@@ -613,22 +613,6 @@ function LifetimeCell({
         )}
       </div>
     </div>
-  );
-}
-
-function InfoDot({ title }: { title: string }) {
-  return (
-    <span
-      className="inline-flex cursor-help text-inherit"
-      title={title}
-      aria-label={title}
-    >
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-        <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" />
-        <path d="M6 5.2V8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-        <circle cx="6" cy="3.6" r="0.7" fill="currentColor" />
-      </svg>
-    </span>
   );
 }
 
