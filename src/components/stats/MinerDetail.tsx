@@ -115,18 +115,6 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const dv = d.derived;
   const hasEvents = !!d.events && d.series.length > 0;
   const covTs = d.coverage?.min_ts ? new Date(d.coverage.min_ts * 1000) : null;
-  // Lifetime (on-chain census) vs the event-reconstructed round history: the census
-  // is the AUTHORITATIVE on-chain total; the round history is only as complete as the
-  // event backfill, which walks newest→oldest and hasn't reached genesis. A wallet
-  // whose deploys mostly predate our event floor shows census ≫ Σ(captured rounds)
-  // (e.g. 1,127 SOL lifetime vs 1.8 SOL captured). This is TEMPORAL coverage, not a
-  // pool thing — old self-cranked miners diverge too, and fully-covered pool miners
-  // don't. Detect it generically from the coverage ratio, not from managed_by.
-  const eventDepSol = hs?.dep_sol != null ? Number(hs.dep_sol) / 1e9 : null;
-  const coverageRatio = !censusMissing && deployed > 0 && eventDepSol != null ? eventDepSol / deployed : null;
-  const partialHistory = coverageRatio != null && deployed > 1
-    && coverageRatio < 0.9 && (deployed - (eventDepSol ?? 0)) > 0.5;
-  const capturedPct = coverageRatio != null ? formatPct(Math.max(0, Math.min(1, coverageRatio))) : null;
   // Same figure as Performance → Total net (USD): sum of round-time USD P/L over the series.
   const hasUsd = d.series.some((p) => p.net_usd != null);
   const totalNetUsd = hasUsd
@@ -200,14 +188,6 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
               </span>
             )
           ))}
-        </div>
-      )}
-      {partialHistory && (
-        <div className="mb-3 rounded-lg border border-amber/30 bg-amber/[0.06] px-3 py-2 font-mono text-[12px] leading-relaxed text-amber">
-          <span className="text-white">Lifetime tiles are the authoritative on-chain totals.</span> The
-          per-round history below only covers captured rounds{covTs ? ` (event data reaches back to ${covTs.toLocaleDateString()} so far)` : ""} —
-          this wallet deployed most of its {formatSol(deployed, 0)} SOL earlier, so captured rounds sum to just {formatSol(eventDepSol ?? 0, 2)} SOL
-          {capturedPct ? ` (${capturedPct} of lifetime)` : ""}. Coverage deepens daily as the backfill digs toward genesis.
         </div>
       )}
 
@@ -403,7 +383,6 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           roundsWin={roundsWin}
           setRoundsWin={setRoundsWin}
           refreshing={det.fetching && !!det.data}
-          partial={partialHistory}
         />
       )}
 
@@ -653,11 +632,11 @@ function InfoDot({ title }: { title: string }) {
   );
 }
 
-function MinerTrend({ pubkey, series, derived, roundsWin, setRoundsWin, refreshing, partial }: {
+function MinerTrend({ pubkey, series, derived, roundsWin, setRoundsWin, refreshing }: {
   pubkey: string;
   series: OreMinerDetail["series"];
   derived: OreMinerDetail["derived"];
-  roundsWin: string; setRoundsWin: (v: string) => void; refreshing?: boolean; partial?: boolean;
+  roundsWin: string; setRoundsWin: (v: string) => void; refreshing?: boolean;
 }) {
   const win = roundsWin;
   const setWin = setRoundsWin;
@@ -716,9 +695,7 @@ function MinerTrend({ pubkey, series, derived, roundsWin, setRoundsWin, refreshi
   return (
     <ChartCard
       title={`${pubkey.slice(0, 4)}'s last ${formatNum(nRounds)} rounds`}
-      subtitle={partial
-        ? "Captured event window only — lifetime census may cover earlier rounds."
-        : "Play, consistency and streaks in the captured window."}
+      subtitle="Play, consistency and streaks in the captured window."
       right={
         <div className="flex flex-wrap items-center gap-2" data-no-capture="true">
           <Refreshing active={!!refreshing} />
