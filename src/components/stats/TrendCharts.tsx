@@ -12,6 +12,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { useFillHeight } from "@/hooks/useFillHeight";
+import { useHoverIndex } from "@/hooks/useHoverIndex";
 import { ChartSkeleton } from "@/components/primitives/Skeleton";
 
 const GRID = "rgba(255,255,255,0.06)";
@@ -171,7 +172,7 @@ export function DualLine({
 }) {
   const [ref, W] = useMeasuredWidth();
   const [svgFillRef, H] = useFillHeight(height, fill);
-  const [hover, setHover] = useState<number | null>(null);
+  const [hover, setHover] = useHoverIndex(a.length);
   // shared mode has no right axis — reclaim its gutter for the plot
   const padL = 52, padR = shared ? 14 : 52, padT = 14, padB = 26;
   const n = a.length;
@@ -278,7 +279,7 @@ export function CostEvChart({
   loading?: boolean;
 }) {
   const [ref, W] = useMeasuredWidth();
-  const [hover, setHover] = useState<number | null>(null);
+  const [hover, setHover] = useHoverIndex(market.length);
   const H = height, padL = 52, padR = 52, padT = 14, padB = 26;
   const MARKET = "#9DB7D8", COST = "#E8881A", POS = "#4ADE80", NEG = "#F87171";
   const n = market.length;
@@ -405,7 +406,7 @@ export function BarsLine({
 }) {
   const [ref, W] = useMeasuredWidth();
   const [svgFillRef, H] = useFillHeight(height, fill);
-  const [hover, setHover] = useState<number | null>(null);
+  const [hover, setHover] = useHoverIndex(bars.length);
   // Wider gutters than DualLine — bar tick strings (e.g. "3.2K") and right-axis
   // prices need room or they clip against the card edge on half-width layouts.
   const padL = 58, padR = 48, padT = 14, padB = 26;
@@ -474,7 +475,8 @@ export function BarsLine({
               bars[hover].label,
               `${barName}: ${bars[hover].value != null ? barFmt(bars[hover].value!) : "·"}`,
               ...(line2 && line2Name ? [`${line2Name}: ${line2[hover]?.value != null ? barFmt(line2[hover].value!) : "·"}`] : []),
-              `${lineName}: ${line[hover].value != null ? lineFmt(line[hover].value!) : "·"}`,
+              // hover is clamped to `bars`; a shorter `line` would still be a hole
+              `${lineName}: ${line[hover]?.value != null ? lineFmt(line[hover].value!) : "·"}`,
             ]} />
           </g>
         )}
@@ -511,7 +513,7 @@ export function PopBars({
   loading?: boolean;
 }) {
   const [ref, W] = useMeasuredWidth();
-  const [hover, setHover] = useState<number | null>(null);
+  const [hover, setHover] = useHoverIndex(bars.length);
   const H = height, padL = 52, padR = 14, padT = 14, padB = 26;
   const POS = "#4ADE80", NEG = "#F87171", BASE = "#5B6CFF", LIVE = "#22E0E6";
   const aFmt = axisFmt ?? fmt;
@@ -624,7 +626,7 @@ export function PnlChart({
   loading?: boolean; emptyText?: string;
 }) {
   const [ref, W] = useMeasuredWidth();
-  const [hover, setHover] = useState<number | null>(null);
+  const [hover, setHover] = useHoverIndex(points.length);
   const H = height, padL = 14, padR = 68, padT = 14, padB = 26;
   const yfmt = axisFmt ?? fmt;
   const POS = "#4ADE80", NEG = "#F87171";

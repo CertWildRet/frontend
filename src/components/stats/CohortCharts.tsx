@@ -12,6 +12,7 @@
  * surface. Order reads cool→warm = small→big, whale = the bright-gold headliner.
  */
 import { useEffect, useRef, useState } from "react";
+import { useHoverIndex } from "@/hooks/useHoverIndex";
 import { ChartSkeleton } from "@/components/primitives/Skeleton";
 
 const GRID = "rgba(255,255,255,0.06)";
@@ -78,7 +79,7 @@ export function Donut({
   loading?: boolean;
 }) {
   const [ref, W] = useMeasuredWidth();
-  const [hover, setHover] = useState<number | null>(null);
+  const [hover, setHover] = useHoverIndex(slices.length); // segs is 1:1 with slices
   const total = slices.reduce((a, s) => a + Math.max(0, s.value), 0);
   if (!slices.length || total <= 0) return <div ref={ref} className="w-full"><Empty h={height} loading={loading} /></div>;
 
@@ -153,7 +154,7 @@ export function CohortBalanceBars({
   emptyText?: string;
 }) {
   const [ref, W] = useMeasuredWidth(640);
-  const [hover, setHover] = useState<number | null>(null);
+  const [hover, setHover] = useHoverIndex(buckets.length);
   const H = height, padL = 54, padR = 12, padT = 12, padB = 30;
   const n = buckets.length;
   if (!n) return <div ref={ref} className="w-full"><Empty h={H} loading={loading} text={emptyText} /></div>;
