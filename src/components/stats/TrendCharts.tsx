@@ -20,6 +20,22 @@ const SURFACE = "#0E1222";
 const FS = 12;
 const CHART_AXIS_FONT = "var(--font-subtext)";
 
+/** Blend two hex colors. t=0 → `base`, t=1 → `tint`. Non-#rrggbb input passes
+ *  through untouched so a themed/named color can never render as NaN. */
+function mixHex(base: string, tint: string, t: number): string {
+  const ok = (h: string) => /^#[0-9a-fA-F]{6}$/.test(h);
+  if (!ok(base) || !ok(tint)) return base;
+  const ch = (h: string, i: number) => parseInt(h.slice(i, i + 2), 16);
+  const mix = (i: number) =>
+    Math.round(ch(base, i) + (ch(tint, i) - ch(base, i)) * t).toString(16).padStart(2, "0");
+  return `#${mix(1)}${mix(3)}${mix(5)}`;
+}
+/** How far a dual-axis tick label leans from neutral toward its own series color.
+ *  Low by design: enough to tell the two axes apart at a glance, not enough to
+ *  compete with the plotted lines or cost the labels their legibility. */
+const AXIS_TINT = 0.35;
+const tintedAxis = (seriesColor: string): string => mixHex(AXIS, seriesColor, AXIS_TINT);
+
 // Semantic series colors — the two ORE-economy assets, kept identical across every
 // chart so the eye learns them once. Chosen for maximum separation (the old cyan/
 // blue pair scored a colorblind ΔE of just 4.4 — near-invisible to deuteranopes):
@@ -122,8 +138,9 @@ export function DualLine({
   bFmt = (v: number) => v.toFixed(2),
   loading = false,
   shared = false,
-  /** Paint both y-axis tick labels in the neutral AXIS color (same as the
-   *  shared Yields chart) instead of matching each series stroke. */
+  /** Quiet the y-axis tick labels: instead of taking each series' full stroke
+   *  color, they sit near the neutral AXIS color with only a faint wash of it
+   *  (AXIS_TINT) — still enough to tell the left and right scales apart. */
   neutralAxes = false,
   band,
   refLine,
@@ -136,8 +153,9 @@ export function DualLine({
   loading?: boolean;
   /** Same-unit series: one combined y-scale, single left axis (no dual-axis). */
   shared?: boolean;
-  /** Paint both y-axis tick labels in the neutral AXIS color (same as the
-   *  shared Yields chart) instead of matching each series stroke. */
+  /** Quiet the y-axis tick labels: instead of taking each series' full stroke
+   *  color, they sit near the neutral AXIS color with only a faint wash of it
+   *  (AXIS_TINT) — still enough to tell the left and right scales apart. */
   neutralAxes?: boolean;
   /** shared-mode only: fill the gap between the lines, green where a > b and
    *  red where a < b, and name it in the legend + tooltip (the "carry"). */
@@ -196,9 +214,13 @@ export function DualLine({
           return (
             <g key={gi}>
               <line x1={padL} y1={yy} x2={plotR} y2={yy} stroke={GRID} strokeWidth={1} />
-              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={shared || neutralAxes ? AXIS : aColor} textAnchor="end" fontFamily="monospace">{aFmt(sa.max - g * (sa.max - sa.min))}</text>
+              {/* Dual axes carry a faint wash of their OWN series color — with two
+                  different scales on screen, fully neutral ticks left no way to
+                  tell which axis reads which line. `shared` has one axis, so it
+                  stays neutral. */}
+              <text x={padL - 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={shared ? AXIS : neutralAxes ? tintedAxis(aColor) : aColor} textAnchor="end" fontFamily="monospace">{aFmt(sa.max - g * (sa.max - sa.min))}</text>
               {!shared && (
-                <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={neutralAxes ? AXIS : bColor} textAnchor="start" fontFamily="monospace">{bFmt(sb.max - g * (sb.max - sb.min))}</text>
+                <text x={plotR + 6} y={yy + 3.5} fontSize={FS} fontWeight={700} fill={neutralAxes ? tintedAxis(bColor) : bColor} textAnchor="start" fontFamily="monospace">{bFmt(sb.max - g * (sb.max - sb.min))}</text>
               )}
             </g>
           );
