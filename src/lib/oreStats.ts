@@ -418,6 +418,8 @@ export type OreMinerDetail = {
 };
 
 export type OreYields = {
+  /** Echo of the applied window (24h|7d|30d|90d|all). */
+  range?: string;
   points: { hour_ts: number; refining_apr: number | null; staking_apr: number | null; window_days: number | null }[];
   latest: { hour_ts: number; refining_apr: number | null; staking_apr: number | null; window_days: number | null } | null;
 };
@@ -428,7 +430,7 @@ export type OreDominancePoint = {
   /** Unrefined treasury ORE / total supply, in percent. */
   dominance_pct: number | null;
 };
-export type OreDominance = { points: OreDominancePoint[]; latest: OreDominancePoint | null };
+export type OreDominance = { range?: string; points: OreDominancePoint[]; latest: OreDominancePoint | null };
 
 export type StatsOverview = {
   ore: {
@@ -495,8 +497,11 @@ export const MTL_ODDS_CHANGE_ROUND = 335_000;
 export const motherlodeOdds = (roundId: number): number => (roundId >= MTL_ODDS_CHANGE_ROUND ? 500 : 625);
 export const expectedPopOre = (roundId: number): number => 0.2 * motherlodeOdds(roundId);
 
-export const fetchOreYields = () => get<OreYields>(`/ore/yields`);
-export const fetchOreDominance = () => get<OreDominance>(`/ore/dominance`);
+// `range` trims which hours are plotted; each point keeps its own rolling-window
+// value, so the same hour reads identically at every zoom level. `latest` is
+// always the newest point of the full series (it drives the headline pills).
+export const fetchOreYields = (range = "all") => get<OreYields>(`/ore/yields?range=${range}`);
+export const fetchOreDominance = (range = "all") => get<OreDominance>(`/ore/dominance?range=${range}`);
 
 /** v4 solo-vs-split over time: deploy lean (behaviour) + outcome rate (luck),
  *  both as a `% solo` share, against the fixed 40% (10/25) expected baseline. */

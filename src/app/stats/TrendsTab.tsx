@@ -68,8 +68,12 @@ function indexByTs<T extends { hour_ts?: number; day_ts?: number }>(
 export function TrendsTab() {
   const [range, setRange] = useState("30d");
   const trends = usePolled(() => fetchOreTrends(range), 60_000, [range]);
-  const yields = usePolled(() => fetchOreYields(), 120_000, []);
-  const dominance = usePolled(() => fetchOreDominance(), 300_000, []);
+  // Both take the range: with empty deps these two ignored the selector entirely
+  // and always drew full history. Server-side the window only trims which hours
+  // come back (values are range-invariant), so the axis zooms and the card
+  // averages below re-average over exactly what's plotted.
+  const yields = usePolled(() => fetchOreYields(range), 120_000, [range]);
+  const dominance = usePolled(() => fetchOreDominance(range), 300_000, [range]);
   const soloSplit = usePolled(() => fetchOreSoloSplitSeries(range), 60_000, [range]);
   const tp = trends.data?.points ?? [];
   const ml = trends.data?.motherlode;
