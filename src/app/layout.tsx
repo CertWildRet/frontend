@@ -66,7 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <div className="flex flex-col items-start gap-4 sm:items-end">
                   <div className="flex gap-2">
                     <Social label="X" href="https://x.com/orestackapp" />
-                    <Social label="Discord" href="https://discord.gg/KP7bBKFsg" />
+                    <Social label="Discord" href="https://t.co/dPLHrecVYL" />
                   </div>
                   <span className="flex items-center gap-2 font-mono text-[12px] text-[#9AA3C8]">
                     Built on
