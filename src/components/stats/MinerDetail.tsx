@@ -127,6 +127,14 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const partialHistory = coverageRatio != null && deployed > 1
     && coverageRatio < 0.9 && (deployed - (eventDepSol ?? 0)) > 0.5;
   const capturedPct = coverageRatio != null ? formatPct(Math.max(0, Math.min(1, coverageRatio))) : null;
+  const partialHistoryTip = partialHistory
+    ? [
+        "Lifetime tiles are the authoritative on-chain totals.",
+        `The per-round history only covers captured rounds${covTs ? ` (event data reaches back to ${covTs.toLocaleDateString()} so far)` : ""}.`,
+        `This wallet deployed most of its ${formatSol(deployed, 0)} SOL earlier, so captured rounds sum to just ${formatSol(eventDepSol ?? 0, 2)} SOL${capturedPct ? ` (${capturedPct} of lifetime)` : ""}.`,
+        "Coverage deepens daily as the backfill digs toward genesis.",
+      ].join(" ")
+    : null;
   // Same figure as Performance → Total net (USD): sum of round-time USD P/L over the series.
   const hasUsd = d.series.some((p) => p.net_usd != null);
   const totalNetUsd = hasUsd
@@ -180,6 +188,12 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
                 Last active <span className="font-semibold text-[#EAECF6]">{timeAgo(lastTs)}</span>
               </span>
             )}
+            {partialHistoryTip && (
+              <span className="inline-flex items-center gap-1 text-amber">
+                Partial history
+                <InfoDot title={partialHistoryTip} />
+              </span>
+            )}
             <RefreshIconButton onClick={det.refresh} disabled={det.fetching} />
           </div>
         </div>
@@ -200,14 +214,6 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
               </span>
             )
           ))}
-        </div>
-      )}
-      {partialHistory && (
-        <div className="mb-3 rounded-lg border border-amber/30 bg-amber/[0.06] px-3 py-2 font-mono text-[12px] leading-relaxed text-amber">
-          <span className="text-white">Lifetime tiles are the authoritative on-chain totals.</span> The
-          per-round history below only covers captured rounds{covTs ? ` (event data reaches back to ${covTs.toLocaleDateString()} so far)` : ""} —
-          this wallet deployed most of its {formatSol(deployed, 0)} SOL earlier, so captured rounds sum to just {formatSol(eventDepSol ?? 0, 2)} SOL
-          {capturedPct ? ` (${capturedPct} of lifetime)` : ""}. Coverage deepens daily as the backfill digs toward genesis.
         </div>
       )}
 
