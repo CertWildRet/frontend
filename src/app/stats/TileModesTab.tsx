@@ -443,6 +443,8 @@ export function TileModesTab() {
         </span>
       </div>
 
+      <SoloSplitTrend />
+
       <ChartCard title="Solo / Split by round" subtitle="Mask is exact (keccak + Fisher–Yates from the round id); outcome + per-tile SOL from the indexed rounds. Solo/split went live at round 349,213.">
         {loading ? (
           <RowsSkeleton rows={6} />
@@ -466,8 +468,6 @@ export function TileModesTab() {
           </>
         )}
       </ChartCard>
-
-      <SoloSplitTrend />
 
       <p className="font-mono text-[12px] text-fog-muted">
         Solo/split assignment is derived from the round id alone, so it&apos;s exact for every round since the v4 cutover (#{formatNum(V4_FIRST_ROUND)}).
