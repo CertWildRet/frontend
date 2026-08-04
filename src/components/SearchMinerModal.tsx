@@ -87,14 +87,14 @@ function SearchMinerModal({ open, onClose }: { open: boolean; onClose: () => voi
 
   return createPortal(
     <div
-      className={`fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/70 p-4 pt-[12vh] backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none sm:items-center sm:pt-4 ${shown ? "opacity-100" : "pointer-events-none opacity-0"}`}
+      className={`fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/70 p-4 pt-[33.333vh] backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "pointer-events-none opacity-0"}`}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="search-miner-modal-title"
     >
       <div
-        className={`my-auto w-full max-w-2xl origin-center transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}
+        className={`w-full max-w-2xl origin-center transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex justify-end">
