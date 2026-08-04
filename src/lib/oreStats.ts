@@ -518,7 +518,16 @@ export type OreSoloSplitSeries = {
     solo_pct: number | null;
     split_pct: number | null;
   };
-  points: { ts: number; solo_deploy_share: number | null; solo_outcome_rate: number | null; rounds: number }[];
+  /** Seconds of rounds aggregated into each point — a point is a WINDOW, not an instant. */
+  bucket_secs?: number;
+  points: {
+    ts: number;
+    solo_deploy_share: number | null;
+    solo_outcome_rate: number | null;
+    rounds: number;
+    /** Rounds in THIS bucket that paid solo (the bucket rate's numerator). */
+    solo_rounds?: number;
+  }[];
 };
 export const fetchOreSoloSplitSeries = (range = "7d") => get<OreSoloSplitSeries>(`/ore/solo-split-series?range=${range}`);
 

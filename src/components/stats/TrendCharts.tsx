@@ -45,7 +45,10 @@ const tintedAxis = (seriesColor: string): string => mixHex(AXIS, seriesColor, AX
 export const SOL_COLOR = "#14F195";
 export const ORE_COLOR = "#FBBF24";
 
-export type TPt = { label: string; value: number | null };
+/** `label` is the x-axis tick AND the tooltip's first line, so it must stay
+ *  short. `note` is tooltip-only: the place to state what a point actually
+ *  covers (its time window, its sample size) when the axis tick can't. */
+export type TPt = { label: string; value: number | null; note?: string };
 
 function useMeasuredWidth(initial = 680): [React.RefObject<HTMLDivElement>, number] {
   const ref = useRef<HTMLDivElement>(null);
@@ -251,8 +254,10 @@ export function DualLine({
             {b[hover].value != null && <circle cx={x(hover)} cy={yb(b[hover].value!)} r={3.5} fill={bColor} stroke={SURFACE} strokeWidth={1.5} />}
             <TrendTooltip x={x(hover)} y={padT + 10} W={W} lines={[
               a[hover].label,
+              ...(a[hover].note ? [a[hover].note] : []),
               `${aName}: ${a[hover].value != null ? aFmt(a[hover].value!) : "·"}`,
               `${bName}: ${b[hover].value != null ? bFmt(b[hover].value!) : "·"}`,
+              ...(b[hover].note ? [b[hover].note] : []),
               ...(shared && band && a[hover].value != null && b[hover].value != null
                 ? [`carry: ${a[hover].value! - b[hover].value! >= 0 ? "+" : ""}${aFmt(a[hover].value! - b[hover].value!)}`]
                 : []),

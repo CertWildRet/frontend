@@ -48,8 +48,29 @@ function SoloSplitTrend() {
     return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:00`;
   };
   const pct = (v: number | null | undefined) => (v == null ? "···" : `${formatNum(v, 1)}%`);
-  const deployLean: TPt[] = pts.map((p) => ({ label: lbl(p.ts), value: p.solo_deploy_share != null ? p.solo_deploy_share * 100 : null }));
-  const outcomeRate: TPt[] = pts.map((p) => ({ label: lbl(p.ts), value: p.solo_outcome_rate != null ? p.solo_outcome_rate * 100 : null }));
+  // Every point is a BUCKET, not an instant. Without saying so, a 44% bucket next
+  // to a 39.5% lifetime headline reads as two contradictory claims — so each
+  // tooltip names its window and its sample size, and the outcome line carries
+  // the raw numerator that produced the percentage.
+  const bucketSecs = series.data?.bucket_secs ?? 21_600;
+  const bucketHrs = Math.max(1, Math.round(bucketSecs / 3600));
+  const span = (ts: number) => {
+    const hh = (d: Date) => `${String(d.getHours()).padStart(2, "0")}:00`;
+    const s = new Date(ts * 1000), e = new Date((ts + bucketSecs) * 1000);
+    return `${s.getMonth() + 1}/${s.getDate()} ${hh(s)}–${hh(e)} (${bucketHrs}h window)`;
+  };
+  const deployLean: TPt[] = pts.map((p) => ({
+    label: lbl(p.ts),
+    value: p.solo_deploy_share != null ? p.solo_deploy_share * 100 : null,
+    note: `${span(p.ts)} · ${formatNum(p.rounds)} rounds`,
+  }));
+  const outcomeRate: TPt[] = pts.map((p) => ({
+    label: lbl(p.ts),
+    value: p.solo_outcome_rate != null ? p.solo_outcome_rate * 100 : null,
+    note: p.solo_rounds != null
+      ? `  └ ${formatNum(p.solo_rounds)} of ${formatNum(p.rounds)} rounds in this window (lifetime: ${pct(t?.solo_pct)})`
+      : undefined,
+  }));
 
   return (
     <ChartCard variant="dispersion" cutCorner="bl" title="Solo vs Split over time">
@@ -63,7 +84,7 @@ function SoloSplitTrend() {
           <span className="text-fog-muted"> · </span>{pct(t?.split_pct)}
         </span>
         <span className="text-[12px] text-fog-muted">
-          all {t ? formatNum(t.rounds) : "···"} v4 rounds · expected 40% / 60%
+          lifetime, all {t ? formatNum(t.rounds) : "···"} v4 rounds · expected 40% / 60%
         </span>
       </div>
       <DualLine a={deployLean} b={outcomeRate}
@@ -76,7 +97,9 @@ function SoloSplitTrend() {
       <p className="mt-2.5 font-mono text-[12px] leading-relaxed text-fog-muted">
         Share of SOL chasing the 10 solo (winner-take-all) tiles — the crowd&apos;s lean — vs the share of
         rounds that actually paid solo. Both against the fixed 40% tile baseline (dashed): deploy lean above
-        the line = solo-chasing; the outcome rate just wobbles around it.
+        the line = solo-chasing; the outcome rate just wobbles around it. Each point is a {bucketHrs}-hour
+        window of rounds, so a single point swings far wider than the lifetime figure above — hover for its
+        exact window and round count.
       </p>
     </ChartCard>
   );
@@ -417,8 +440,9 @@ export function TileModesTab() {
   const v4Total = tip != null ? Math.max(0, tip - V4_FIRST_ROUND + 1) : 0;
   const loading = page.loading && !page.data;
 
-  return (
-    <div className="space-y-5">
+  // The grid's caption + tile legend, kept next to the grid it explains rather
+  // than at the top of the tab (where it read as a header for the trend chart).
+  const gridLegend = (
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 font-mono text-[13px] text-fog-muted">
         <span>
           {tip != null
@@ -442,8 +466,13 @@ export function TileModesTab() {
           </span>
         </span>
       </div>
+  );
 
+  return (
+    <div className="space-y-5">
       <SoloSplitTrend />
+
+      {gridLegend}
 
       <ChartCard title="Solo / Split by round" subtitle="Mask is exact (keccak + Fisher–Yates from the round id); outcome + per-tile SOL from the indexed rounds. Solo/split went live at round 349,213.">
         {loading ? (
