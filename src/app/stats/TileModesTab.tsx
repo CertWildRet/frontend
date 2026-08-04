@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ServiceChip } from "@/components/primitives/ServiceChip";
 import { ChartCard } from "@/components/stats/Charts";
+import { DualLine, type TPt } from "@/components/stats/TrendCharts";
 import { RefreshIconButton } from "@/components/primitives/RefreshIconButton";
 import { RowsSkeleton } from "@/components/primitives/Skeleton";
 import { usePolled } from "@/hooks/useOreStats";
@@ -19,7 +20,7 @@ import {
   roundTileModes, soloSplitDeployStats,
   type TileMode, type SoloSplitDeployStats,
 } from "@/lib/distributionMask";
-import { fetchOreRounds, fetchOreRound, type OreRound, type OreRoundDetail } from "@/lib/oreStats";
+import { fetchOreRounds, fetchOreRound, fetchOreSoloSplitSeries, type OreRound, type OreRoundDetail } from "@/lib/oreStats";
 import { formatNum, formatSol, formatPct } from "@/lib/format";
 import { Pager, PAGE } from "./shared";
 
@@ -33,6 +34,53 @@ const MODE: Record<TileMode, { rgb: string; ink: string; label: string }> = {
   solo: { rgb: "251,191,36", ink: "#FDE08A", label: "Solo" },
   split: { rgb: "59,130,246", ink: "#93C5FD", label: "Split" },
 };
+
+/** Solo-vs-split over time (moved here from Trends, where it sat among charts
+ *  about price and cost rather than beside the mask it describes). The long
+ *  explainer subtitle is replaced by the lifetime tally — the number people
+ *  actually come here for — with the prose kept underneath the chart. */
+function SoloSplitTrend() {
+  const series = usePolled(() => fetchOreSoloSplitSeries("all"), 60_000, []);
+  const pts = series.data?.points ?? [];
+  const t = series.data?.totals;
+  const lbl = (ts: number) => {
+    const d = new Date(ts * 1000);
+    return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:00`;
+  };
+  const pct = (v: number | null | undefined) => (v == null ? "···" : `${formatNum(v, 1)}%`);
+  const deployLean: TPt[] = pts.map((p) => ({ label: lbl(p.ts), value: p.solo_deploy_share != null ? p.solo_deploy_share * 100 : null }));
+  const outcomeRate: TPt[] = pts.map((p) => ({ label: lbl(p.ts), value: p.solo_outcome_rate != null ? p.solo_outcome_rate * 100 : null }));
+
+  return (
+    <ChartCard variant="dispersion" cutCorner="bl" title="Solo vs Split over time">
+      <div className="mb-3 flex flex-wrap items-baseline gap-x-5 gap-y-1.5 font-mono text-[13px]">
+        <span style={{ color: MODE.solo.ink }}>
+          Solo <span className="font-bold">{t ? formatNum(t.solo_rounds) : "···"}</span>
+          <span className="text-fog-muted"> · </span>{pct(t?.solo_pct)}
+        </span>
+        <span style={{ color: MODE.split.ink }}>
+          Split <span className="font-bold">{t ? formatNum(t.split_rounds) : "···"}</span>
+          <span className="text-fog-muted"> · </span>{pct(t?.split_pct)}
+        </span>
+        <span className="text-[12px] text-fog-muted">
+          all {t ? formatNum(t.rounds) : "···"} v4 rounds · expected 40% / 60%
+        </span>
+      </div>
+      <DualLine a={deployLean} b={outcomeRate}
+        aName="Deploy lean (SOL on solos)" bName="Outcome rate (rounds paid solo)"
+        aColor="#FBBF24" bColor="#5B6CFF" shared
+        refLine={{ value: 40, name: "expected 40% (10/25 tiles)", color: "#9094A0" }}
+        aFmt={(v) => `${v.toFixed(0)}%`} bFmt={(v) => `${v.toFixed(0)}%`}
+        height={250} loading={series.loading && !series.data}
+        emptyText="Collecting v4 rounds…" />
+      <p className="mt-2.5 font-mono text-[12px] leading-relaxed text-fog-muted">
+        Share of SOL chasing the 10 solo (winner-take-all) tiles — the crowd&apos;s lean — vs the share of
+        rounds that actually paid solo. Both against the fixed 40% tile baseline (dashed): deploy lean above
+        the line = solo-chasing; the outcome rate just wobbles around it.
+      </p>
+    </ChartCard>
+  );
+}
 
 const shortKey = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "·");
 const isSplitWinner = (topMiner?: string | null) => topMiner?.startsWith(SPLIT_SENTINEL) ?? false;
@@ -418,6 +466,8 @@ export function TileModesTab() {
           </>
         )}
       </ChartCard>
+
+      <SoloSplitTrend />
 
       <p className="font-mono text-[12px] text-fog-muted">
         Solo/split assignment is derived from the round id alone, so it&apos;s exact for every round since the v4 cutover (#{formatNum(V4_FIRST_ROUND)}).

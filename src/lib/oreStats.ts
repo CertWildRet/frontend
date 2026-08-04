@@ -509,6 +509,15 @@ export type OreSoloSplitSeries = {
   range: string;
   expected_solo_share: number;
   v4_first_round: number;
+  /** Lifetime tally over every settled v4 round — NOT range-scoped, so it stays
+   *  put when the chart window narrows. */
+  totals?: {
+    rounds: number;
+    solo_rounds: number;
+    split_rounds: number;
+    solo_pct: number | null;
+    split_pct: number | null;
+  };
   points: { ts: number; solo_deploy_share: number | null; solo_outcome_rate: number | null; rounds: number }[];
 };
 export const fetchOreSoloSplitSeries = (range = "7d") => get<OreSoloSplitSeries>(`/ore/solo-split-series?range=${range}`);

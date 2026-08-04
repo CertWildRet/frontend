@@ -8,7 +8,7 @@ import { ChartCard, type Pt } from "@/components/stats/Charts";
 import { DualLine, CostEvChart, BarsLine, PopBars, ORE_COLOR, type TPt } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
 import {
-  fetchOreTrends, fetchOreYields, fetchOreDominance, fetchOreSoloSplitSeries,
+  fetchOreTrends, fetchOreYields, fetchOreDominance,
   expectedPopOre,
   type OreTrendPoint,
 } from "@/lib/oreStats";
@@ -74,7 +74,6 @@ export function TrendsTab() {
   // averages below re-average over exactly what's plotted.
   const yields = usePolled(() => fetchOreYields(range), 120_000, [range]);
   const dominance = usePolled(() => fetchOreDominance(range), 300_000, [range]);
-  const soloSplit = usePolled(() => fetchOreSoloSplitSeries(range), 60_000, [range]);
   const tp = trends.data?.points ?? [];
   const ml = trends.data?.motherlode;
   // Motherlode odds are round-gated on-chain (1-in-625 -> 1-in-500 at round
@@ -123,11 +122,6 @@ export function TrendsTab() {
   if (ml?.current_pool_ore != null) popExpected.push(mlExpected);
   const nowLive = trends.data?.now ?? null;
   const evNow = nowLive?.ev_pct ?? [...tp].reverse().find((p) => p.ev_pct != null)?.ev_pct ?? null;
-
-  // v4 solo/split: deploy lean (behaviour) + outcome rate (luck), both as % solo.
-  const ssPts = soloSplit.data?.points ?? [];
-  const deployLean: TPt[] = ssPts.map((p) => ({ label: hLbl(p.ts), value: p.solo_deploy_share != null ? p.solo_deploy_share * 100 : null }));
-  const outcomeRate: TPt[] = ssPts.map((p) => ({ label: hLbl(p.ts), value: p.solo_outcome_rate != null ? p.solo_outcome_rate * 100 : null }));
 
   return (
     <div className="space-y-5">
@@ -186,20 +180,7 @@ export function TrendsTab() {
             barColor="#22E0E6" lineColor={ORE_COLOR}
             barFmt={(v) => formatNum(v, 1)} lineFmt={(v) => formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
-        {/* (4) v4 solo/split — deploy behaviour vs realised outcome, both vs the 40% baseline */}
-        <div className="lg:col-span-2">
-          <ChartCard variant="dispersion" cutCorner="bl" title="Solo vs Split over time"
-            subtitle="v4: share of SOL chasing the 10 solo (winner-take-all) tiles — the crowd's lean — vs the share of rounds that actually paid solo. Both against the fixed 40% tile baseline (dashed). Deploy lean above the line = solo-chasing; the outcome rate just wobbles around it.">
-            <DualLine a={deployLean} b={outcomeRate}
-              aName="Deploy lean (SOL on solos)" bName="Outcome rate (rounds paid solo)"
-              aColor="#FBBF24" bColor="#5B6CFF" shared
-              refLine={{ value: 40, name: "expected 40% (10/25 tiles)", color: "#9094A0" }}
-              aFmt={(v) => `${v.toFixed(0)}%`} bFmt={(v) => `${v.toFixed(0)}%`}
-              height={250} loading={soloSplit.loading && !soloSplit.data}
-              emptyText="Collecting v4 rounds…" />
-          </ChartCard>
-        </div>
-        {/* (5) yields — refining vs staking APR. Half-width, paired in a row with miner dominance. */}
+        {/* (4) yields — refining vs staking APR. Half-width, paired in a row with miner dominance. */}
         <div>
           <ChartCard variant="dispersion" cutCorner="tr" title="Yields · hold unclaimed vs claim & stake"
             subtitle="Refining APR on unclaimed ORE vs stORE staking APR. The shaded gap is the carry you keep by not claiming.">
