@@ -1,0 +1,35 @@
+/* /platform-health — light clone of the profile hero tokens (same palette,
+ * far less ceremony: this is an ops page, the data is the design). */
+.page {
+  --health-cyan: #22e0e6;
+  --health-blue: #5b6cff;
+  position: relative;
+  isolation: isolate;
+}
+
+.hero {
+  position: relative;
+  border-radius: 18px;
+  padding: 20px 24px;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01) 42%, rgba(7, 9, 18, 0.28)),
+    rgba(14, 18, 34, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 20px 60px -30px rgba(0, 0, 0, 0.85);
+}
+
+.statusChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  border: 1px solid;
+  padding: 4px 10px;
+  font-weight: 700;
+  font-size: 13px;
+}
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+}
