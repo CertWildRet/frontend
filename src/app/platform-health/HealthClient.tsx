@@ -366,7 +366,7 @@ export function HealthClient() {
                 </tr></thead>
                 <tbody>
                   {h.downtime.episodes.map((e, i) => (
-                    <tr key={i} className="border-t border-line/50 text-gray-300">
+                    <tr key={i} className="border-t border-[rgba(91,108,255,0.16)] text-gray-300">
                       <td className="py-1.5 pr-4">{fmtEpochRange(e.from_ts, e.to_ts)}</td>
                       <td className="py-1.5 pr-4 text-right text-white">{fmtDur(e.minutes)}</td>
                       <td className="py-1.5">
@@ -453,7 +453,7 @@ export function HealthClient() {
               </tr></thead>
               <tbody>
                 {h.workers.map((w) => (
-                  <tr key={w.name} className="border-t border-line/50 text-gray-300">
+                  <tr key={w.name} className="border-t border-[rgba(91,108,255,0.16)] text-gray-300">
                     <td className="py-1.5 pr-3 text-white">{w.name}</td>
                     <td className="py-1.5 pr-3">
                       <span style={{ color: WORKER_STATUS_COLOR[w.status] ?? "#B7BDD2" }}>{w.status}</span>
