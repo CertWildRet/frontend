@@ -8,7 +8,11 @@
  * (verified upstream), so a range comparison can never be drawn.
  */
 
-export type RwaAssetClass = "Commodity" | "Equity" | "Crypto" | "Index" | "Forex" | "Basket";
+// Only the three classes Autonom serves BARS for. The 6xxx (forex), 7xxx
+// (index/rates), and 8xxx (basket) families are quotes-only — verified feed by
+// feed (SPX, NDX, VIX, VIX_FUT, EURUSD, USDJPY, PMX, CRYPTO3_EQW all return
+// zero bars) — and futures (CL1, NG) are too; SPOT commodities work.
+export type RwaAssetClass = "Commodity" | "Equity" | "Crypto";
 
 /** How a price quote should be labelled in the UI (never present stale as live). */
 export type FreshnessLabel = "live" | "market_closed" | "last_close" | "stale";
@@ -28,15 +32,15 @@ export type RwaAsset = {
 export const RWA_ASSETS: readonly RwaAsset[] = [
   { feedId: 2056, symbol: "XAU", name: "Gold", assetClass: "Commodity", marketHours: "24/5" },
   { feedId: 2069, symbol: "XAG", name: "Silver", assetClass: "Commodity", marketHours: "24/5" },
+  { feedId: 2062, symbol: "XPT", name: "Platinum", assetClass: "Commodity", marketHours: "24/5" },
+  { feedId: 2035, symbol: "WTI", name: "Crude WTI Spot", assetClass: "Commodity", marketHours: "24/5" },
   { feedId: 1027, symbol: "SPY", name: "S&P 500", assetClass: "Equity", marketHours: "equity" },
+  { feedId: 1015, symbol: "QQQ", name: "Nasdaq-100", assetClass: "Equity", marketHours: "equity" },
   { feedId: 1022, symbol: "NVDA", name: "NVIDIA", assetClass: "Equity", marketHours: "equity" },
   { feedId: 1014, symbol: "MSTR", name: "MicroStrategy", assetClass: "Equity", marketHours: "equity" },
   { feedId: 3001, symbol: "BTC", name: "Bitcoin", assetClass: "Crypto", marketHours: "24/7" },
   // ETH, not SOL — the ORE/SOL comparison already lives on the Trends page.
   { feedId: 3002, symbol: "ETH", name: "Ethereum", assetClass: "Crypto", marketHours: "24/7" },
-  { feedId: 7001, symbol: "SPX", name: "S&P 500 Index", assetClass: "Index", marketHours: "equity" },
-  { feedId: 6001, symbol: "EURUSD", name: "Euro / US Dollar", assetClass: "Forex", marketHours: "24/5" },
-  { feedId: 8001, symbol: "AUBTC50", name: "Gold/BTC 50:50", assetClass: "Basket", marketHours: "24/7" },
 ] as const;
 
 export const DEFAULT_RWA_FEED_ID = 2056; // Gold
@@ -51,7 +55,7 @@ export const RWA_RANGES = [
 
 export type RwaRange = (typeof RWA_RANGES)[number]["id"];
 
-export const RWA_ASSET_CLASSES: RwaAssetClass[] = ["Commodity", "Equity", "Crypto", "Index", "Forex", "Basket"];
+export const RWA_ASSET_CLASSES: RwaAssetClass[] = ["Commodity", "Equity", "Crypto"];
 
 export function rwaAssetByFeedId(feedId: number): RwaAsset | undefined {
   return RWA_ASSETS.find((a) => a.feedId === feedId);

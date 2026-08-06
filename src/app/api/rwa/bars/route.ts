@@ -19,12 +19,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const feedId = Number(url.searchParams.get("feed_id"));
   const rangeRaw = (url.searchParams.get("range") || "30d") as RwaRange;
-  // Roster feeds + a small evaluation set: candidate benchmarks whose bar
-  // availability can only be tested through this key-holding proxy (the
-  // oracle serves quotes for many feeds it has no bars for — CL1/T3MO_Y/SPX/
-  // EURUSD all proved that). Not in RWA_ASSETS, so the UI never shows them.
-  const CANDIDATE_FEED_IDS = [7002, 7003, 7010, 6002, 8003, 8004, 2061, 2062, 2035, 2025];
-  const allowed = new Set([...RWA_ASSETS.map((a) => a.feedId), ...CANDIDATE_FEED_IDS]);
+  const allowed = new Set(RWA_ASSETS.map((a) => a.feedId));
 
   if (!Number.isFinite(feedId) || !allowed.has(feedId)) {
     return NextResponse.json(
