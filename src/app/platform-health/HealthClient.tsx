@@ -71,6 +71,93 @@ const WORKER_STATUS_COLOR: Record<string, string> = {
   STANDBY: "#B7BDD2", COMPLETE: "#B7BDD2", STARTING: "#FBBF24", DISABLED: "#6B7280",
 };
 
+/** Plain-language status meanings — written for a non-technical reader. */
+const WORKER_STATUS_INFO: Record<string, string> = {
+  HEALTHY: "Last run finished successfully. Everything normal.",
+  RUNNING: "Doing a pass right now.",
+  ERROR: "The most recent run failed — see the error on the right. One failure is usually transient; repeated failures matter.",
+  STANDBY: "Skipped its last turn because another copy of the service held the work lease. Normal on shared infra, not an error.",
+  COMPLETE: "A one-time job that already finished. It will not run again.",
+  STARTING: "Registered but hasn't taken its first turn since the service booted.",
+  DISABLED: "Switched off on purpose via config. Not a failure.",
+};
+
+/** What each background worker does + how to read its "last result" number.
+ *  Written for a non-technical reader; shown inline (does) and on hover (result). */
+const WORKER_INFO: Record<string, { does: string; result: string }> = {
+  "ore-live-round": {
+    does: "Watches the live round on-chain every few seconds — keeps the current board (tiles, SOL, miner count) fresh on the site.",
+    result: "Shows \"ok\" after each pass. It runs every ~4 seconds, so \"last ok\" should always be seconds ago.",
+  },
+  "ore-reset-tail": {
+    does: "Catches each round's final settlement record (one per ~75s round) so finished rounds get their outcome quickly.",
+    result: "Number of new settlements ingested this pass — 0 between rounds is normal.",
+  },
+  "ore-tip": {
+    does: "The main indexer: reads every deploy transaction from chain and records who staked what, on which tile.",
+    result: "Events processed this pass. Hundreds per pass is normal during busy rounds.",
+  },
+  "ore-cumulative": {
+    does: "Recomputes the running totals (emission, rake, vaulted) for newly settled rounds.",
+    result: "Rounds advanced this pass — 0 while waiting for the next settlement is normal.",
+  },
+  "ore-reset-backfill": {
+    does: "One-time gap filler that stitched old settlements down to the historical import. Its gap closed long ago; passes are no-ops.",
+    result: "Rounds filled — 0 is the expected steady state.",
+  },
+  "ore-missing-retry": {
+    does: "Retries the handful of transactions the indexer couldn't fetch on the first try (pruned or flaky RPC responses).",
+    result: "Transactions recovered — 0 means nothing is missing, which is the good case.",
+  },
+  "ore-backfill-missing-retry": {
+    does: "Retry lane for the deep history walk. Off while the walk is paused.",
+    result: "Disabled — no output expected.",
+  },
+  "ore-prices": {
+    does: "Pulls ORE and SOL prices from CoinGecko every minute. No blockchain involved — this is why it keeps running through RPC outages.",
+    result: "Price rows written (usually 0 or 1 — one per hourly bucket).",
+  },
+  "ore-prices-gapfill": {
+    does: "Backfills any price hours the minute-poller missed.",
+    result: "Hours filled — 0 means no holes.",
+  },
+  "ore-factor-snapshot": {
+    does: "Snapshots the on-chain treasury every ~5 minutes — powers the Yields charts, and its gaps double as this page's downtime detector.",
+    result: "1 when a snapshot landed, 0 when the 5-minute lease wasn't due yet.",
+  },
+  "ore-daily-activity": {
+    does: "Rolls up daily mining activity (rounds, unique miners, volume, whale share) for the Trends charts.",
+    result: "Days recomputed this pass.",
+  },
+  "ore-census": {
+    does: "Full sweep of every miner account on-chain (~every 30 min) — powers the leaderboard and miner balances.",
+    result: "Miner accounts captured (~30,000+ on a real sweep; 0 between sweeps is normal).",
+  },
+  "ore-miner-cohorts": {
+    does: "Groups miners into size buckets (Plankton → Whale) from the census — the Cohort tab's miner view.",
+    result: "Snapshots derived this pass.",
+  },
+  "ore-holder-cohorts": {
+    does: "Sweeps every ORE token holder wallet (~every 30 min) — the Cohort tab's wallet-holders view.",
+    result: "Holder wallets counted on a real sweep (~26,000+); 0 between sweeps is normal.",
+  },
+  "ore-warm-miners": {
+    does: "Pre-computes the most-viewed miner pages every 6 hours so they open instantly instead of taking minutes.",
+    result: "Miner pages warmed. STANDBY between 6-hour passes is normal.",
+  },
+  "ore-health-heartbeat": {
+    does: "Records where every data frontier sits every 5 minutes — the recorder feeding this very page's staleness history.",
+    result: "1 per beat.",
+  },
+  "ore-backfill": {
+    does: "The deep history walk toward round zero. Paused on purpose — it runs on its own dedicated RPC when enabled.",
+    result: "Disabled — no output expected.",
+  },
+};
+
+/** Rounds settle ~every 66s — rough count of rounds whose data arrived late. */
+const roundsDelayed = (minutes: number): number => Math.round((minutes * 60) / 66);
+
 /** Small colored pill, the page's one repeated accent device. */
 function Pill({ color, children, title }: { color: string; children: React.ReactNode; title?: string }) {
   return (
@@ -317,19 +404,30 @@ export function HealthClient() {
             <div className="overflow-x-auto">
               <table className="w-full font-mono text-[12.5px] [font-variant-numeric:tabular-nums]">
                 <thead><tr className="text-left text-gray-500">
-                  <th className="py-1 pr-4 font-semibold">window (local)</th>
-                  <th className="py-1 pr-4 text-right font-semibold">duration</th>
-                  <th className="py-1 font-semibold">scope</th>
+                  <th className="whitespace-nowrap py-1 pr-6 font-semibold" title="When the outage started and ended, in your local time">window (local)</th>
+                  <th className="whitespace-nowrap py-1 pr-6 text-right font-semibold" title="How long chain snapshots were missing">duration</th>
+                  <th className="whitespace-nowrap py-1 pr-6 text-right font-semibold" title="Rough number of game rounds whose data arrived late (rounds settle about every 66 seconds). Delayed, not lost — ingestion backfills after recovery.">≈ rounds delayed</th>
+                  <th className="whitespace-nowrap py-1 pr-6 font-semibold" title="What was down: 'rpc only' = our blockchain connection; 'service down' = the whole analytics service">scope</th>
+                  <th className="w-full py-1 font-semibold" title="What this meant for the site while it lasted">impact</th>
                 </tr></thead>
                 <tbody>
                   {h.downtime.episodes.map((e, i) => (
                     <tr key={i} className="border-t text-gray-300" style={{ borderColor: DIVIDER }}>
-                      <td className="py-1.5 pr-4">{fmtEpochRange(e.from_ts, e.to_ts)}</td>
-                      <td className="py-1.5 pr-4 text-right text-white">{fmtDur(e.minutes)}</td>
-                      <td className="py-1.5">
-                        <Pill color={e.scope === "service" ? "#F87171" : "#FBBF24"}>
+                      <td className="whitespace-nowrap py-1.5 pr-6">{fmtEpochRange(e.from_ts, e.to_ts)}</td>
+                      <td className="whitespace-nowrap py-1.5 pr-6 text-right text-white">{fmtDur(e.minutes)}</td>
+                      <td className="whitespace-nowrap py-1.5 pr-6 text-right">{formatNum(roundsDelayed(e.minutes))}</td>
+                      <td className="whitespace-nowrap py-1.5 pr-6">
+                        <Pill color={e.scope === "service" ? "#F87171" : "#FBBF24"}
+                          title={e.scope === "service"
+                            ? "Price hours are missing too — the whole analytics service was down, not just its chain connection."
+                            : "The off-chain price feed kept landing, so workers were alive — only the blockchain (RPC) side stopped."}>
                           {e.scope === "service" ? "service down" : "rpc only"}
                         </Pill>
+                      </td>
+                      <td className="py-1.5 text-[12px] text-gray-500">
+                        {e.scope === "service"
+                          ? "site data frozen while it lasted; backfilled after recovery"
+                          : "chain data paused; prices kept updating; backfilled after recovery"}
                       </td>
                     </tr>
                   ))}
@@ -458,28 +556,41 @@ export function HealthClient() {
           <div className="overflow-x-auto">
             <table className="w-full font-mono text-[12.5px] [font-variant-numeric:tabular-nums]">
               <thead><tr className="text-left text-gray-500">
-                <th className="py-1 pr-3 font-semibold">worker</th>
-                <th className="py-1 pr-3 font-semibold">status</th>
-                <th className="py-1 pr-3 text-right font-semibold">last ok</th>
-                <th className="py-1 pr-3 text-right font-semibold">runs</th>
-                <th className="py-1 pr-3 text-right font-semibold">fails</th>
-                <th className="py-1 font-semibold">last result / error</th>
+                <th className="whitespace-nowrap py-1 pr-5 font-semibold">worker</th>
+                <th className="w-full py-1 pr-5 font-semibold">what it does</th>
+                <th className="whitespace-nowrap py-1 pr-5 font-semibold" title="HEALTHY = last run succeeded · RUNNING = mid-pass right now · STANDBY = skipped its turn (another instance held the lease — normal) · COMPLETE = one-time job, finished · DISABLED = switched off on purpose · ERROR = last run failed">status</th>
+                <th className="whitespace-nowrap py-1 pr-5 text-right font-semibold" title="When this worker last finished a pass successfully. Compare against its cadence: a 4-second worker should read seconds ago, a 6-hour one can read hours ago.">last ok</th>
+                <th className="whitespace-nowrap py-1 pr-5 text-right font-semibold" title="Successful passes since the service last restarted (resets on every deploy)">runs</th>
+                <th className="whitespace-nowrap py-1 pr-5 text-right font-semibold" title="Failed passes since the last restart. Occasional blips self-heal; a climbing number matters.">fails</th>
+                <th className="whitespace-nowrap py-1 font-semibold" title="What the last pass reported — hover a value to see what the number means for that worker">last result</th>
               </tr></thead>
               <tbody>
-                {h.workers.map((w) => (
-                  <tr key={w.name} className="border-t text-gray-300" style={{ borderColor: DIVIDER }}>
-                    <td className="py-1.5 pr-3 text-white">{w.name}</td>
-                    <td className="py-1.5 pr-3">
-                      <span style={{ color: WORKER_STATUS_COLOR[w.status] ?? "#B7BDD2" }}>{w.status}</span>
-                    </td>
-                    <td className="py-1.5 pr-3 text-right">{ago(w.last_success_at)}</td>
-                    <td className="py-1.5 pr-3 text-right">{formatNum(w.successes)}</td>
-                    <td className="py-1.5 pr-3 text-right" style={{ color: w.failures ? "#FBBF24" : undefined }}>{formatNum(w.failures)}</td>
-                    <td className="max-w-[320px] truncate py-1.5 text-[11.5px] text-gray-500" title={w.last_error ?? w.last_result ?? undefined}>
-                      {w.status === "ERROR" && w.last_error ? <span className="text-red">{w.last_error}</span> : w.last_result ?? "·"}
-                    </td>
-                  </tr>
-                ))}
+                {h.workers.map((w) => {
+                  const info = WORKER_INFO[w.name];
+                  return (
+                    <tr key={w.name} className="border-t align-top text-gray-300" style={{ borderColor: DIVIDER }}>
+                      <td className="whitespace-nowrap py-2 pr-5 text-white">{w.name}</td>
+                      <td className="min-w-[260px] py-2 pr-5 text-[12px] leading-relaxed text-gray-500">{info?.does ?? "·"}</td>
+                      <td className="whitespace-nowrap py-2 pr-5">
+                        <span style={{ color: WORKER_STATUS_COLOR[w.status] ?? "#B7BDD2" }}
+                          title={WORKER_STATUS_INFO[w.status]}>{w.status}</span>
+                      </td>
+                      <td className="whitespace-nowrap py-2 pr-5 text-right"
+                        title={w.interval_ms != null ? `runs every ${w.interval_ms >= 60_000 ? `${Math.round(w.interval_ms / 60_000)} min` : `${Math.round(w.interval_ms / 1000)}s`}` : undefined}>
+                        {ago(w.last_success_at)}
+                      </td>
+                      <td className="whitespace-nowrap py-2 pr-5 text-right">{formatNum(w.successes)}</td>
+                      <td className="whitespace-nowrap py-2 pr-5 text-right" style={{ color: w.failures ? "#FBBF24" : undefined }}
+                        title={w.failures ? `${w.failures} failed pass(es) since restart — see last error` : "no failures since the last restart"}>
+                        {formatNum(w.failures)}
+                      </td>
+                      <td className="max-w-[220px] truncate py-2 text-[11.5px] text-gray-500"
+                        title={w.status === "ERROR" && w.last_error ? w.last_error : info?.result ?? w.last_result ?? undefined}>
+                        {w.status === "ERROR" && w.last_error ? <span className="text-red">{w.last_error}</span> : w.last_result ?? "·"}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
