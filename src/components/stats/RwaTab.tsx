@@ -142,8 +142,10 @@ export function RwaTab() {
     );
     // The newest bucket additionally takes the live quote when it is fresher
     // than the last bar — the chart's endpoint then always matches the quoted
-    // price in the strip above, open or closed.
-    if (peerFilled.length && quote?.price != null) {
+    // price in the strip above, open or closed. Only when real bars exist:
+    // pinning a quote onto a bar-less feed fabricated a single-point series
+    // that normalized to a fake 0.00%.
+    if (peerFilled.some((v) => v != null) && quote?.price != null) {
       const i = peerFilled.length - 1;
       if (peerFilled[i] == null || carried[i]) {
         peerFilled[i] = quote.price;
@@ -250,6 +252,13 @@ export function RwaTab() {
                 formatPctChange(chart.lastPeer)
               ) : bars.loading ? (
                 "···"
+              ) : bars.error?.includes("no bars in response") ? (
+                // Truth, not a broken fetch: the oracle serves live quotes for
+                // this asset but no price history — retrying can't change that.
+                <span className="rounded border border-line bg-ink-800/60 px-2 py-1 text-[13px] font-semibold text-fog-muted"
+                  title="Autonom serves a live quote for this asset but no historical bars, so a range comparison can't be drawn.">
+                  quotes only · no history
+                </span>
               ) : (
                 <button type="button" onClick={bars.refresh}
                   className="rounded border border-amber-500/35 bg-amber-500/10 px-2 py-1 text-[13px] font-semibold text-amber-200 transition-colors hover:border-amber-500/60"
