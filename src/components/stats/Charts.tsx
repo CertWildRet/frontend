@@ -9,6 +9,7 @@
  * steel #9DB7D8 (primary), amber #E8881A (secondary), green #4ADE80.
  */
 import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { IconRefresh } from "@tabler/icons-react";
 import { useFillHeight } from "@/hooks/useFillHeight";
 import styles from "@/app/dispersion.module.css";
@@ -51,6 +52,10 @@ export function ChartCard({
   compact?: boolean;
 }) {
   const watermark = useContext(ChartWatermarkContext);
+  // Watermark names the page the screenshot came from — /search cards were
+  // stamped diamondpools.app/stats before this.
+  const pathname = usePathname();
+  const watermarkLabel = `diamondpools.app${pathname === "/" ? "" : pathname ?? "/stats"}`;
   const cutClass = cutCorner === "bl" ? styles.cutBL : styles.cutTR;
   const pad = compact ? "px-4 py-3 sm:px-4 sm:py-3" : "px-5 py-5 sm:px-6 sm:py-6";
   const surfaceClass =
@@ -154,7 +159,7 @@ export function ChartCard({
                   className="pointer-events-none select-none whitespace-nowrap font-mono text-[10px] leading-none tracking-tight text-[#C7D0EA] sm:text-[12px]"
                   style={{ opacity: 0.75 }}
                 >
-                  diamondpools.app/stats
+                  {watermarkLabel}
                 </div>
               </div>
             )}

@@ -392,6 +392,9 @@ export type OreMinerDetail = {
     round_id: string; ts: string | null; deployed: string; mask_union: string; stake_w: string;
     winning_tile: number | null; total_winnings: string | null; deployed_winning_square: string | null;
     total_minted: string | null; is_split: number | null;
+    /** Solo-ORE winner + motherlode pool paid — lets the client compute the
+     *  round's ORE won with the same rules the series uses. */
+    top_miner?: string | null; motherlode_paid?: string | null;
   }[];
   /** Per-tile deploy counts (25) across every deploy in the event window. */
   tiles: number[] | null;

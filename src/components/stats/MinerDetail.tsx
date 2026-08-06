@@ -9,6 +9,7 @@
  * Visuals are shared via stats.module.css.
  */
 import Image from "next/image";
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { IconExternalLink } from "@tabler/icons-react";
 import { SegmentedControl } from "@/components/primitives/TabBar";
@@ -116,15 +117,20 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const dv = d.derived;
   const hasEvents = !!d.events && d.series.length > 0;
   const covTs = d.coverage?.min_ts ? new Date(d.coverage.min_ts * 1000) : null;
-  // Same figure as Performance → Total net (USD): sum of round-time USD P/L over the series.
-  const hasUsd = d.series.some((p) => p.net_usd != null);
-  const totalNetUsd = hasUsd
-    ? d.series.reduce((a, p) => a + (p.net_usd ?? 0), 0)
-    : null;
-  const nSeriesRounds = d.series.reduce((a, p) => a + (p.n ?? 1), 0);
-  const avgPerRoundUsd = totalNetUsd != null && nSeriesRounds > 0
-    ? totalNetUsd / nSeriesRounds
-    : null;
+  // Net P&L = current-rate accounting over the FULL lifetime census, not the
+  // fetched window: net SOL (returned − deployed) valued at today's SOL price,
+  // plus lifetime ORE earned valued at today's ORE price. One consistent
+  // "what is this mining position worth in dollars now" figure — the previous
+  // window-summed number silently changed with the timeframe toggle while
+  // claiming to be lifetime.
+  const solNow = d.prices_now?.sol_usd ?? null;
+  const oreNow = d.prices_now?.ore_usd ?? null;
+  const solLegUsd = solNow != null ? net * solNow : null;
+  const oreLegUsd = oreNow != null ? oreLifetime * oreNow : null;
+  const pnlUsd = solLegUsd != null && oreLegUsd != null ? solLegUsd + oreLegUsd : null;
+  const roundsAll = hs?.rounds ?? d.series.reduce((a, p) => a + (p.n ?? 1), 0);
+  const avgPerRoundUsd = pnlUsd != null && roundsAll > 0 ? pnlUsd / roundsAll : null;
+  const fmtSignedUsd = (v: number, dec = 2) => `${v >= 0 ? "+" : "-"}$${formatNum(Math.abs(v), dec)}`;
 
   const HISTORY_PREVIEW = 10;
   const historyRows = historyExpanded ? d.history : d.history.slice(0, HISTORY_PREVIEW);
@@ -209,19 +215,29 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
             <InfoDot
               className="text-fog-muted"
               title={
-                totalNetUsd != null
-                  ? "Sum of round-time USD P&L over captured rounds — same figure as Performance → Total net"
+                pnlUsd != null
+                  ? "Current-rate accounting: lifetime net SOL (returned − deployed) valued at today's SOL price, plus lifetime ORE earned valued at today's ORE price — what this mining position is worth in dollars right now. Both legs from the on-chain census."
                   : censusMissing
                     ? "Won − deployed over captured rounds"
                     : "Returned − deployed from on-chain lifetime census"
               }
             />
           </div>
-          <div className="flex min-h-0 items-center py-2.5 md:flex-1 md:py-0.5">
-            {totalNetUsd != null ? (
-              <span className={`num block text-[2.75rem] leading-[0.9] tracking-tight md:text-[clamp(2.75rem,28cqh,4.25rem)] ${netTone(totalNetUsd)}`}>
-                {totalNetUsd >= 0 ? "+" : "-"}${formatNum(Math.abs(totalNetUsd), 2)}
-              </span>
+          <div className="flex min-h-0 flex-col justify-center gap-2 py-2.5 md:flex-1 md:py-0.5">
+            {pnlUsd != null ? (
+              <>
+                <span className={`num block text-[2.75rem] leading-[0.9] tracking-tight md:text-[clamp(2.75rem,28cqh,4.25rem)] ${netTone(pnlUsd)}`}>
+                  {fmtSignedUsd(pnlUsd)}
+                </span>
+                {/* The reconciliation the page never offered: how a negative net
+                    SOL and a pile of ORE combine into one dollar figure. */}
+                <span className="num text-[13px] text-[#8B93B4]">
+                  SOL <span className={netTone(solLegUsd ?? 0)}>{fmtSignedUsd(solLegUsd ?? 0)}</span>
+                  <span className="text-[#5A6284]"> · </span>
+                  ORE <span className={netTone(oreLegUsd ?? 0)}>{fmtSignedUsd(oreLegUsd ?? 0)}</span>
+                  <span className="text-[#5A6284]"> at current prices</span>
+                </span>
+              </>
             ) : (
               <div className="flex items-baseline gap-2 whitespace-nowrap">
                 <span className={`num text-[2.75rem] leading-[0.9] tracking-tight md:text-[clamp(2.75rem,28cqh,4.25rem)] ${netTone(net)}`}>
@@ -244,8 +260,9 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
               <>
                 Average per round:{" "}
                 <span className={`font-semibold ${netTone(avgPerRoundUsd)}`}>
-                  {avgPerRoundUsd >= 0 ? "+" : "-"}${formatNum(Math.abs(avgPerRoundUsd), 2)}
+                  {fmtSignedUsd(avgPerRoundUsd)}
                 </span>
+                <span className="text-[#8B93B4]"> over {formatNum(roundsAll)} rounds</span>
               </>
             ) : (
               <>Average per round: <span className="font-semibold text-[#EAECF6]">·</span></>
@@ -342,7 +359,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
             />
             <LifetimeCell
               label="ORE earned"
-              value={formatNum(oreLifetime, 2)}
+              value={<span className="text-[#86EFAC]">{formatNum(oreLifetime, 2)}</span>}
               unit="ORE"
               className="rounded-xl border border-line bg-[rgba(255,192,97,0.07)]"
             />
@@ -380,6 +397,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           pubkey={pubkey}
           series={d.series}
           derived={dv}
+          pricesNow={d.prices_now}
           roundsWin={roundsWin}
           setRoundsWin={setRoundsWin}
           refreshing={det.fetching && !!det.data}
@@ -400,7 +418,8 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
             <th className={`${th} hidden text-right sm:table-cell`}>Tiles</th>
             <th className={`${th} text-right`}>Result</th>
             <th className={`${th} text-right`}>SOL back</th>
-            <th className={`${th} text-right`}>Net</th>
+            <th className={`${th} hidden text-right sm:table-cell`}>ORE</th>
+            <th className={`${th} text-right`} title="Round SOL net + ORE won, both valued at current prices — same accounting as the Net P&L">Net ($)</th>
           </tr></thead>
           <tbody>
             {historyRows.map((h) => {
@@ -411,20 +430,46 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
               const won = hit && dws > 0
                 ? (stakeW * 0.99 + Number(h.total_winnings ?? "0") * (stakeW / dws)) / 1e9
                 : 0;
-              const rowNet = won - dep;
+              const rowNetSol = won - dep;
               const tiles = tilesFromMask(h.mask_union);
+              // ORE won: same rules as the series — solo rounds pay the full
+              // base to the sampled winner, splits pro-rata by winning-tile
+              // stake, motherlode pops always pro-rata.
+              const share = hit && dws > 0 ? stakeW / dws : 0;
+              const baseGrams = Math.max(0, Number(h.total_minted ?? "0") - 20_000_000_000);
+              let oreWonRow = 0;
+              if (share > 0) {
+                if (h.is_split == null || Number(h.is_split) !== 0) oreWonRow = (baseGrams * share) / 1e11;
+                else oreWonRow = h.top_miner === pubkey ? baseGrams / 1e11 : 0;
+                oreWonRow += (Number(h.motherlode_paid ?? "0") * share) / 1e11;
+              }
+              const rowNetUsd = solNow != null && oreNow != null
+                ? rowNetSol * solNow + oreWonRow * oreNow : null;
               return (
                 <tr key={h.round_id} className={bodyRow}>
-                  <td className={`${td} text-white`}>#{formatNum(Number(h.round_id))}</td>
+                  <td className={`${td} text-white`}>
+                    <Link href={`/stats?section=rounds&round=${h.round_id}`}
+                      className="underline decoration-[rgba(91,108,255,0.5)] decoration-dotted underline-offset-4 transition-colors hover:text-[#22E0E6]"
+                      title="Open this round on the Rounds tab (participants, tiles, outcome)">
+                      #{formatNum(Number(h.round_id))}
+                    </Link>
+                  </td>
                   <td className={`${td} text-right text-gray-300`}>{formatSol(dep, 3)}</td>
                   <td className={`${td} hidden text-right text-fog-muted sm:table-cell`}>{tiles}</td>
                   <td className={`${td} text-right`}>
                     {h.winning_tile == null
-                      ? <span className="text-fog-dim">refund</span>
-                      : hit ? <span className="text-pos">HIT</span> : <span className="text-fog-muted">miss</span>}
+                      ? <span className="text-fog-dim">REFUND</span>
+                      : hit ? <span className="text-pos">HIT</span> : <span className="text-fog-muted">MISS</span>}
                   </td>
                   <td className={`${td} num text-right text-gray-300`}>{won > 0 ? formatSol(won, 3) : "·"}</td>
-                  <td className={`${td} num text-right ${netTone(rowNet)}`}>{formatSol(rowNet, 3)}</td>
+                  <td className={`${td} num hidden text-right sm:table-cell ${oreWonRow > 0.0005 ? "text-[#86EFAC]" : "text-fog-dim"}`}>
+                    {oreWonRow > 0.0005 ? formatNum(oreWonRow, 3) : "·"}
+                  </td>
+                  <td className={`${td} num text-right ${netTone(rowNetUsd ?? rowNetSol)}`}>
+                    {rowNetUsd != null
+                      ? `${rowNetUsd >= 0 ? "+" : "-"}$${formatNum(Math.abs(rowNetUsd), 2)}`
+                      : formatSol(rowNetSol, 3)}
+                  </td>
                 </tr>
               );
             })}
@@ -616,10 +661,11 @@ function LifetimeCell({
   );
 }
 
-function MinerTrend({ pubkey, series, derived, roundsWin, setRoundsWin, refreshing }: {
+function MinerTrend({ pubkey, series, derived, pricesNow, roundsWin, setRoundsWin, refreshing }: {
   pubkey: string;
   series: OreMinerDetail["series"];
   derived: OreMinerDetail["derived"];
+  pricesNow: OreMinerDetail["prices_now"];
   roundsWin: string; setRoundsWin: (v: string) => void; refreshing?: boolean;
 }) {
   const win = roundsWin;
@@ -627,12 +673,18 @@ function MinerTrend({ pubkey, series, derived, roundsWin, setRoundsWin, refreshi
   const [cur, setCur] = useState<"sol" | "usd">("usd");
   // "all" -> the whole (possibly bucketed) series; each point may sum n rounds
   const slice = win === "all" ? series : series.slice(-Math.min(Number(win), series.length));
-  const hasUsd = slice.some((p) => p.net_usd != null);
+  // USD = current-rate accounting, consistent with the Net P&L hero: each
+  // round's SOL leg and ORE leg valued at TODAY'S prices (not round-time).
+  // Falls back to the API's round-time net_usd only when spot is unavailable.
+  const solNow = pricesNow?.sol_usd ?? null;
+  const oreNow = pricesNow?.ore_usd ?? null;
+  const usdOf = (p: OreMinerDetail["series"][number]): number | null =>
+    solNow != null && oreNow != null ? p.net_sol * solNow + p.ore_won * oreNow : p.net_usd;
+  const hasUsd = (solNow != null && oreNow != null) || slice.some((p) => p.net_usd != null);
   // cumulative recomputed over the visible window so it starts at 0.
-  // Prices are round-time (realized) over the selected window.
   let cum = 0;
   const pts: TPt[] = slice.map((p) => {
-    cum += cur === "usd" && p.net_usd != null ? p.net_usd : p.net_sol;
+    cum += cur === "usd" ? usdOf(p) ?? p.net_sol : p.net_sol;
     return { label: `#${formatNum(p.round_id)}`, value: cum };
   });
   const nRounds = slice.reduce((a, p) => a + (p.n ?? 1), 0);
@@ -648,7 +700,7 @@ function MinerTrend({ pubkey, series, derived, roundsWin, setRoundsWin, refreshi
   // bucket is pure hits or pure misses — mixed buckets can't split the net.
   let winSum = 0, winRounds = 0, lossSum = 0, lossRounds = 0;
   for (const p of slice) {
-    const net = cur === "usd" && p.net_usd != null ? p.net_usd : p.net_sol;
+    const net = cur === "usd" ? usdOf(p) ?? p.net_sol : p.net_sol;
     const n = p.n ?? 1;
     const hits = p.hits ?? (p.hit ? 1 : 0);
     if (n > 1 && hits > 0 && hits < n) continue;
@@ -663,23 +715,27 @@ function MinerTrend({ pubkey, series, derived, roundsWin, setRoundsWin, refreshi
   const avgWin = winRounds > 0 ? winSum / winRounds : null;
   const avgLoss = lossRounds > 0 ? lossSum / lossRounds : null;
 
-  // Best / worst in the visible chart window (prefer USD).
+  // Best / worst in the visible chart window, same current-rate USD.
   let bestUsd: number | null = null;
   let worstUsd: number | null = null;
   for (const p of slice) {
-    const v = p.net_usd ?? (hasUsd ? null : p.net_sol);
+    const v = usdOf(p);
     if (v == null) continue;
     if (bestUsd == null || v > bestUsd) bestUsd = v;
     if (worstUsd == null || v < worstUsd) worstUsd = v;
   }
-  // Fall back to derived extremes when the slice has no USD.
-  if (bestUsd == null) bestUsd = derived?.best_round?.net_usd ?? null;
-  if (worstUsd == null) worstUsd = derived?.worst_round?.net_usd ?? null;
+  // Fall back to derived extremes (revalued at current prices when possible).
+  const derivedUsd = (r: { net_sol: number; ore_won: number; net_usd: number | null } | null | undefined): number | null =>
+    r == null ? null : solNow != null && oreNow != null ? r.net_sol * solNow + r.ore_won * oreNow : r.net_usd;
+  if (bestUsd == null) bestUsd = derivedUsd(derived?.best_round);
+  if (worstUsd == null) worstUsd = derivedUsd(derived?.worst_round);
 
   return (
     <ChartCard
       title={`${pubkey.slice(0, 4)}'s last ${formatNum(nRounds)} rounds`}
-      subtitle="Play, consistency and streaks in the captured window."
+      subtitle={cur === "usd" && solNow != null
+        ? "Play, consistency and streaks in the captured window. USD values both legs (SOL + ORE won) at current prices — same accounting as the Net P&L above."
+        : "Play, consistency and streaks in the captured window."}
       right={
         <div className="flex flex-wrap items-center gap-2" data-no-capture="true">
           <Refreshing active={!!refreshing} />
@@ -695,23 +751,32 @@ function MinerTrend({ pubkey, series, derived, roundsWin, setRoundsWin, refreshi
               value={win} onChange={setWin} />
           </div>
           {hasUsd && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <span
-                className="text-[12px] font-medium text-[#8B93B4]"
+                className="text-[11px] font-medium text-[#5A6284]"
                 style={{ fontFamily: "var(--font-subtext)" }}
               >
                 Show
               </span>
-              <select
-                aria-label="Show currency"
-                value={cur}
-                onChange={(e) => setCur(e.target.value as "sol" | "usd")}
-                className="rounded-lg border border-line bg-ink-800 px-3 py-2 text-[12px] font-semibold text-[#EAECF6] transition-colors focus:border-steel focus:outline-none"
-                style={{ fontFamily: "var(--font-subtext)" }}
-              >
-                <option value="sol">SOL</option>
-                <option value="usd">USD</option>
-              </select>
+              {/* appearance-none + own chevron: the native arrow crowded the
+                  right edge and the default chrome read like a toggle button. */}
+              <span className="relative inline-flex">
+                <select
+                  aria-label="Show currency"
+                  value={cur}
+                  onChange={(e) => setCur(e.target.value as "sol" | "usd")}
+                  title="USD values both legs (SOL + ORE) at current prices"
+                  className="appearance-none rounded-lg border border-[rgba(91,108,255,0.3)] bg-ink-900 py-2 pl-3 pr-8 text-[12px] font-semibold text-[#EAECF6] transition-colors hover:border-[rgba(91,108,255,0.55)] focus:border-steel focus:outline-none"
+                  style={{ fontFamily: "var(--font-subtext)" }}
+                >
+                  <option value="sol">SOL</option>
+                  <option value="usd">USD</option>
+                </select>
+                <svg aria-hidden width="10" height="10" viewBox="0 0 10 10" fill="none"
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8B93B4]">
+                  <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
             </div>
           )}
         </div>

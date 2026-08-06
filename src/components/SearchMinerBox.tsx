@@ -6,8 +6,11 @@ import { ChartCard } from "@/components/stats/Charts";
 export const SEARCH_MINER_PLACEHOLDER = "Paste Solana Wallet Address…";
 export const ADDRESS_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
+// NB: never `border-line/50` — an alpha modifier on a color the theme already
+// defines as rgba() doesn't compile, the class drops, and the border falls back
+// to Tailwind's near-white default (the "ugly gray box"). Explicit surface blue.
 const searchInputIdle =
-  "border-line/50 bg-ink-900/40 text-fog-dim placeholder:text-fog-muted";
+  "border-[rgba(91,108,255,0.25)] bg-ink-900/40 text-fog-dim placeholder:text-fog-muted";
 const searchInputActive =
   "focus:border-steel focus:bg-ink-800 focus:text-white focus:outline-none";
 const searchInputShared =

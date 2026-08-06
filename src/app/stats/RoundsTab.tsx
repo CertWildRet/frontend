@@ -1,6 +1,7 @@
 "use client";
 
-import { Fragment, useContext, useEffect, useState } from "react";
+import { Fragment, useContext, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { ServiceChip } from "@/components/primitives/ServiceChip";
@@ -138,6 +139,24 @@ export function RoundsTab() {
   const rounds = usePolled(() => fetchOreRounds(PAGE, offset), 20_000, [offset]);
   const rs = rounds.data?.rounds ?? [];
   const total = rounds.data?.total ?? 0;
+
+  // Deep link: /stats?section=rounds&round=<id> (miner-history round links).
+  // One-shot — once the first page reveals the tip, jump to the page holding the
+  // target (rows are contiguous newest-first) and open its drilldown. Never
+  // re-fires on poll/pagination so the user keeps control afterwards.
+  const searchParams = useSearchParams();
+  const deepLinkDone = useRef(false);
+  useEffect(() => {
+    if (deepLinkDone.current || !rs.length) return;
+    const target = Number(searchParams.get("round"));
+    if (!Number.isInteger(target) || target <= 0) { deepLinkDone.current = true; return; }
+    deepLinkDone.current = true;
+    const tip = Number(rs[0].round_id) + offset;
+    if (target > tip) return;
+    setOffset(Math.floor((tip - target) / PAGE) * PAGE);
+    setOpenRound(target);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rs.length]);
 
   return (
     <div className="space-y-5">
