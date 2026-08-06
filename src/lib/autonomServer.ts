@@ -474,22 +474,29 @@ export async function fetchAutonomBars(feedId: number, range: RwaRange): Promise
 
   let lastError: string | null = null;
   for (const rp of resCandidates) {
-    const res = await autonomFetch(
-      `/api/v1/bars?feed_id=${feedId}&resolution=${rp}&from=${fromSec}&to=${toSec}`,
-      key,
-    );
-    if (!res.ok) {
-      lastError = lastError ?? res.error ?? `upstream ${res.status}`;
-      // Auth — no point trying more with the same key
-      if (res.status === 401 || res.status === 403) break;
-      continue;
+    // The upstream intermittently returns EMPTY for valid queries under load
+    // (observed live: identical request empty then full seconds apart), so an
+    // empty answer gets one same-query retry before it counts as evidence.
+    // Successes are CDN-cached 45s, so the extra call only spends on failures.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 400));
+      const res = await autonomFetch(
+        `/api/v1/bars?feed_id=${feedId}&resolution=${rp}&from=${fromSec}&to=${toSec}`,
+        key,
+      );
+      if (!res.ok) {
+        lastError = lastError ?? res.error ?? `upstream ${res.status}`;
+        // Auth — no point retrying or trying more resolutions with the same key
+        if (res.status === 401 || res.status === 403) return { points: [], resolution: resolutionMin, error: lastError };
+        continue;
+      }
+      const rpMin = rp === "D" ? 1440 : resolutionMin;
+      const points = parseBarsPayload(res.json).filter((p) => p.t >= start - rpMin * 60_000);
+      if (points.length) return { points, resolution: rpMin, error: null };
+      // First message wins here too — an ok-but-empty retry must not mask the
+      // real failure reason from the attempt before it.
+      lastError = lastError ?? `no bars in response (resolution ${rp})`;
     }
-    const rpMin = rp === "D" ? 1440 : resolutionMin;
-    const points = parseBarsPayload(res.json).filter((p) => p.t >= start - rpMin * 60_000);
-    if (points.length) return { points, resolution: rpMin, error: null };
-    // First message wins here too — an ok-but-empty retry must not mask the
-    // real failure reason from the attempt before it.
-    lastError = lastError ?? `no bars in response (resolution ${rp})`;
   }
   return { points: [], resolution: resolutionMin, error: lastError };
 }

@@ -253,12 +253,13 @@ export function RwaTab() {
               ) : bars.loading ? (
                 "···"
               ) : bars.error?.includes("no bars in response") ? (
-                // Truth, not a broken fetch: the oracle serves live quotes for
-                // this asset but no price history — retrying can't change that.
-                <span className="rounded border border-line bg-ink-800/60 px-2 py-1 text-[13px] font-semibold text-fog-muted"
-                  title="Autonom serves a live quote for this asset but no historical bars, so a range comparison can't be drawn.">
-                  quotes only · no history
-                </span>
+                // Usually the truth (quote-only feed) — but the upstream also
+                // returns empty intermittently under load, so keep it tappable.
+                <button type="button" onClick={bars.refresh}
+                  className="rounded border border-line bg-ink-800/60 px-2 py-1 text-[13px] font-semibold text-fog-muted transition-colors hover:border-steel hover:text-white"
+                  title="The oracle returned no historical bars for this asset. For forex/index/basket feeds that's permanent (quotes only); otherwise it can be a transient upstream blip — tap to retry.">
+                  no history · retry
+                </button>
               ) : (
                 <button type="button" onClick={bars.refresh}
                   className="rounded border border-amber-500/35 bg-amber-500/10 px-2 py-1 text-[13px] font-semibold text-amber-200 transition-colors hover:border-amber-500/60"
