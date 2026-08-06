@@ -6,7 +6,6 @@
  * peer. Chart defaults to normalized %.
  */
 import { useMemo, useState } from "react";
-import { StatTile } from "@/components/primitives/Stat";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { Refreshing } from "@/components/primitives/Skeleton";
 import { ChartCard } from "@/components/stats/Charts";
@@ -153,93 +152,108 @@ export function RwaTab() {
         </div>
       </div>
 
-      {/* Asset picker grouped by class */}
-      <div className="space-y-3">
+      {/* Asset picker — classes inline (the stacked label-per-group layout ate
+          three screens of vertical space on mobile for nine chips) */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5">
         {RWA_ASSET_CLASSES.map((cls) => {
           const group = RWA_ASSETS.filter((a) => a.assetClass === cls);
           return (
-            <div key={cls}>
-              <div className="mb-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-fog-muted">
+            <div key={cls} className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-0.5 font-mono text-[10.5px] font-bold uppercase tracking-wider text-fog-dim">
                 {cls}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {group.map((a) => {
-                  const active = a.feedId === feedId;
-                  return (
-                    <button
-                      key={a.feedId}
-                      type="button"
-                      onClick={() => setFeedId(a.feedId)}
-                      className={`rounded-md border px-2.5 py-1.5 font-mono text-[12.5px] font-semibold transition ${
-                        active
-                          ? "border-cyan-400/50 bg-cyan-400/15 text-white"
-                          : "border-line bg-ink-800/40 text-[#B7BDD2] hover:border-line-bright hover:text-white"
-                      }`}
-                      aria-pressed={active}
-                    >
-                      <span className="text-white">{a.symbol}</span>
-                      <span className="ml-1.5 hidden text-fog-muted sm:inline">{a.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              </span>
+              {group.map((a) => {
+                const active = a.feedId === feedId;
+                return (
+                  <button
+                    key={a.feedId}
+                    type="button"
+                    onClick={() => setFeedId(a.feedId)}
+                    title={a.name}
+                    className={`rounded-md border px-2.5 py-1.5 font-mono text-[12.5px] font-semibold transition ${
+                      active
+                        ? "border-cyan-400/50 bg-cyan-400/15 text-white"
+                        : "border-[rgba(91,108,255,0.25)] bg-ink-800/40 text-[#B7BDD2] hover:border-steel hover:text-white"
+                    }`}
+                    aria-pressed={active}
+                  >
+                    {a.symbol}
+                  </button>
+                );
+              })}
             </div>
           );
         })}
       </div>
 
-      {/* Selected asset summary */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile
-          label={`${asset.name} (${asset.symbol})`}
-          value={pricesLoading ? "···" : formatUsdPrice(quote?.price, asset.symbol)}
-          hint={asset.assetClass}
-        />
-        <StatTile
-          label={`${asset.symbol} · ${range.toUpperCase()}`}
-          value={
-            <span className={pctTone(chart.lastPeer)}>
-              {formatPctChange(chart.lastPeer)}
-            </span>
-          }
-          hint={chart.lastOre != null ? `ORE ${formatPctChange(chart.lastOre)}` : "normalized % change"}
-        />
-        <StatTile
-          label="Market status"
-          value={
-            quote?.tradable == null
-              ? asset.marketHours === "24/7"
-                ? "24/7"
-                : "···"
-              : quote.tradable
-                ? "Open"
-                : "Closed"
-          }
-          hint={quote?.ts ? `as of ${timeAgo(quote.ts)}` : undefined}
-        />
-        <div className="flex flex-col justify-center rounded-lg border border-line bg-ink-800/40 px-3 py-3">
-          <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-fog-muted">
-            Quote freshness
+      {/* The comparison IS the product — one strip, both numbers at equal weight,
+          spread as the verdict; price/market/freshness demoted to one meta row. */}
+      <div className="rounded-xl border border-line bg-ink-800/40 px-4 py-3.5">
+        <div className="flex flex-wrap items-end gap-x-7 gap-y-3 font-mono">
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-wider" style={{ color: ORE_COLOR }}>
+              ORE · {range.toUpperCase()}
+            </div>
+            <div className={`num mt-1.5 text-[28px] leading-none tracking-tight ${pctTone(chart.lastOre)}`}>
+              {chart.hasOre ? formatPctChange(chart.lastOre) : "···"}
+            </div>
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            {quote ? (
-              <span
-                className={`rounded-md border px-2 py-1 font-mono text-[12px] font-bold ${freshnessTone(quote.freshness)}`}
-              >
+          <div className="pb-1 text-[13px] text-fog-dim">vs</div>
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-wider" style={{ color: PEER_COLOR }}>
+              {asset.symbol} · {range.toUpperCase()}
+            </div>
+            <div className={`num mt-1.5 text-[28px] leading-none tracking-tight ${pctTone(chart.lastPeer)}`}>
+              {chart.hasPeer ? (
+                formatPctChange(chart.lastPeer)
+              ) : bars.loading ? (
+                "···"
+              ) : (
+                <button type="button" onClick={bars.refresh}
+                  className="rounded border border-amber-500/35 bg-amber-500/10 px-2 py-1 text-[13px] font-semibold text-amber-200 transition-colors hover:border-amber-500/60"
+                  title={bars.error ?? "The benchmark feed returned no bars for this range — tap to retry"}>
+                  feed unavailable · retry
+                </button>
+              )}
+            </div>
+          </div>
+          {chart.lastOre != null && chart.lastPeer != null && (() => {
+            const spreadPts = chart.lastOre - chart.lastPeer;
+            const ahead = spreadPts >= 0;
+            return (
+              <div className="pb-0.5">
+                <span
+                  className="rounded-md border px-2 py-1 text-[12.5px] font-bold"
+                  style={ahead
+                    ? { color: "#4ADE80", borderColor: "#4ADE8055", background: "#4ADE8012" }
+                    : { color: "#F87171", borderColor: "#F8717155", background: "#F8717112" }}
+                  title={`Normalized ${range.toUpperCase()} performance gap: ORE ${formatPctChange(chart.lastOre)} vs ${asset.symbol} ${formatPctChange(chart.lastPeer)}`}
+                >
+                  ORE {ahead ? "leads" : "trails"} by {Math.abs(spreadPts).toFixed(1)} pts
+                </span>
+              </div>
+            );
+          })()}
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t pt-2.5 font-mono text-[12.5px] text-fog-muted"
+          style={{ borderColor: "rgba(91,108,255,0.16)" }}>
+          <span className="text-white">{pricesLoading ? "···" : formatUsdPrice(quote?.price, asset.symbol)}</span>
+          <span className="text-fog-dim">·</span>
+          <span>
+            {quote?.tradable == null
+              ? asset.marketHours === "24/7" ? "trades 24/7" : "market status ···"
+              : quote.tradable ? "market open" : "market closed"}
+          </span>
+          {quote && (
+            <>
+              <span className="text-fog-dim">·</span>
+              <span className={`rounded-md border px-1.5 py-0.5 text-[11.5px] font-bold ${freshnessTone(quote.freshness)}`}>
                 {freshnessLabelText(quote.freshness)}
               </span>
-            ) : (
-              <span className="font-mono text-sm text-fog-muted">{pricesLoading ? "loading…" : "unavailable"}</span>
-            )}
-            {quote?.ts && (
-              <span className="font-mono text-[12px] text-fog-muted" title={quote.ts}>
-                {timeAgo(quote.ts)}
-              </span>
-            )}
-          </div>
-          {quote?.error && (
-            <div className="mt-1 font-mono text-[11px] text-fog-muted">{quote.error}</div>
+            </>
           )}
+          {quote?.ts && <span title={quote.ts}>{timeAgo(quote.ts)}</span>}
+          {quote?.error && <span className="text-[11.5px]">{quote.error}</span>}
         </div>
       </div>
 
@@ -300,7 +314,9 @@ export function RwaTab() {
               return (
                 <tr
                   key={a.feedId}
-                  className={`cursor-pointer border-b border-line/60 transition hover:bg-white/[0.03] ${
+                  // border-line/60 never compiled (alpha modifier on an rgba theme
+                  // color) — rows fell back to the near-white default border.
+                  className={`cursor-pointer border-b border-[rgba(91,108,255,0.16)] transition hover:bg-white/[0.03] ${
                     active ? "bg-cyan-400/5" : ""
                   }`}
                   onClick={() => setFeedId(a.feedId)}
