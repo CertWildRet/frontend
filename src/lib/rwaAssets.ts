@@ -32,7 +32,8 @@ export const RWA_ASSETS: readonly RwaAsset[] = [
   { feedId: 1022, symbol: "NVDA", name: "NVIDIA", assetClass: "Equity", marketHours: "equity" },
   { feedId: 1014, symbol: "MSTR", name: "MicroStrategy", assetClass: "Equity", marketHours: "equity" },
   { feedId: 3001, symbol: "BTC", name: "Bitcoin", assetClass: "Crypto", marketHours: "24/7" },
-  { feedId: 3005, symbol: "SOL", name: "Solana", assetClass: "Crypto", marketHours: "24/7" },
+  // ETH, not SOL — the ORE/SOL comparison already lives on the Trends page.
+  { feedId: 3002, symbol: "ETH", name: "Ethereum", assetClass: "Crypto", marketHours: "24/7" },
   { feedId: 7001, symbol: "SPX", name: "S&P 500 Index", assetClass: "Index", marketHours: "equity" },
   { feedId: 6001, symbol: "EURUSD", name: "Euro / US Dollar", assetClass: "Forex", marketHours: "24/5" },
   { feedId: 8001, symbol: "AUBTC50", name: "Gold/BTC 50:50", assetClass: "Basket", marketHours: "24/7" },
