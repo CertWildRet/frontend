@@ -467,6 +467,57 @@ async function get<T>(path: string): Promise<OreEnvelope<T>> {
   return res.json();
 }
 
+// ── /ore/health : deep ingestion forensics (ops; /platform-health) ───────────
+export type OreHealthReport = {
+  generated_at: number;
+  now: {
+    chain_round: number | null;
+    spine_round: number | null;
+    deploy_round: number | null;
+    cumulative_round: number | null;
+    reset_tail_round: number | null;
+    heartbeat_age_s: number | null;
+    spine_lag: number | null;
+    deploy_lag: number | null;
+    factor_age_min: number | null;
+    price_age_min: number | null;
+    census_age_min: number | null;
+    ingest_progress: {
+      last_indexed_slot: string | number | null;
+      chain_tip_slot: string | number | null;
+      lag_slots: string | number | null;
+      catchup_active: boolean;
+      missing_open: number | null;
+      txs_total: string | number | null;
+      events_total: string | number | null;
+      last_error: string | null;
+      updated_at: number | null;
+    } | null;
+  };
+  downtime: {
+    since_ts: number | null;
+    episodes: { from_ts: number; to_ts: number; minutes: number; scope: "rpc" | "service" }[];
+    totals: { count: number; minutes: number; largest_minutes: number; last7d_count: number; last7d_minutes: number };
+  };
+  staleness: {
+    first_beat_ts: number | null;
+    points: { ts: number; chain_round: number | null; spine_round: number | null; deploy_round: number | null; cumulative_round: number | null }[];
+    behind_7d: { episodes: number; beats_behind: number; beats: number } | null;
+  };
+  coverage: {
+    tables: { t: string; min_round: string | null; max_round: string | null; min_ts: string | null }[];
+    spine_holes: { missing_total: number; gaps: { after_round: number; before_round: number; missing: number }[] };
+    recent_1000: { settled: number; without_deploys: number } | null;
+  };
+  workers: {
+    name: string; kind: string; status: string; enabled: boolean;
+    interval_ms: number | null; last_success_at: number | null; last_error_at: number | null;
+    last_duration_ms: number | null; last_result: string | null; last_error: string | null;
+    attempts: number; successes: number; failures: number; lock_skips: number;
+  }[];
+};
+export const fetchOreHealth = () => get<OreHealthReport>("/ore/health");
+
 export const fetchOreSummary = () => get<OreSummary>("/ore/summary");
 export const fetchOreRounds = (limit = 200, offset = 0) =>
   get<{ rounds: OreRound[]; limit: number; offset: number; total: number }>(`/ore/rounds?limit=${limit}&offset=${offset}`);
