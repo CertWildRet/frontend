@@ -403,12 +403,14 @@ export function HealthClient() {
             </div>
             <div className="overflow-x-auto">
               <table className="w-full font-mono text-[12.5px] [font-variant-numeric:tabular-nums]">
+                {/* Percentage widths spread the columns across the card instead of
+                    packing left with one stretched trailing column. */}
                 <thead><tr className="text-left text-gray-500">
-                  <th className="whitespace-nowrap py-1 pr-6 font-semibold" title="When the outage started and ended, in your local time">window (local)</th>
-                  <th className="whitespace-nowrap py-1 pr-6 text-right font-semibold" title="How long chain snapshots were missing">duration</th>
-                  <th className="whitespace-nowrap py-1 pr-6 text-right font-semibold" title="Rough number of game rounds whose data arrived late (rounds settle about every 66 seconds). Delayed, not lost — ingestion backfills after recovery.">≈ rounds delayed</th>
-                  <th className="whitespace-nowrap py-1 pr-6 font-semibold" title="What was down: 'rpc only' = our blockchain connection; 'service down' = the whole analytics service">scope</th>
-                  <th className="w-full py-1 font-semibold" title="What this meant for the site while it lasted">impact</th>
+                  <th className="w-[22%] whitespace-nowrap py-1 pr-6 font-semibold" title="When the outage started and ended, in your local time">window (local)</th>
+                  <th className="w-[9%] whitespace-nowrap py-1 pr-6 text-right font-semibold" title="How long chain snapshots were missing">duration</th>
+                  <th className="w-[13%] whitespace-nowrap py-1 pr-6 text-right font-semibold" title="Rough number of game rounds whose data arrived late (rounds settle about every 66 seconds). Delayed, not lost — ingestion backfills after recovery.">≈ rounds delayed</th>
+                  <th className="w-[13%] whitespace-nowrap py-1 pr-6 font-semibold" title="What was down: 'rpc only' = our blockchain connection; 'service down' = the whole analytics service">scope</th>
+                  <th className="py-1 font-semibold" title="What this meant for the site while it lasted">impact</th>
                 </tr></thead>
                 <tbody>
                   {h.downtime.episodes.map((e, i) => (
