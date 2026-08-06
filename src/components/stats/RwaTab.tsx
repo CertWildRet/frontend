@@ -81,6 +81,30 @@ function alignPeerToOre(
   });
 }
 
+/** Forward-fill closed-market holes: ORE trades 24/7 but XAU/SPY sleep nights
+ *  and weekends, so aligned peer series have nulls exactly where the crowd is
+ *  looking. Carrying the LAST CLOSE through (Autonom's fresh=false semantics —
+ *  the price you'd transact against next open) keeps both lines continuous and
+ *  the comparison honest. Never fills BEFORE the first real bar: pre-history
+ *  would be fabricated, holes after a close are just the market being shut.
+ *  Returns which indices were carried so tooltips can say so. */
+function forwardFillClosed(values: (number | null)[]): { filled: (number | null)[]; carried: boolean[] } {
+  const filled: (number | null)[] = [];
+  const carried: boolean[] = [];
+  let last: number | null = null;
+  for (const v of values) {
+    if (v != null) {
+      last = v;
+      filled.push(v);
+      carried.push(false);
+    } else {
+      filled.push(last);
+      carried.push(last != null);
+    }
+  }
+  return { filled, carried };
+}
+
 export function RwaTab() {
   const [range, setRange] = useState<RwaRange>("30d");
   const [feedId, setFeedId] = useState(DEFAULT_RWA_FEED_ID);
@@ -111,21 +135,39 @@ export function RwaTab() {
       ? orePoints.map((p) => lbl(p.day_ts > 1e12 ? Math.floor(p.day_ts / 1000) : p.day_ts))
       : peerRaw.map((p) => lbl(Math.floor(p.t / 1000)));
 
-    // If ORE series is empty, still show peer-only normalized path
-    const oreNorm = normalizePerformance(oreCloses.length ? oreCloses : peerAligned.map(() => null));
-    const peerNorm = normalizePerformance(
+    // Closed-market holes carry the last close (fresh=false semantics). 24/7
+    // assets have no holes, so every class renders the same continuous way.
+    const { filled: peerFilled, carried } = forwardFillClosed(
       oreCloses.length ? peerAligned : peerRaw.map((p) => p.close),
     );
+    // The newest bucket additionally takes the live quote when it is fresher
+    // than the last bar — the chart's endpoint then always matches the quoted
+    // price in the strip above, open or closed.
+    if (peerFilled.length && quote?.price != null) {
+      const i = peerFilled.length - 1;
+      if (peerFilled[i] == null || carried[i]) {
+        peerFilled[i] = quote.price;
+        carried[i] = quote.tradable === false;
+      }
+    }
+
+    // If ORE series is empty, still show peer-only normalized path
+    const oreNorm = normalizePerformance(oreCloses.length ? oreCloses : peerFilled.map(() => null));
+    const peerNorm = normalizePerformance(peerFilled);
 
     const a: TPt[] = labels.map((label, i) => ({ label, value: oreNorm[i] ?? null }));
-    const b: TPt[] = labels.map((label, i) => ({ label, value: peerNorm[i] ?? null }));
+    const b: TPt[] = labels.map((label, i) => ({
+      label,
+      value: peerNorm[i] ?? null,
+      note: carried[i] ? "market closed — last close carried" : undefined,
+    }));
 
     const lastOre = [...oreNorm].reverse().find((v) => v != null) ?? null;
     const lastPeer = [...peerNorm].reverse().find((v) => v != null) ?? null;
 
     return { a, b, lastOre, lastPeer, hasOre: oreCloses.some((v) => v != null), hasPeer: peerNorm.some((v) => v != null) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orePoints, bars.data, range]);
+  }, [orePoints, bars.data, range, quote?.price, quote?.tradable]);
 
   const loadingChart = (trends.loading && !trends.data) || (bars.loading && !bars.data);
   const pricesLoading = prices.loading && !prices.data;
