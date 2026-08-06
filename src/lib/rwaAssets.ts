@@ -32,7 +32,9 @@ export type RwaAsset = {
 export const RWA_ASSETS: readonly RwaAsset[] = [
   { feedId: 2056, symbol: "XAU", name: "Gold", assetClass: "Commodity", marketHours: "24/5" },
   { feedId: 2069, symbol: "XAG", name: "Silver", assetClass: "Commodity", marketHours: "24/5" },
-  { feedId: 2062, symbol: "XPT", name: "Platinum", assetClass: "Commodity", marketHours: "24/5" },
+  // XBR, not XPT/XPD: both platinum-group feeds sit weeks stale upstream (the
+  // oracle's fresh-filtered batch omits them entirely); Brent spot quotes live.
+  { feedId: 2059, symbol: "XBR", name: "Brent Spot", assetClass: "Commodity", marketHours: "24/5" },
   { feedId: 2035, symbol: "WTI", name: "Crude WTI Spot", assetClass: "Commodity", marketHours: "24/5" },
   { feedId: 1027, symbol: "SPY", name: "S&P 500", assetClass: "Equity", marketHours: "equity" },
   { feedId: 1015, symbol: "QQQ", name: "Nasdaq-100", assetClass: "Equity", marketHours: "equity" },
