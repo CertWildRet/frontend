@@ -5,7 +5,13 @@
  * Pure wrappers over existing fetchers (oreStats + oreRoundOnchain); no new
  * backend. See /platform-health.
  */
-import type { Connection } from "@solana/web3.js";
+import { Connection } from "@solana/web3.js";
+
+/** Independent public mainnet node (browser-CORS-friendly) the live sample
+ *  falls back to when the site's own RPC proxy is the thing that died —
+ *  otherwise an outage of our provider would blind the audit exactly when
+ *  it matters most. Never used for anything but the click-only sample. */
+const PUBLIC_FALLBACK_RPC = "https://api.mainnet-beta.solana.com";
 import {
   fetchOreRound,
   fetchOreParticipants,
@@ -97,6 +103,9 @@ export type LiveSampleResult = {
     totalMiners: number;
     winningTile: number | null;
   } | null;
+  /** Which node answered the chain read: the site's own proxy, or the public
+   *  fallback (meaning the site RPC failed but the audit still saw chain). */
+  onchainVia: "site" | "public-fallback" | null;
   deltas: {
     deployedSol: number | null; // analytics − onchain
     miners: number | null;
@@ -115,10 +124,26 @@ export async function runLiveSample(
   const id = Math.max(1, Math.floor(roundId ?? tip - 1));
   const errors: string[] = [];
 
+  let onchainVia: LiveSampleResult["onchainVia"] = null;
+  const chainRead = async () => {
+    try {
+      const r = await fetchOnchainRoundTiles(connection, id);
+      onchainVia = "site";
+      return r;
+    } catch (primaryErr) {
+      // The site proxy failing must not blind the audit — that is precisely the
+      // scenario worth auditing. One retry on an independent public node.
+      errors.push(`site rpc: ${msg(primaryErr)} — retrying via public fallback`);
+      const r = await fetchOnchainRoundTiles(new Connection(PUBLIC_FALLBACK_RPC, { commitment: "confirmed" }), id);
+      onchainVia = "public-fallback";
+      return r;
+    }
+  };
+
   const [roundR, partsR, chainR] = await Promise.allSettled([
     fetchOreRound(id),
     fetchOreParticipants(id, "deployed", 1), // top=1 — participants_total is unaffected by the slice
-    fetchOnchainRoundTiles(connection, id),
+    chainRead(),
   ]);
 
   // Analytics round detail. A 404 is a real answer ("analytics has no row"),
@@ -199,6 +224,7 @@ export async function runLiveSample(
     analytics,
     participants,
     onchain,
+    onchainVia,
     deltas,
     status,
     errors,

@@ -512,9 +512,16 @@ export function HealthClient() {
               </div>
 
               <div className="rounded-lg border p-3 font-mono text-[13px]" style={{ borderColor: DIVIDER }}>
-                <div className="section-label mb-1.5">on-chain round PDA</div>
+                <div className="section-label mb-1.5">
+                  on-chain round PDA
+                  {r.onchainVia === "public-fallback" && (
+                    <span className="ml-2 normal-case tracking-normal">
+                      <Pill color="#FBBF24" title="The site's own RPC failed; this reading came from an independent public mainnet node instead — the comparison still stands.">via public fallback</Pill>
+                    </span>
+                  )}
+                </div>
                 {r.onchain == null ? (
-                  <div className="text-amber">RPC lookup failed — analytics half still stands</div>
+                  <div className="text-amber">both the site RPC and the public fallback failed — chain unreadable, analytics half still stands</div>
                 ) : r.onchain.missing ? (
                   <div className="space-y-1">
                     <div className="text-gray-300">account reclaimed</div>
