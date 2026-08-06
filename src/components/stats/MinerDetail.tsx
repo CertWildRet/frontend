@@ -458,6 +458,10 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
               }
               const rowNetUsd = solNow != null && oreNow != null
                 ? rowNetSol * solNow + oreWonRow * oreNow : null;
+              // Solo rounds are winner-take-all: the full base emission goes to
+              // the one sampled top miner, so 0 ORE on a solo loss is correct.
+              const soloMiss =
+                share > 0 && h.is_split != null && Number(h.is_split) === 0 && h.top_miner !== pubkey;
               return (
                 <tr key={h.round_id} className={bodyRow}>
                   <td className={`${td} text-white`}>
@@ -469,8 +473,20 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
                   </td>
                   <td className={`${td} text-right text-gray-300`}>{formatSol(dep, 3)}</td>
                   <td className={`${td} hidden text-right text-fog-muted sm:table-cell`}>{tiles}</td>
-                  <td className={`${td} num text-right ${oreWonRow > 0.0005 ? "text-[#86EFAC]" : "text-fog-dim"}`}>
-                    {oreWonRow > 0.0005 ? formatNum(oreWonRow, 3) : "·"}
+                  <td className={`${td} num text-right ${oreWonRow > 0 ? "text-[#86EFAC]" : "text-fog-dim"}`}>
+                    {oreWonRow >= 0.0005 ? (
+                      formatNum(oreWonRow, 3)
+                    ) : oreWonRow > 0 ? (
+                      <span title="Tiny pro-rata share — real but below 0.001 ORE">{"<0.001"}</span>
+                    ) : (
+                      <span
+                        title={soloMiss
+                          ? "Solo round — the full ~1 ORE emission went to the one sampled winner, everyone else gets SOL back only"
+                          : undefined}
+                      >
+                        ·
+                      </span>
+                    )}
                   </td>
                   <td className={`${td} num text-right text-gray-300`}>{won > 0 ? formatSol(won, 3) : "·"}</td>
                   <td className={`${td} num text-right ${h.winning_tile == null ? "" : netTone(rowNetUsd ?? rowNetSol)}`}>
@@ -870,6 +886,7 @@ function MinerTrend({ pubkey, series, derived, pricesNow, roundsWin, setRoundsWi
               </span>
             }
             unit={cur === "sol" ? "SOL" : undefined}
+            hint="sum of captured rounds"
             className="rounded-xl border border-line bg-[rgba(74,222,128,0.05)]"
           />
           <DerivedMetricCell
