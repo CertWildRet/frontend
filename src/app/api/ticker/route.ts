@@ -19,10 +19,18 @@ export async function GET() {
     const json = await tickerRes.json();
     const poolGrams = json?.data?.motherlode_pool_grams;
     const motherlode_pool_ore = poolGrams != null ? oreGramsToOre(poolGrams) : null;
+    // Spine tip from provenance — same round id the board is on (no extra upstream hop).
+    const rawRound = json?.provenance?.ore_max_round;
+    const current_round =
+      rawRound != null && rawRound !== "" && Number.isFinite(Number(rawRound))
+        ? Number(rawRound)
+        : null;
     return NextResponse.json(
       {
         ...json,
-        data: json?.data ? { ...json.data, motherlode_pool_ore } : json?.data,
+        data: json?.data
+          ? { ...json.data, motherlode_pool_ore, current_round }
+          : json?.data,
       },
       {
         status: tickerRes.status,
