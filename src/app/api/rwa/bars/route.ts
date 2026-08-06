@@ -36,6 +36,7 @@ export async function GET(req: Request) {
 
   try {
     const { points, resolution, error } = await fetchAutonomBars(feedId, rangeRaw);
+    const ok = points.length > 0 || !error;
     return NextResponse.json(
       {
         ok: !error || points.length > 0,
@@ -43,8 +44,12 @@ export async function GET(req: Request) {
         data: { feedId, range: rangeRaw, resolution, points },
       },
       {
-        status: points.length || !error ? 200 : 502,
-        headers: { "cache-control": CACHE_CONTROL_SHORT },
+        status: ok ? 200 : 502,
+        // NEVER cache a failure: s-maxage + stale-while-revalidate on a 502
+        // let the CDN pin one transient upstream flake onto this exact URL
+        // for every visitor (observed live: cache-busted request returned 132
+        // bars while the canonical URL kept serving the stale error).
+        headers: { "cache-control": ok ? CACHE_CONTROL_SHORT : "no-store" },
       },
     );
   } catch {

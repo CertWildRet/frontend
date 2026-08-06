@@ -487,7 +487,9 @@ export async function fetchAutonomBars(feedId: number, range: RwaRange): Promise
     const rpMin = rp === "D" ? 1440 : resolutionMin;
     const points = parseBarsPayload(res.json).filter((p) => p.t >= start - rpMin * 60_000);
     if (points.length) return { points, resolution: rpMin, error: null };
-    lastError = `no bars in response (resolution ${rp})`;
+    // First message wins here too — an ok-but-empty retry must not mask the
+    // real failure reason from the attempt before it.
+    lastError = lastError ?? `no bars in response (resolution ${rp})`;
   }
   return { points: [], resolution: resolutionMin, error: lastError };
 }
