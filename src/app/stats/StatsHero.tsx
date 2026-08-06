@@ -12,7 +12,7 @@ export function StatsHero() {
       <div className={styles.signals} aria-label="Data coverage">
         <span className={styles.signal}>On-chain data</span>
         <span className={styles.signal}>Live polling</span>
-        <span className={styles.signal}>Full v3 coverage</span>
+        <span className={styles.signal}>Full v4 coverage</span>
       </div>
       <div className={styles.lens} aria-hidden>
         <span className={styles.lensRing} />

@@ -13,7 +13,7 @@ export default function StatsLoading() {
         <div className={styles.signals} aria-label="Data coverage">
           <span className={styles.signal}>On-chain data</span>
           <span className={styles.signal}>Live polling</span>
-          <span className={styles.signal}>Full v3 coverage</span>
+          <span className={styles.signal}>Full v4 coverage</span>
         </div>
       </header>
       <div className="mt-6 space-y-3">
