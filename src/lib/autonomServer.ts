@@ -70,13 +70,17 @@ async function autonomFetch(
       json = { raw: text.slice(0, 200) };
     }
     if (!res.ok) {
+      // Pull the reason from every shape the upstream speaks: plain
+      // message/error, TradingView-UDF errmsg ({s:"error",errmsg:...}), detail,
+      // and as a last resort the raw body — "upstream 400" with the reason
+      // swallowed cost a debugging round trip once already.
+      const field = (k: string): string | null =>
+        json && typeof json === "object" && k in (json as Record<string, unknown>) && typeof (json as Record<string, unknown>)[k] === "string"
+          ? ((json as Record<string, unknown>)[k] as string)
+          : null;
       const msg =
-        (json && typeof json === "object" && "message" in json && typeof (json as { message: unknown }).message === "string"
-          ? (json as { message: string }).message
-          : null) ||
-        (json && typeof json === "object" && "error" in json && typeof (json as { error: unknown }).error === "string"
-          ? (json as { error: string }).error
-          : null) ||
+        field("message") || field("error") || field("errmsg") || field("detail") ||
+        (field("raw") ? `upstream ${res.status} — ${field("raw")!.slice(0, 140)}` : null) ||
         `upstream ${res.status}`;
       return { ok: false, status: res.status, json, error: msg };
     }
@@ -289,20 +293,24 @@ export function labelFreshness(opts: {
   return fresh ? "live" : "stale";
 }
 
-/** Lookback + bar resolution (minutes) for Stats ranges. */
-export function rangeToBarsParams(range: RwaRange): { resolution: number; lookbackMs: number } {
+/** Lookback + bar resolution for Stats ranges. `resParam` is the wire value —
+ *  STANDARD TradingView/UDF resolutions only (15/60/240/"D"): the old map sent
+ *  360 (not a UDF resolution) and 1440 (UDF spells daily "D"), which a strict
+ *  UDF backend rejects with a 400. `resolutionMin` is the numeric bar width for
+ *  local time math. */
+export function rangeToBarsParams(range: RwaRange): { resParam: string; resolutionMin: number; lookbackMs: number } {
   switch (range) {
     case "24h":
-      return { resolution: 15, lookbackMs: 24 * 3600_000 };
+      return { resParam: "15", resolutionMin: 15, lookbackMs: 24 * 3600_000 };
     case "7d":
-      return { resolution: 60, lookbackMs: 7 * 24 * 3600_000 };
+      return { resParam: "60", resolutionMin: 60, lookbackMs: 7 * 24 * 3600_000 };
     case "30d":
-      return { resolution: 240, lookbackMs: 30 * 24 * 3600_000 };
+      return { resParam: "240", resolutionMin: 240, lookbackMs: 30 * 24 * 3600_000 };
     case "90d":
-      return { resolution: 360, lookbackMs: 90 * 24 * 3600_000 };
+      return { resParam: "D", resolutionMin: 1440, lookbackMs: 90 * 24 * 3600_000 };
     case "all":
     default:
-      return { resolution: 1440, lookbackMs: 730 * 24 * 3600_000 }; // ~2y
+      return { resParam: "D", resolutionMin: 1440, lookbackMs: 730 * 24 * 3600_000 }; // ~2y
   }
 }
 
@@ -451,17 +459,17 @@ export async function fetchAutonomBars(feedId: number, range: RwaRange): Promise
   if (!key) {
     return { points: [], resolution: 60, error: "AUTONOM_BARS_KEY not configured" };
   }
-  const { resolution, lookbackMs } = rangeToBarsParams(range);
+  const { resParam, resolutionMin, lookbackMs } = rangeToBarsParams(range);
   const end = Date.now();
   const start = end - lookbackMs;
   const fromSec = Math.floor(start / 1000);
   const toSec = Math.floor(end / 1000);
   // Autonom bars require from/to in unix seconds (TradingView UDF shape).
   const queries = [
-    `/api/v1/bars?feed_id=${feedId}&resolution=${resolution}&from=${fromSec}&to=${toSec}`,
-    `/api/v1/bars?feed_id=${feedId}&resolution=${resolution}&from=${start}&to=${end}`,
-    `/api/v1/bars?feed_id=${feedId}&resolution=${resolution}&start=${fromSec}&end=${toSec}`,
-    `/api/v1/bars?feed_id=${feedId}&resolution=${resolution}`,
+    `/api/v1/bars?feed_id=${feedId}&resolution=${resParam}&from=${fromSec}&to=${toSec}`,
+    `/api/v1/bars?feed_id=${feedId}&resolution=${resParam}&from=${start}&to=${end}`,
+    `/api/v1/bars?feed_id=${feedId}&resolution=${resParam}&start=${fromSec}&end=${toSec}`,
+    `/api/v1/bars?feed_id=${feedId}&resolution=${resParam}`,
   ];
 
   let lastError: string | null = null;
@@ -473,12 +481,12 @@ export async function fetchAutonomBars(feedId: number, range: RwaRange): Promise
       if (res.status === 401 || res.status === 403) break;
       continue;
     }
-    const points = parseBarsPayload(res.json).filter((p) => p.t >= start - resolution * 60_000);
-    if (points.length) return { points, resolution, error: null };
+    const points = parseBarsPayload(res.json).filter((p) => p.t >= start - resolutionMin * 60_000);
+    if (points.length) return { points, resolution: resolutionMin, error: null };
     // Empty but OK — keep trying alternate param shapes
     lastError = "no bars in response";
   }
-  return { points: [], resolution, error: lastError };
+  return { points: [], resolution: resolutionMin, error: lastError };
 }
 
 export const CACHE_CONTROL_SHORT = "public, s-maxage=45, stale-while-revalidate=120";
