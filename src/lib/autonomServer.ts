@@ -464,27 +464,30 @@ export async function fetchAutonomBars(feedId: number, range: RwaRange): Promise
   const start = end - lookbackMs;
   const fromSec = Math.floor(start / 1000);
   const toSec = Math.floor(end / 1000);
-  // Autonom bars require from/to in unix seconds (TradingView UDF shape).
-  const queries = [
-    `/api/v1/bars?feed_id=${feedId}&resolution=${resParam}&from=${fromSec}&to=${toSec}`,
-    `/api/v1/bars?feed_id=${feedId}&resolution=${resParam}&from=${start}&to=${end}`,
-    `/api/v1/bars?feed_id=${feedId}&resolution=${resParam}&start=${fromSec}&end=${toSec}`,
-    `/api/v1/bars?feed_id=${feedId}&resolution=${resParam}`,
-  ];
+  // The backend REQUIRES from/to ("Failed to deserialize query string: missing
+  // field `from`" — proven on prod), so the old start/end and parameterless
+  // fallback variants could only ever 400, and being tried LAST their noise
+  // overwrote the meaningful error from the real attempts. The useful cascade
+  // is resolutions, not param shapes: a feed with no bars at the native
+  // resolution (rates feeds often publish daily only) falls back to "D".
+  const resCandidates = resParam === "D" ? ["D"] : [resParam, "D"];
 
   let lastError: string | null = null;
-  for (const q of queries) {
-    const res = await autonomFetch(q, key);
+  for (const rp of resCandidates) {
+    const res = await autonomFetch(
+      `/api/v1/bars?feed_id=${feedId}&resolution=${rp}&from=${fromSec}&to=${toSec}`,
+      key,
+    );
     if (!res.ok) {
-      lastError = res.error ?? `upstream ${res.status}`;
-      // Auth / not-found — no point trying more variants with same key
+      lastError = lastError ?? res.error ?? `upstream ${res.status}`;
+      // Auth — no point trying more with the same key
       if (res.status === 401 || res.status === 403) break;
       continue;
     }
-    const points = parseBarsPayload(res.json).filter((p) => p.t >= start - resolutionMin * 60_000);
-    if (points.length) return { points, resolution: resolutionMin, error: null };
-    // Empty but OK — keep trying alternate param shapes
-    lastError = "no bars in response";
+    const rpMin = rp === "D" ? 1440 : resolutionMin;
+    const points = parseBarsPayload(res.json).filter((p) => p.t >= start - rpMin * 60_000);
+    if (points.length) return { points, resolution: rpMin, error: null };
+    lastError = `no bars in response (resolution ${rp})`;
   }
   return { points: [], resolution: resolutionMin, error: lastError };
 }
