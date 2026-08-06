@@ -3,16 +3,19 @@
 /**
  * /platform-health — ops readout for analytics round-data completeness.
  *
- * Always-on: provenance-derived tiles + fill quality over the last 50 settled
- * spine rows (30s poll). On-demand: a live sample that fetches one settled
- * round from analytics AND the on-chain Round PDA and diffs them.
+ * Structure (grouped by purpose, each fact stated exactly once):
+ *   1. hero            overall verdict + poll state
+ *   2. Ingestion now   frontiers vs chain (left) · freshness + tip internals (right)
+ *   3. integrity row   data quality/holes · backfill depth
+ *   4. Downtime report historical outages, classified
+ *   5. Live sample     click-only analytics-vs-chain diff for one round
+ *   6. Workers         live registry table
  *
  * URL-only by design (no nav entry). Read-only everywhere: this page cannot
  * touch the ingest pipeline.
  */
 import { useMemo, useState } from "react";
-import { StatTile } from "@/components/primitives/Stat";
-import { TileSkeleton, Refreshing } from "@/components/primitives/Skeleton";
+import { Refreshing } from "@/components/primitives/Skeleton";
 import { ChartCard } from "@/components/stats/Charts";
 import { Caveats } from "@/app/stats/shared";
 import { usePolled } from "@/hooks/useOreStats";
@@ -23,6 +26,7 @@ import { formatNum } from "@/lib/format";
 import styles from "./health.module.css";
 
 const AMBER_LAG_ROUNDS = 100; // ~2h of rounds; normal ops sit near zero
+const DIVIDER = "rgba(91,108,255,0.16)"; // row separators on the dark blue surface
 
 const STATUS_STYLES: Record<string, { color: string; label: string }> = {
   green: { color: "#4ADE80", label: "healthy" },
@@ -35,12 +39,6 @@ const SAMPLE_BADGE: Record<LiveSampleResult["status"], { color: string; label: s
   partial: { color: "#FBBF24", label: "PARTIAL", blurb: "spine row exists but participants or per-tile data are incomplete" },
   missing: { color: "#F87171", label: "MISSING", blurb: "analytics has no usable row for this round" },
   unreachable: { color: "#F87171", label: "UNREACHABLE", blurb: "analytics could not be queried — nothing can be concluded about the data" },
-};
-
-const fmtTs = (iso: string | null): string => {
-  if (!iso) return "···";
-  const d = new Date(iso);
-  return `${d.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
 };
 
 const fmtDur = (min: number): string => (min >= 90 ? `${(min / 60).toFixed(1)}h` : `${min}min`);
@@ -62,21 +60,50 @@ const ago = (msEpoch: number | null): string => {
   if (s < 5400) return `${Math.round(s / 60)}m ago`;
   return `${(s / 3600).toFixed(1)}h ago`;
 };
+const fmtAgeMin = (min: number | null): string => {
+  if (min == null) return "···";
+  if (min < 1) return "just now";
+  if (min < 90) return `${min}m ago`;
+  return `${(min / 60).toFixed(1)}h ago`;
+};
 const WORKER_STATUS_COLOR: Record<string, string> = {
   HEALTHY: "#4ADE80", RUNNING: "#22E0E6", ERROR: "#F87171",
   STANDBY: "#B7BDD2", COMPLETE: "#B7BDD2", STARTING: "#FBBF24", DISABLED: "#6B7280",
 };
 
-/** Frontier row for the staleness card: name + round + lag chip vs chain. */
-function FrontierRow({ name, round, lag, hint }: { name: string; round: number | null; lag: number | null; hint: string }) {
-  const lagColor = lag == null ? undefined : lag <= 2 ? "#4ADE80" : lag <= 100 ? "#FBBF24" : "#F87171";
+/** Small colored pill, the page's one repeated accent device. */
+function Pill({ color, children, title }: { color: string; children: React.ReactNode; title?: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3">
+    <span title={title}
+      className="inline-flex items-center rounded border px-1.5 py-px text-[11px] font-semibold uppercase tracking-[0.08em]"
+      style={{ color, borderColor: `${color}55`, backgroundColor: `${color}12` }}>
+      {children}
+    </span>
+  );
+}
+
+/** Aligned label/value line — the whole page speaks in these. */
+function KV({ label, children, title }: { label: React.ReactNode; children: React.ReactNode; title?: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 py-[3px]" title={title}>
+      <span className="shrink-0 text-gray-400">{label}</span>
+      <span className="text-right text-white [font-variant-numeric:tabular-nums]">{children}</span>
+    </div>
+  );
+}
+
+function FrontierRow({ name, round, lag, hint }: { name: string; round: number | null; lag: number | null; hint: string }) {
+  const pill =
+    lag == null ? null
+    : lag <= 0 ? <Pill color="#4ADE80">at tip</Pill>
+    : lag <= AMBER_LAG_ROUNDS ? <Pill color={lag <= 2 ? "#4ADE80" : "#FBBF24"}>−{formatNum(lag)}</Pill>
+    : <Pill color="#F87171">−{formatNum(lag)}</Pill>;
+  return (
+    <div className="flex items-center justify-between gap-3 border-t py-1.5 first:border-t-0" style={{ borderColor: DIVIDER }} title={hint}>
       <span className="text-gray-300">{name}</span>
-      <span className="flex items-baseline gap-2">
-        <span className="text-white">{round != null ? formatNum(round) : "···"}</span>
-        {lag != null && <span style={{ color: lagColor }}>{lag === 0 ? "at tip" : `−${formatNum(lag)}`}</span>}
-        <span className="hidden text-[11px] text-gray-600 sm:inline">{hint}</span>
+      <span className="flex items-center gap-2">
+        <span className="text-white [font-variant-numeric:tabular-nums]">{round != null ? formatNum(round) : "···"}</span>
+        <span className="inline-flex w-16 justify-end">{pill}</span>
       </span>
     </div>
   );
@@ -131,72 +158,196 @@ export function HealthClient() {
     const hot = Math.abs(v) > thresh;
     return { text: `${v >= 0 ? "+" : ""}${formatNum(v, decimals)}`, hot };
   };
+  const beh = h?.staleness.behind_7d ?? null;
 
   return (
-    <div className={`${styles.page} space-y-6`}>
+    <div className={`${styles.page} space-y-5`}>
+      {/* ── 1 · hero ── */}
       <header className={styles.hero}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-[22px] font-bold text-white">Platform health</h1>
             <p className="mt-1 font-mono text-[13px] text-fog-muted">
-              Analytics round-data completeness · ingest provenance + on-demand chain comparison
+              Analytics round-data completeness · ingest forensics + on-demand chain comparison
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 font-mono">
+            {metrics && (
+              <span className="text-[12px] text-fog-muted">
+                ingest <span style={{ color: metrics.ingestEnabled ? "#4ADE80" : "#F87171" }}>{metrics.ingestEnabled ? "ON" : "OFF"}</span>
+              </span>
+            )}
             {overall && (
               <span className={styles.statusChip} style={{ color: overall.color, borderColor: `${overall.color}55`, background: `${overall.color}12` }}>
                 <span className={styles.statusDot} style={{ background: overall.color }} />
                 {overall.label}
               </span>
             )}
-            <span className="font-mono text-[12px] text-fog-muted">
+            <span className="text-[12px] text-fog-muted">
               30s poll<Refreshing active={spine.fetching && !!spine.data} />
             </span>
           </div>
         </div>
       </header>
 
-      {/* metric grid */}
-      {!metrics ? (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-          <TileSkeleton /><TileSkeleton /><TileSkeleton /><TileSkeleton /><TileSkeleton /><TileSkeleton />
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-          <StatTile label="Ingest" value={
-            <span style={{ color: metrics.ingestEnabled ? "#4ADE80" : "#F87171" }}>{metrics.ingestEnabled ? "ON" : "OFF"}</span>
-          } hint="ingest_enabled flag" />
-          <StatTile label="Spine tip" value={formatNum(metrics.spineTip)} hint="newest indexed round" />
-          <StatTile label="Cumulative through" value={metrics.cumulativeThrough != null ? formatNum(metrics.cumulativeThrough) : "···"} hint="running totals valid to here" />
-          <StatTile label="Cumulative lag" value={
-            <span style={{ color: (metrics.cumulativeLag ?? 0) > AMBER_LAG_ROUNDS ? "#FBBF24" : undefined }}>
-              {metrics.cumulativeLag != null ? formatNum(metrics.cumulativeLag) : "···"}
-            </span>
-          } unit="rounds" hint={`spine − cumulative · amber > ${AMBER_LAG_ROUNDS}`} />
-          <StatTile label="Reset tail" value={metrics.resetTailLastRound != null ? formatNum(metrics.resetTailLastRound) : "···"} hint="last reset-event round" />
-          <StatTile label="Census" value={fmtTs(metrics.censusSnapshotTs)} hint="miner census snapshot (30min cadence)" />
-        </div>
-      )}
-
-      {/* recent fill */}
-      <ChartCard title="Recent fill" subtitle="Data quality over the last 50 spine rows: of the settled ones, how many carry a miner count and a per-tile spread.">
-        {!fill ? (
-          <div className="font-mono text-[13px] text-fog-muted">{spine.loading ? "Loading spine…" : "No spine rows."}</div>
+      {/* ── 2 · ingestion now ── */}
+      <ChartCard variant="dispersion" cutCorner="tr" title="Ingestion now"
+        subtitle="Every frontier vs the live chain tip (left) and how fresh each producer is (right). Recorded every 5 min by the health heartbeat — a gap in beats is itself the footprint of an outage.">
+        {!h ? (
+          <div className="font-mono text-[13px] text-fog-muted">{health.loading ? "Loading…" : health.error ?? "No health report."}</div>
         ) : (
-          <div className="flex flex-wrap gap-x-8 gap-y-2 font-mono text-[14px]">
-            <span className="text-gray-300">settled <span className="font-bold text-white">{fill.settled}</span> / {fill.sampled} sampled</span>
-            <span style={{ color: fill.withMiners === fill.settled ? "#4ADE80" : "#FBBF24" }}>
-              with miners {fill.withMiners} / {fill.settled}
-            </span>
-            <span style={{ color: fill.withTileSpread === fill.settled ? "#4ADE80" : "#FBBF24" }}>
-              with tile spread {fill.withTileSpread} / {fill.settled}
-            </span>
+          <div className="grid gap-x-10 gap-y-4 font-mono text-[13px] md:grid-cols-2">
+            <div>
+              <div className="section-label mb-1.5">frontiers · hover a row for its source</div>
+              <FrontierRow name="Chain (Board)" round={h.now.chain_round} lag={null} hint="live round on-chain, via the live-round worker's Board read" />
+              <FrontierRow name="Spine" round={h.now.spine_round} lag={h.now.spine_lag} hint="ore.rounds — round outcomes" />
+              <FrontierRow name="Deploy events" round={h.now.deploy_round} lag={h.now.deploy_lag} hint="per-miner deploy data (participants, competition)" />
+              <FrontierRow name="Cumulative" round={h.now.cumulative_round}
+                lag={h.now.chain_round != null && h.now.cumulative_round != null ? h.now.chain_round - h.now.cumulative_round : null}
+                hint="running totals (emission, rake)" />
+              <FrontierRow name="Reset tail" round={h.now.reset_tail_round}
+                lag={h.now.chain_round != null && h.now.reset_tail_round != null ? h.now.chain_round - h.now.reset_tail_round : null}
+                hint="independent reset-event cursor (fast recovery path)" />
+            </div>
+            <div>
+              <div className="section-label mb-1.5">freshness &amp; tip internals</div>
+              <KV label="Health heartbeat">{h.now.heartbeat_age_s != null ? fmtAgeMin(Math.round(h.now.heartbeat_age_s / 60)) : "none yet"}</KV>
+              <KV label="Factor snapshot">{fmtAgeMin(h.now.factor_age_min)}</KV>
+              <KV label="Price point">{fmtAgeMin(h.now.price_age_min)}</KV>
+              <KV label="Miner census">{fmtAgeMin(h.now.census_age_min)}</KV>
+              {h.now.ingest_progress && (
+                <>
+                  <KV label="Tip slot lag" title="ingest_progress.lag_slots — slots between the chain tip and the last provably indexed slot">
+                    {h.now.ingest_progress.lag_slots ?? "·"} slots
+                    {h.now.ingest_progress.catchup_active && <Pill color="#FBBF24" title="the tip is paging a backlog">catch-up</Pill>}
+                  </KV>
+                  <KV label="Open missing txs">
+                    <span style={{ color: (h.now.ingest_progress.missing_open ?? 0) > 0 ? "#FBBF24" : undefined }}>
+                      {h.now.ingest_progress.missing_open ?? 0}
+                    </span>
+                  </KV>
+                  {h.now.ingest_progress.last_error && (
+                    <div className="pt-1 text-[12px] text-amber">last tip error: {h.now.ingest_progress.last_error}</div>
+                  )}
+                </>
+              )}
+              <div className="mt-2 border-t pt-2" style={{ borderColor: DIVIDER }}>
+                {beh && h.staleness.first_beat_ts != null ? (
+                  <KV label="Fell behind ›3 rounds (7d)" title={`${beh.beats_behind} of ${beh.beats} beats behind · recording since ${fmtDate(h.staleness.first_beat_ts)}`}>
+                    <span style={{ color: beh.episodes ? "#FBBF24" : "#4ADE80" }}>{beh.episodes}×</span>
+                  </KV>
+                ) : (
+                  <div className="text-[12px] text-fog-muted">Behind-episode counts appear as heartbeat history accrues.</div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </ChartCard>
 
-      {/* live sample */}
-      <ChartCard title="Live sample" subtitle="Fetch one settled round from analytics AND the on-chain Round PDA, then diff them. Click-only — nothing here polls the chain.">
+      {/* ── 3 · integrity row ── */}
+      <div className="grid gap-5 lg:grid-cols-2">
+        <ChartCard variant="dispersion" cutCorner="bl" title="Data integrity"
+          subtitle="Per-round usefulness and holes that never healed.">
+          <div className="space-y-0.5 font-mono text-[13px]">
+            {fill && (
+              <>
+                <KV label="Settled (last 50 spine rows)">{fill.settled} / {fill.sampled}</KV>
+                <KV label="…carrying miner counts">
+                  <span style={{ color: fill.withMiners === fill.settled ? "#4ADE80" : "#FBBF24" }}>{fill.withMiners} / {fill.settled}</span>
+                </KV>
+                <KV label="…carrying tile spread">
+                  <span style={{ color: fill.withTileSpread === fill.settled ? "#4ADE80" : "#FBBF24" }}>{fill.withTileSpread} / {fill.settled}</span>
+                </KV>
+              </>
+            )}
+            {h && (
+              <>
+                <KV label="Missing rounds (all history)">
+                  <span style={{ color: h.coverage.spine_holes.missing_total ? "#FBBF24" : "#4ADE80" }}>
+                    {formatNum(h.coverage.spine_holes.missing_total)}
+                  </span>
+                </KV>
+                {h.coverage.spine_holes.gaps.map((g, i) => (
+                  <div key={i} className="py-[2px] text-right text-[12px] text-gray-500">
+                    after #{formatNum(g.after_round)} → #{formatNum(g.before_round)} · {formatNum(g.missing)} missing
+                  </div>
+                ))}
+                {h.coverage.recent_1000 && (
+                  <KV label="Settled w/o deploy data (last 1,000)">
+                    <span style={{ color: h.coverage.recent_1000.without_deploys ? "#FBBF24" : "#4ADE80" }}>
+                      {h.coverage.recent_1000.without_deploys}
+                    </span> / {h.coverage.recent_1000.settled}
+                  </KV>
+                )}
+              </>
+            )}
+          </div>
+        </ChartCard>
+
+        <ChartCard variant="dispersion" cutCorner="tr" title="Backfill depth"
+          subtitle="How far back each dataset reaches. Floors move only when the paused genesis walk runs.">
+          <div className="space-y-0.5 font-mono text-[13px]">
+            {(h?.coverage.tables ?? []).map((tbl) => (
+              <KV key={tbl.t} label={tbl.t}>
+                {tbl.min_round != null && <>#{formatNum(Number(tbl.min_round))}<span className="text-gray-500"> · </span></>}
+                <span className="text-gray-400">{fmtDate(tbl.min_ts)}</span>
+              </KV>
+            ))}
+            {!h && <div className="text-fog-muted">·</div>}
+          </div>
+        </ChartCard>
+      </div>
+
+      {/* ── 4 · downtime report ── */}
+      <ChartCard variant="dispersion" cutCorner="bl" title="Downtime report"
+        subtitle="Outage episodes mined from the 5-min RPC snapshot cadence (a gap IS an outage), classified against the RPC-independent hourly price feed.">
+        {!h ? (
+          <div className="font-mono text-[13px] text-fog-muted">{health.loading ? "Loading…" : "·"}</div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-x-6 gap-y-1 font-mono text-[13px] [font-variant-numeric:tabular-nums]">
+              <span className="text-gray-300"><span className="font-bold text-white">{h.downtime.totals.count}</span> episodes since {fmtDate(h.downtime.since_ts)}</span>
+              <span className="text-gray-300">total <span className="font-bold text-white">{fmtDur(h.downtime.totals.minutes)}</span></span>
+              <span className="text-gray-300">largest <span className="font-bold text-white">{fmtDur(h.downtime.totals.largest_minutes)}</span></span>
+              <span style={{ color: h.downtime.totals.last7d_count ? "#FBBF24" : "#4ADE80" }}>
+                last 7d: {h.downtime.totals.last7d_count} ({fmtDur(h.downtime.totals.last7d_minutes)})
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full font-mono text-[12.5px] [font-variant-numeric:tabular-nums]">
+                <thead><tr className="text-left text-gray-500">
+                  <th className="py-1 pr-4 font-semibold">window (local)</th>
+                  <th className="py-1 pr-4 text-right font-semibold">duration</th>
+                  <th className="py-1 font-semibold">scope</th>
+                </tr></thead>
+                <tbody>
+                  {h.downtime.episodes.map((e, i) => (
+                    <tr key={i} className="border-t text-gray-300" style={{ borderColor: DIVIDER }}>
+                      <td className="py-1.5 pr-4">{fmtEpochRange(e.from_ts, e.to_ts)}</td>
+                      <td className="py-1.5 pr-4 text-right text-white">{fmtDur(e.minutes)}</td>
+                      <td className="py-1.5">
+                        <Pill color={e.scope === "service" ? "#F87171" : "#FBBF24"}>
+                          {e.scope === "service" ? "service down" : "rpc only"}
+                        </Pill>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-[12px] leading-relaxed text-gray-500">
+              &quot;rpc only&quot; = the off-chain price feed kept landing while chain snapshots stopped — workers were
+              alive, the RPC side was not. Ingestion self-heals after each episode (the spine backfills), so an
+              episode means delayed data, not lost rounds — anything that never healed shows under Data integrity.
+            </p>
+          </div>
+        )}
+      </ChartCard>
+
+      {/* ── 5 · live sample ── */}
+      <ChartCard variant="dispersion" cutCorner="tr" title="Live sample"
+        subtitle="Fetch one settled round from analytics AND the on-chain Round PDA, then diff them. Click-only — nothing here polls the chain.">
         <div className="flex flex-wrap items-center gap-3">
           <input
             value={roundInput}
@@ -231,26 +382,26 @@ export function HealthClient() {
             </div>
 
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-lg border border-line p-3 font-mono text-[13px]">
-                <div className="section-label mb-2">analytics</div>
+              <div className="rounded-lg border p-3 font-mono text-[13px]" style={{ borderColor: DIVIDER }}>
+                <div className="section-label mb-1.5">analytics</div>
                 {r.analytics.roundPresent ? (
-                  <div className="space-y-1 text-gray-300">
-                    <div>tile columns <span className="text-white">{r.analytics.tileColumns}/25</span></div>
-                    <div>deployed <span className="text-white">{r.analytics.totalDeployedSol != null ? `${formatNum(r.analytics.totalDeployedSol, 3)} SOL` : "·"}</span></div>
-                    <div>miners <span className="text-white">{r.analytics.totalMiners ?? "·"}</span></div>
-                    <div>winning tile <span className="text-white">{r.analytics.winningTile != null ? `#${r.analytics.winningTile + 1}` : "·"}</span></div>
+                  <div className="space-y-0.5">
+                    <KV label="tile columns">{r.analytics.tileColumns}/25</KV>
+                    <KV label="deployed">{r.analytics.totalDeployedSol != null ? `${formatNum(r.analytics.totalDeployedSol, 3)} SOL` : "·"}</KV>
+                    <KV label="miners">{r.analytics.totalMiners ?? "·"}</KV>
+                    <KV label="winning tile">{r.analytics.winningTile != null ? `#${r.analytics.winningTile + 1}` : "·"}</KV>
                   </div>
                 ) : (
                   <div className="text-red">no row for this round</div>
                 )}
               </div>
 
-              <div className="rounded-lg border border-line p-3 font-mono text-[13px]">
-                <div className="section-label mb-2">participants</div>
+              <div className="rounded-lg border p-3 font-mono text-[13px]" style={{ borderColor: DIVIDER }}>
+                <div className="section-label mb-1.5">participants</div>
                 {r.participants.hasParticipants ? (
-                  <div className="space-y-1 text-gray-300">
-                    <div>total <span className="text-white">{r.participants.participantsTotal != null ? formatNum(r.participants.participantsTotal) : "·"}</span></div>
-                    <div>deploy frontier <span className="text-white">{r.participants.deployFrontier != null ? formatNum(r.participants.deployFrontier) : "·"}</span></div>
+                  <div className="space-y-0.5">
+                    <KV label="total">{r.participants.participantsTotal != null ? formatNum(r.participants.participantsTotal) : "·"}</KV>
+                    <KV label="deploy frontier">{r.participants.deployFrontier != null ? formatNum(r.participants.deployFrontier) : "·"}</KV>
                   </div>
                 ) : (
                   <div className="space-y-1">
@@ -260,8 +411,8 @@ export function HealthClient() {
                 )}
               </div>
 
-              <div className="rounded-lg border border-line p-3 font-mono text-[13px]">
-                <div className="section-label mb-2">on-chain round PDA</div>
+              <div className="rounded-lg border p-3 font-mono text-[13px]" style={{ borderColor: DIVIDER }}>
+                <div className="section-label mb-1.5">on-chain round PDA</div>
                 {r.onchain == null ? (
                   <div className="text-amber">RPC lookup failed — analytics half still stands</div>
                 ) : r.onchain.missing ? (
@@ -270,17 +421,17 @@ export function HealthClient() {
                     <div className="text-[12px] text-fog-muted">expected for old rounds — analytics outliving the PDA is the point of indexing</div>
                   </div>
                 ) : (
-                  <div className="space-y-1 text-gray-300">
-                    <div>deployed <span className="text-white">{formatNum(r.onchain.totalDeployedSol, 3)} SOL</span></div>
-                    <div>miners <span className="text-white">{formatNum(r.onchain.totalMiners)}</span></div>
-                    <div>winning tile <span className="text-white">{r.onchain.winningTile != null ? `#${r.onchain.winningTile + 1}` : "·"}</span></div>
+                  <div className="space-y-0.5">
+                    <KV label="deployed">{formatNum(r.onchain.totalDeployedSol, 3)} SOL</KV>
+                    <KV label="miners">{formatNum(r.onchain.totalMiners)}</KV>
+                    <KV label="winning tile">{r.onchain.winningTile != null ? `#${r.onchain.winningTile + 1}` : "·"}</KV>
                   </div>
                 )}
               </div>
             </div>
 
             {r.deltas && (
-              <div className="flex flex-wrap gap-x-8 gap-y-1 rounded-lg border border-line p-3 font-mono text-[13px]">
+              <div className="flex flex-wrap items-center gap-x-8 gap-y-1 rounded-lg border p-3 font-mono text-[13px]" style={{ borderColor: DIVIDER }}>
                 <span className="section-label">deltas (analytics − chain)</span>
                 {(() => { const d = delta(r.deltas.deployedSol, 0.01); return (
                   <span style={{ color: d.hot ? "#F87171" : "#4ADE80" }}>deployed {d.text}{r.deltas.deployedSol != null ? " SOL" : ""}</span>
@@ -300,149 +451,12 @@ export function HealthClient() {
         )}
       </ChartCard>
 
-      {/* ── forensics: staleness ── */}
-      <ChartCard title="Staleness · where every frontier sits"
-        subtitle="Chain tip (from the live Board read) vs each ingestion frontier. Recorded every 5 min by the health heartbeat — a gap in beats is itself the footprint of an outage.">
-        {!h ? (
-          <div className="font-mono text-[13px] text-fog-muted">{health.loading ? "Loading…" : health.error ?? "No health report."}</div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-1.5 font-mono text-[13px]">
-              <FrontierRow name="Chain (Board)" round={h.now.chain_round} lag={null} hint="live round on-chain" />
-              <FrontierRow name="Spine" round={h.now.spine_round} lag={h.now.spine_lag} hint="ore.rounds" />
-              <FrontierRow name="Deploy events" round={h.now.deploy_round} lag={h.now.deploy_lag} hint="per-miner data" />
-              <FrontierRow name="Cumulative" round={h.now.cumulative_round}
-                lag={h.now.chain_round != null && h.now.cumulative_round != null ? h.now.chain_round - h.now.cumulative_round : null} hint="running totals" />
-              <div className="pt-1 text-[12px] text-gray-500">
-                heartbeat {h.now.heartbeat_age_s != null ? `${Math.round(h.now.heartbeat_age_s / 60)}m ago` : "none yet"}
-                {" · "}factor snap {h.now.factor_age_min != null ? `${h.now.factor_age_min}m` : "·"}
-                {" · "}census {h.now.census_age_min != null ? `${Math.round(h.now.census_age_min / 60 * 10) / 10}h` : "·"}
-              </div>
-            </div>
-            <div className="space-y-1.5 font-mono text-[13px]">
-              {h.staleness.behind_7d && h.staleness.first_beat_ts != null ? (
-                <>
-                  <div className="text-gray-300">Fell behind (&gt;3 rounds): <span className="text-white">{h.staleness.behind_7d.episodes}×</span> in 7d</div>
-                  <div className="text-gray-300">Beats behind: <span className="text-white">{h.staleness.behind_7d.beats_behind}</span> / {h.staleness.behind_7d.beats}</div>
-                  <div className="text-[12px] text-gray-500">recording since {fmtDate(h.staleness.first_beat_ts)}</div>
-                </>
-              ) : (
-                <div className="text-[12px] text-fog-muted">Heartbeat history collecting — behind-episode counts appear as beats accrue.</div>
-              )}
-              {h.now.ingest_progress && (
-                <div className="pt-1 text-[12px] text-gray-500">
-                  tip lag {h.now.ingest_progress.lag_slots ?? "·"} slots
-                  {h.now.ingest_progress.catchup_active && <span className="text-amber"> · CATCH-UP ACTIVE</span>}
-                  {" · "}open missing txs {h.now.ingest_progress.missing_open ?? 0}
-                  {h.now.ingest_progress.last_error && <div className="text-amber">last error: {h.now.ingest_progress.last_error}</div>}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </ChartCard>
-
-      {/* ── forensics: downtime report ── */}
-      <ChartCard title="Downtime report"
-        subtitle="Outage episodes mined from the 5-min RPC snapshot cadence (a gap IS an outage), classified against the RPC-independent hourly price feed: rpc = only the chain side stopped; service = the whole service was down.">
-        {!h ? (
-          <div className="font-mono text-[13px] text-fog-muted">{health.loading ? "Loading…" : "·"}</div>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-x-6 gap-y-1 font-mono text-[13px]">
-              <span className="text-gray-300"><span className="font-bold text-white">{h.downtime.totals.count}</span> episodes since {fmtDate(h.downtime.since_ts)}</span>
-              <span className="text-gray-300">total <span className="font-bold text-white">{fmtDur(h.downtime.totals.minutes)}</span></span>
-              <span className="text-gray-300">largest <span className="font-bold text-white">{fmtDur(h.downtime.totals.largest_minutes)}</span></span>
-              <span style={{ color: h.downtime.totals.last7d_count ? "#FBBF24" : "#4ADE80" }}>
-                last 7d: {h.downtime.totals.last7d_count} ({fmtDur(h.downtime.totals.last7d_minutes)})
-              </span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full font-mono text-[12.5px]">
-                <thead><tr className="text-left text-gray-500">
-                  <th className="py-1 pr-4 font-semibold">window (local)</th>
-                  <th className="py-1 pr-4 text-right font-semibold">duration</th>
-                  <th className="py-1 font-semibold">scope</th>
-                </tr></thead>
-                <tbody>
-                  {h.downtime.episodes.map((e, i) => (
-                    <tr key={i} className="border-t border-[rgba(91,108,255,0.16)] text-gray-300">
-                      <td className="py-1.5 pr-4">{fmtEpochRange(e.from_ts, e.to_ts)}</td>
-                      <td className="py-1.5 pr-4 text-right text-white">{fmtDur(e.minutes)}</td>
-                      <td className="py-1.5">
-                        <span className="rounded border px-1.5 py-0.5 text-[11px] uppercase tracking-wide"
-                          style={e.scope === "service"
-                            ? { color: "#F87171", borderColor: "#F8717155" }
-                            : { color: "#FBBF24", borderColor: "#FBBF2455" }}>
-                          {e.scope === "service" ? "service down" : "rpc only"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="text-[12px] leading-relaxed text-gray-500">
-              &quot;rpc only&quot; = the off-chain price feed kept landing while chain snapshots stopped — workers were
-              alive, the RPC side was not. Ingestion self-heals after each episode (spine backfills), so an
-              episode means delayed data, not lost rounds — cross-check the spine holes below for anything
-              that never healed.
-            </p>
-          </div>
-        )}
-      </ChartCard>
-
-      {/* ── forensics: coverage + backfill depth ── */}
-      <div className="grid gap-5 lg:grid-cols-2">
-        <ChartCard title="Backfill depth · oldest data"
-          subtitle="How far back each dataset reaches. The deep genesis walk is paused; floors move only when it runs.">
-          {!h ? <div className="font-mono text-[13px] text-fog-muted">·</div> : (
-            <div className="space-y-1.5 font-mono text-[13px]">
-              {h.coverage.tables.map((tbl) => (
-                <div key={tbl.t} className="flex items-baseline justify-between gap-3">
-                  <span className="text-gray-300">{tbl.t}</span>
-                  <span>
-                    {tbl.min_round != null && <span className="text-white">#{formatNum(Number(tbl.min_round))}</span>}
-                    <span className="text-gray-500"> · {fmtDate(tbl.min_ts)}</span>
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </ChartCard>
-        <ChartCard title="Spine integrity"
-          subtitle="Missing round ids in ore.rounds (holes that never healed) and per-round usefulness over the last 1,000 settled rounds.">
-          {!h ? <div className="font-mono text-[13px] text-fog-muted">·</div> : (
-            <div className="space-y-2 font-mono text-[13px]">
-              <div className="text-gray-300">
-                missing rounds <span className="font-bold" style={{ color: h.coverage.spine_holes.missing_total ? "#FBBF24" : "#4ADE80" }}>
-                  {formatNum(h.coverage.spine_holes.missing_total)}
-                </span>
-              </div>
-              {h.coverage.spine_holes.gaps.map((g, i) => (
-                <div key={i} className="text-[12px] text-gray-500">
-                  gap after #{formatNum(g.after_round)} → #{formatNum(g.before_round)} ({formatNum(g.missing)} missing)
-                </div>
-              ))}
-              {h.coverage.recent_1000 && (
-                <div className="pt-1 text-gray-300">
-                  settled without deploy data (last 1,000):{" "}
-                  <span className="font-bold" style={{ color: h.coverage.recent_1000.without_deploys ? "#FBBF24" : "#4ADE80" }}>
-                    {h.coverage.recent_1000.without_deploys}
-                  </span> / {h.coverage.recent_1000.settled}
-                </div>
-              )}
-            </div>
-          )}
-        </ChartCard>
-      </div>
-
-      {/* ── forensics: workers ── */}
-      <ChartCard title="Background workers"
+      {/* ── 6 · workers ── */}
+      <ChartCard variant="dispersion" cutCorner="bl" title="Background workers"
         subtitle="Live status of every registered analytics worker — the same registry the 30-min log report reads.">
         {!h ? <div className="font-mono text-[13px] text-fog-muted">·</div> : (
           <div className="overflow-x-auto">
-            <table className="w-full font-mono text-[12.5px]">
+            <table className="w-full font-mono text-[12.5px] [font-variant-numeric:tabular-nums]">
               <thead><tr className="text-left text-gray-500">
                 <th className="py-1 pr-3 font-semibold">worker</th>
                 <th className="py-1 pr-3 font-semibold">status</th>
@@ -453,7 +467,7 @@ export function HealthClient() {
               </tr></thead>
               <tbody>
                 {h.workers.map((w) => (
-                  <tr key={w.name} className="border-t border-[rgba(91,108,255,0.16)] text-gray-300">
+                  <tr key={w.name} className="border-t text-gray-300" style={{ borderColor: DIVIDER }}>
                     <td className="py-1.5 pr-3 text-white">{w.name}</td>
                     <td className="py-1.5 pr-3">
                       <span style={{ color: WORKER_STATUS_COLOR[w.status] ?? "#B7BDD2" }}>{w.status}</span>
