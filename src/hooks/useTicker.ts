@@ -10,6 +10,7 @@ export type TickerData = {
   store_apr: number | null;
   motherlode_pool_ore: number | null;
   motherlode_odds: number | null;
+  current_round: number | null;
 };
 
 /** Live header ticker — cached /api/ticker, re-polls each minute. */

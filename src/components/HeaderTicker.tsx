@@ -11,6 +11,7 @@ type Ticker = {
   store_apr: number | null;
   motherlode_pool_ore: number | null;
   motherlode_odds: number | null;
+  current_round: number | null;
 };
 
 /**
@@ -58,6 +59,14 @@ export function HeaderTicker() {
   }
   if (t.store_apr != null) items.push({ label: "stORE APR", value: `${t.store_apr.toFixed(1)}%`, color: "#E8881A", title: "stORE staking yield, annualized over a rolling window of up to 7 days" });
   if (t.uore_apr != null) items.push({ label: "uORE APR", value: `${t.uore_apr.toFixed(1)}%`, color: "#FFC061", title: "Refining yield on unclaimed ORE, annualized over a rolling window of up to 7 days" });
+  if (t.current_round != null) {
+    items.push({
+      label: "Round",
+      value: `#${formatNum(t.current_round)}`,
+      color: "#EAECF6",
+      title: "Current ORE mining round on chain",
+    });
+  }
   if (!items.length) return null;
 
   return (
