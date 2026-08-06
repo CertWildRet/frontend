@@ -94,12 +94,10 @@ function SoloSplitTrend() {
         aFmt={(v) => `${v.toFixed(0)}%`} bFmt={(v) => `${v.toFixed(0)}%`}
         height={250} loading={series.loading && !series.data}
         emptyText="Collecting v4 rounds…" />
-      <p className="mt-2.5 font-mono text-[12px] leading-relaxed text-fog-muted">
-        Share of SOL chasing the 10 solo (winner-take-all) tiles — the crowd&apos;s lean — vs the share of
-        rounds that actually paid solo. Both against the fixed 40% tile baseline (dashed): deploy lean above
-        the line = solo-chasing; the outcome rate just wobbles around it. Each point is a {bucketHrs}-hour
-        window of rounds, so a single point swings far wider than the lifetime figure above — hover for its
-        exact window and round count.
+      <p className="mt-2.5 font-mono text-[12px] leading-relaxed text-fog-muted"
+        title={`Deploy lean = share of SOL on the 10 winner-take-all tiles (the crowd's behaviour). Outcome rate = share of rounds a solo tile actually won (luck). Each point aggregates a ${bucketHrs}-hour window of rounds, so single points swing far wider than the lifetime figure.`}>
+        Gold above the dashed 40% = the crowd overweighting solo tiles; blue just wobbles around it.
+        Points are {bucketHrs}h windows — hover for exact counts.
       </p>
     </ChartCard>
   );
