@@ -117,7 +117,15 @@ export function RwaTab() {
   const quote: RwaPriceQuote | null =
     prices.data?.quotes.find((q) => q.feedId === feedId) ?? null;
 
-  const orePoints = trends.data?.points ?? [];
+  // usePolled keeps the PREVIOUS selection's data while the new fetch runs —
+  // rendered as-is, the chart draws the old asset then snaps when new bars
+  // land. Both payloads echo what they answer for (bars: feedId+range, trends:
+  // range), so gate on "does the data in hand match the current selection" and
+  // show the chart skeleton whenever it doesn't.
+  const peerReady = bars.data?.feedId === feedId && bars.data?.range === range;
+  const oreReady = trends.data != null && (trends.data.range == null || trends.data.range === range);
+
+  const orePoints = oreReady ? trends.data?.points ?? [] : [];
   // Hour labels only for sub-daily buckets (24h). Daily ORE points sit at
   // midnight UTC (~86400s apart) which is still < 48h — the old check made
   // every 7d/30d tick read "00:00".
@@ -127,7 +135,7 @@ export function RwaTab() {
   const chart = useMemo(() => {
     const oreTs = orePoints.map((p) => (p.day_ts > 1e12 ? p.day_ts : p.day_ts * 1000));
     const oreCloses = orePoints.map((p) => p.ore_usd);
-    const peerRaw = bars.data?.points ?? [];
+    const peerRaw = peerReady ? bars.data?.points ?? [] : [];
     const peerAligned = oreTs.length
       ? alignPeerToOre(oreTs, peerRaw)
       : peerRaw.map((p) => p.close);
@@ -169,9 +177,13 @@ export function RwaTab() {
 
     return { a, b, lastOre, lastPeer, hasOre: oreCloses.some((v) => v != null), hasPeer: peerNorm.some((v) => v != null) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orePoints, bars.data, range, quote?.price, quote?.tradable]);
+  }, [orePoints, bars.data, feedId, range, peerReady, quote?.price, quote?.tradable]);
 
-  const loadingChart = (trends.loading && !trends.data) || (bars.loading && !bars.data);
+  // Skeleton whenever either side hasn't answered FOR THE CURRENT SELECTION —
+  // an asset/range switch re-runs the loading state instead of the chart
+  // redrawing the old series and jumping when the new one lands.
+  const peerLoading = !peerReady && (bars.loading || bars.fetching);
+  const loadingChart = (!oreReady && (trends.loading || trends.fetching)) || peerLoading;
   const pricesLoading = prices.loading && !prices.data;
   const configError = prices.provenance?.caveats?.[0] ?? bars.provenance?.caveats?.[0] ?? null;
 
@@ -250,7 +262,7 @@ export function RwaTab() {
             <div className={`num mt-1.5 text-[28px] leading-none tracking-tight ${pctTone(chart.lastPeer)}`}>
               {chart.hasPeer ? (
                 formatPctChange(chart.lastPeer)
-              ) : bars.loading ? (
+              ) : peerLoading ? (
                 "···"
               ) : bars.error?.includes("no bars in response") ? (
                 // Usually the truth (quote-only feed) — but the upstream also
@@ -329,8 +341,12 @@ export function RwaTab() {
       >
         <DualLine
           shared
-          a={chart.a}
-          b={chart.b}
+          // Empty while loading ON PURPOSE: with data present DualLine draws
+          // whatever it has (ORE-only mid-switch), so the skeleton branch only
+          // engages when the series are withheld until both sides answer for
+          // the current selection.
+          a={loadingChart ? [] : chart.a}
+          b={loadingChart ? [] : chart.b}
           aName="ORE"
           bName={asset.symbol}
           aColor={ORE_COLOR}
