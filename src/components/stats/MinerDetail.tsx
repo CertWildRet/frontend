@@ -447,21 +447,26 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
               const tiles = tilesFromMask(h.mask_union);
               // ORE won: same rules as the series — solo rounds pay the full
               // base to the sampled winner, splits pro-rata by winning-tile
-              // stake, motherlode pops always pro-rata.
+              // stake, motherlode pops always pro-rata. A settled round that is
+              // not a split IS solo (the API coalesces the pre-#292,600 null),
+              // and solo base is credited only to a RECORDED winner — an
+              // unrecorded-era solo win is shown as unrecorded, never guessed.
               const share = hit && dws > 0 ? stakeW / dws : 0;
               const baseGrams = Math.max(0, Number(h.total_minted ?? "0") - 20_000_000_000);
+              const isSplit = Number(h.is_split) === 1;
               let oreWonRow = 0;
               if (share > 0) {
-                if (h.is_split == null || Number(h.is_split) !== 0) oreWonRow = (baseGrams * share) / 1e11;
-                else oreWonRow = h.top_miner === pubkey ? baseGrams / 1e11 : 0;
+                if (isSplit) oreWonRow = (baseGrams * share) / 1e11;
+                else oreWonRow = h.top_miner != null && h.top_miner === pubkey ? baseGrams / 1e11 : 0;
                 oreWonRow += (Number(h.motherlode_paid ?? "0") * share) / 1e11;
               }
               const rowNetUsd = solNow != null && oreNow != null
                 ? rowNetSol * solNow + oreWonRow * oreNow : null;
-              // Solo rounds are winner-take-all: the full base emission goes to
-              // the one sampled top miner, so 0 ORE on a solo loss is correct.
-              const soloMiss =
-                share > 0 && h.is_split != null && Number(h.is_split) === 0 && h.top_miner !== pubkey;
+              // Why a solo round shows no ORE: lost the winner sample (correct,
+              // winner-take-all) vs the winner simply not being recorded
+              // (pre-#292,600 era) — two different truths, two tooltips.
+              const soloMiss = share > 0 && !isSplit && h.top_miner != null && h.top_miner !== pubkey;
+              const soloUnrecorded = share > 0 && !isSplit && h.top_miner == null;
               return (
                 <tr key={h.round_id} className={bodyRow}>
                   <td className={`${td} text-white`}>
@@ -482,7 +487,9 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
                       <span
                         title={soloMiss
                           ? "Solo round — the full ~1 ORE emission went to the one sampled winner, everyone else gets SOL back only"
-                          : undefined}
+                          : soloUnrecorded
+                            ? "Solo round from before ~#292,600 — the winner wasn't recorded on-chain, so this round's ORE can't be attributed to anyone"
+                            : undefined}
                       >
                         ·
                       </span>
