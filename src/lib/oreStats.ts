@@ -521,6 +521,17 @@ export type OreHealthReport = {
 };
 export const fetchOreHealth = () => get<OreHealthReport>("/ore/health");
 
+/** Paginated per-round history for one wallet (same row shape the miner
+ *  envelope embeds for its newest-50). Total pages come from the envelope's
+ *  events.rounds — the endpoint itself only serves rows. */
+export type OreMinerHistoryPage = {
+  rows: OreMinerDetail["history"];
+  limit: number;
+  offset: number;
+};
+export const fetchOreMinerHistory = (pubkey: string, limit = 50, offset = 0) =>
+  get<OreMinerHistoryPage>(`/ore/miner/${pubkey}/history?limit=${limit}&offset=${offset}`);
+
 export const fetchOreSummary = () => get<OreSummary>("/ore/summary");
 export const fetchOreRounds = (limit = 200, offset = 0) =>
   get<{ rounds: OreRound[]; limit: number; offset: number; total: number }>(`/ore/rounds?limit=${limit}&offset=${offset}`);

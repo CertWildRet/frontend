@@ -10,7 +10,7 @@
  */
 import Image from "next/image";
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { IconExternalLink } from "@tabler/icons-react";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
@@ -25,12 +25,14 @@ import { usePolled } from "@/hooks/useOreStats";
 import { useTicker } from "@/hooks/useTicker";
 import {
   fetchOreMiner,
+  fetchOreMinerHistory,
   lamportsToSol,
   oreGramsToOre,
   ORE_TILE_COUNT,
   type OreMinerDetail,
 } from "@/lib/oreStats";
 import { formatSol, formatNum, formatPct } from "@/lib/format";
+import { Pager, PAGE } from "@/app/stats/shared";
 import styles from "@/app/stats/stats.module.css";
 
 /** Distinct tiles covered in a round from the deploy mask bitfield. */
@@ -84,10 +86,15 @@ function timeAgo(d: Date): string {
 
 export function MinerDetail({ pubkey }: { pubkey: string }) {
   const [roundsWin, setRoundsWin] = useState("500");
-  const [historyExpanded, setHistoryExpanded] = useState(false);
+  // History pagination: page 0 renders instantly from the envelope's embedded
+  // newest-50; deeper pages fetch /ore/miner/:pubkey/history so the ENTIRE
+  // captured history is walkable, same Pager as the Rounds/Motherlode tables.
+  const [histOffset, setHistOffset] = useState(0);
   const ticker = useTicker();
   // Fetch on mount, pubkey/window change, and manual refresh only — no background poll.
   const det = usePolled(() => fetchOreMiner(pubkey, roundsWin === "all" ? "all" : Math.max(1000, Number(roundsWin))), 0, [pubkey, roundsWin]);
+  const histPage = usePolled(() => fetchOreMinerHistory(pubkey, PAGE, histOffset), 0, [pubkey, histOffset]);
+  useEffect(() => { setHistOffset(0); }, [pubkey]);
   const d = det.data;
   if (det.loading && !d) {
     return <div className="grid grid-cols-2 gap-3 md:grid-cols-4"><TileSkeleton /><TileSkeleton /><TileSkeleton /><TileSkeleton /></div>;
@@ -132,9 +139,12 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const avgPerRoundUsd = pnlUsd != null && roundsAll > 0 ? pnlUsd / roundsAll : null;
   const fmtSignedUsd = (v: number, dec = 2) => `${v >= 0 ? "+" : "-"}$${formatNum(Math.abs(v), dec)}`;
 
-  const HISTORY_PREVIEW = 10;
-  const historyRows = historyExpanded ? d.history : d.history.slice(0, HISTORY_PREVIEW);
-  const canExpandHistory = d.history.length > HISTORY_PREVIEW;
+  // Page 0 falls back to the embedded newest-50 while (or if) the endpoint
+  // fetch is in flight; deeper pages only ever come from the endpoint.
+  const historyRows = histPage.data?.rows ?? (histOffset === 0 ? d.history : []);
+  // Pager total = full covered rounds (rollup count from the envelope); the
+  // embedded history length is the floor when events aren't aggregated yet.
+  const historyTotal = d.events?.rounds ?? d.history.length;
 
   return (
     <ChartWatermarkContext.Provider value={true}>
@@ -406,8 +416,8 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
 
       {d.history.length > 0 && (
       <ChartCard
-        title={`${pubkey.slice(0, 4)}'s recent history`}
-        subtitle="Per-round deploy and outcome from the captured history."
+        title={`${pubkey.slice(0, 4)}'s round history`}
+        subtitle={`Per-round deploy and outcome — every captured round, newest first${historyTotal > PAGE ? ` (${formatNum(historyTotal)} rounds)` : ""}.`}
       >
         <div className="overflow-hidden rounded-xl border border-line bg-ink-800/80">
         <div className={`${tableWrap} border-0 bg-transparent`}>
@@ -476,20 +486,11 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           </tbody>
         </table>
       </div>
-      {canExpandHistory && (
-        <div className="border-t border-line px-4 py-3" data-no-capture="true">
-          <button
-            type="button"
-            onClick={() => setHistoryExpanded((v) => !v)}
-            className="w-full rounded-lg border border-line bg-white/[0.03] px-3 py-2 text-[13px] font-semibold text-[#EAECF6] transition-colors hover:bg-white/[0.06] focus:outline-none focus:border-steel"
-            style={{ fontFamily: "var(--font-subtext)" }}
-          >
-            {historyExpanded
-              ? "Collapse"
-              : `Expand · ${formatNum(d.history.length - HISTORY_PREVIEW)} more`}
-          </button>
-        </div>
-      )}
+      <div className="border-t border-line px-4 pb-3 pt-1" data-no-capture="true">
+        <Pager offset={histOffset} total={historyTotal}
+          onPage={setHistOffset} unit="rounds"
+          loading={histPage.fetching && !!histPage.data} />
+      </div>
       </div>
       </ChartCard>
       )}
