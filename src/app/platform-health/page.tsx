@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { HealthClient } from "./HealthClient";
+import { OpsGate } from "./OpsGate";
 
 // Ops readout — URL-only by design (no nav item), so keep it out of indexes.
 export const metadata: Metadata = {
@@ -8,5 +9,12 @@ export const metadata: Metadata = {
 };
 
 export default function PlatformHealthPage() {
-  return <HealthClient />;
+  // The gate wraps everything so no poller starts and no partial data renders before
+  // a session exists. The real enforcement is server-side (analytics returns 401 for
+  // /ore/health and /admin/*); this is the part a human sees.
+  return (
+    <OpsGate>
+      <HealthClient />
+    </OpsGate>
+  );
 }

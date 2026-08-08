@@ -28,11 +28,16 @@ export async function GET(
     // rather than sent blank — a blank hop header is meaningless and a needless
     // thing for any intermediary to have to interpret.
     const clientIp = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim();
+    // Exactly one request header is forwarded from the client, by allowlist. A blanket
+    // pass-through would let a caller smuggle x-api-key or x-forwarded-for upstream and
+    // impersonate the first party.
+    const opsToken = req.headers.get("x-ops-token");
     const upstream = await fetch(url, {
       cache: "no-store",
       headers: {
         ...analyticsAuthHeaders(),
         ...(clientIp ? { "x-forwarded-for": clientIp } : {}),
+        ...(opsToken ? { "x-ops-token": opsToken } : {}),
       },
     });
     const text = await upstream.text();
@@ -46,6 +51,10 @@ export async function GET(
       const v = upstream.headers.get(h);
       if (v) headers[h] = v;
     }
+    // An authenticated payload must never be stored by a shared cache, and the
+    // response varies by the ops token.
+    headers["cache-control"] = "no-store";
+    headers["vary"] = "x-ops-token";
     return new Response(text, { status: upstream.status, headers });
   } catch {
     return Response.json({ error: "analytics upstream unreachable" }, { status: 502 });

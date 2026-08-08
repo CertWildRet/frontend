@@ -7,6 +7,7 @@
  * Live layer: the same service exposes a WebSocket at /stream (see useOreLive).
  */
 import { ANALYTICS_URL, ANALYTICS_WS_URL, analyticsAuthHeaders, lamportsToSol, oreGramsToOre } from "./analytics";
+import { getOpsToken, clearOpsToken, OpsUnauthorizedError } from "./opsAuth";
 
 export { lamportsToSol, oreGramsToOre };
 
@@ -458,17 +459,29 @@ const unreachable = () =>
     `Can't reach the ORE stats service (${ANALYTICS_URL}). It may be waking up (free tier) or the ORE ingest may be disabled. Retry in a moment.`,
   );
 
-async function get<T>(path: string): Promise<OreEnvelope<T>> {
+async function get<T>(path: string, opts?: { ops?: boolean }): Promise<OreEnvelope<T>> {
   let res: Response;
+  // Ops-gated reads carry the session token. It lives only in memory on the client, so
+  // this is a no-op during SSR — those endpoints are only ever read from the browser.
+  const opsToken = opts?.ops ? getOpsToken() : null;
+  if (opts?.ops && !opsToken) throw new OpsUnauthorizedError();
   try {
     // On the server this call goes straight to the analytics service, bypassing the
     // /api/analytics proxy, so it has to carry the first-party key itself — otherwise
     // SSR traffic is metered as an anonymous third party. In the browser the header
     // is absent (the key is server-only) and the proxy adds it.
-    res = await fetch(`${ANALYTICS_URL}${path}`, { headers: analyticsAuthHeaders() });
+    res = await fetch(`${ANALYTICS_URL}${path}`, {
+      headers: { ...analyticsAuthHeaders(), ...(opsToken ? { "x-ops-token": opsToken } : {}) },
+    });
   } catch (e) {
     console.error("[oreStats] GET", path, e);
     throw unreachable();
+  }
+  // 401 is the ops gate; surface it as a typed error so the UI can re-prompt instead
+  // of rendering "request failed (401)" at someone.
+  if (res.status === 401) {
+    clearOpsToken();
+    throw new OpsUnauthorizedError();
   }
   if (!res.ok) throw new Error(`ORE stats request failed (${res.status}) on ${path}`);
   return res.json();
@@ -523,7 +536,7 @@ export type OreHealthReport = {
     attempts: number; successes: number; failures: number; lock_skips: number;
   }[];
 };
-export const fetchOreHealth = () => get<OreHealthReport>("/ore/health");
+export const fetchOreHealth = () => get<OreHealthReport>("/ore/health", { ops: true });
 
 /** Paginated per-round history for one wallet (same row shape the miner
  *  envelope embeds for its newest-50). Total pages come from the envelope's
@@ -728,3 +741,53 @@ export const fetchStatsOverview = () => get<StatsOverview>("/stats/overview");
 /** Rake bps -> percent (10.5% ≈ 1050 bps). */
 export const bpsToPct = (bps?: string | number | null): number =>
   bps == null ? 0 : Number(bps) / 100;
+
+
+// ── /admin/usage/* : API-gateway usage analytics (ops-gated) ─────────────────
+export type UsageCaller = {
+  caller: string;
+  label: string | null;
+  kind: string | null;
+  service_label: string | null;
+  service_color: string | null;
+  requests: number;
+  errors: number;
+  compute_ms: number;
+  egress_bytes: number;
+  cost_units: number;
+  cache_hits: number;
+  throttled: number;
+  gated: number;
+  distinct_sources: number;
+  last_seen: string | null;
+  cost_share: number;
+  cost_usd_estimate: number | null;
+};
+export type UsageRoute = {
+  route: string; requests: number; compute_ms: number; mean_ms: number; max_ms: number;
+  p95_ms: number | null; egress_bytes: number; cache_hits: number; errors: number;
+  cost_share: number; cost_usd_estimate: number | null;
+};
+export type UsageSource = {
+  source_id: string; caller: string; requests: number; compute_ms: number; egress_bytes: number;
+  throttled: number; routes_touched: number; first_seen: string; last_seen: string;
+  cost_share: number; cost_usd_estimate: number | null;
+};
+export type UsagePoint = {
+  bucket: string; requests: number; first_party: number; anonymous: number;
+  throttled: number; egress_bytes: number;
+};
+export type UsageSummary = {
+  window_hours: number;
+  callers: UsageCaller[];
+  cost_model: { weights: { compute: number; egress: number; requests: number }; monthly_usd: number | null; note: string };
+};
+
+export const fetchUsageSummary = (hours = 24) =>
+  get<UsageSummary>(`/admin/usage/summary?hours=${hours}`, { ops: true });
+export const fetchUsageRoutes = (hours = 24) =>
+  get<{ window_hours: number; routes: UsageRoute[] }>(`/admin/usage/routes?hours=${hours}`, { ops: true });
+export const fetchUsageSources = (hours = 24) =>
+  get<{ window_hours: number; sources: UsageSource[] }>(`/admin/usage/sources?hours=${hours}`, { ops: true });
+export const fetchUsageSeries = (hours = 24) =>
+  get<{ window_hours: number; bucket_minutes: number; points: UsagePoint[] }>(`/admin/usage/series?hours=${hours}`, { ops: true });
