@@ -21,15 +21,18 @@ export async function GET(
   const url = `${UPSTREAM}/${path}${req.nextUrl.search}`;
 
   try {
+    // SET, never append. Vercel populates x-forwarded-for with the real client
+    // address; taking the leftmost entry and overwriting means a client-supplied
+    // header can never survive this hop and forge a source. Upstream only believes
+    // it because our key is marked trust_forwarded_for. Omitted entirely when empty
+    // rather than sent blank — a blank hop header is meaningless and a needless
+    // thing for any intermediary to have to interpret.
+    const clientIp = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim();
     const upstream = await fetch(url, {
       cache: "no-store",
       headers: {
         ...analyticsAuthHeaders(),
-        // SET, never append. Vercel populates x-forwarded-for with the real client
-        // address; taking the leftmost entry and overwriting means a client-supplied
-        // header can never survive this hop and forge a source. Upstream only
-        // believes it because our key is marked trust_forwarded_for.
-        "x-forwarded-for": (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim(),
+        ...(clientIp ? { "x-forwarded-for": clientIp } : {}),
       },
     });
     const text = await upstream.text();
