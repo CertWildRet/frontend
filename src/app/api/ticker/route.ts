@@ -3,7 +3,7 @@
 // visitors have the header open.
 
 import { NextResponse } from "next/server";
-import { oreGramsToOre } from "@/lib/analytics";
+import { analyticsAuthHeaders, oreGramsToOre } from "@/lib/analytics";
 
 export const revalidate = 60;
 
@@ -15,7 +15,10 @@ const UPSTREAM = (
 
 export async function GET() {
   try {
-    const tickerRes = await fetch(`${UPSTREAM}/ore/ticker`, { next: { revalidate: 60 } });
+    const tickerRes = await fetch(`${UPSTREAM}/ore/ticker`, {
+      next: { revalidate: 60 },
+      headers: analyticsAuthHeaders(),
+    });
     const json = await tickerRes.json();
     const poolGrams = json?.data?.motherlode_pool_grams;
     const motherlode_pool_ore = poolGrams != null ? oreGramsToOre(poolGrams) : null;

@@ -2,6 +2,7 @@
 // never cross-origin to Render (avoids CORS). Forwards GET only — read-only API.
 
 import { NextRequest } from "next/server";
+import { analyticsAuthHeaders } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,12 +21,29 @@ export async function GET(
   const url = `${UPSTREAM}/${path}${req.nextUrl.search}`;
 
   try {
-    const upstream = await fetch(url, { cache: "no-store" });
-    const text = await upstream.text();
-    return new Response(text, {
-      status: upstream.status,
-      headers: { "content-type": upstream.headers.get("content-type") ?? "application/json" },
+    const upstream = await fetch(url, {
+      cache: "no-store",
+      headers: {
+        ...analyticsAuthHeaders(),
+        // SET, never append. Vercel populates x-forwarded-for with the real client
+        // address; taking the leftmost entry and overwriting means a client-supplied
+        // header can never survive this hop and forge a source. Upstream only
+        // believes it because our key is marked trust_forwarded_for.
+        "x-forwarded-for": (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim(),
+      },
     });
+    const text = await upstream.text();
+    const headers: Record<string, string> = {
+      "content-type": upstream.headers.get("content-type") ?? "application/json",
+    };
+    // Pass the throttling signals through — dropping them (as this route used to)
+    // leaves a client unable to tell "slow down" from "broken", and hides the
+    // shadow-mode warning a partner would otherwise see before enforcement starts.
+    for (const h of ["retry-after", "x-ratelimit-limit", "x-ratelimit-remaining", "x-ratelimit-shadow"]) {
+      const v = upstream.headers.get(h);
+      if (v) headers[h] = v;
+    }
+    return new Response(text, { status: upstream.status, headers });
   } catch {
     return Response.json({ error: "analytics upstream unreachable" }, { status: 502 });
   }

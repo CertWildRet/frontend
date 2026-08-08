@@ -17,6 +17,22 @@ const UPSTREAM = (
 export const ANALYTICS_URL =
   typeof window !== "undefined" ? "/api/analytics" : UPSTREAM;
 
+/**
+ * First-party credential for the analytics API gateway. SERVER-ONLY — never
+ * NEXT_PUBLIC_*, so it cannot reach the browser bundle. Same shape as the Autonom
+ * key in autonomServer.ts.
+ *
+ * Why every server-side caller needs it: the gateway identifies our app by key, not
+ * by IP, because all our REST traffic arrives from a handful of Vercel egress IPs
+ * with no Origin header. A server-side fetch that omits this is recorded as an
+ * anonymous third party — which would both mis-attribute our own usage and, once
+ * enforcement is on, subject our own app to anonymous rate limits.
+ */
+export const analyticsAuthHeaders = (): Record<string, string> => {
+  const key = process.env.ANALYTICS_API_KEY?.trim();
+  return key ? { "x-api-key": key } : {};
+};
+
 /** WebSocket always targets upstream (no browser proxy for /stream). */
 export const ANALYTICS_WS_URL = `${UPSTREAM.replace(/^http/, "ws")}/stream`;
 
@@ -121,7 +137,9 @@ async function get<T>(path: string): Promise<Envelope<T>> {
   const url = `${ANALYTICS_URL}${path}`;
   let res: Response;
   try {
-    res = await fetch(url);
+    // Server-side calls reach the analytics service directly (no proxy hop), so they
+    // must present the first-party key themselves. Browser-side it resolves to {}.
+    res = await fetch(url, { headers: analyticsAuthHeaders() });
   } catch (e) {
     console.error("[analytics] GET", url, e);
     throw unreachable();

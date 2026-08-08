@@ -6,7 +6,7 @@
  *
  * Live layer: the same service exposes a WebSocket at /stream (see useOreLive).
  */
-import { ANALYTICS_URL, ANALYTICS_WS_URL, lamportsToSol, oreGramsToOre } from "./analytics";
+import { ANALYTICS_URL, ANALYTICS_WS_URL, analyticsAuthHeaders, lamportsToSol, oreGramsToOre } from "./analytics";
 
 export { lamportsToSol, oreGramsToOre };
 
@@ -461,7 +461,11 @@ const unreachable = () =>
 async function get<T>(path: string): Promise<OreEnvelope<T>> {
   let res: Response;
   try {
-    res = await fetch(`${ANALYTICS_URL}${path}`);
+    // On the server this call goes straight to the analytics service, bypassing the
+    // /api/analytics proxy, so it has to carry the first-party key itself — otherwise
+    // SSR traffic is metered as an anonymous third party. In the browser the header
+    // is absent (the key is server-only) and the proxy adds it.
+    res = await fetch(`${ANALYTICS_URL}${path}`, { headers: analyticsAuthHeaders() });
   } catch (e) {
     console.error("[oreStats] GET", path, e);
     throw unreachable();
