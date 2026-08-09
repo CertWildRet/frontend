@@ -804,7 +804,7 @@ export type SourceRoute = {
   route: string; requests: number; bytes: number; mean_ms: number; p95_ms: number | null; errors: number;
 };
 export type SourceDetail = {
-  source_id: string; caller: string; requests: number; bytes: number; errors: number;
+  source_id: string; ip: string | null; caller: string; requests: number; bytes: number; errors: number;
   first_seen: string; last_seen: string; per_min: number; active_minutes: number;
   routes: SourceRoute[];
 };

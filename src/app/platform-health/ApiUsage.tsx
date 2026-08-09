@@ -314,9 +314,10 @@ export function ApiUsage() {
             <div>
               <div className="section-label mb-1.5">per-source breakdown</div>
               <p className="subtext mb-2">
-                One row per network address, as a scrambled id — the address itself is never
-                stored. Open a row to see which endpoints it calls. Rate is over the span
-                that source was active, not the whole window, so a short burst reads as a burst.
+                One row per calling IP address. Open a row for the exact endpoints it hits,
+                with per-endpoint counts, typical time and slow tail. Rate is measured over
+                the span that address was actually active, not the whole window, so a short
+                burst reads as a burst instead of being averaged into a trickle.
               </p>
               <div className="space-y-1">
                 {detail.data.sources.map((s) => {
@@ -331,7 +332,10 @@ export function ApiUsage() {
                         className="flex w-full items-center gap-3 px-2.5 py-1.5 text-left transition-colors hover:bg-white/[0.03]"
                       >
                         <span className="w-4 shrink-0 text-fog-dim">{isOpen ? "\u2212" : "+"}</span>
-                        <span className="w-[74px] shrink-0 text-[12px] text-gray-400">{s.source_id?.slice(0, 8)}</span>
+                        <span className="w-[150px] shrink-0 truncate text-[12px] text-white"
+                          title={s.ip ? `source id ${s.source_id?.slice(0, 8)}` : "address not recorded — this row predates address capture"}>
+                          {s.ip ?? `${s.source_id?.slice(0, 8)} (no address)`}
+                        </span>
                         <span className="w-[130px] shrink-0 truncate text-[12px]"
                           style={{ color: anon ? CHART.amber : CHART.cyan }}>
                           {anon ? "no key" : s.caller}
