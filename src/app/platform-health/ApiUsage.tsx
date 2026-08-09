@@ -131,18 +131,32 @@ export function ApiUsage() {
               hint="Requests a limit would have refused if enforcement were on. Nothing was actually refused." />
           </div>
 
-          {/* traffic over time */}
+          {/* traffic over time.
+              NEVER pass `fill` here. It is for a grid-stretched card in a paired row:
+              useFillHeight measures the container and grows the plot into the leftover
+              space, so in a full-width card whose own height depends on its content
+              that is a feedback loop — the plot grew unbounded and the page visibly
+              juddered. A fixed height is correct for a stacked section. */}
           <div className="mt-5">
             <div className="section-label mb-1.5">traffic over time</div>
-            <AreaLine
-              points={trafficPts}
-              color={CHART.cyan}
-              height={150}
-              fill
-              loading={!series.data && !series.error}
-              yLabel="requests"
-              fmt={(v) => `${formatNum(v)} requests`}
-            />
+            {trafficPts.length >= 2 ? (
+              <AreaLine
+                points={trafficPts}
+                color={CHART.cyan}
+                height={160}
+                loading={!series.data && !series.error}
+                yLabel="requests"
+                fmt={(v) => `${formatNum(v)} requests`}
+              />
+            ) : (
+              // A one- or two-point line is not a trend, it is a decoration that
+              // invites a wrong read. Say what is actually true instead.
+              <p className="font-mono text-[12px] text-fog-dim">
+                {series.data
+                  ? `Not enough history yet — ${trafficPts.length} interval${trafficPts.length === 1 ? "" : "s"} recorded. The shape appears once collection has run a few hours.`
+                  : "Collecting…"}
+              </p>
+            )}
           </div>
 
           {/* share of cost, as a composition rather than a column of percentages */}
