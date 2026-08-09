@@ -791,3 +791,25 @@ export const fetchUsageSources = (hours = 24) =>
   get<{ window_hours: number; sources: UsageSource[] }>(`/admin/usage/sources?hours=${hours}`, { ops: true });
 export const fetchUsageSeries = (hours = 24) =>
   get<{ window_hours: number; bucket_minutes: number; points: UsagePoint[] }>(`/admin/usage/series?hours=${hours}`, { ops: true });
+
+export type UsageDistribution = {
+  window_hours: number;
+  caller: string | null;
+  latency: { label: string; count: number }[];
+  sizes: { label: string; count: number; bytes: number }[];
+  statuses: { status: number; count: number }[];
+  cache: { state: string; count: number; mean_ms: number }[];
+};
+export type SourceRoute = {
+  route: string; requests: number; bytes: number; mean_ms: number; p95_ms: number | null; errors: number;
+};
+export type SourceDetail = {
+  source_id: string; caller: string; requests: number; bytes: number; errors: number;
+  first_seen: string; last_seen: string; per_min: number; active_minutes: number;
+  routes: SourceRoute[];
+};
+
+export const fetchUsageDistribution = (hours = 24, caller?: string) =>
+  get<UsageDistribution>(`/admin/usage/distribution?hours=${hours}${caller ? `&caller=${encodeURIComponent(caller)}` : ""}`, { ops: true });
+export const fetchSourceDetail = (hours = 24, limit = 12) =>
+  get<{ window_hours: number; sources: SourceDetail[] }>(`/admin/usage/source-detail?hours=${hours}&limit=${limit}`, { ops: true });

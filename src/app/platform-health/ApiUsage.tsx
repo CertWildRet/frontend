@@ -3,10 +3,10 @@
 import { useMemo, useState } from "react";
 import { usePolled } from "@/hooks/useOreStats";
 import {
-  fetchUsageSummary, fetchUsageRoutes, fetchUsageSources, fetchUsageSeries,
+  fetchUsageSummary, fetchUsageRoutes, fetchUsageSeries, fetchUsageDistribution, fetchSourceDetail,
   type UsageCaller,
 } from "@/lib/oreStats";
-import { ChartCard, AreaLine } from "@/components/stats/Charts";
+import { ChartCard, AreaLine, compactNum } from "@/components/stats/Charts";
 import { CHART } from "@/lib/chartColors";
 import { formatNum } from "@/lib/format";
 
@@ -63,8 +63,10 @@ export function ApiUsage() {
   const [hours, setHours] = useState(24);
   const summary = usePolled(() => fetchUsageSummary(hours), 60_000, [hours]);
   const routes = usePolled(() => fetchUsageRoutes(hours), 120_000, [hours]);
-  const sources = usePolled(() => fetchUsageSources(hours), 120_000, [hours]);
   const series = usePolled(() => fetchUsageSeries(hours), 60_000, [hours]);
+  const dist = usePolled(() => fetchUsageDistribution(hours), 120_000, [hours]);
+  const detail = usePolled(() => fetchSourceDetail(hours, 12), 120_000, [hours]);
+  const [openSource, setOpenSource] = useState<string | null>(null);
 
   const callers = summary.data?.callers ?? [];
   const monthly = summary.data?.cost_model?.monthly_usd ?? null;
@@ -120,7 +122,7 @@ export function ApiUsage() {
       )}
 
       {summary.data && (
-        <div className="font-mono text-[13px]">
+        <div className="space-y-6 font-mono text-[13px]">
           {/* headline numbers */}
           <div className="grid grid-cols-2 gap-x-8 gap-y-3 border-t pt-3 sm:grid-cols-4" style={{ borderColor: DIVIDER }}>
             <Stat label="requests" value={formatNum(totals.requests)} hint="Total API calls in this window, from everyone." />
@@ -137,7 +139,7 @@ export function ApiUsage() {
               space, so in a full-width card whose own height depends on its content
               that is a feedback loop — the plot grew unbounded and the page visibly
               juddered. A fixed height is correct for a stacked section. */}
-          <div className="mt-5">
+          <div>
             <div className="section-label mb-1.5">traffic over time</div>
             {trafficPts.length >= 2 ? (
               <AreaLine
@@ -145,7 +147,11 @@ export function ApiUsage() {
                 color={CHART.cyan}
                 height={160}
                 loading={!series.data && !series.error}
-                yLabel="requests"
+                // yFmt is the AXIS formatter and fmt is the TOOLTIP one. Omitting
+                // yFmt made every axis tick render the tooltip string ("N requests"),
+                // which both read wrong and overflowed the 50px label gutter into the
+                // card border. compactNum is what every other chart in the app uses.
+                yFmt={compactNum}
                 fmt={(v) => `${formatNum(v)} requests`}
               />
             ) : (
@@ -160,7 +166,7 @@ export function ApiUsage() {
           </div>
 
           {/* share of cost, as a composition rather than a column of percentages */}
-          <div className="mt-5">
+          <div>
             <div className="section-label mb-1.5">share of cost</div>
             <div className="flex h-3 w-full overflow-hidden rounded" style={{ background: "rgba(255,255,255,0.04)" }}>
               {callers.map((c) => {
@@ -192,7 +198,7 @@ export function ApiUsage() {
           </div>
 
           {/* who is calling */}
-          <div className="mt-5">
+          <div>
             <div className="section-label mb-1.5">who is calling</div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px]">
@@ -239,7 +245,7 @@ export function ApiUsage() {
 
           {/* endpoint cost, as bars — a number pair does not show which one hurts */}
           {!!routes.data?.routes?.length && (
-            <div className="mt-5">
+            <div>
               <div className="section-label mb-1.5">slowest endpoints</div>
               <p className="subtext mb-2">
                 Bar length is the typical response time; the marker is where the slowest 5% begin.
@@ -276,31 +282,105 @@ export function ApiUsage() {
             </div>
           )}
 
-          {/* busiest sources */}
-          {!!sources.data?.sources?.length && (
-            <div className="mt-5">
-              <div className="section-label mb-1.5">busiest sources</div>
+          {/* how long requests actually take — the shape, not the average */}
+          {dist.data && (
+            <div>
+              <div className="section-label mb-1.5">response time distribution</div>
               <p className="subtext mb-2">
-                One row per network address, shown as a scrambled id — the address itself is
-                never stored. This is where a single heavy user shows up.
+                Where every request actually landed. An average hides a split like this:
+                a fast bulk and a slow tail are two different populations, and only the
+                tail costs real money.
+              </p>
+              <Histogram rows={dist.data.latency} color={CHART.blue} slowFrom={7} />
+              <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[12px]">
+                {dist.data.cache.map((c) => (
+                  <span key={c.state} className="text-fog-dim">
+                    {c.state === "uncached" ? "no cache" : c.state}
+                    <span className="ml-1 text-gray-300">{formatNum(c.count)}</span>
+                    <span className="ml-1">avg {ms(c.mean_ms)}</span>
+                  </span>
+                ))}
+                {dist.data.statuses.map((st) => (
+                  <span key={st.status} className="text-fog-dim">
+                    HTTP {st.status}<span className="ml-1 text-gray-300">{formatNum(st.count)}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* per-source distribution: what each address is actually doing */}
+          {!!detail.data?.sources?.length && (
+            <div>
+              <div className="section-label mb-1.5">per-source breakdown</div>
+              <p className="subtext mb-2">
+                One row per network address, as a scrambled id — the address itself is never
+                stored. Open a row to see which endpoints it calls. Rate is over the span
+                that source was active, not the whole window, so a short burst reads as a burst.
               </p>
               <div className="space-y-1">
-                {sources.data.sources.slice(0, 10).map((s) => {
-                  const top = sources.data!.sources[0].requests || 1;
+                {detail.data.sources.map((s) => {
+                  const key = `${s.source_id}|${s.caller}`;
+                  const isOpen = openSource === key;
+                  const anon = s.caller === "anonymous";
+                  const top = detail.data!.sources[0].requests || 1;
                   return (
-                    <div key={`${s.source_id}-${s.caller}`} className="flex items-center gap-3"
-                      title={`${formatNum(s.requests)} requests · ${bytes(s.egress_bytes)} · ${s.routes_touched} endpoints touched`}>
-                      <span className="w-20 shrink-0 text-[12px] text-gray-400">{s.source_id?.slice(0, 8) ?? "·"}</span>
-                      <span className="w-32 shrink-0 truncate text-[12px]"
-                        style={{ color: s.caller === "anonymous" ? CHART.amber : CHART.cyan }}>
-                        {s.caller === "anonymous" ? "no key" : s.caller}
-                      </span>
-                      <div className="relative h-2.5 flex-1 overflow-hidden rounded" style={{ background: "rgba(255,255,255,0.04)" }}>
-                        <div className="h-full rounded"
-                          style={{ width: `${Math.max(2, (s.requests / top) * 100)}%`,
-                            background: s.caller === "anonymous" ? CHART.amber : CHART.cyan, opacity: 0.75 }} />
-                      </div>
-                      <span className="num w-14 shrink-0 text-right text-[12px] text-gray-300">{formatNum(s.requests)}</span>
+                    <div key={key} className="rounded border" style={{ borderColor: DIVIDER }}>
+                      <button
+                        onClick={() => setOpenSource(isOpen ? null : key)}
+                        className="flex w-full items-center gap-3 px-2.5 py-1.5 text-left transition-colors hover:bg-white/[0.03]"
+                      >
+                        <span className="w-4 shrink-0 text-fog-dim">{isOpen ? "\u2212" : "+"}</span>
+                        <span className="w-[74px] shrink-0 text-[12px] text-gray-400">{s.source_id?.slice(0, 8)}</span>
+                        <span className="w-[130px] shrink-0 truncate text-[12px]"
+                          style={{ color: anon ? CHART.amber : CHART.cyan }}>
+                          {anon ? "no key" : s.caller}
+                        </span>
+                        <span className="relative hidden h-2 flex-1 overflow-hidden rounded sm:block"
+                          style={{ background: "rgba(255,255,255,0.04)" }}>
+                          <span className="absolute inset-y-0 left-0 rounded"
+                            style={{ width: `${Math.max(2, (s.requests / top) * 100)}%`,
+                              background: anon ? CHART.amber : CHART.cyan, opacity: 0.75 }} />
+                        </span>
+                        <span className="num w-16 shrink-0 text-right text-[12px] text-gray-300">{formatNum(s.requests)}</span>
+                        <span className="num w-20 shrink-0 text-right text-[12px] text-fog-dim">{s.per_min.toFixed(1)}/min</span>
+                        <span className="num w-14 shrink-0 text-right text-[12px]"
+                          style={{ color: s.errors > 0 ? CHART.red : undefined }}>
+                          {s.errors > 0 ? `${s.errors} err` : "\u00b7"}
+                        </span>
+                      </button>
+                      {isOpen && (
+                        <div className="border-t px-2.5 py-2" style={{ borderColor: DIVIDER }}>
+                          <div className="mb-1 flex flex-wrap gap-x-5 text-[11px] text-fog-dim">
+                            <span>active {s.active_minutes} min</span>
+                            <span>{bytes(s.bytes)} served</span>
+                            <span>{s.routes.length} endpoint{s.routes.length === 1 ? "" : "s"}</span>
+                          </div>
+                          {s.routes.slice(0, 12).map((r) => {
+                            const rmax = s.routes[0].requests || 1;
+                            return (
+                              <div key={r.route} className="flex items-center gap-3 py-[3px]">
+                                <span className="w-[200px] shrink-0 truncate text-[11px] text-gray-400">{r.route}</span>
+                                <span className="relative h-1.5 flex-1 overflow-hidden rounded"
+                                  style={{ background: "rgba(255,255,255,0.04)" }}>
+                                  <span className="absolute inset-y-0 left-0 rounded"
+                                    style={{ width: `${Math.max(2, (r.requests / rmax) * 100)}%`,
+                                      background: CHART.violet, opacity: 0.7 }} />
+                                </span>
+                                <span className="num w-12 shrink-0 text-right text-[11px] text-gray-300">{formatNum(r.requests)}</span>
+                                <span className="num w-16 shrink-0 text-right text-[11px] text-fog-dim">{ms(r.mean_ms)}</span>
+                                <span className="num w-16 shrink-0 text-right text-[11px]"
+                                  style={{ color: (r.p95_ms ?? 0) > 3000 ? CHART.red : "#8b93a7" }}>
+                                  {r.p95_ms != null ? ms(r.p95_ms) : "\u00b7"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          <div className="mt-1 flex justify-end gap-4 text-[10px] text-fog-dim">
+                            <span>requests</span><span>typical</span><span>slow tail</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -310,6 +390,31 @@ export function ApiUsage() {
         </div>
       )}
     </ChartCard>
+  );
+}
+
+/** Horizontal histogram. Bar length is share of total; the slow buckets are tinted so
+ *  the tail is visible at a glance rather than needing to be read off an axis. */
+function Histogram({ rows, color, slowFrom }: { rows: { label: string; count: number }[]; color: string; slowFrom: number }) {
+  const total = rows.reduce((a, r) => a + r.count, 0) || 1;
+  const max = Math.max(...rows.map((r) => r.count), 1);
+  return (
+    <div className="space-y-[3px]">
+      {rows.map((r, i) => (
+        <div key={r.label} className="flex items-center gap-3" title={`${formatNum(r.count)} requests (${((r.count / total) * 100).toFixed(1)}%)`}>
+          <span className="w-[80px] shrink-0 text-right text-[11px] text-gray-400">{r.label}</span>
+          <span className="relative h-2.5 flex-1 overflow-hidden rounded" style={{ background: "rgba(255,255,255,0.04)" }}>
+            <span className="absolute inset-y-0 left-0 rounded"
+              style={{ width: `${Math.max(r.count ? 1.5 : 0, (r.count / max) * 100)}%`,
+                background: i >= slowFrom ? CHART.red : color, opacity: 0.8 }} />
+          </span>
+          <span className="num w-14 shrink-0 text-right text-[11px] text-gray-300">{r.count ? formatNum(r.count) : "\u00b7"}</span>
+          <span className="num w-12 shrink-0 text-right text-[11px] text-fog-dim">
+            {r.count ? `${((r.count / total) * 100).toFixed(0)}%` : ""}
+          </span>
+        </div>
+      ))}
+    </div>
   );
 }
 
