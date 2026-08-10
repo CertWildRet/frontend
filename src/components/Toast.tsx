@@ -59,6 +59,12 @@ export function useToast() {
       (id) => (
         <div
           role="status"
+          // The family is set on the CARD, not just the body copy: sonner ships its own
+          // stylesheet which puts a font-family on the toaster container, so any text in
+          // here that does not name a family inherits sonner's stack rather than the app's.
+          // Declared the way the rest of the UI declares it, as the CSS variable, so the
+          // toast tracks the app font instead of pinning a second source of truth.
+          style={{ fontFamily: "var(--font-subtext)" }}
           className={`w-[356px] max-w-[calc(100vw-2rem)] rounded-xl border bg-ink-900/95 p-4 shadow-glow-gold backdrop-blur-md ${
             variant === "warn" ? "border-amber/40" : "border-line-bright"
           }`}
