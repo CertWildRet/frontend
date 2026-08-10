@@ -10,7 +10,7 @@
  */
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { IconExternalLink } from "@tabler/icons-react";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
@@ -18,6 +18,7 @@ import { InfoDot } from "@/components/primitives/InfoDot";
 import { RefreshIconButton } from "@/components/primitives/RefreshIconButton";
 import { ServiceChip } from "@/components/primitives/ServiceChip";
 import { TileSkeleton, Refreshing } from "@/components/primitives/Skeleton";
+import { useToast } from "@/components/Toast";
 import { ChartCard, ChartWatermarkContext } from "@/components/stats/Charts";
 import { HitRate } from "@/components/stats/HitRate";
 import { PnlChart, type TPt } from "@/components/stats/TrendCharts";
@@ -67,6 +68,13 @@ const iconBtn =
   "inline-flex items-center justify-center rounded border border-line px-2 py-1 text-fog-muted transition-colors hover:border-steel hover:text-white";
 
 const short = (a?: string | null) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "·");
+
+/**
+ * Per-wallet key for the "fetching full history" toast, so the notice raised on click can
+ * be retired by whichever component sees the fetch land, and so hammering the All button
+ * replaces the live toast instead of stacking copies of it.
+ */
+const allHistoryToastKey = (pk: string) => `miner-all-history:${pk}`;
 const tableWrap = styles.tableWrap;
 const theadRow = `${styles.tableHead} text-left`;
 const th = "px-2 py-2 font-bold sm:px-3";
@@ -95,6 +103,30 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const det = usePolled(() => fetchOreMiner(pubkey, roundsWin === "all" ? "all" : Math.max(1000, Number(roundsWin))), 0, [pubkey, roundsWin]);
   const histPage = usePolled(() => fetchOreMinerHistory(pubkey, PAGE, histOffset), 0, [pubkey, histOffset]);
   useEffect(() => { setHistOffset(0); }, [pubkey]);
+  // Retire the "fetching full history" notice the moment the payload lands, or the user
+  // moves off All. Raised on click down in MinerTrend; cleared here, because this is where
+  // the fetch state actually lives.
+  //
+  // The latch is load-bearing. usePolled flips `fetching` inside its effect, so on the
+  // render immediately after the window switches to "all" it is still false, left over
+  // from the previous completed fetch. Dismissing on `!fetching` alone would therefore
+  // kill the toast in the same commit that raised it. Only a fetch we have actually seen
+  // start is allowed to trigger the dismissal.
+  const { dismiss: dismissToast } = useToast();
+  const allFetchStarted = useRef(false);
+  useEffect(() => {
+    const key = allHistoryToastKey(pubkey);
+    if (roundsWin !== "all") {
+      allFetchStarted.current = false;
+      dismissToast(key); // left the window: the notice is moot
+      return;
+    }
+    if (det.fetching) { allFetchStarted.current = true; return; }
+    if (allFetchStarted.current) {
+      allFetchStarted.current = false;
+      dismissToast(key);
+    }
+  }, [roundsWin, det.fetching, pubkey, dismissToast]);
   const d = det.data;
   if (det.loading && !d) {
     return <div className="grid grid-cols-2 gap-3 md:grid-cols-4"><TileSkeleton /><TileSkeleton /><TileSkeleton /><TileSkeleton /></div>;
@@ -713,6 +745,34 @@ function MinerTrend({ pubkey, series, derived, pricesNow, oreLifetime, lifetimeP
   const win = roundsWin;
   const setWin = setRoundsWin;
   const [cur, setCur] = useState<"sol" | "usd">("usd");
+  const { toast } = useToast();
+
+  /**
+   * "All" is the one timeframe that is never pre-warmed, so the first person to ask for a
+   * given wallet pays the full rebuild: measured at 14s on a 42k-round wallet and longer
+   * on the biggest. A spinner alone reads as a hung page at that length, so say plainly
+   * what is happening and why. The notice is keyed per wallet, so repeated clicks replace
+   * it rather than stack, and MinerDetail clears it as soon as the payload lands, which
+   * means a wallet that is already cached shows it only for the moment it takes to arrive.
+   */
+  const onPickWindow = (v: string): void => {
+    if (v === "all" && win !== "all") {
+      toast({
+        title: "Fetching this wallet's full history",
+        key: allHistoryToastKey(pubkey),
+        duration: 45_000,
+        body: (
+          <>
+            Every other timeframe is pre-computed, but full history is rebuilt round by
+            round on request. Expect around 20 seconds the first time a wallet is asked
+            for. The page is not stuck. Once it lands it is cached, so it is instant for
+            you and for everyone else who looks up this wallet.
+          </>
+        ),
+      });
+    }
+    setWin(v);
+  };
   // "all" -> the whole (possibly bucketed) series; each point may sum n rounds
   const slice = win === "all" ? series : series.slice(-Math.min(Number(win), series.length));
   // USD = current-rate accounting, consistent with the Net P&L hero: each
@@ -824,7 +884,7 @@ function MinerTrend({ pubkey, series, derived, pricesNow, oreLifetime, lifetimeP
             </span>
             <SegmentedControl aria-label="Timeframe" variant="loose"
               items={[{ id: "100", label: "100" }, { id: "500", label: "500" }, { id: "1000", label: "1000" }, { id: "2500", label: "2500" }, { id: "5000", label: "5000" }, { id: "all", label: "All" }]}
-              value={win} onChange={setWin} />
+              value={win} onChange={onPickWindow} />
           </div>
           {hasUsd && (
             <div className="flex items-center gap-1.5">
