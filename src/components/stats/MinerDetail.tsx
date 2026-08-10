@@ -408,6 +408,8 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           series={d.series}
           derived={dv}
           pricesNow={d.prices_now}
+          oreLifetime={censusMissing ? null : oreLifetime}
+          lifetimePnlUsd={pnlUsd}
           roundsWin={roundsWin}
           setRoundsWin={setRoundsWin}
           refreshing={det.fetching && !!det.data}
@@ -527,16 +529,19 @@ function DerivedMetricCell({
   value,
   unit,
   hint,
+  title,
   className = "",
 }: {
   label: string;
   value: ReactNode;
   unit?: string;
   hint?: string;
+  /** Hover explanation, used where a metric's name alone invites a wrong reading. */
+  title?: string;
   className?: string;
 }) {
   return (
-    <div className={`min-w-0 flex-1 px-5 py-4 ${className}`}>
+    <div className={`min-w-0 flex-1 px-5 py-4 ${className}`} title={title}>
       <div
         className="text-[13px] font-medium leading-none text-[#9AA3C8]"
         style={{ fontFamily: "var(--font-subtext)" }}
@@ -685,11 +690,24 @@ function LifetimeCell({
   );
 }
 
-function MinerTrend({ pubkey, series, derived, pricesNow, roundsWin, setRoundsWin, refreshing }: {
+/**
+ * The round in which the program began recording the winner-take-all winner.
+ *
+ * Below it a solo round's ORE base is credited to NOBODY: the chain never said who won,
+ * and inventing a pro-rata split would be fabrication. That single rule is the whole
+ * reason this card's ORE total can sit far below the lifetime census, so the card states
+ * it outright rather than leaving two numbers to look like a contradiction.
+ * Mirrors DEPLOY-era gating in the analytics service (`top_miner.first_valid_round`).
+ */
+const SOLO_WINNER_FIRST_ROUND = 292_659;
+
+function MinerTrend({ pubkey, series, derived, pricesNow, oreLifetime, lifetimePnlUsd, roundsWin, setRoundsWin, refreshing }: {
   pubkey: string;
   series: OreMinerDetail["series"];
   derived: OreMinerDetail["derived"];
   pricesNow: OreMinerDetail["prices_now"];
+  oreLifetime: number | null;
+  lifetimePnlUsd: number | null;
   roundsWin: string; setRoundsWin: (v: string) => void; refreshing?: boolean;
 }) {
   const win = roundsWin;
@@ -719,25 +737,59 @@ function MinerTrend({ pubkey, series, derived, pricesNow, roundsWin, setRoundsWi
   const oreCostWin = oreWonWin > 0 && netSolWin < 0 ? -netSolWin / oreWonWin : null;
   const avgPerRound = nRounds > 0 ? cum / nRounds : 0;
 
-  // Avg win / avg loss over the visible window: mean net on hit rounds vs miss
-  // rounds. Bucketed points (n>1, large "all"/5k windows) only count when the
-  // bucket is pure hits or pure misses — mixed buckets can't split the net.
-  let winSum = 0, winRounds = 0, lossSum = 0, lossRounds = 0;
-  for (const p of slice) {
-    const net = cur === "usd" ? usdOf(p) ?? p.net_sol : p.net_sol;
-    const n = p.n ?? 1;
-    const hits = p.hits ?? (p.hit ? 1 : 0);
-    if (n > 1 && hits > 0 && hits < n) continue;
-    if (hits === n) {
-      winSum += net;
-      winRounds += n;
-    } else if (hits === 0) {
-      lossSum += net;
-      lossRounds += n;
+  // Mean net on HIT rounds vs MISS rounds. "Hit" means the wallet had stake on the
+  // winning tile, NOT that the round made money: a hit still pays for the 24 losing
+  // tiles, so the figure can land either side of zero. Labelled "hit"/"miss" rather than
+  // "win"/"loss" for exactly that reason.
+  //
+  // Two sources, preferring the one that actually matches what the chart is showing:
+  //  - An UNBUCKETED window (every point is one round) is summed here, so the figure
+  //    tracks the selected timeframe exactly.
+  //  - A BUCKETED window cannot be summed here at all: a bucket mixing hits and misses
+  //    carries a single net for both outcomes. Reading those points once produced an
+  //    average over whichever pure buckets happened to exist: 22% of one wallet's rounds,
+  //    and no miss figure at all. So we take the server's per-round aggregate instead,
+  //    which is exact over the whole fetched history, and say so in the hint rather than
+  //    passing a full-history number off as a window number.
+  const sliceUnbucketed = slice.every((p) => (p.n ?? 1) === 1);
+  let avgWin: number | null = null;
+  let avgLoss: number | null = null;
+  let winRounds = 0, lossRounds = 0;
+  let avgScopeIsLifetime = false;
+  if (sliceUnbucketed) {
+    let hitSum = 0, missSum = 0;
+    for (const p of slice) {
+      const net = cur === "usd" ? usdOf(p) ?? p.net_sol : p.net_sol;
+      if (p.hit) { hitSum += net; winRounds += 1; }
+      else { missSum += net; lossRounds += 1; }
     }
+    avgWin = winRounds > 0 ? hitSum / winRounds : null;
+    avgLoss = lossRounds > 0 ? missSum / lossRounds : null;
+  } else if (derived?.hit_rounds != null && derived?.miss_rounds != null) {
+    const legUsd = (netSol: number, ore: number): number | null =>
+      cur === "sol" ? netSol : solNow != null && oreNow != null ? netSol * solNow + ore * oreNow : null;
+    winRounds = derived.hit_rounds;
+    lossRounds = derived.miss_rounds;
+    const hv = legUsd(derived.hit_net_sol ?? 0, derived.hit_ore_won ?? 0);
+    const mv = legUsd(derived.miss_net_sol ?? 0, derived.miss_ore_won ?? 0);
+    avgWin = winRounds > 0 && hv != null ? hv / winRounds : null;
+    avgLoss = lossRounds > 0 && mv != null ? mv / lossRounds : null;
+    avgScopeIsLifetime = true;
   }
-  const avgWin = winRounds > 0 ? winSum / winRounds : null;
-  const avgLoss = lossRounds > 0 ? lossSum / lossRounds : null;
+  const avgScopeNote = avgScopeIsLifetime ? " · full history" : "";
+
+  // ── Reconciliation against the lifetime census ────────────────────────────────
+  // This card sums REBUILT rounds; the hero above reads the on-chain census. The SOL
+  // legs agree to within ~0.2 SOL in 29,000 (verified), so any gap between the two
+  // headline dollar figures is the ORE leg and nothing else. Surfacing that delta and
+  // naming its cause is the difference between a documented limitation and an apparent
+  // contradiction in our own numbers.
+  const windowLoRound = slice.length ? slice[0].round_id : null;
+  const spansUnrecordedSolo = windowLoRound != null && windowLoRound < SOLO_WINNER_FIRST_ROUND;
+  const oreGap = oreLifetime != null ? oreLifetime - oreWonWin : null;
+  // Only a whole-history window can be compared to a lifetime total.
+  const oreGapMeaningful = oreGap != null && win === "all" && Math.abs(oreGap) > Math.max(1, oreLifetime! * 0.005);
+  const oreGapUsd = oreGap != null && oreNow != null ? oreGap * oreNow : null;
 
   // Best / worst in the visible chart window, same current-rate USD.
   let bestUsd: number | null = null;
@@ -758,8 +810,8 @@ function MinerTrend({ pubkey, series, derived, pricesNow, roundsWin, setRoundsWi
     <ChartCard
       title={`${pubkey.slice(0, 4)}'s last ${formatNum(nRounds)} rounds`}
       subtitle={cur === "usd" && solNow != null
-        ? "Play, consistency and streaks in the captured window. USD values both legs (SOL + ORE won) at current prices — same accounting as the Net P&L above."
-        : "Play, consistency and streaks in the captured window."}
+        ? "Play, consistency and streaks in the captured window, rebuilt round by round. SOL is exact; ORE is reconstructed and can differ from the lifetime figure above. Reconciled below."
+        : "Play, consistency and streaks in the captured window, rebuilt round by round."}
       right={
         <div className="flex flex-wrap items-center gap-2" data-no-capture="true">
           <Refreshing active={!!refreshing} />
@@ -857,7 +909,8 @@ function MinerTrend({ pubkey, series, derived, pricesNow, roundsWin, setRoundsWi
             className="rounded-xl border border-line bg-[rgba(91,108,255,0.07)]"
           />
           <DerivedMetricCell
-            label="Avg win"
+            label="Avg hit round"
+            title="Mean net across rounds where this wallet had stake on the winning tile: SOL returned minus the whole round's deploy, plus any ORE won. A hit still pays for the losing tiles, so this is not an 'average win' and can land either side of zero."
             value={
               avgWin != null ? (
                 <span className={netTone(avgWin)}>
@@ -866,11 +919,12 @@ function MinerTrend({ pubkey, series, derived, pricesNow, roundsWin, setRoundsWi
               ) : "·"
             }
             unit={avgWin != null && cur === "sol" ? "SOL" : undefined}
-            hint={winRounds > 0 ? `${formatNum(winRounds)} hit${winRounds === 1 ? "" : "s"}` : undefined}
+            hint={avgWin != null ? `${formatNum(winRounds)} hit round${winRounds === 1 ? "" : "s"}${avgScopeNote}` : undefined}
             className="rounded-xl border border-line bg-[rgba(74,222,128,0.05)]"
           />
           <DerivedMetricCell
-            label="Avg loss"
+            label="Avg miss round"
+            title="Mean net across rounds where this wallet had no stake on the winning tile, so the full deploy is lost."
             value={
               avgLoss != null ? (
                 <span className={netTone(avgLoss)}>
@@ -879,7 +933,7 @@ function MinerTrend({ pubkey, series, derived, pricesNow, roundsWin, setRoundsWi
               ) : "·"
             }
             unit={avgLoss != null && cur === "sol" ? "SOL" : undefined}
-            hint={lossRounds > 0 ? `${formatNum(lossRounds)} miss${lossRounds === 1 ? "" : "es"}` : undefined}
+            hint={avgLoss != null ? `${formatNum(lossRounds)} miss round${lossRounds === 1 ? "" : "es"}${avgScopeNote}` : undefined}
             className="rounded-xl border border-line bg-[rgba(255,90,200,0.05)]"
           />
         </div>
@@ -887,13 +941,14 @@ function MinerTrend({ pubkey, series, derived, pricesNow, roundsWin, setRoundsWi
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           <DerivedMetricCell
             label="Total net"
+            title="Sum of the rebuilt rounds in this window: exact SOL plus reconstructed ORE. The Net P&L at the top of the page is a different measurement, the on-chain lifetime census, so the two agree only where every ORE win is attributable."
             value={
               <span className={netTone(cum)}>
                 {cum >= 0 ? "+" : ""}{cur === "usd" ? "$" : ""}{formatNum(cum, cur === "usd" ? 2 : 3)}
               </span>
             }
             unit={cur === "sol" ? "SOL" : undefined}
-            hint="sum of captured rounds"
+            hint={oreGapMeaningful ? "rebuilt rounds; differs from lifetime, see below" : "sum of captured rounds"}
             className="rounded-xl border border-line bg-[rgba(74,222,128,0.05)]"
           />
           <DerivedMetricCell
@@ -922,6 +977,65 @@ function MinerTrend({ pubkey, series, derived, pricesNow, roundsWin, setRoundsWi
             className="rounded-xl border border-line bg-[rgba(255,192,97,0.07)]"
           />
         </div>
+
+      {/* The reconciliation itself. Two honest measurements of the same wallet can
+          disagree; what is not acceptable is letting a reader discover that on their own
+          and conclude the data is wrong. State the gap, price it, and name its cause. */}
+      {oreGapMeaningful && (
+        <div className="rounded-xl border border-line bg-[rgba(255,192,97,0.05)] px-5 py-4">
+          <div
+            className="text-[13px] font-medium leading-none text-[#EAECF6]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            Why this total differs from the Net P&amp;L above
+          </div>
+          <div
+            className="mt-3 flex flex-col gap-2 text-[12.5px] leading-[1.55] text-[#A8B0CC]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            <div className="num text-[13px] text-[#EAECF6]">
+              ORE rebuilt here {formatNum(oreWonWin, 1)}
+              <span className="text-[#5A6284]"> · </span>
+              lifetime on-chain {formatNum(oreLifetime!, 1)}
+              <span className="text-[#5A6284]"> · </span>
+              <span className="text-[#FFC061]">
+                rebuilt is {oreGap! > 0 ? "short by" : "over by"} {formatNum(Math.abs(oreGap!), 1)} ORE
+                {oreGapUsd != null && ` (${formatNum(Math.abs(oreGapUsd), 0)} USD)`}
+              </span>
+            </div>
+            <div>
+              Both cards use the same SOL figure, per-tile stake reconstruction, which
+              reconciles to the on-chain census within a fraction of a percent. The gap between
+              this card&apos;s total and the Net P&amp;L above is <em>entirely</em> the ORE line above.
+              Only rounds present in the on-chain event tape are rebuilt here.
+            </div>
+            {spansUnrecordedSolo ? (
+              <div>
+                This window reaches back to round #{formatNum(windowLoRound!)}, before the program
+                started recording the winner-take-all winner at #{formatNum(SOLO_WINNER_FIRST_ROUND)}.
+                In those earlier rounds the chain never published <em>who</em> took the 1 ORE base, so
+                it is credited to nobody rather than guessed. This card therefore understates ORE for
+                this wallet; the lifetime figure above counts it and is the one to trust.
+              </div>
+            ) : (
+              <div>
+                Per-round ORE is apportioned from each round&apos;s minted base, the wallet&apos;s share of
+                the winning tile, and any motherlode payout. Apportioning round by round can drift
+                from the wallet&apos;s own on-chain lifetime counter in either direction. Where the two
+                disagree, that counter (the Net P&amp;L above) is the authoritative figure.
+              </div>
+            )}
+            {lifetimePnlUsd != null && (
+              <div className="num text-[#8B93B4]">
+                Authoritative lifetime Net P&amp;L:{" "}
+                <span className={netTone(lifetimePnlUsd)}>
+                  {lifetimePnlUsd >= 0 ? "+" : "−"}${formatNum(Math.abs(lifetimePnlUsd), 2)}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       </div>
     </ChartCard>
   );

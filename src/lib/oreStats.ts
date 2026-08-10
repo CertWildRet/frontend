@@ -414,6 +414,13 @@ export type OreMinerDetail = {
     /** Realized: solo wins counted in full to the sampled winner. */
     ore_won_realized: number;
     ore_cost_sol: number | null;
+    /** Hit/miss split over EVERY round of the fetched history, accumulated server-side
+     *  before the >5k-round series is folded into buckets, because a mixed bucket carries one
+     *  net for both outcomes, so these are not recoverable from `series`. "hit" means
+     *  stake on the winning tile, not a profitable round. Both legs raw so the client
+     *  can value them at current prices. Optional: older payloads omit them. */
+    hit_rounds?: number; hit_net_sol?: number; hit_ore_won?: number;
+    miss_rounds?: number; miss_net_sol?: number; miss_ore_won?: number;
   } | null;
   /** Latest spot prices — lets the P/L trend re-mark the ORE leg at today's value. */
   prices_now: { sol_usd: number; ore_usd: number } | null;
