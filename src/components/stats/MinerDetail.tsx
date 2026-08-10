@@ -227,7 +227,13 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const solLegUsd = solNow != null ? net * solNow : null;
   const oreLegUsd = oreNow != null ? oreLifetime * oreNow : null;
   const pnlUsd = solLegUsd != null && oreLegUsd != null ? solLegUsd + oreLegUsd : null;
-  const roundsAll = hs?.rounds ?? d.series.reduce((a, p) => a + (p.n ?? 1), 0);
+  // Divisor for the LIFETIME average, so it must count every settled round the wallet
+  // played. hit_stats.rounds counts only the rounds the rebuild could reconstruct, so the
+  // omitted ones have to be added back: dividing a lifetime P&L by the reconstructable
+  // subset inflates the per-round figure (24% on one sampled wallet).
+  const roundsAll = hs != null
+    ? hs.rounds + (dv?.rounds_unreconstructable ?? 0)
+    : d.series.reduce((a, p) => a + (p.n ?? 1), 0);
   const avgPerRoundUsd = pnlUsd != null && roundsAll > 0 ? pnlUsd / roundsAll : null;
   const fmtSignedUsd = (v: number, dec = 2) => `${v >= 0 ? "+" : "-"}$${formatNum(Math.abs(v), dec)}`;
 
@@ -533,6 +539,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           derived={dv}
           pricesNow={d.prices_now}
           oreLifetime={censusMissing ? null : oreLifetime}
+          netSolLifetime={censusMissing ? null : net}
           lifetimePnlUsd={pnlUsd}
           roundsWin={roundsWin}
           setRoundsWin={setRoundsWin}
@@ -825,12 +832,15 @@ function LifetimeCell({
  */
 const SOLO_WINNER_FIRST_ROUND = 292_659;
 
-function MinerTrend({ pubkey, series, derived, pricesNow, oreLifetime, lifetimePnlUsd, roundsWin, setRoundsWin, refreshing }: {
+function MinerTrend({ pubkey, series, derived, pricesNow, oreLifetime, netSolLifetime, lifetimePnlUsd, roundsWin, setRoundsWin, refreshing }: {
   pubkey: string;
   series: OreMinerDetail["series"];
   derived: OreMinerDetail["derived"];
   pricesNow: OreMinerDetail["prices_now"];
   oreLifetime: number | null;
+  /** Lifetime net SOL from the on-chain census, so the SOL leg is measured rather than
+   *  assumed to agree with the rebuild. */
+  netSolLifetime: number | null;
   lifetimePnlUsd: number | null;
   roundsWin: string; setRoundsWin: (v: string) => void; refreshing?: boolean;
 }) {
@@ -931,17 +941,30 @@ function MinerTrend({ pubkey, series, derived, pricesNow, oreLifetime, lifetimeP
   const avgScopeNote = avgScopeIsLifetime ? " · full history" : "";
 
   // ── Reconciliation against the lifetime census ────────────────────────────────
-  // This card sums REBUILT rounds; the hero above reads the on-chain census. The SOL
-  // legs agree to within ~0.2 SOL in 29,000 (verified), so any gap between the two
-  // headline dollar figures is the ORE leg and nothing else. Surfacing that delta and
-  // naming its cause is the difference between a documented limitation and an apparent
-  // contradiction in our own numbers.
+  // This card sums REBUILT rounds; the hero above reads the on-chain census. BOTH legs are
+  // measured against it, and neither is assumed to agree.
+  //
+  // An earlier version asserted the SOL legs always reconcile and that any difference was
+  // therefore "entirely the ORE line". That held only for wallets whose history sits above
+  // the rounds where the chain published which tiles a deploy covered. Below that the
+  // winnings have no computable share, those rounds are omitted from the rebuild entirely,
+  // and the card is a partial view whose total is not supposed to match a lifetime figure.
+  // Measure both legs, count what was left out, claim nothing.
   const windowLoRound = slice.length ? slice[0].round_id : null;
   const spansUnrecordedSolo = windowLoRound != null && windowLoRound < SOLO_WINNER_FIRST_ROUND;
+  const wholeHistory = win === "all";
   const oreGap = oreLifetime != null ? oreLifetime - oreWonWin : null;
   // Only a whole-history window can be compared to a lifetime total.
-  const oreGapMeaningful = oreGap != null && win === "all" && Math.abs(oreGap) > Math.max(1, oreLifetime! * 0.005);
+  const oreGapMeaningful = oreGap != null && wholeHistory && Math.abs(oreGap) > Math.max(1, oreLifetime! * 0.005);
   const oreGapUsd = oreGap != null && oreNow != null ? oreGap * oreNow : null;
+  const solGap = netSolLifetime != null ? netSolLifetime - netSolWin : null;
+  const solGapMeaningful =
+    solGap != null && wholeHistory && Math.abs(solGap) > Math.max(1, Math.abs(netSolLifetime!) * 0.005);
+  const solGapUsd = solGap != null && solNow != null ? solGap * solNow : null;
+  // Rounds the rebuild deliberately left out. Once any round is omitted this card is a
+  // partial view by construction, so the panel must appear even when both gaps look small.
+  const excludedRounds = derived?.rounds_unreconstructable ?? 0;
+  const anyGap = wholeHistory && (oreGapMeaningful || solGapMeaningful || excludedRounds > 0);
 
   // Best / worst in the visible chart window, same current-rate USD.
   let bestUsd: number | null = null;
@@ -1100,7 +1123,7 @@ function MinerTrend({ pubkey, series, derived, pricesNow, oreLifetime, lifetimeP
               </span>
             }
             unit={cur === "sol" ? "SOL" : undefined}
-            hint={oreGapMeaningful ? "rebuilt rounds; differs from lifetime, see below" : "sum of captured rounds"}
+            hint={anyGap ? "rebuilt rounds; differs from lifetime, see below" : "sum of captured rounds"}
             className="rounded-xl border border-line bg-[rgba(74,222,128,0.05)]"
           />
           <DerivedMetricCell
@@ -1133,7 +1156,7 @@ function MinerTrend({ pubkey, series, derived, pricesNow, oreLifetime, lifetimeP
       {/* The reconciliation itself. Two honest measurements of the same wallet can
           disagree; what is not acceptable is letting a reader discover that on their own
           and conclude the data is wrong. State the gap, price it, and name its cause. */}
-      {oreGapMeaningful && (
+      {anyGap && (
         <div className="rounded-xl border border-line bg-[rgba(255,192,97,0.05)] px-5 py-4">
           <div
             className="text-[13px] font-medium leading-none text-[#EAECF6]"
@@ -1145,21 +1168,45 @@ function MinerTrend({ pubkey, series, derived, pricesNow, oreLifetime, lifetimeP
             className="mt-3 flex flex-col gap-2 text-[12.5px] leading-[1.55] text-[#A8B0CC]"
             style={{ fontFamily: "var(--font-subtext)" }}
           >
-            <div className="num text-[13px] text-[#EAECF6]">
-              ORE rebuilt here {formatNum(oreWonWin, 1)}
-              <span className="text-[#5A6284]"> · </span>
-              lifetime on-chain {formatNum(oreLifetime!, 1)}
-              <span className="text-[#5A6284]"> · </span>
-              <span className="text-[#FFC061]">
-                rebuilt is {oreGap! > 0 ? "short by" : "over by"} {formatNum(Math.abs(oreGap!), 1)} ORE
-                {oreGapUsd != null && ` (${formatNum(Math.abs(oreGapUsd), 0)} USD)`}
-              </span>
-            </div>
+            {oreGapMeaningful && (
+              <div className="num text-[13px] text-[#EAECF6]">
+                ORE rebuilt here {formatNum(oreWonWin, 1)}
+                <span className="text-[#5A6284]"> · </span>
+                lifetime on-chain {formatNum(oreLifetime!, 1)}
+                <span className="text-[#5A6284]"> · </span>
+                <span className="text-[#FFC061]">
+                  rebuilt is {oreGap! > 0 ? "short by" : "over by"} {formatNum(Math.abs(oreGap!), 1)} ORE
+                  {oreGapUsd != null && ` (${formatNum(Math.abs(oreGapUsd), 0)} USD)`}
+                </span>
+              </div>
+            )}
+            {solGapMeaningful && (
+              <div className="num text-[13px] text-[#EAECF6]">
+                SOL rebuilt here {formatSol(netSolWin, 1)}
+                <span className="text-[#5A6284]"> · </span>
+                lifetime on-chain {formatSol(netSolLifetime!, 1)}
+                <span className="text-[#5A6284]"> · </span>
+                <span className="text-[#FFC061]">
+                  rebuilt is {solGap! > 0 ? "short by" : "over by"} {formatSol(Math.abs(solGap!), 1)} SOL
+                  {solGapUsd != null && ` (${formatNum(Math.abs(solGapUsd), 0)} USD)`}
+                </span>
+              </div>
+            )}
+            {excludedRounds > 0 && (
+              <div>
+                <span className="num text-[#EAECF6]">
+                  Rebuilt from {formatNum(nRounds)} rounds; {formatNum(excludedRounds)} omitted.
+                </span>{" "}
+                A round pays each winner its share of the winning tile, so rebuilding it needs the
+                total staked on that tile. In those omitted rounds the chain published how many
+                tiles each deploy covered but not <em>which</em>, so no share is computable. They are
+                left out rather than scored as total losses, which is why this card&apos;s total is a
+                partial view and is not expected to equal the lifetime figure above.
+              </div>
+            )}
             <div>
-              Both cards use the same SOL figure, per-tile stake reconstruction, which
-              reconciles to the on-chain census within a fraction of a percent. The gap between
-              this card&apos;s total and the Net P&amp;L above is <em>entirely</em> the ORE line above.
-              Only rounds present in the on-chain event tape are rebuilt here.
+              Every round here is rebuilt from the on-chain event tape and each leg is measured
+              against the wallet&apos;s own account rather than assumed to match it.
             </div>
             {spansUnrecordedSolo ? (
               <div>

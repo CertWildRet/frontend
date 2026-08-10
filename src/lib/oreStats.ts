@@ -425,6 +425,11 @@ export type OreMinerDetail = {
      *  can value them at current prices. Optional: older payloads omit them. */
     hit_rounds?: number; hit_net_sol?: number; hit_ore_won?: number;
     miss_rounds?: number; miss_net_sol?: number; miss_ore_won?: number;
+    /** Settled rounds left OUT of the rebuild because the chain published how many tiles
+     *  the deploy covered but not which, so the winnings have no computable share. They
+     *  are omitted rather than scored as total losses; this is what the card must disclose
+     *  to explain why its total no longer has to equal the lifetime figure. */
+    rounds_unreconstructable?: number;
   } | null;
   /** Latest spot prices — lets the P/L trend re-mark the ORE leg at today's value. */
   prices_now: { sol_usd: number; ore_usd: number } | null;
