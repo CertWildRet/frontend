@@ -82,13 +82,25 @@ export function TabBar<T extends string>({
   value,
   onChange,
   className = "",
+  underline = true,
   "aria-label": ariaLabel = "Tabs",
-}: CommonProps<T>) {
+}: CommonProps<T> & {
+  /**
+   * The bottom rule and the space above it. A prop rather than something callers cancel
+   * from `className`, because appending `pb-0` does NOT override `pb-2`: both are plain
+   * utilities of equal specificity, so the winner is whichever Tailwind emits later, and
+   * it emits `pb-2` after `pb-0`. The bar therefore kept its bottom padding, sat 8px
+   * taller than its content, and any row centring it aligned the box while the tab labels
+   * rode high. `border-b-0` happens to win the same fight only because Tailwind emits it
+   * after `border-b`, which is exactly how silently these go wrong.
+   */
+  underline?: boolean;
+}) {
   return (
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className={`flex flex-wrap gap-1 border-b border-line pb-2 ${className}`}
+      className={`flex flex-wrap gap-1 ${underline ? "border-b border-line pb-2" : ""} ${className}`}
     >
       {items.map((item) => (
         <TabButton

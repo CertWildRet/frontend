@@ -100,7 +100,8 @@ export function StatsClient() {
             items={TABS}
             value={tab}
             onChange={openTab}
-            className="min-w-0 flex-1 border-b-0 pb-0"
+            underline={false}
+            className="min-w-0 flex-1"
           />
           <button
             type="button"
