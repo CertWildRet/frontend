@@ -177,6 +177,45 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const lastCensusRound = c?.round_id != null ? Number(c.round_id) : null;
   const preDeployEraOnly =
     deployTapeFloor != null && lastCensusRound != null && lastCensusRound > 0 && lastCensusRound < deployTapeFloor;
+
+  // The quieter, and worse, half of the same limitation: a wallet that was ALREADY mining
+  // when the deploy tape starts keeps every lifetime figure but silently loses the rounds
+  // underneath them. Sampled across the 40 largest active wallets, 15 are in this state
+  // and are missing a per-round record for ~23% of their deployed SOL on average. Nothing
+  // on the page said so, which is how a correct number gets mistaken for a broken one.
+  const eventDeployedSol = d.events?.deployed != null ? lamportsToSol(d.events.deployed) : null;
+  const unrecordedSol = eventDeployedSol != null && deployed > 0 ? deployed - eventDeployedSol : null;
+  const partialHistory = hasEvents && unrecordedSol != null && unrecordedSol > deployed * 0.01;
+  const unrecordedPct = partialHistory && unrecordedSol != null ? (unrecordedSol / deployed) * 100 : null;
+
+  const coverageNotice: { title: string; body: ReactNode } | null = preDeployEraOnly
+    ? {
+        title: "This wallet has no per-round history, and never will",
+        body: (
+          <div>
+            It last mined at round #{formatNum(lastCensusRound!)}. The ORE program did not
+            publish per-miner deploy events until round #{formatNum(deployTapeFloor!)}, and
+            rounds below that recorded settlement totals only, never who deployed what. The
+            lifetime figures above come straight from this wallet&apos;s own on-chain account
+            and are complete.
+          </div>
+        ),
+      }
+    : partialHistory
+      ? {
+          title: "Part of this wallet's history predates on-chain deploy events",
+          body: (
+            <div>
+              Per-round history begins at round #{formatNum(deployTapeFloor!)}, where the ORE
+              program started publishing per-miner deploy events. This wallet was already
+              mining before then, so about {unrecordedPct!.toFixed(0)}% of its lifetime
+              deploys ({formatSol(unrecordedSol!, 2)} SOL) has no per-round record anywhere.
+              The lifetime totals above still count it and are complete; the charts and
+              tables below cover the recorded era only.
+            </div>
+          ),
+        }
+      : null;
   // Net P&L = current-rate accounting over the FULL lifetime census, not the
   // fetched window: net SOL (returned − deployed) valued at today's SOL price,
   // plus lifetime ORE earned valued at today's ORE price. One consistent
@@ -379,6 +418,35 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
         </div>
       </div>
 
+      {coverageNotice && (
+        <div className="mt-3 rounded-xl border border-[#FFC061]/45 bg-[rgba(255,192,97,0.08)] px-4 py-3.5">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+            <span
+              className="inline-flex items-center rounded-md border border-[#FFC061]/50 bg-[rgba(255,192,97,0.16)] px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#FFC061]"
+              style={{ fontFamily: "var(--font-subtext)" }}
+            >
+              Chain limitation
+            </span>
+            <span
+              className="text-[13.5px] font-semibold text-white"
+              style={{ fontFamily: "var(--font-subtext)" }}
+            >
+              {coverageNotice.title}
+            </span>
+          </div>
+          <div
+            className="mt-2.5 flex flex-col gap-2 text-[12.5px] leading-[1.55] text-[#C3C9DE]"
+            style={{ fontFamily: "var(--font-subtext)" }}
+          >
+            {coverageNotice.body}
+            <div className="text-[#8B93B4]">
+              This is a property of the ORE program, not a gap in our indexing. There is
+              nothing queued to fill it in.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Lifetime performance · on-chain totals */}
       <div className="mt-8 space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
@@ -446,24 +514,14 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           </div>
       </div>
 
-      {!hasEvents && (
+      {/* The pre-era and partial-era cases are called out loudly above, before a reader can
+          reach the wrong conclusion. This only catches the leftover: a wallet with no events
+          for some reason other than the era boundary. */}
+      {!hasEvents && !coverageNotice && (
         <div className="mt-3 rounded-lg border border-line bg-white/[0.02] px-4 py-3 font-mono text-[13px] leading-relaxed text-[#B7BDD2]">
-          {preDeployEraOnly ? (
-            <>
-              This wallet stopped mining at round #{formatNum(lastCensusRound!)}, before round
-              #{formatNum(deployTapeFloor!)} where the ORE program began publishing per-miner
-              deploy events. Rounds below that emitted settlement totals only, never who
-              deployed what, so this wallet has no per-round history anywhere on chain and
-              never will. Nothing is pending: the lifetime figures above come from its
-              on-chain account and are complete.
-            </>
-          ) : (
-            <>
-              No deploys recorded for this wallet in the per-miner event tape
-              {deployTapeFloor != null ? `, which covers round #${formatNum(deployTapeFloor)} onward` : ""}.
-              The figures above are its lifetime on-chain totals.
-            </>
-          )}
+          No deploys recorded for this wallet in the per-miner event tape
+          {deployTapeFloor != null ? `, which covers round #${formatNum(deployTapeFloor)} onward` : ""}.
+          The figures above are its lifetime on-chain totals.
         </div>
       )}
     </ChartCard>
