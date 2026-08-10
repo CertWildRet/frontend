@@ -155,7 +155,28 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const lastTs = d.events?.last_ts ? new Date(Number(d.events.last_ts) * 1000) : null;
   const dv = d.derived;
   const hasEvents = !!d.events && d.series.length > 0;
-  const covTs = d.coverage?.min_ts ? new Date(d.coverage.min_ts * 1000) : null;
+  // The hero P&L scales itself to the height of the column beside it, which is only tall
+  // enough to scale into when that column carries BOTH tiles. HitRate renders only when
+  // there are events, so on an events-less wallet the row collapses to the ORE tile's
+  // height, and because the hero is a `container-type: size` container its own content
+  // cannot push it back out. The clamped value then paints straight over its own label and
+  // the line beneath it. Scale only when there is something to scale into; without it the
+  // base 2.75rem size applies and the card grows with its content like any normal box.
+  const heroScales = hasEvents;
+  const heroNumScale = heroScales ? "md:text-[clamp(2.75rem,28cqh,4.25rem)]" : "";
+  // Why a wallet can show lifetime totals and no per-round history at all.
+  //
+  // coverage.min_round is the floor of the PER-MINER deploy tape (~80,498), which is not
+  // a backfill frontier: the v3 program did not emit DeployEvents before that round, so
+  // nothing below it exists on chain to be fetched, ever. census.round_id is the last
+  // round the wallet's own Miner account acted in, and it is the only way to date a
+  // wallet that has no events. A wallet whose last round sits below the tape floor mined
+  // entirely inside that era, and its per-round history is not missing, it was never
+  // published.
+  const deployTapeFloor = d.coverage?.min_round != null ? Number(d.coverage.min_round) : null;
+  const lastCensusRound = c?.round_id != null ? Number(c.round_id) : null;
+  const preDeployEraOnly =
+    deployTapeFloor != null && lastCensusRound != null && lastCensusRound > 0 && lastCensusRound < deployTapeFloor;
   // Net P&L = current-rate accounting over the FULL lifetime census, not the
   // fetched window: net SOL (returned − deployed) valued at today's SOL price,
   // plus lifetime ORE earned valued at today's ORE price. One consistent
@@ -248,7 +269,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           size containment ignores content height, collapses the card, and the
           clamp'd value overflows over the label, footer, and next tiles.
         */}
-        <div className="flex flex-col rounded-xl border border-line bg-[rgba(91,108,255,0.07)] px-3.5 py-3 md:col-span-2 md:h-full md:[container-type:size]">
+        <div className={`flex flex-col rounded-xl border border-line bg-[rgba(91,108,255,0.07)] px-3.5 py-3 md:col-span-2 ${heroScales ? "md:h-full md:[container-type:size]" : ""}`}>
           <div
             className="flex shrink-0 items-center gap-1.5 text-[13px] font-medium leading-none text-[#9AA3C8]"
             style={{ fontFamily: "var(--font-subtext)" }}
@@ -268,7 +289,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
           <div className="flex min-h-0 flex-col justify-center gap-2 py-2.5 md:flex-1 md:py-0.5">
             {pnlUsd != null ? (
               <>
-                <span className={`num block text-[2.75rem] leading-[0.9] tracking-tight md:text-[clamp(2.75rem,28cqh,4.25rem)] ${netTone(pnlUsd)}`}>
+                <span className={`num block text-[2.75rem] leading-[0.9] tracking-tight ${heroNumScale} ${netTone(pnlUsd)}`}>
                   {fmtSignedUsd(pnlUsd)}
                 </span>
                 {/* The reconciliation the page never offered: how a negative net
@@ -282,7 +303,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
               </>
             ) : (
               <div className="flex items-baseline gap-2 whitespace-nowrap">
-                <span className={`num text-[2.75rem] leading-[0.9] tracking-tight md:text-[clamp(2.75rem,28cqh,4.25rem)] ${netTone(net)}`}>
+                <span className={`num text-[2.75rem] leading-[0.9] tracking-tight ${heroNumScale} ${netTone(net)}`}>
                   {net > 0 ? "+" : ""}{formatSol(net, 2)}
                 </span>
                 <span
@@ -427,9 +448,22 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
 
       {!hasEvents && (
         <div className="mt-3 rounded-lg border border-line bg-white/[0.02] px-4 py-3 font-mono text-[13px] leading-relaxed text-[#B7BDD2]">
-          No deploys in the covered event window
-          {covTs ? ` (round history currently reaches back to ${covTs.toLocaleDateString()} and deepens daily as the backfill digs toward genesis)` : ""}.
-          This wallet last mined before that; the figures above are its lifetime on-chain census totals.
+          {preDeployEraOnly ? (
+            <>
+              This wallet stopped mining at round #{formatNum(lastCensusRound!)}, before round
+              #{formatNum(deployTapeFloor!)} where the ORE program began publishing per-miner
+              deploy events. Rounds below that emitted settlement totals only, never who
+              deployed what, so this wallet has no per-round history anywhere on chain and
+              never will. Nothing is pending: the lifetime figures above come from its
+              on-chain account and are complete.
+            </>
+          ) : (
+            <>
+              No deploys recorded for this wallet in the per-miner event tape
+              {deployTapeFloor != null ? `, which covers round #${formatNum(deployTapeFloor)} onward` : ""}.
+              The figures above are its lifetime on-chain totals.
+            </>
+          )}
         </div>
       )}
     </ChartCard>

@@ -382,6 +382,10 @@ export type OreMinerDetail = {
     snapshot_ts: string; rewards_sol: string; rewards_ore: string; refined_live: string;
     lifetime_rewards_sol: string; lifetime_rewards_ore: string; lifetime_deployed: string;
     last_claim_ore_at: number; last_claim_sol_at: number;
+    /** Last round this wallet's on-chain Miner account acted in. The only way to date a
+     *  wallet that has no per-round events, which is every wallet that stopped before the
+     *  program began emitting deploy events. */
+    round_id: string | null;
   } | null;
   events: { deploys: number; rounds: number; deployed: string; first_ts: string | null; last_ts: string | null } | null;
   hit_stats: { rounds: number; hits: number; won_sol: string | null; dep_sol: string | null } | null;
