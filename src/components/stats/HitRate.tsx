@@ -4,7 +4,8 @@ import { formatNum, formatPct } from "@/lib/format";
 import { InfoDot } from "@/components/primitives/InfoDot";
 
 /**
- * Hit-rate tile — circular progress ring + percent + wins/rounds caption.
+ * Hit-rate tile — circular progress ring + percent + hits/rounds caption.
+ * Hit = stake on the winning tile (ORE share), not SOL profit.
  * Optional expected rate (from avg tiles / 25) drawn as an outer reference arc.
  */
 export function HitRate({
@@ -42,7 +43,7 @@ export function HitRate({
   const expOffset = expPct != null ? cExp * (1 - expPct) : null;
 
   const tipParts = [
-    "Share of captured rounds that paid a win",
+    "Share of captured rounds with stake on the winning tile (ORE share, not SOL profit)",
     expPct != null && avgTiles != null && sampleRounds != null
       ? `Expected ${formatPct(expPct)} from avg ${formatNum(avgTiles, 1)} tiles over last ${formatNum(sampleRounds)} rounds (tiles ÷ 25)`
       : null,
@@ -130,7 +131,7 @@ export function HitRate({
           </div>
           {hits != null && rounds != null && rounds > 0 && (
             <div className="subtext mt-0.5">
-              {formatNum(hits)} wins from {formatNum(rounds)} rounds
+              {formatNum(hits)} hits from {formatNum(rounds)} rounds
             </div>
           )}
           {expPct != null && (

@@ -32,6 +32,7 @@ export type OreRound = {
   total_deployed: string | null;
   total_miners: string | null;
   total_vaulted: string | null;
+  /** Wire name; value is Round.total_returned_sol after ORE #167 (~90% of deployed), not a loser pot. */
   total_winnings: string | null;
   total_minted: string | null;
   deployed_winning_square: string | null;
@@ -44,7 +45,9 @@ export type OreRound = {
   motherlode_hit: number | null;
   source: string | null;
   admin_fee: string | null;
+  /** Pre-#167 ingest field; do not treat as a live winner pot. */
   losing_pool: string | null;
+  /** Pre-#167 ingest field; do not treat as a live winner pot. */
   net_to_winners: string | null;
   effective_rake_bps: string | null;
   motherlode_pool_at_start: string | null;
@@ -190,6 +193,7 @@ export type OreSeriesPoint = {
   bucket_ts: string;
   deployed: string;
   vaulted: string;
+  /** Bucket returned-SOL / vault ingest — not a jackpot. Cutover-split if charted. */
   winnings: string;
   minted: string;
   rounds: number;
@@ -244,7 +248,7 @@ export type OreMotherlodeSharer = {
   cost_sol: number; // full round spend, all tiles
   tiles_covered: number; // distinct tiles they deployed on
   ml_ore: number; // ORE taken from the pool
-  sol_return: number; // SOL from the winners' pot
+  sol_return: number; // fee-netted return of that miner's own stake (not a winners' pot)
   roi: number | null; // gross return / cost (USD), null if unpriced
   service?: OreServiceTag | null;
 };
@@ -272,7 +276,7 @@ export type OreRoundParticipant = {
   deploys: number;
   share: number;        // fraction of the round's total deployed SOL
   won: boolean;         // staked on the winning tile
-  sol_return: number;   // pro-rata SOL from the winners' pot
+  sol_return: number;   // fee-netted return of that miner's own stake (not a winners' pot)
   ml_ore: number;       // pro-rata motherlode ORE (0 unless the round popped)
   ore_won: number;      // total ORE won: ml_ore + the ~1 ORE base emission if solo winner
   roi: number | null;   // gross multiple (return / cost), USD-based; null if unpriced
@@ -395,7 +399,9 @@ export type OreMinerDetail = {
   service?: OreServiceTag | null;
   history: {
     round_id: string; ts: string | null; deployed: string; mask_union: string; stake_w: string;
-    winning_tile: number | null; total_winnings: string | null; deployed_winning_square: string | null;
+    winning_tile: number | null;
+    /** Wire name; after ORE #167 this is Round.total_returned_sol, not a loser pot. */
+    total_winnings: string | null; deployed_winning_square: string | null;
     total_minted: string | null; is_split: number | null;
     /** Solo-ORE winner + motherlode pool paid — lets the client compute the
      *  round's ORE won with the same rules the series uses. */

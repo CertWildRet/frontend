@@ -125,7 +125,7 @@ function PopDrilldown({ roundId }: { roundId: number }) {
         pro-rata to <em>everyone</em> staked on the winning tile — so every miner here got a slice. The
         <span className="mx-1 rounded bg-gold/15 px-1 text-gold">solo ORE</span> badge is a <em>separate</em> reward:
         the round&apos;s ~1-ORE base prize, won by a single miner (here, they also happened to top the pool). ROI is the
-        round&apos;s gross return (winning SOL pot + ML) over total SOL deployed that round, at round-time prices. Sorted by {sort === "roi" ? "ROI" : "ML share"}.
+        round&apos;s gross return (fee-netted returned SOL of own stake + ML) over total SOL deployed that round, at round-time prices. Sorted by {sort === "roi" ? "ROI" : "ML share"}.
       </p>
     </div>
   );

@@ -87,7 +87,7 @@ export function EcosystemTab() {
             fmt={(v) => formatNum(v, 0) + " ORE"} yFmt={compactNum} loading={eco.loading} />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="tr" title="Buyback pressure"
-          subtitle="SOL swapped into ORE per day (bars, 10% of losing tiles). ORE/SOL market price on the right — buybacks sell SOL for ORE.">
+          subtitle="SOL swapped into ORE per day (bars; protocol vault is 10% of remainder after 1% admin on losing tiles). ORE/SOL market price on the right — buybacks sell SOL for ORE.">
           <BarsLine
             bars={buybackBars}
             line={oreSolLine}
