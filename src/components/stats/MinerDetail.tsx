@@ -33,6 +33,7 @@ import {
   type OreMinerDetail,
 } from "@/lib/oreStats";
 import { formatSol, formatNum, formatPct } from "@/lib/format";
+import { returnedSolFromHistory } from "@/lib/oreSettlement";
 import { Pager, PAGE } from "@/app/stats/shared";
 import styles from "@/app/stats/stats.module.css";
 
@@ -555,16 +556,16 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
         <div className="overflow-hidden rounded-xl border border-line bg-ink-800/80">
         <div className={`${tableWrap} border-0 bg-transparent`}>
         <table className="w-full font-mono text-[13px] sm:min-w-[560px]">
-          {/* No Result column — the outcome is already in the numbers (SOL back
-              > 0 = hit the winning tile; ORE 0 with a negative net = miss), and
-              dropping it lets ORE gain stay visible on mobile. Refund/unsettled
-              rounds are the one state that needs a word: it lives in Net ($). */}
+          {/* No Result column — ORE 0 with a negative net ≈ miss (rake, not a
+              100% wipe). Refund/unsettled rounds are the one state that needs
+              a word: it lives in Net ($). After ORE #167 every occupied round
+              returns SOL, so SOL back no longer means "hit". */}
           <thead><tr className={theadRow}>
             <th className={th}>Round</th>
             <th className={`${th} text-right`}>Deployed</th>
             <th className={`${th} hidden text-right sm:table-cell`}>Tiles</th>
-            <th className={`${th} text-right`} title="ORE credited this round (winner-emission share + any motherlode slice). 0 alongside a negative net = the round missed.">ORE gain</th>
-            <th className={`${th} text-right`} title="Pro-rata SOL from the winners' pot — anything above 0 means the round hit the winning tile">SOL back</th>
+            <th className={`${th} text-right`} title="ORE credited this round (winner-emission share + any motherlode slice). 0 alongside a negative net = the round missed the winning tile.">ORE gain</th>
+            <th className={`${th} text-right`} title="Fee-netted return of this miner's own stake (hit ~0.99× that tile; miss ~0.891×). Not a share of other miners' SOL.">SOL back</th>
             <th className={`${th} text-right`} title="Round SOL net + ORE won, both valued at current prices — same accounting as the Net P&L">Net ($)</th>
           </tr></thead>
           <tbody>
@@ -573,10 +574,8 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
               const stakeW = Number(h.stake_w ?? "0");
               const hit = stakeW > 0;
               const dws = Number(h.deployed_winning_square ?? "0");
-              const won = hit && dws > 0
-                ? (stakeW * 0.99 + Number(h.total_winnings ?? "0") * (stakeW / dws)) / 1e9
-                : 0;
-              const rowNetSol = won - dep;
+              const solBack = returnedSolFromHistory(h);
+              const rowNetSol = solBack - dep;
               const tiles = tilesFromMask(h.mask_union);
               // ORE won: same rules as the series — solo rounds pay the full
               // base to the sampled winner, splits pro-rata by winning-tile
@@ -628,7 +627,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
                       </span>
                     )}
                   </td>
-                  <td className={`${td} num text-right text-gray-300`}>{won > 0 ? formatSol(won, 3) : "·"}</td>
+                  <td className={`${td} num text-right text-gray-300`}>{solBack > 0 ? formatSol(solBack, 3) : "·"}</td>
                   <td className={`${td} num text-right ${h.winning_tile == null ? "" : netTone(rowNetUsd ?? rowNetSol)}`}>
                     {h.winning_tile == null
                       ? <span className="text-fog-dim" title="Round not settled (or voided) — no outcome to score yet">refund</span>

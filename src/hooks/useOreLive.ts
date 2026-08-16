@@ -18,6 +18,7 @@ export type LiveRound = {
   total_deployed: string | null;
   total_miners: string | null;
   total_vaulted: string | null;
+  /** Wire name; value is total_returned_sol after ORE #167, not a winner pot. */
   total_winnings: string | null;
   motherlode_paid: string | null;
   top_miner: string | null;

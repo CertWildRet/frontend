@@ -102,7 +102,9 @@ export function MinerRankingsTab() {
         {headlineMeta?.net_positive_pct != null && (
           <div className="mb-3 font-mono text-[12.5px] text-fog-muted">
             <span className="text-pos">{formatPct(headlineMeta.net_positive_pct)}</span> of miners are net-positive lifetime
-            (SOL returned − deployed, plus ORE earned at today&apos;s market ratio)
+            (SOL returned − deployed, plus ORE earned at today&apos;s market ratio). Deployed is turnover, not capital
+            burned — after Aug 2026 returned SOL includes recycled stake, so lifetime ROI mixes the old 100%-miss
+            economy with the new ~10.9% rake.
           </div>
         )}
         <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] text-fog-muted">

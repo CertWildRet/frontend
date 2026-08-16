@@ -13,6 +13,7 @@ import {
   lamportsToSol, roundTileDeployRange, roundMaxSpreadFrac,
 } from "@/lib/oreStats";
 import { formatSol, formatNum, formatPct } from "@/lib/format";
+import { participantDisplayReturnSol } from "@/lib/oreSettlement";
 import {
   PAGE, POP_PAGE, Pager, SkeletonRows, Caveats, solOf, netTone,
   tableWrap, theadRow, th, td, bodyRow, oursRow,
@@ -68,8 +69,16 @@ function RoundParticipants({ roundId }: { roundId: number }) {
             </tr>
           </thead>
           <tbody>
-            {(d?.participants ?? []).slice(0, shown).map((p) => (
-              <tr key={p.pubkey} className={p.is_solo_winner ? oursRow : bodyRow}>
+            {(d?.participants ?? []).slice(0, shown).map((p) => {
+              const solBack = participantDisplayReturnSol({
+                won: p.won,
+                solReturn: p.sol_return,
+                deployedSol: p.deployed_sol,
+                roundId: d?.round.round_id,
+                ts: d?.round.ts,
+              });
+              return (
+                <tr key={p.pubkey} className={p.is_solo_winner ? oursRow : bodyRow}>
                 <td className={`${td} text-white`}>
                   <span className="inline-flex items-center gap-1.5">
                     <CopyAddress address={p.pubkey} />
@@ -93,8 +102,8 @@ function RoundParticipants({ roundId }: { roundId: number }) {
                 <td className={`${td} num hidden text-right text-gray-300 sm:table-cell`}>{p.tiles_covered}</td>
                 <td className={`${td} num text-right text-gray-300`}>{fmtDust(p.deployed_sol, 2)}</td>
                 <td className={`${td} num text-right text-gray-300`}>{fmtPctDust(p.share)}</td>
-                <td className={`${td} num text-right ${p.sol_return > 0 ? "text-gray-200" : "text-gray-600"}`}>
-                  {p.sol_return > 0 ? fmtDust(p.sol_return, 3) : "·"}
+                <td className={`${td} num text-right ${solBack > 0 ? "text-gray-200" : "text-gray-600"}`}>
+                  {solBack > 0 ? fmtDust(solBack, 3) : "·"}
                 </td>
                 <td className={`${td} num hidden text-right sm:table-cell ${p.ore_won > 0.005 ? "text-gold" : "text-gray-600"}`}>
                   {p.ore_won > 0.005 ? formatNum(p.ore_won, p.ore_won >= 10 ? 0 : 2) : "·"}
@@ -103,7 +112,8 @@ function RoundParticipants({ roundId }: { roundId: number }) {
                   {p.roi == null ? "·" : `${formatNum(p.roi, 1)}×`}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -119,8 +129,8 @@ function RoundParticipants({ roundId }: { roundId: number }) {
       )}
       <p className="px-1 text-[11px] leading-relaxed text-gray-500">
         Every miner that deployed this round, by SOL staked. <span className="text-pos">won</span> = staked on the winning
-        tile{wt != null ? ` #${wt + 1}` : ""}; <span className="text-gray-400">SOL back</span> is their pro-rata slice of the
-        winners&apos; pot; <span className="text-gold">ORE won</span> is their cut of the ~1-ORE winner emission (all to the
+        tile{wt != null ? ` #${wt + 1}` : ""}; <span className="text-gray-400">SOL back</span> is the fee-netted return of
+        that miner&apos;s own stake (hit ~0.99× that tile, miss ~0.891×) — not a share of other miners&apos; SOL; <span className="text-gold">ORE won</span> is their cut of the ~1-ORE winner emission (all to the
         solo winner, or shared pro-rata on a split round) plus any motherlode slice on a pop. ROI is the round&apos;s gross
         return over what they deployed, at round-time prices. Sorted by{" "}
         {sort === "roi" ? "ROI" : sort === "won" ? "winners first" : "deploy size"}.
@@ -160,7 +170,7 @@ export function RoundsTab() {
 
   return (
     <div className="space-y-5">
-      <ChartCard subtitle="Tap a settled round to see every participant and their P&L. Split = jackpot shared across winners. Max spread = hottest minus coldest tile; % = spread ÷ coldest."
+      <ChartCard subtitle="Tap a settled round to see every participant and their P&L. Split = the ~1 ORE emission shared across winners. Max spread = hottest minus coldest tile; % = spread ÷ coldest."
         right={<Refreshing active={rounds.fetching && !!rounds.data} label="loading" />}>
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px] sm:min-w-[560px]">

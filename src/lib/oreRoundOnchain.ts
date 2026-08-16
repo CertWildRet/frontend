@@ -22,7 +22,8 @@ export type OnchainRoundTiles = {
   /** Miner counts per tile (length 25). */
   perTileCount: number[];
   totalDeployedSol: number;
-  totalWinningsSol: number;
+  /** Round.total_returned_sol (same u64 offset as the old total_winnings). ~90% of deployed after ORE #167 — not a loser-pool pot. */
+  totalReturnedSol: number;
   totalMiners: number;
   /** 0-based winning square, or null if round not yet settled. */
   winningTile: number | null;
@@ -100,7 +101,7 @@ export function decodeRoundAccount(data: Buffer, expectId?: number): OnchainRoun
   o += PUBKEY; // rent_payer
   o += U64 * TILE_COUNT; // rewards
   o += U64; // total_vaulted
-  const totalWinningsSol = data.length >= o + U64 ? Number(readU64(data, o)) / 1e9 : 0;
+  const totalReturnedSol = data.length >= o + U64 ? Number(readU64(data, o)) / 1e9 : 0;
   o += U64;
   const totalMiners = data.length >= o + U64 ? readU64Number(data, o) : 0;
   o += U64;
@@ -121,7 +122,7 @@ export function decodeRoundAccount(data: Buffer, expectId?: number): OnchainRoun
     perTileSol,
     perTileCount,
     totalDeployedSol: perTileSol.reduce((a, b) => a + b, 0),
-    totalWinningsSol,
+    totalReturnedSol,
     totalMiners,
     winningTile: winningTileFromSlotHash(slotHash),
     topMiner,
@@ -142,7 +143,7 @@ export async function fetchOnchainRoundTiles(
       perTileSol: Array(TILE_COUNT).fill(0),
       perTileCount: Array(TILE_COUNT).fill(0),
       totalDeployedSol: 0,
-      totalWinningsSol: 0,
+      totalReturnedSol: 0,
       totalMiners: 0,
       winningTile: null,
       topMiner: null,
