@@ -305,8 +305,8 @@ export function RwaTab() {
           <span className="text-fog-dim">·</span>
           <span>
             {quote?.tradable == null
-              ? asset.marketHours === "24/7" ? "trades 24/7" : "market status ···"
-              : quote.tradable ? "market open" : "market closed"}
+              ? asset.marketHours === "24/7" ? "Trades 24/7" : "Market Status ···"
+              : quote.tradable ? "Market Open" : "Market Closed"}
           </span>
           {quote && (
             <>

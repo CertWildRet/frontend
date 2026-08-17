@@ -91,7 +91,7 @@ function PopDrilldown({ roundId }: { roundId: number }) {
                         <path d="M5.25 4.25 H7.75 V6.75" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </button>
-                    {s.is_solo_winner && <span title="also won the round's separate ~1-ORE base prize (one winner per round)" className="rounded bg-gold/15 px-1 text-[10px] text-gold">solo ORE</span>}
+                    {s.is_solo_winner && <span title="also won the round's separate ~1-ORE base prize (one winner per round)" className="rounded bg-gold/15 px-1 text-[10px] text-gold">Solo ORE</span>}
                     <ServiceChip service={s.service} compact />
                   </span>
                 </td>
@@ -123,7 +123,7 @@ function PopDrilldown({ roundId }: { roundId: number }) {
       <p className="px-1 text-[11px] leading-relaxed text-gray-500">
         <span className="text-gray-400">ML got</span> is each miner&apos;s share of the motherlode pool, which pops
         pro-rata to <em>everyone</em> staked on the winning tile — so every miner here got a slice. The
-        <span className="mx-1 rounded bg-gold/15 px-1 text-gold">solo ORE</span> badge is a <em>separate</em> reward:
+        <span className="mx-1 rounded bg-gold/15 px-1 text-gold">Solo ORE</span> badge is a <em>separate</em> reward:
         the round&apos;s ~1-ORE base prize, won by a single miner (here, they also happened to top the pool). ROI is the
         round&apos;s gross return (fee-netted returned SOL of own stake + ML) over total SOL deployed that round, at round-time prices. Sorted by {sort === "roi" ? "ROI" : "ML share"}.
       </p>
@@ -151,7 +151,7 @@ export function MotherlodeTab() {
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatTile label="Current pool" value={pool ? formatNum(pool, 1) : "···"} unit="ORE" tone="gold" hint={`+0.2 ORE/round · ${formatNum(sinceHit)} since last hit · 1:${formatNum(mtlOdds)} odds`} />
-        <StatTile label="Biggest pop" value={biggestOre ? formatNum(biggestOre, 0) : "···"} unit="ORE" tone="gold" hint="all-time record payout" />
+        <StatTile label="Biggest pop" value={biggestOre ? formatNum(biggestOre, 0) : "···"} unit="ORE" tone="gold" hint="All-time record payout" />
         <StatTile label="Average pop" value={avgOre ? formatNum(avgOre, 0) : "···"} unit="ORE" hint={`over ${formatNum(total)} hits`} />
         <StatTile label="Underwater pops" value={d ? `${formatNum(d.underwater)} / ${formatNum(d.priced)}` : "···"} hint="pool paid less than the SOL burned to win that round" />
       </div>

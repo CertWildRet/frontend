@@ -114,7 +114,7 @@ export function TrendsTab() {
   // Motherlode: last 48 pops as bars + the LIVE pool as the final (highlighted) bar.
   const POPS_SHOWN = 48;
   const popBars: Pt[] = (ml?.pops ?? []).slice(-POPS_SHOWN).map((h) => ({ label: `#${formatNum(Number(h.round_id))}`, value: h.pop_ore }));
-  if (ml?.current_pool_ore != null) popBars.push({ label: "now (accruing)", value: ml.current_pool_ore });
+  if (ml?.current_pool_ore != null) popBars.push({ label: "Now (Accruing)", value: ml.current_pool_ore });
   // each pop is judged against the expectation of the era it settled in; the live
   // pool bar uses the current era's
   const popExpected: number[] = (ml?.pops ?? []).slice(-POPS_SHOWN).map((h) =>
@@ -146,11 +146,11 @@ export function TrendsTab() {
               {evNow != null ? `${evNow >= 0 ? "+" : ""}${formatNum(evNow, 1)}%` : "···"}
             </span>
           }
-          hint={nowLive ? `live · last ${nowLive.rounds_window} rounds × spot` : "vs buying ORE at market (today)"} />
-        <StatTile label="Production cost" value={nowLive ? formatNum(nowLive.prod_cost_sol, 3) : tp.length && tp[tp.length - 1].prod_cost_sol != null ? formatNum(tp[tp.length - 1].prod_cost_sol!, 3) : "···"} unit="SOL/ORE" hint={nowLive ? "live · trailing ~35 min" : "measured on-chain, today"} />
+          hint={nowLive ? `Live · last ${nowLive.rounds_window} rounds × spot` : "Vs buying ORE at market (today)"} />
+        <StatTile label="Production cost" value={nowLive ? formatNum(nowLive.prod_cost_sol, 3) : tp.length && tp[tp.length - 1].prod_cost_sol != null ? formatNum(tp[tp.length - 1].prod_cost_sol!, 3) : "···"} unit="SOL/ORE" hint={nowLive ? "Live · trailing ~35 min" : "Measured on-chain, today"} />
         <StatTile label="Motherlode pool" value={ml?.current_pool_ore != null ? formatNum(ml.current_pool_ore, 1) : "···"} unit="ORE" tone="gold"
-          hint={`expected pop ${formatNum(mlExpected, 0)} (1-in-${formatNum(mlOdds)}) · past avg ${ml?.avg_pop_ore != null ? formatNum(ml.avg_pop_ore, 0) : "·"}`} />
-        <StatTile label="Miners today" value={nowLive?.miners_today != null ? formatNum(nowLive.miners_today) : "···"} hint="unique wallets that deployed (UTC day)" />
+          hint={`Expected pop ${formatNum(mlExpected, 0)} (1-in-${formatNum(mlOdds)}) · past avg ${ml?.avg_pop_ore != null ? formatNum(ml.avg_pop_ore, 0) : "·"}`} />
+        <StatTile label="Miners today" value={nowLive?.miners_today != null ? formatNum(nowLive.miners_today) : "···"} hint="Unique wallets that deployed (UTC day)" />
       </div>
       )}
 
@@ -167,7 +167,7 @@ export function TrendsTab() {
           right={corr != null ? (
             <span className="rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold text-[#B7BDD2]"
               title="Pearson correlation of ORE and SOL per-bucket returns over the visible range (+1 moves together, 0 independent, -1 opposite)">
-              corr {corr >= 0 ? "+" : ""}{corr.toFixed(2)}
+              Corr {corr >= 0 ? "+" : ""}{corr.toFixed(2)}
             </span>
           ) : undefined}>
           <DualLine a={mkT((p) => p.ore_usd)} b={mkT((p) => p.sol_usd)} aName="ORE $" bName="SOL $" height={205} fill
@@ -176,7 +176,7 @@ export function TrendsTab() {
         </ChartCard>
         {/* (3) activity — deploys vs the motherlode pool */}
         <ChartCard variant="dispersion" cutCorner="tr" title="Mining activity" titleInfo="Avg SOL/round (bars) vs the motherlode pool (line). Deploys chase a fat pool.">
-          <BarsLine bars={mkT((p) => p.avg_deployed_sol)} line={mkT((p) => p.ml_pool_ore)} barName="SOL / round" lineName="motherlode pool (ORE)" height={205} fill
+          <BarsLine bars={mkT((p) => p.avg_deployed_sol)} line={mkT((p) => p.ml_pool_ore)} barName="SOL / Round" lineName="Motherlode Pool (ORE)" height={205} fill
             barColor="#22E0E6" lineColor={ORE_COLOR}
             barFmt={(v) => formatNum(v, 1)} lineFmt={(v) => formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
@@ -187,21 +187,23 @@ export function TrendsTab() {
             {(avgRefin != null || avgStake != null || carryAvg != null) && (
               // Averages moved out of the header (they were stealing its width on the
               // half-width card) into a compact full-width row above the chart.
-              <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[12.5px] font-bold"
+              <div className="mb-3 flex flex-wrap items-center gap-x-1 gap-y-1 font-mono text-[12.5px] font-bold"
                 title="Averages over the plotted points; hover the chart for the per-hour carry.">
-                {avgRefin != null && <span style={{ color: "#22E0E6" }}>refining avg {formatNum(avgRefin, 1)}%</span>}
-                {avgStake != null && <span style={{ color: "#E8881A" }}>staking avg {formatNum(avgStake, 1)}%</span>}
-                {carryAvg != null && <span className={carryAvg >= 0 ? "text-pos" : "text-red"}>carry avg {carryAvg >= 0 ? "+" : ""}{formatNum(carryAvg, 1)}%</span>}
+                {avgRefin != null && <span style={{ color: "#22E0E6" }}>Refining Avg {formatNum(avgRefin, 1)}%</span>}
+                {avgRefin != null && (avgStake != null || carryAvg != null) && <span className="text-fog-muted">·</span>}
+                {avgStake != null && <span style={{ color: "#E8881A" }}>Staking Avg {formatNum(avgStake, 1)}%</span>}
+                {avgStake != null && carryAvg != null && <span className="text-fog-muted">·</span>}
+                {carryAvg != null && <span className={carryAvg >= 0 ? "text-pos" : "text-red"}>Carry Avg {carryAvg >= 0 ? "+" : ""}{formatNum(carryAvg, 1)}%</span>}
               </div>
             )}
-            <DualLine shared band={{ name: "unclaimed carry (refining minus staking)" }}
+            <DualLine shared band={{ name: "Unclaimed Carry (Refining Minus Staking)" }}
               a={yPts.map((p) => ({ label: hLbl(p.hour_ts), value: p.refining_apr }))}
               b={yPts.map((p) => ({ label: hLbl(p.hour_ts), value: p.staking_apr }))}
-              aName="refining APR (unclaimed)" bName="stORE staking APR"
+              aName="Refining APR (Unclaimed)" bName="stORE Staking APR"
               aColor="#22E0E6" bColor="#E8881A" height={210} fill
               aFmt={(v) => formatNum(v, 1) + "%"} bFmt={(v) => formatNum(v, 1) + "%"}
               loading={yields.loading}
-              emptyText="collecting on-chain snapshots. First points appear within ~2 hours; the full 7-day view completes by Jul 20." />
+              emptyText="Collecting on-chain snapshots. First points appear within ~2 hours; the full 7-day view completes by Jul 20." />
           </ChartCard>
         </div>
         {/* (6) miner dominance — unrefined treasury ORE vs total supply. Half-width, paired with yields. */}
@@ -213,14 +215,14 @@ export function TrendsTab() {
                 title={dominance.data.latest.unclaimed_ore != null && dominance.data.latest.supply_ore != null
                   ? `${formatNum(dominance.data.latest.unclaimed_ore, 0)} of ${formatNum(dominance.data.latest.supply_ore, 0)} ORE`
                   : undefined}>
-                now {formatNum(dominance.data.latest.dominance_pct, 2)}%
+                Now {formatNum(dominance.data.latest.dominance_pct, 2)}%
               </span>
             ) : undefined}>
             <DualLine
               a={domDominance}
               b={domRefining}
-              aName="miner dominance"
-              bName="refining APR"
+              aName="Miner Dominance"
+              bName="Refining APR"
               aColor="#22E0E6"
               bColor="#E8881A"
               height={210}
@@ -239,14 +241,14 @@ export function TrendsTab() {
               <span className="rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold"
                 style={{ color: ml.current_pool_ore - mlExpected >= 0 ? "#4ADE80" : "#F87171" }}
                 title={`Pop premium = the live motherlode pool minus the ${formatNum(mlExpected, 0)} ORE long-run average pop (0.2/round x 1-in-${formatNum(mlOdds)}). Positive = the pool is already fatter than an average pop pays.`}>
-                pop premium {ml.current_pool_ore - mlExpected >= 0 ? "+" : ""}{formatNum(ml.current_pool_ore - mlExpected, 1)} ORE
+                Pop Premium {ml.current_pool_ore - mlExpected >= 0 ? "+" : ""}{formatNum(ml.current_pool_ore - mlExpected, 1)} ORE
               </span>
             ) : undefined}>
             <div className="mb-1.5 flex flex-wrap gap-4 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#4ADE80] opacity-80" /> pop above its era average (surplus slice)</span>
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#F87171] opacity-70" /> pop below its era average</span>
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#22E0E6]" /> live pool (not popped yet)</span>
-              <span className="flex items-center gap-1.5"><span className="inline-block h-0 w-4 border-t border-dashed border-fog-muted" /> long-run average pop (0.2/round × odds); steps 125 → 100 at round 335,000</span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#4ADE80] opacity-80" /> Pop Above Era Average (Surplus Slice)</span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#F87171] opacity-70" /> Pop Below Era Average</span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#22E0E6]" /> Live Pool (Not Popped Yet)</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block h-0 w-4 border-t border-dashed border-fog-muted" /> Long-Run Average Pop (0.2/Round × Odds); Steps 125 → 100 at Round 335,000</span>
             </div>
             <PopBars bars={popBars} height={205} expected={popExpected} fmt={(v) => formatNum(v, 1) + " ORE"}
               axisFmt={(v) => formatNum(v, 0) + " ORE"}

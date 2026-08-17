@@ -1045,7 +1045,7 @@ function MinerTrend({ pubkey, series, derived, pricesNow, oreLifetime, netSolLif
             : a.toFixed(cur === "usd" ? 2 : 3);
           return `${sgn}${u}${c}`;
         }}
-        emptyText="not enough round history yet" />
+        emptyText="Not enough round history yet" />
 
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
           <DerivedMetricCell

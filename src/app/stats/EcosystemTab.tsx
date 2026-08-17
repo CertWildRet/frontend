@@ -76,7 +76,7 @@ export function EcosystemTab() {
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="tr" title="Emission vs burn"
             titleInfo="ORE minted per day vs ORE destroyed by buyback burns: the net issuance picture.">
-            <DualLine a={mkN((p) => p.minted_ore)} b={mkN((p) => p.burned_ore)} aName="minted / day" bName="burned / day"
+            <DualLine a={mkN((p) => p.minted_ore)} b={mkN((p) => p.burned_ore)} aName="Minted / Day" bName="Burned / Day"
               aColor="#22E0E6" bColor="#F87171" height={220}
               aFmt={(v) => formatNum(v, 0)} bFmt={(v) => formatNum(v, 0)} loading={eco.loading} />
           </ChartCard>
@@ -91,8 +91,8 @@ export function EcosystemTab() {
           <BarsLine
             bars={buybackBars}
             line={oreSolLine}
-            barName="buyback SOL / day"
-            lineName="market ORE/SOL"
+            barName="Buyback SOL / Day"
+            lineName="Market ORE/SOL"
             barColor="#5B6CFF"
             lineColor="#9DB7D8"
             height={200}

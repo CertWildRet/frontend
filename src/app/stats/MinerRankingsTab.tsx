@@ -86,7 +86,7 @@ export function MinerRankingsTab() {
     ? [
         { label: "#1", value: b.top1 }, { label: "top 5%", value: b.b05 }, { label: "top 10%", value: b.b10 },
         { label: "top 20%", value: b.b20 }, { label: "top 30%", value: b.b30 }, { label: "top 50%", value: b.b50 },
-        { label: "all", value: b.avg_all },
+        { label: "All", value: b.avg_all },
       ]
     : [];
   const sortLabel = RANKING_SORTS.find((x) => x.id === sort)?.label ?? sort;
@@ -122,7 +122,7 @@ export function MinerRankingsTab() {
           <SegmentedControl
             aria-label="Minimum deployed"
             variant="loose"
-            items={MIN_DEP.map((v) => ({ id: String(v), label: v === 0 ? "any" : `${v} SOL` }))}
+            items={MIN_DEP.map((v) => ({ id: String(v), label: v === 0 ? "Any" : `${v} SOL` }))}
             value={String(minDep)}
             onChange={(id) => { setMinDep(Number(id)); setOffset(0); }}
           />

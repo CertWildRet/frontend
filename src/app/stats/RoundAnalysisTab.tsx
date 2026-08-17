@@ -71,7 +71,7 @@ export function RoundAnalysisTab() {
                   <span className="font-mono text-[13px] text-fog-muted">to crack <span className="text-white">top {rank}</span></span>
                 </div>
                 <div className="mt-3 font-mono text-[13px] leading-snug text-fog-muted">
-                  median deploy of the #{rank} wallet over the last {n} rounds · range {formatSol(thr.min_sol ?? 0, 3)}–{formatSol(thr.max_sol ?? 0, 3)} SOL · avg {formatSol(thr.avg_sol ?? 0, 3)}
+                  median deploy of the #{rank} wallet over the last {n} rounds · range {formatSol(thr.min_sol ?? 0, 3)}–{formatSol(thr.max_sol ?? 0, 3)} SOL · Avg {formatSol(thr.avg_sol ?? 0, 3)}
                 </div>
               </>
             ) : (

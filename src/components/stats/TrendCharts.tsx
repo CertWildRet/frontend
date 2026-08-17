@@ -328,13 +328,13 @@ export function CostEvChart({
   return (
     <div ref={ref} className="w-full">
       <div className="mb-1.5 flex flex-wrap items-center gap-4 font-mono text-[12.5px] font-semibold text-[#bcc3da]">
-        <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: MARKET }} /> market (ORE/SOL)</span>
-        <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: COST }} /> production cost</span>
+        <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: MARKET }} /> Market (ORE/SOL)</span>
+        <span className="flex items-center gap-1.5"><span className="h-[2px] w-4" style={{ background: COST }} /> Production Cost</span>
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: POS, opacity: 0.55 }} /> EV+ <span className="h-2.5 w-2.5 rounded-sm" style={{ background: NEG, opacity: 0.55 }} /> EV−</span>
         {evPill != null && (
           <span className="ml-auto rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold" style={{ color: evPill >= 0 ? POS : NEG }}
             title="Live: trailing ~30 settled rounds valued at the latest spot price (same figure as the hero tile). The chart's rightmost point is the current period so far, which can differ.">
-            EV now {evPill >= 0 ? "+" : ""}{evPill.toFixed(1)}%
+            EV Now {evPill >= 0 ? "+" : ""}{evPill.toFixed(1)}%
           </span>
         )}
       </div>

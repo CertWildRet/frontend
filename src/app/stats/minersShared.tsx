@@ -14,9 +14,9 @@ import {
 
 export const RANKING_SORTS: { id: string; label: string }[] = [
   { id: "net_sol", label: "Net SOL" },
-  { id: "earned", label: "SOL earned" },
-  { id: "deployed", label: "SOL deployed" },
-  { id: "ore", label: "ORE earned" },
+  { id: "earned", label: "SOL Earned" },
+  { id: "deployed", label: "SOL Deployed" },
+  { id: "ore", label: "ORE Earned" },
   { id: "roi", label: "Gross ROI" },
 ];
 

@@ -90,7 +90,7 @@ function SoloSplitTrend() {
       <DualLine a={deployLean} b={outcomeRate}
         aName="Deploy lean (SOL on solos)" bName="Outcome rate (rounds paid solo)"
         aColor="#FBBF24" bColor="#5B6CFF" shared
-        refLine={{ value: 40, name: "expected 40% (10/25 tiles)", color: "#9094A0" }}
+        refLine={{ value: 40, name: "Expected 40% (10/25 Tiles)", color: "#9094A0" }}
         aFmt={(v) => `${v.toFixed(0)}%`} bFmt={(v) => `${v.toFixed(0)}%`}
         height={250} loading={series.loading && !series.data}
         emptyText="Collecting v4 rounds…" />
@@ -274,7 +274,7 @@ function RoundDetail({ round, modes }: { round: OreRound; modes: TileMode[] }) {
   return (
     <div className="space-y-4 px-4 py-4">
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
-        <Stat label="Result">{resultMode ? <ResultBadge mode={resultMode} /> : <span className="text-fog-muted">in progress</span>}</Stat>
+        <Stat label="Result">{resultMode ? <ResultBadge mode={resultMode} /> : <span className="text-fog-muted">In Progress</span>}</Stat>
         <Stat label="Deployed">{formatSol(lamToSol(round.total_deployed), 2)} <span className="text-fog-muted">SOL</span></Stat>
         <Stat label="Miners">{round.total_miners != null ? formatNum(Number(round.total_miners)) : "—"}</Stat>
         <Stat label="Winning tile">
@@ -373,7 +373,7 @@ function RoundModal({ round, onClose }: { round: OreRound | null; onClose: () =>
         <div className="flex items-center justify-between gap-4 border-b border-line px-4 py-3">
           <span className="num flex items-center gap-2 text-[15px] font-bold text-white">
             #{formatNum(rid)}
-            {resultMode ? <ResultBadge mode={resultMode} /> : <span className="text-[11px] font-normal text-fog-muted">in progress</span>}
+            {resultMode ? <ResultBadge mode={resultMode} /> : <span className="text-[11px] font-normal text-fog-muted">In Progress</span>}
           </span>
           <button
             ref={closeRef}
@@ -408,7 +408,7 @@ function RoundCard({ round, onOpen }: { round: OreRound; onOpen: () => void }) {
       <div className="flex items-center justify-between gap-2 px-3 pt-3">
         <span className="num text-[13px] font-semibold text-white">#{formatNum(rid)}</span>
         <span className="flex items-center gap-2">
-          {resultMode ? <ResultBadge mode={resultMode} /> : <span className="text-[11px] text-fog-muted">in progress</span>}
+          {resultMode ? <ResultBadge mode={resultMode} /> : <span className="text-[11px] text-fog-muted">In Progress</span>}
           <span className="text-[11px] text-gray-500 transition-colors group-hover:text-fog" aria-hidden>↗</span>
         </span>
       </div>
@@ -417,7 +417,7 @@ function RoundCard({ round, onOpen }: { round: OreRound; onOpen: () => void }) {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 font-mono text-[11px] text-fog-muted">
           <span className="num text-white">{formatSol(lamToSol(round.total_deployed), 2)}</span> SOL
           <span className="num text-white">{round.total_miners != null ? formatNum(Number(round.total_miners)) : "—"}</span> miners
-          {wt != null && <span className="ml-auto" style={{ color: WIN }}>win #{wt + 1}</span>}
+          {wt != null && <span className="ml-auto" style={{ color: WIN }}>Win #{wt + 1}</span>}
         </div>
       </div>
     </button>

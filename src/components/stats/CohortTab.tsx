@@ -294,8 +294,8 @@ export function CohortTab() {
               glance: the crowd is Plankton by count, but the ORE is nearly all Whale. */}
           <div className="mt-auto space-y-4 border-t border-white/[0.05] pt-5">
             {[
-              { key: "wallets", label: isHolder ? "by wallets" : "by miners", total: totalHolders, get: (c: (typeof COHORTS)[number]) => byId(c.id)?.holders ?? 0 },
-              { key: "ore", label: "by ORE held", total: held, get: (c: (typeof COHORTS)[number]) => byId(c.id)?.ore ?? 0 },
+              { key: "wallets", label: isHolder ? "By Wallets" : "By Miners", total: totalHolders, get: (c: (typeof COHORTS)[number]) => byId(c.id)?.holders ?? 0 },
+              { key: "ore", label: "By ORE Held", total: held, get: (c: (typeof COHORTS)[number]) => byId(c.id)?.ore ?? 0 },
             ].map((row) => (
               <div key={row.key}>
                 <div className="mb-1.5 flex justify-between font-mono text-[13px] text-fog-muted">
@@ -342,8 +342,8 @@ export function CohortTab() {
         <CohortBalanceBars buckets={buckets} series={series} loading={loading} height={320}
           fmt={(v) => formatNum(v, 1)} unit="net ORE change per snapshot"
           emptyText={isHolder
-            ? "collecting holder snapshots — balance-change history builds up as the daily sweep runs."
-            : "collecting census snapshots — balance-change history builds up as new snapshots land."} />
+            ? "Collecting holder snapshots — balance-change history builds up as the daily sweep runs."
+            : "Collecting census snapshots — balance-change history builds up as new snapshots land."} />
         {!isHolder && hasApproximateTicks && (
           <p className="mt-2 font-mono text-[11.5px] leading-relaxed text-amber">
             Approx* = exact Treasury total with the cohort split estimated from surrounding complete Miner census snapshots.

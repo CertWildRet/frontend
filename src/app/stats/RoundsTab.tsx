@@ -94,8 +94,8 @@ function RoundParticipants({ roundId }: { roundId: number }) {
                         <path d="M5.25 4.25 H7.75 V6.75" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </button>
-                    {p.won && <span title="staked on the winning tile" className="rounded bg-pos/15 px-1 text-[10px] text-pos">won</span>}
-                    {p.is_solo_winner && <span title="also won the round's separate ~1-ORE base prize" className="rounded bg-gold/15 px-1 text-[10px] text-gold">solo ORE</span>}
+                    {p.won && <span title="staked on the winning tile" className="rounded bg-pos/15 px-1 text-[10px] text-pos">Won</span>}
+                    {p.is_solo_winner && <span title="also won the round's separate ~1-ORE base prize" className="rounded bg-gold/15 px-1 text-[10px] text-gold">Solo ORE</span>}
                     <ServiceChip service={p.service} compact />
                   </span>
                 </td>
@@ -128,12 +128,12 @@ function RoundParticipants({ roundId }: { roundId: number }) {
         </div>
       )}
       <p className="px-1 text-[11px] leading-relaxed text-gray-500">
-        Every miner that deployed this round, by SOL staked. <span className="text-pos">won</span> = staked on the winning
+        Every miner that deployed this round, by SOL staked. <span className="text-pos">Won</span> = staked on the winning
         tile{wt != null ? ` #${wt + 1}` : ""}; <span className="text-gray-400">SOL back</span> is the fee-netted return of
         that miner&apos;s own stake (hit ~0.99× that tile, miss ~0.891×) — not a share of other miners&apos; SOL; <span className="text-gold">ORE won</span> is their cut of the ~1-ORE winner emission (all to the
         solo winner, or shared pro-rata on a split round) plus any motherlode slice on a pop. ROI is the round&apos;s gross
         return over what they deployed, at round-time prices. Sorted by{" "}
-        {sort === "roi" ? "ROI" : sort === "won" ? "winners first" : "deploy size"}.
+        {sort === "roi" ? "ROI" : sort === "won" ? "Winners First" : "Deploy Size"}.
       </p>
     </div>
   );
@@ -171,7 +171,7 @@ export function RoundsTab() {
   return (
     <div className="space-y-5">
       <ChartCard title="Rounds" titleInfo="Tap a settled round to see every participant and their P&L. Split = the ~1 ORE emission shared across winners. Max spread = hottest minus coldest tile; % = spread ÷ coldest."
-        right={<Refreshing active={rounds.fetching && !!rounds.data} label="loading" />}>
+        right={<Refreshing active={rounds.fetching && !!rounds.data} label="Loading" />}>
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px] sm:min-w-[560px]">
             <thead>
@@ -217,7 +217,7 @@ export function RoundsTab() {
                   <td className={`${td} text-right text-gray-300`}>{r.total_miners ? formatNum(Number(r.total_miners)) : "·"}</td>
                   <td className={`${td} hidden text-right text-gray-300 sm:table-cell`}>{r.winning_tile != null ? `#${r.winning_tile + 1}` : "·"}</td>
                   <td className={`${td} text-right text-gray-300`}>
-                    {r.is_split ? "split" : (
+                    {r.is_split ? "Split" : (
                       <span className="inline-flex items-center gap-1.5">
                         <CopyAddress address={r.top_miner} />
                         <ServiceChip service={r.top_miner_service} compact />
