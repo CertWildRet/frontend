@@ -1,12 +1,27 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 /**
  * Info icon with a styled flyover — hover on desktop, tap to toggle on touch.
  * Native `title` alone is unreliable on mobile and slow on desktop.
+ * Pass `children` for rich tooltip markup; `title` is always used for aria-label.
  */
-export function InfoDot({ title, className = "" }: { title: string; className?: string }) {
+export function InfoDot({
+  title,
+  className = "",
+  children,
+  wide = false,
+  placement = "bottom",
+}: {
+  title: string;
+  className?: string;
+  children?: ReactNode;
+  /** Wider panel for multi-paragraph tooltips (same mono shell as the default). */
+  wide?: boolean;
+  /** Flyout direction — use `top` when the trigger sits near the bottom of a clipped card. */
+  placement?: "top" | "bottom";
+}) {
   const [open, setOpen] = useState(false);
   const id = useId();
   const rootRef = useRef<HTMLSpanElement>(null);
@@ -38,13 +53,19 @@ export function InfoDot({ title, className = "" }: { title: string; className?: 
       <span
         id={id}
         role="tooltip"
-        className={`pointer-events-none absolute left-1/2 top-full z-50 mt-1.5 w-64 max-w-[min(16rem,calc(100vw-2rem))] -translate-x-1/2 rounded-md border border-line-bright bg-ink-800 px-3 py-2 text-left font-mono text-[10.5px] leading-snug text-fog shadow-xl transition-opacity ${
+        className={`pointer-events-none absolute left-1/2 z-50 -translate-x-1/2 rounded-md border border-line-bright bg-ink-800 px-3 py-2 text-left font-mono text-[10.5px] leading-snug text-fog shadow-xl transition-opacity ${
+          wide ? "w-[min(20rem,calc(100vw-2rem))] leading-relaxed" : "w-64 max-w-[min(16rem,calc(100vw-2rem))]"
+        } ${placement === "top" ? "bottom-full mb-1.5" : "top-full mt-1.5"} ${
           open ? "opacity-100" : "opacity-0 group-hover/info:opacity-100"
         }`}
       >
-        {title}
+        {children ?? title}
         <span
-          className="absolute bottom-full left-1/2 h-2 w-2 -translate-x-1/2 translate-y-1/2 rotate-45 border-l border-t border-line-bright bg-ink-800"
+          className={`absolute left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-line-bright bg-ink-800 ${
+            placement === "top"
+              ? "top-full -translate-y-1/2 border-r border-b"
+              : "bottom-full translate-y-1/2 border-l border-t"
+          }`}
           aria-hidden
         />
       </span>
