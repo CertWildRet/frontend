@@ -15,6 +15,7 @@ import { useFillHeight } from "@/hooks/useFillHeight";
 import styles from "@/app/dispersion.module.css";
 import { CHART } from "@/lib/chartColors";
 import { ChartSkeleton } from "@/components/primitives/Skeleton";
+import { InfoDot } from "@/components/primitives/InfoDot";
 
 const GRID = "rgba(255,255,255,0.06)";
 const AXIS = "#B7BDD2"; // lightened for axis legibility (was fog-muted #9094A0)
@@ -30,6 +31,7 @@ export const ChartWatermarkContext = createContext(false);
 
 export function ChartCard({
   title,
+  titleInfo,
   subtitle,
   children,
   right,
@@ -39,6 +41,8 @@ export function ChartCard({
   compact = false,
 }: {
   title?: string;
+  /** InfoDot after the heading; hover/tap shows this text. */
+  titleInfo?: string;
   subtitle?: string;
   children: React.ReactNode;
   right?: React.ReactNode;
@@ -113,10 +117,13 @@ export function ChartCard({
           <div className="flex items-start justify-between gap-2">
             {title ? (
               <h2
-                className="min-w-0 flex-1 text-[19px] font-semibold tracking-tight text-[#EAECF6]"
+                className="inline-flex min-w-0 flex-1 items-center gap-1.5 text-[19px] font-semibold tracking-tight text-[#EAECF6]"
                 style={{ fontFamily: "'Chakra Petch', sans-serif" }}
               >
-                {title}
+                <span className="min-w-0">{title}</span>
+                {titleInfo && (
+                  <InfoDot title={titleInfo} className="shrink-0 text-[#8B93B4]" />
+                )}
               </h2>
             ) : (
               <span className="flex-1" />
