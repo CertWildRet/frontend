@@ -108,7 +108,7 @@ export function ChartCard({
 
   return (
     <div ref={cardRef} data-fillcard className={wrapperClass}>
-      {(title || subtitle || right || watermark) && (
+      {(title || subtitle || titleInfo || right || watermark) && (
         <div className={compact ? "mb-2" : "mb-3"}>
           {/* row 1: heading + branding/share ALWAYS share a line, so the mark stays
               top-right aligned with the title on mobile too (it just shrinks). Only

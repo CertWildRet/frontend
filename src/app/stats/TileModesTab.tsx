@@ -472,7 +472,7 @@ export function TileModesTab() {
 
       {gridLegend}
 
-      <ChartCard title="Solo / Split by round" subtitle="Mask is exact (keccak + Fisher–Yates from the round id); outcome + per-tile SOL from the indexed rounds. Solo/split went live at round 349,213.">
+      <ChartCard title="Solo / Split by round" titleInfo="Mask is exact (keccak + Fisher–Yates from the round id); outcome + per-tile SOL from the indexed rounds. Solo/split went live at round 349,213.">
         {loading ? (
           <RowsSkeleton rows={6} />
         ) : page.error && !page.data ? (

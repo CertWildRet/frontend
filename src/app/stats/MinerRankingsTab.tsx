@@ -96,7 +96,7 @@ export function MinerRankingsTab() {
     <div className="space-y-5">
       <ChartCard
         title="Miner Rankings"
-        subtitle={headlineMeta
+        titleInfo={headlineMeta
           ? `On-chain lifetime census ${new Date(headlineMeta.snapshot_ts).toLocaleDateString()} · ${formatNum(headlineMeta.total)} miners · ranked by ${sortLabel}`
           : "loading census…"}>
         {headlineMeta?.net_positive_pct != null && (
@@ -143,7 +143,7 @@ export function MinerRankingsTab() {
         </p>
       </ChartCard>
 
-      <ChartCard title="Gross ROI by percentile band" subtitle={b ? `${formatNum(b.n)} miners with a deploy · a size-neutral view` : ""}>
+      <ChartCard title="Gross ROI by percentile band" titleInfo={b ? `${formatNum(b.n)} miners with a deploy · a size-neutral view` : undefined}>
         {b ? <div className="max-w-3xl"><HBars rows={bandRows} /></div> : <p className="font-mono text-xs text-fog-muted">No census yet.</p>}
       </ChartCard>
       <Caveats provenance={polled.provenance} error={polled.error} onRetry={polled.refresh} />

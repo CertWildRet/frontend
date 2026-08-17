@@ -75,19 +75,19 @@ export function EcosystemTab() {
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="tr" title="Emission vs burn"
-            subtitle="ORE minted per day vs ORE destroyed by buyback burns: the net issuance picture.">
+            titleInfo="ORE minted per day vs ORE destroyed by buyback burns: the net issuance picture.">
             <DualLine a={mkN((p) => p.minted_ore)} b={mkN((p) => p.burned_ore)} aName="minted / day" bName="burned / day"
               aColor="#22E0E6" bColor="#F87171" height={220}
               aFmt={(v) => formatNum(v, 0)} bFmt={(v) => formatNum(v, 0)} loading={eco.loading} />
           </ChartCard>
         </div>
         <ChartCard variant="dispersion" cutCorner="bl" title="Cumulative net issuance"
-          subtitle="Running minted − burned over the window. Falling = deflationary stretch.">
+          titleInfo="Running minted − burned over the window. Falling = deflationary stretch.">
           <AreaLine fill color={CHART.teal} points={mkP((p) => p.cum_net_ore)} height={200} zeroBaseline={false}
             fmt={(v) => formatNum(v, 0) + " ORE"} yFmt={compactNum} loading={eco.loading} />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="tr" title="Buyback pressure"
-          subtitle="SOL swapped into ORE per day (bars; protocol vault is 10% of remainder after 1% admin on losing tiles). ORE/SOL market price on the right — buybacks sell SOL for ORE.">
+          titleInfo="SOL swapped into ORE per day (bars; protocol vault is 10% of remainder after 1% admin on losing tiles). ORE/SOL market price on the right — buybacks sell SOL for ORE.">
           <BarsLine
             bars={buybackBars}
             line={oreSolLine}
@@ -104,12 +104,12 @@ export function EcosystemTab() {
             loading={eco.loading || trends.loading} />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="bl" title="Pooled-mining share"
-          subtitle="% of deployed SOL flowing through managed cranks (a signer driving ≥3 miners that day).">
+          titleInfo="% of deployed SOL flowing through managed cranks (a signer driving ≥3 miners that day).">
           <AreaLine fill points={mkP((p) => p.pool_share_pct)} height={200} zeroBaseline={false} color="#9A6BFF"
             fmt={(v) => formatNum(v, 1) + "%"} yFmt={(v) => formatNum(v, 0) + "%"} loading={eco.loading} />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="tr" title="Whale concentration"
-          subtitle="Top-10 miner authorities' share of deployed SOL per day.">
+          titleInfo="Top-10 miner authorities' share of deployed SOL per day.">
           <AreaLine fill points={mkP((p) => p.top10_share_pct)} height={200} zeroBaseline={false} color="#E8881A"
             fmt={(v) => formatNum(v, 1) + "%"} yFmt={(v) => formatNum(v, 0) + "%"} loading={eco.loading} />
         </ChartCard>

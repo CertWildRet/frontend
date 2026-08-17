@@ -183,7 +183,7 @@ export function CohortTab() {
       <div className="grid gap-5 lg:grid-cols-2">
         {/* distribution donut */}
         <ChartCard variant="dispersion" cutCorner="tr" title={isHolder ? "Direct-wallet distribution" : "Holder distribution"}
-          subtitle={isHolder
+          titleInfo={isHolder
             ? "Every direct ORE wallet by size, after known program custody is removed."
             : "ORE miners bucketed by how much ORE they hold on the mine."}
           right={
@@ -253,7 +253,7 @@ export function CohortTab() {
         {/* per-cohort table */}
         <ChartCard variant="dispersion" cutCorner="bl" title="By cohort"
           contentClassName="flex min-h-0 flex-1 flex-col"
-          subtitle={isHolder
+          titleInfo={isHolder
             ? "Every direct-wallet size band, its owner count and ORE balance."
             : "Every miner size band, its holder count and ORE balance."}>
           <div className="overflow-x-auto">
@@ -327,7 +327,7 @@ export function CohortTab() {
 
       {/* balance changes — full width */}
       <ChartCard variant="dispersion" cutCorner="bl" title="Cohort balance changes"
-        subtitle="Net ORE each cohort gained (up) or lost (down) between snapshots — accumulation vs distribution. A wallet crossing a size line shows as one cohort down + the next up. Moves are usually a fraction of a percent of each band (hover for the %); the axis auto-zooms, so small shifts still fill the bars."
+        titleInfo="Net ORE each cohort gained (up) or lost (down) between snapshots — accumulation vs distribution. A wallet crossing a size line shows as one cohort down + the next up. Moves are usually a fraction of a percent of each band (hover for the %); the axis auto-zooms, so small shifts still fill the bars."
         right={(
           <>
             <Refreshing active={polled.fetching && !!md} />

@@ -156,7 +156,7 @@ export function MotherlodeTab() {
         <StatTile label="Underwater pops" value={d ? `${formatNum(d.underwater)} / ${formatNum(d.priced)}` : "···"} hint="pool paid less than the SOL burned to win that round" />
       </div>
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <ChartCard variant="dispersion" cutCorner="tr" title="Motherlode payouts" subtitle="Last 50 hits: ORE paid per round.">
+        <ChartCard variant="dispersion" cutCorner="tr" title="Motherlode payouts" titleInfo="Last 50 hits: ORE paid per round.">
           <AreaLine
             color={CHART.lime}
             points={mlChartPts}
@@ -168,11 +168,11 @@ export function MotherlodeTab() {
           />
         </ChartCard>
         <ChartCard variant="dispersion" cutCorner="bl" title="Odds of reaching a size"
-          subtitle="Chance the pool ever REACHES a given size.">
+          titleInfo="Chance the pool ever REACHES a given size.">
           <MotherlodeReachChart currentPoolOre={pool ?? undefined} height={240} />
         </ChartCard>
       </div>
-      <ChartCard title="Every motherlode drop" subtitle="Tap a row to see who actually shared the pool and their ROI. Each hit pays the whole pool out; it rebuilds at +0.2 ORE/round.">
+      <ChartCard title="Every motherlode drop" titleInfo="Tap a row to see who actually shared the pool and their ROI. Each hit pays the whole pool out; it rebuilds at +0.2 ORE/round.">
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px]">
             <thead>

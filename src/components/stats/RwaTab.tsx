@@ -332,7 +332,7 @@ export function RwaTab() {
         variant="dispersion"
         cutCorner="bl"
         title={`ORE vs ${asset.symbol} · normalized performance`}
-        subtitle="Both series indexed to 0% at the first available point in the range. Raw prices differ too much to share a dollar axis."
+        titleInfo="Both series indexed to 0% at the first available point in the range. Raw prices differ too much to share a dollar axis."
         right={
           <span className="rounded-md border border-line px-2 py-1 font-mono text-[12px] font-bold text-[#B7BDD2]">
             {asset.assetClass}

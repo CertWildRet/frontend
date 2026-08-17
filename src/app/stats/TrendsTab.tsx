@@ -163,7 +163,7 @@ export function TrendsTab() {
           </ChartCard>
         </div>
         {/* (1) prices */}
-        <ChartCard variant="dispersion" cutCorner="bl" title="ORE & SOL price" subtitle="Market prices (USD). A cheap ORE or a ratio discount is a call to action."
+        <ChartCard variant="dispersion" cutCorner="bl" title="ORE & SOL price" titleInfo="Market prices (USD). A cheap ORE or a ratio discount is a call to action."
           right={corr != null ? (
             <span className="rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold text-[#B7BDD2]"
               title="Pearson correlation of ORE and SOL per-bucket returns over the visible range (+1 moves together, 0 independent, -1 opposite)">
@@ -175,7 +175,7 @@ export function TrendsTab() {
             aFmt={(v) => "$" + formatNum(v, 1)} bFmt={(v) => "$" + formatNum(v, 0)} loading={trends.loading} />
         </ChartCard>
         {/* (3) activity — deploys vs the motherlode pool */}
-        <ChartCard variant="dispersion" cutCorner="tr" title="Mining activity" subtitle="Avg SOL/round (bars) vs the motherlode pool (line). Deploys chase a fat pool.">
+        <ChartCard variant="dispersion" cutCorner="tr" title="Mining activity" titleInfo="Avg SOL/round (bars) vs the motherlode pool (line). Deploys chase a fat pool.">
           <BarsLine bars={mkT((p) => p.avg_deployed_sol)} line={mkT((p) => p.ml_pool_ore)} barName="SOL / round" lineName="motherlode pool (ORE)" height={205} fill
             barColor="#22E0E6" lineColor={ORE_COLOR}
             barFmt={(v) => formatNum(v, 1)} lineFmt={(v) => formatNum(v, 0)} loading={trends.loading} />
@@ -183,7 +183,7 @@ export function TrendsTab() {
         {/* (4) yields — refining vs staking APR. Half-width, paired in a row with miner dominance. */}
         <div>
           <ChartCard variant="dispersion" cutCorner="tr" title="Yields · hold unclaimed vs claim & stake"
-            subtitle="Refining APR on unclaimed ORE vs stORE staking APR. The shaded gap is the carry you keep by not claiming.">
+            titleInfo="Refining APR on unclaimed ORE vs stORE staking APR. The shaded gap is the carry you keep by not claiming.">
             {(avgRefin != null || avgStake != null || carryAvg != null) && (
               // Averages moved out of the header (they were stealing its width on the
               // half-width card) into a compact full-width row above the chart.
@@ -207,7 +207,7 @@ export function TrendsTab() {
         {/* (6) miner dominance — unrefined treasury ORE vs total supply. Half-width, paired with yields. */}
         <div>
           <ChartCard variant="dispersion" cutCorner="bl" title="Miner dominance"
-            subtitle="Unclaimed ORE as a share of supply (left) vs refining APR (right). They tend to move inversely — high dominance = miners sitting on unclaimed ORE earning refining."
+            titleInfo="Unclaimed ORE as a share of supply (left) vs refining APR (right). They tend to move inversely — high dominance = miners sitting on unclaimed ORE earning refining."
             right={dominance.data?.latest?.dominance_pct != null ? (
               <span className="rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold text-[#22E0E6]"
                 title={dominance.data.latest.unclaimed_ore != null && dominance.data.latest.supply_ore != null
@@ -234,7 +234,7 @@ export function TrendsTab() {
         {/* (4) motherlode — full width */}
         <div className="lg:col-span-2">
           <ChartCard variant="dispersion" cutCorner="bl" title="Motherlode pop value"
-            subtitle={`Every pop vs the long-run average it ran under (dashed, now ${formatNum(mlExpected, 0)} ORE at 1-in-${formatNum(mlOdds)}). Green slice = the part above the line, red bars fell short. Last bar is the live pool, still filling 0.2/round. The odds tightened from 1-in-625 to 1-in-500 at round 335,000, so the line steps down from 125 to 100 there.${ml?.avg_pop_ore != null ? ` Average pop across all eras: ${formatNum(ml.avg_pop_ore, 1)} ORE over ${formatNum(ml.pops.length)} pops.` : ""}`}
+            titleInfo={`Every pop vs the long-run average it ran under (dashed, now ${formatNum(mlExpected, 0)} ORE at 1-in-${formatNum(mlOdds)}). Green slice = the part above the line, red bars fell short. Last bar is the live pool, still filling 0.2/round. The odds tightened from 1-in-625 to 1-in-500 at round 335,000, so the line steps down from 125 to 100 there.${ml?.avg_pop_ore != null ? ` Average pop across all eras: ${formatNum(ml.avg_pop_ore, 1)} ORE over ${formatNum(ml.pops.length)} pops.` : ""}`}
             right={ml?.current_pool_ore != null ? (
               <span className="rounded-md border border-line px-2 py-1 font-mono text-[13px] font-bold"
                 style={{ color: ml.current_pool_ore - mlExpected >= 0 ? "#4ADE80" : "#F87171" }}

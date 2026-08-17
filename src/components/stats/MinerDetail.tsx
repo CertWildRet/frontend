@@ -551,7 +551,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
       {d.history.length > 0 && (
       <ChartCard
         title={`${pubkey.slice(0, 4)}'s round history`}
-        subtitle={`Per-round deploy and outcome — every captured round, newest first${historyTotal > PAGE ? ` (${formatNum(historyTotal)} rounds)` : ""}.`}
+        titleInfo={`Per-round deploy and outcome — every captured round, newest first${historyTotal > PAGE ? ` (${formatNum(historyTotal)} rounds)` : ""}.`}
       >
         <div className="overflow-hidden rounded-xl border border-line bg-ink-800/80">
         <div className={`${tableWrap} border-0 bg-transparent`}>
@@ -983,7 +983,7 @@ function MinerTrend({ pubkey, series, derived, pricesNow, oreLifetime, netSolLif
   return (
     <ChartCard
       title={`${pubkey.slice(0, 4)}'s last ${formatNum(nRounds)} rounds`}
-      subtitle={cur === "usd" && solNow != null
+      titleInfo={cur === "usd" && solNow != null
         ? "Play, consistency and streaks in the captured window, rebuilt round by round. SOL is exact; ORE is reconstructed and can differ from the lifetime figure above. Reconciled below."
         : "Play, consistency and streaks in the captured window, rebuilt round by round."}
       right={

@@ -170,7 +170,7 @@ export function RoundsTab() {
 
   return (
     <div className="space-y-5">
-      <ChartCard subtitle="Tap a settled round to see every participant and their P&L. Split = the ~1 ORE emission shared across winners. Max spread = hottest minus coldest tile; % = spread ÷ coldest."
+      <ChartCard title="Rounds" titleInfo="Tap a settled round to see every participant and their P&L. Split = the ~1 ORE emission shared across winners. Max spread = hottest minus coldest tile; % = spread ÷ coldest."
         right={<Refreshing active={rounds.fetching && !!rounds.data} label="loading" />}>
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px] sm:min-w-[560px]">

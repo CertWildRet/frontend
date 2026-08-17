@@ -47,7 +47,7 @@ export function RoundAnalysisTab() {
         <div className="lg:col-span-1">
           <ChartCard
             title="To be top-N next round"
-            subtitle="How much to deploy to crack your target rank."
+            titleInfo="How much to deploy to crack your target rank."
           >
             <div className="mb-4 flex flex-wrap items-center gap-1.5">
               <span className="mr-1 font-mono text-[13px] text-fog-muted">reach</span>
@@ -87,7 +87,7 @@ export function RoundAnalysisTab() {
         <div className="lg:col-span-2">
           <ChartCard
             title="Price of each tier"
-            subtitle={`Median deploy that landed a wallet at each rank over the last ${n} rounds. Your picked rank is highlighted.`}
+            titleInfo={`Median deploy that landed a wallet at each rank over the last ${n} rounds. Your picked rank is highlighted.`}
           >
             <div className={tableWrap}>
               <table className="w-full font-mono text-[13px]">
@@ -115,7 +115,7 @@ export function RoundAnalysisTab() {
       </div>
 
       {/* your competition — persistent top players */}
-      <ChartCard title="Your competition" subtitle={`The persistent top wallets across the last ${n} rounds: who you're up against every round.`}>
+      <ChartCard title="Your competition" titleInfo={`The persistent top wallets across the last ${n} rounds: who you're up against every round.`}>
         <div className={tableWrap}>
           <table className="w-full font-mono text-[13px] sm:min-w-[520px]">
             <thead><tr className={theadRow}>
