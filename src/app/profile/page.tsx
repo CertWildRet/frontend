@@ -24,17 +24,19 @@ export default function ProfilePage() {
           </div>
         </header>
 
-        <ChartCard title="dORE Mining Pool Is Available">
-          <p className="max-w-2xl text-sm leading-relaxed text-[#A8B0D4]">
-            Put in SOL. Hold dORE. The vault mines the rounds worth playing and turns wins back
-            into SOL.
-          </p>
-          <div className="mt-4">
-            <Link href="/pools" className="btn-primary inline-flex px-5 py-2.5">
-              View dORE Details
-            </Link>
-          </div>
-        </ChartCard>
+        {address ? (
+          <ChartCard title="dORE Mining Pool Is Available">
+            <p className="max-w-2xl text-sm leading-relaxed text-[#A8B0D4]">
+              Put in SOL. Hold dORE. The vault mines the rounds worth playing and turns wins back
+              into SOL.
+            </p>
+            <div className="mt-4">
+              <Link href="/pools" className="btn-primary inline-flex px-5 py-2.5">
+                View dORE Details
+              </Link>
+            </div>
+          </ChartCard>
+        ) : null}
 
         {address ? (
           <MinerDetail pubkey={address} collapsible />
