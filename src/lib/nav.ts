@@ -13,7 +13,6 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/automine", label: "Automine" },
   { href: "/profile", label: "Profile" },
   // Hidden for now — restore when shipping these surfaces again:
-  // { href: "/ore", label: "ORE" },
   // { href: "/position", label: "Position" },
   // { href: "/referral", label: "Referral" },
 ];

@@ -31,7 +31,7 @@ export function HeroLiveStrip() {
         style={{ background: "linear-gradient(90deg,transparent,#5B6CFF55,#9A6BFF55,transparent)" }}
       />
       <PoolBlock
-        href="/ore"
+        href="/stats"
         label="dORE"
         tagline="Digging live, priced every round"
         dot="#22E0E6"

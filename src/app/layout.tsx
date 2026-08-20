@@ -10,7 +10,6 @@ import "@fontsource-variable/geist";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { Providers } from "@/components/Providers";
-import { StatTickerGate } from "@/components/StatTickerGate";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SearchMinerModalProvider } from "@/components/SearchMinerModal";
 
@@ -42,7 +41,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Suspense fallback={null}>
               <SiteHeader />
             </Suspense>
-            <StatTickerGate />
             <main className="mx-auto max-w-6xl px-6 pt-4 pb-10">{children}</main>
             <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(7,9,18,0.5)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
             <div className="mx-auto max-w-6xl px-6 py-10">

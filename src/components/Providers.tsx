@@ -7,7 +7,7 @@ import { WalletShellActive, needsWalletShell } from "./walletShell";
 
 /**
  * App providers: Toast is always on. Solana wallet/RPC shell is loaded only on
- * routes that need it (/ore, /profile, …) so Ore Data (/stats) stays light.
+ * routes that need it (/profile, /referral, …) so Ore Data (/stats) stays light.
  *
  * `wallets={[]}` inside SolanaProviders is intentional — wallet-adapter
  * auto-detects Wallet Standard wallets without bundling per-wallet packages.
