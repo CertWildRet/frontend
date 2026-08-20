@@ -79,20 +79,20 @@ export function DepositPreview() {
   const lastLabel = useMemo(() => VALUE.dore[VALUE.dore.length - 1]?.label ?? "", []);
 
   return (
-    <ChartCard
-      title={depositing ? "Deposit SOL" : "Withdraw dORE"}
-      subtitle={`Mock Quote · ${formatSol(MOCK_NAV, 3)} SOL / dORE`}
-    >
-      <div className="mb-4">
-        <SegmentedControl
-          items={[...TABS]}
-          value={tab}
-          onChange={setTab}
-          aria-label="Deposit or Withdraw"
-        />
-      </div>
-      <div className="grid gap-5 lg:grid-cols-3">
-        <div className="flex flex-col rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-4">
+    <div className="grid items-stretch gap-5 lg:grid-cols-3">
+      <ChartCard
+        title={depositing ? "Deposit SOL" : "Withdraw dORE"}
+        subtitle={`Mock Quote · ${formatSol(MOCK_NAV, 3)} SOL / dORE`}
+      >
+        <div className="mb-4">
+          <SegmentedControl
+            items={[...TABS]}
+            value={tab}
+            onChange={setTab}
+            aria-label="Deposit or Withdraw"
+          />
+        </div>
+        <div className="flex flex-col">
           <label className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#8B93B4]">
             {depositing ? "Amount (SOL)" : "Amount (dORE)"}
           </label>
@@ -139,35 +139,33 @@ export function DepositPreview() {
             </p>
           </div>
 
-          <button type="button" className="btn-primary mt-auto inline-flex w-full justify-center px-5 py-2.5">
+          <button type="button" className="btn-primary mt-5 inline-flex w-full justify-center px-5 py-2.5">
             {depositing ? "Deposit SOL" : "Withdraw SOL"}
           </button>
         </div>
+      </ChartCard>
 
-        <div className="flex min-w-0 flex-col gap-4 lg:col-span-2">
-          <div>
-            <h3
-              className="mb-2 text-[15px] font-semibold tracking-tight text-[#EAECF6]"
-              style={{ fontFamily: "'Chakra Petch', sans-serif" }}
-            >
-              dORE Value
-            </h3>
-            <DualLine
-              a={VALUE.dore}
-              b={VALUE.sol}
-              aName="dORE Value"
-              bName="SOL"
-              aColor={CHART.cyan}
-              bColor={CHART.steel}
-              shared
-              height={180}
-              aFmt={(v) => `${v.toFixed(3)} SOL`}
-              bFmt={(v) => `${v.toFixed(2)} SOL`}
-            />
-            <p className="mt-1 font-mono text-[11px] text-[#8B93B4]">
-              Mock 90-day series · last {lastLabel} · {formatSol(MOCK_NAV, 3)} SOL
-            </p>
-          </div>
+      <div className="min-w-0 lg:col-span-2">
+      <ChartCard
+        title="dORE Value"
+        subtitle={`Mock 90-Day Series · Last ${lastLabel}`}
+        contentClassName="px-1 pb-1 sm:px-2 sm:pb-2"
+      >
+        <div className="flex min-w-0 flex-col gap-5">
+          <DualLine
+            a={VALUE.dore}
+            b={VALUE.sol}
+            aName="dORE Value"
+            bName="SOL"
+            aColor={CHART.cyan}
+            bColor={CHART.steel}
+            shared
+            height={180}
+            padL={72}
+            padR={22}
+            aFmt={(v) => `${v.toFixed(3)} SOL`}
+            bFmt={(v) => `${v.toFixed(2)} SOL`}
+          />
 
           <div>
             <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
@@ -202,7 +200,8 @@ export function DepositPreview() {
             </div>
           </div>
         </div>
+      </ChartCard>
       </div>
-    </ChartCard>
+    </div>
   );
 }

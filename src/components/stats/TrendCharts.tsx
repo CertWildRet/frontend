@@ -150,6 +150,8 @@ export function DualLine({
   refLine,
   emptyText,
   fill = false,
+  padL: padLProp,
+  padR: padRProp,
 }: {
   a: TPt[]; b: TPt[]; aName: string; bName: string;
   aColor?: string; bColor?: string; height?: number;
@@ -172,12 +174,15 @@ export function DualLine({
   /** Grow to fill a grid-stretched card's leftover height (paired rows). `height`
    *  is the floor. See useFillHeight. */
   fill?: boolean;
+  /** Left / right SVG gutters. Override when tick strings are longer than the default. */
+  padL?: number;
+  padR?: number;
 }) {
   const [ref, W] = useMeasuredWidth();
   const [svgFillRef, H] = useFillHeight(height, fill);
   const [hover, setHover] = useHoverIndex(a.length);
   // shared mode has no right axis — reclaim its gutter for the plot
-  const padL = 52, padR = shared ? 14 : 52, padT = 14, padB = 26;
+  const padL = padLProp ?? 52, padR = padRProp ?? (shared ? 14 : 52), padT = 14, padB = 26;
   const n = a.length;
   if (!n) return <div ref={ref} className="w-full"><EmptyBox h={H} loading={loading} text={emptyText} /></div>;
 
