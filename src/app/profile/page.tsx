@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /profile — compact banner + collapsible MinerDetail + Pool A promo.
+ * /profile — compact banner + collapsible MinerDetail + Mining Pool promo.
  */
 import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -39,14 +39,14 @@ export default function ProfilePage() {
           </ChartCard>
         )}
 
-        <ChartCard title="Pool A" subtitle="First Diamond Pool">
+        <ChartCard title="Mining Pool" subtitle="dORE">
           <p className="max-w-2xl text-sm leading-relaxed text-[#A8B0D4]">
-            Deposit SOL, hold dORE, and let the vault work the full ORE board for you — pooled
-            coverage, lower variance, and redeemable whenever the window is open.
+            Put in SOL. Hold dORE. The vault mines the rounds worth playing and turns wins back
+            into SOL.
           </p>
           <div className="mt-4">
             <Link href="/pools" className="btn-primary inline-flex px-5 py-2.5">
-              View Pools
+              View Mining Pool
             </Link>
           </div>
         </ChartCard>
