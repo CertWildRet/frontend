@@ -27,22 +27,14 @@ export default function PoolsPage() {
     <div className={styles.page}>
       <div className="space-y-5">
         <header className="space-y-2">
-          <p className="text-[11px] font-medium tracking-wide text-[#8B93B4]">
-            First Diamond Pool · dORE
-          </p>
           <h1
             className="text-[28px] font-bold tracking-tight text-[#EAECF6] sm:text-[32px]"
             style={{ fontFamily: "'Chakra Petch', sans-serif" }}
           >
-            Mining Pool
+            dORE Pooled Mining
           </h1>
           <p className="max-w-2xl text-base font-medium leading-snug text-[#EAECF6]">
             Put in SOL. Hold dORE. We mine the rounds worth playing.
-          </p>
-          <p className="max-w-2xl text-sm leading-relaxed text-[#A8B0D4]">
-            You don&apos;t pick tiles and you don&apos;t sit every round. Deposit SOL and get dORE
-            — your share of the vault. The vault mines ORE when a round looks worth it, then
-            turns wins back into SOL.
           </p>
         </header>
 
