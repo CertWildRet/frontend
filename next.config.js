@@ -6,10 +6,9 @@ const nextConfig = {
   },
   async redirects() {
     return [
-      // Pool page used to live at /ore (and earlier /crank, /pools) — send old links to profile.
+      // Old pool URLs — /ore and /crank redirect to profile; /pools is a live route again.
       { source: "/ore", destination: "/profile", permanent: true },
       { source: "/crank", destination: "/profile", permanent: true },
-      { source: "/pools", destination: "/profile", permanent: true },
       { source: "/automine", destination: "https://orestack.app/", permanent: false },
     ];
   },

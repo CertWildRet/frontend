@@ -1,11 +1,9 @@
 "use client";
 
 /**
- * /profile — the connected wallet's miner readout.
- *
- * Same stats page shell + MinerDetail panel as /search results, with a compact
- * Profile banner above (no wallet strip — MinerDetail already shows the address).
+ * /profile — compact banner + collapsible MinerDetail + Pool A promo.
  */
+import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { ChartCard } from "@/components/stats/Charts";
 import { MinerDetail } from "@/components/stats/MinerDetail";
@@ -22,16 +20,7 @@ export default function ProfilePage() {
       <div className="space-y-5">
         <header className={banner.banner}>
           <div className={banner.row}>
-            <div className={banner.eyebrow}>
-              <span className={banner.liveDot} aria-hidden />
-              Your Wallet
-            </div>
-            <h1 className={banner.title}>
-              Profile · <span className={banner.titleAccent}>Miner Readout</span>
-            </h1>
-            <p className={banner.subtitle}>
-              Your ORE miner stats for the connected wallet — the same lens as Search Miner.
-            </p>
+            <h1 className={banner.title}>Your Profile</h1>
           </div>
         </header>
 
@@ -49,6 +38,18 @@ export default function ProfilePage() {
             </div>
           </ChartCard>
         )}
+
+        <ChartCard title="Pool A" subtitle="First Diamond Pool">
+          <p className="max-w-2xl text-sm leading-relaxed text-[#A8B0D4]">
+            Deposit SOL, hold dORE, and let the vault work the full ORE board for you — pooled
+            coverage, lower variance, and redeemable whenever the window is open.
+          </p>
+          <div className="mt-4">
+            <Link href="/pools" className="btn-primary inline-flex px-5 py-2.5">
+              View Pools
+            </Link>
+          </div>
+        </ChartCard>
       </div>
     </div>
   );

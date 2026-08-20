@@ -540,7 +540,7 @@ export function MinerDetail({ pubkey, collapsible = false }: { pubkey: string; c
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-line bg-[rgba(14,18,34,0.58)] px-4 py-3 font-mono text-[13px] text-[#C7D0EA] transition-colors hover:border-steel hover:text-white"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-[rgba(14,18,34,0.58)] px-4 py-3 font-mono text-[13px] text-[#C7D0EA] transition-colors hover:border-white/20 hover:text-white"
         >
           Expand More
           <IconChevronDown size={16} stroke={1.75} aria-hidden />
@@ -670,7 +670,7 @@ export function MinerDetail({ pubkey, collapsible = false }: { pubkey: string; c
         <button
           type="button"
           onClick={() => setExpanded(false)}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-line bg-[rgba(14,18,34,0.58)] px-4 py-3 font-mono text-[13px] text-[#C7D0EA] transition-colors hover:border-steel hover:text-white"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-[rgba(14,18,34,0.58)] px-4 py-3 font-mono text-[13px] text-[#C7D0EA] transition-colors hover:border-white/20 hover:text-white"
         >
           Show Less
           <IconChevronUp size={16} stroke={1.75} aria-hidden />

@@ -1,5 +1,4 @@
 .banner {
-  --profile-cyan: #22e0e6;
   position: relative;
   overflow: hidden;
   border-radius: 16px;
@@ -50,87 +49,14 @@
 .row {
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8px 14px;
-}
-
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: "JetBrains Mono Variable", monospace;
-  font-size: 10px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: #a8b0d4;
-}
-
-.liveDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--profile-cyan);
-  box-shadow: 0 0 10px rgba(34, 224, 230, 0.9);
-  animation: livePulse 2s ease-in-out 3 forwards;
 }
 
 .title {
+  margin: 0;
   font-family: "Chakra Petch", sans-serif;
   font-size: clamp(1.15rem, 2.4vw, 1.45rem);
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.02em;
   color: #eaecf6;
-}
-
-.titleAccent {
-  display: inline;
-  background: linear-gradient(110deg, #22e0e6, #7d88ff 22%, #d988ff 38%, #ff86d9 50%, #d988ff 62%, #7d88ff 78%, #22e0e6);
-  background-size: 180% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: spectrumFlow 8s ease-in-out 3 alternate forwards;
-}
-
-.subtitle {
-  flex-basis: 100%;
-  margin: 0;
-  max-width: 36rem;
-  font-size: 13px;
-  line-height: 1.45;
-  color: #a8b0d4;
-}
-
-@keyframes spectrumFlow {
-  to {
-    background-position: 180% 0;
-  }
-}
-
-@keyframes livePulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(0.78);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .liveDot,
-  .titleAccent {
-    animation: none;
-  }
-}
-
-@media (max-width: 768px), (prefers-reduced-motion: reduce) {
-  .titleAccent {
-    animation: none !important;
-  }
 }
