@@ -11,7 +11,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { IconExternalLink } from "@tabler/icons-react";
+import { IconChevronDown, IconChevronUp, IconExternalLink } from "@tabler/icons-react";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { InfoDot } from "@/components/primitives/InfoDot";
@@ -93,8 +93,9 @@ function timeAgo(d: Date): string {
   return `${Math.round(s / 86400)}d ago`;
 }
 
-export function MinerDetail({ pubkey }: { pubkey: string }) {
+export function MinerDetail({ pubkey, collapsible = false }: { pubkey: string; collapsible?: boolean }) {
   const [roundsWin, setRoundsWin] = useState("500");
+  const [expanded, setExpanded] = useState(false);
   // History pagination: page 0 renders instantly from the envelope's embedded
   // newest-50; deeper pages fetch /ore/miner/:pubkey/history so the ENTIRE
   // captured history is walkable, same Pager as the Rounds/Motherlode tables.
@@ -104,6 +105,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   const det = usePolled(() => fetchOreMiner(pubkey, roundsWin === "all" ? "all" : Math.max(1000, Number(roundsWin))), 0, [pubkey, roundsWin]);
   const histPage = usePolled(() => fetchOreMinerHistory(pubkey, PAGE, histOffset), 0, [pubkey, histOffset]);
   useEffect(() => { setHistOffset(0); }, [pubkey]);
+  useEffect(() => { setExpanded(false); }, [pubkey]);
   // Retire the "fetching full history" notice the moment the payload lands, or the user
   // moves off All. Raised on click down in MinerTrend; cleared here, because this is where
   // the fetch state actually lives.
@@ -244,6 +246,7 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
   // Pager total = full covered rounds (rollup count from the envelope); the
   // embedded history length is the floor when events aren't aggregated yet.
   const historyTotal = d.events?.rounds ?? d.history.length;
+  const hasMorePanels = d.series.length > 1 || d.history.length > 0;
 
   return (
     <ChartWatermarkContext.Provider value={true}>
@@ -533,6 +536,19 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
       )}
     </ChartCard>
 
+      {collapsible && !expanded && hasMorePanels && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-line bg-[rgba(14,18,34,0.58)] px-4 py-3 font-mono text-[13px] text-[#C7D0EA] transition-colors hover:border-steel hover:text-white"
+        >
+          Expand More
+          <IconChevronDown size={16} stroke={1.75} aria-hidden />
+        </button>
+      )}
+
+      {(!collapsible || expanded) && (
+        <>
       {d.series.length > 1 && (
         <MinerTrend
           pubkey={pubkey}
@@ -648,6 +664,19 @@ export function MinerDetail({ pubkey }: { pubkey: string }) {
       </div>
       </div>
       </ChartCard>
+      )}
+
+      {collapsible && hasMorePanels && (
+        <button
+          type="button"
+          onClick={() => setExpanded(false)}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-line bg-[rgba(14,18,34,0.58)] px-4 py-3 font-mono text-[13px] text-[#C7D0EA] transition-colors hover:border-steel hover:text-white"
+        >
+          Show Less
+          <IconChevronUp size={16} stroke={1.75} aria-hidden />
+        </button>
+      )}
+        </>
       )}
     </div>
     </ChartWatermarkContext.Provider>
