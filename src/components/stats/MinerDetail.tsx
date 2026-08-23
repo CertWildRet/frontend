@@ -153,7 +153,20 @@ export function MinerDetail({ pubkey, collapsible = false }: { pubkey: string; c
   const refinedLive = solOf(c?.refined_live ?? null);
   const hs = d.hit_stats;
   const hitRate = hs && hs.rounds > 0 ? hs.hits / hs.rounds : null;
-  const tilesExpect = avgTilesExpected(d.history, 50);
+  // Expected hit rate belongs to the same window as the measured one. tiles[] counts every
+  // deploy's tile coverage across the whole captured history, so sum(tiles)/deploys is the
+  // true average tiles per deploy; the last-50 sample stays only as a fallback for wallets
+  // whose per-tile histogram timed out. One wallet averaging 22.8 tiles read "vs 70.96%
+  // expected" from a thin recent sample while its true expectation was 91.2%, which made an
+  // exactly-as-expected hit rate look like a wild outperformance.
+  const tilesSum = d.tiles ? d.tiles.reduce((a, n) => a + n, 0) : 0;
+  const tilesExpect = d.tiles && (d.events?.deploys ?? 0) > 0
+    ? {
+        avgTiles: tilesSum / d.events!.deploys,
+        expectedRate: tilesSum / d.events!.deploys / ORE_TILE_COUNT,
+        sampleRounds: d.events!.rounds,
+      }
+    : avgTilesExpected(d.history, 50);
   const firstTs = d.events?.first_ts ? new Date(Number(d.events.first_ts) * 1000) : null;
   const lastTs = d.events?.last_ts ? new Date(Number(d.events.last_ts) * 1000) : null;
   const dv = d.derived;
@@ -954,10 +967,12 @@ function TotalNetReconciliationTip({
           </p>
         ) : (
           <p>
-            Per-round ORE is apportioned from each round&apos;s minted base, the wallet&apos;s share of the
-            winning tile, and any motherlode payout. Apportioning round by round can drift from the
-            wallet&apos;s own on-chain lifetime counter in either direction. Where the two disagree, that
-            counter (the Net P&amp;L above) is the authoritative figure.
+            Per-round ORE here is the gross amount each round paid, verified against the program&apos;s
+            own checkpoint logs. The lifetime figure above is the wallet&apos;s on-chain counter, which
+            the program reduces by the 10% fee charged when unrefined ORE is claimed and increases
+            with staking accrual on unclaimed rewards. A wallet that claims often will therefore
+            show a lifetime figure below the gross rebuilt here; the difference is fees it actually
+            paid, not a data gap.
           </p>
         )}
         {lifetimePnlUsd != null && (
