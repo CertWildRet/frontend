@@ -153,18 +153,18 @@ export function MinerDetail({ pubkey, collapsible = false }: { pubkey: string; c
   const refinedLive = solOf(c?.refined_live ?? null);
   const hs = d.hit_stats;
   const hitRate = hs && hs.rounds > 0 ? hs.hits / hs.rounds : null;
-  // Expected hit rate belongs to the same window as the measured one. tiles[] counts every
-  // deploy's tile coverage across the whole captured history, so sum(tiles)/deploys is the
-  // true average tiles per deploy; the last-50 sample stays only as a fallback for wallets
-  // whose per-tile histogram timed out. One wallet averaging 22.8 tiles read "vs 70.96%
-  // expected" from a thin recent sample while its true expectation was 91.2%, which made an
-  // exactly-as-expected hit rate look like a wild outperformance.
-  const tilesSum = d.tiles ? d.tiles.reduce((a, n) => a + n, 0) : 0;
-  const tilesExpect = d.tiles && (d.events?.deploys ?? 0) > 0
+  // Expected hit rate belongs to the same window as the measured one, and it must be the
+  // average tiles covered per ROUND (the union of that round's masks), served by the API.
+  // The two tempting client-side stand-ins are both wrong: the last-50 sample is too thin
+  // (one wallet read "vs 70.96% expected" against a true 91.2%), and dividing the per-tile
+  // histogram by deploy count halves the figure the moment a wallet splits a round across
+  // several deploy events (the same wallet then read 12.9 tiles for a ~23-tile spread).
+  // The last-50 sample survives only as the fallback when the whole-history scan timed out.
+  const tilesExpect = d.events?.avg_round_tiles != null && d.events.avg_round_tiles > 0
     ? {
-        avgTiles: tilesSum / d.events!.deploys,
-        expectedRate: tilesSum / d.events!.deploys / ORE_TILE_COUNT,
-        sampleRounds: d.events!.rounds,
+        avgTiles: d.events.avg_round_tiles,
+        expectedRate: d.events.avg_round_tiles / ORE_TILE_COUNT,
+        sampleRounds: d.events.rounds,
       }
     : avgTilesExpected(d.history, 50);
   const firstTs = d.events?.first_ts ? new Date(Number(d.events.first_ts) * 1000) : null;

@@ -391,7 +391,14 @@ export type OreMinerDetail = {
      *  program began emitting deploy events. */
     round_id: string | null;
   } | null;
-  events: { deploys: number; rounds: number; deployed: string; first_ts: string | null; last_ts: string | null } | null;
+  events: {
+    deploys: number; rounds: number; deployed: string; first_ts: string | null; last_ts: string | null;
+    /** Average tiles covered per ROUND (union of that round's masks) over the whole captured
+     *  history. The honest base for the expected hit rate: a per-deploy average halves the
+     *  moment a wallet splits a round across several deploy events, and the last-50 sample is
+     *  too thin. Optional: NULL when the scan soft-timed out; older payloads omit it. */
+    avg_round_tiles?: number | null;
+  } | null;
   hit_stats: { rounds: number; hits: number; won_sol: string | null; dep_sol: string | null } | null;
   claims: { claim_type: number; amount: string; n: number }[];
   managed_by: { pubkey: string; n: number; service?: OreServiceTag | null }[];
