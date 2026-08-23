@@ -1304,7 +1304,16 @@ function MinerTrend({ pubkey, series, derived, pricesNow, oreLifetime, netSolLif
               </span>
             }
             unit={cur === "sol" ? "SOL" : undefined}
-            hint={anyGap ? "Rebuilt rounds; differs from lifetime" : "Sum of captured rounds"}
+            hint={
+              // The one-line bridge to the hero. Gross round winnings minus claim fees is
+              // what the wallet kept, and that difference is why this tile and the
+              // Lifetime Net P&L disagree on a claim-heavy wallet. Shown only on the
+              // whole-history USD view, where the subtraction is actually meaningful, and
+              // only when the gap is fee-shaped (lifetime below gross).
+              wholeHistory && cur === "usd" && lifetimePnlUsd != null && cum - lifetimePnlUsd > 1
+                ? `${cum >= 0 ? "+" : "-"}$${formatNum(Math.abs(cum), 2)} - $${formatNum(cum - lifetimePnlUsd, 2)} claim fees = ${lifetimePnlUsd >= 0 ? "+" : "-"}$${formatNum(Math.abs(lifetimePnlUsd), 2)} lifetime`
+                : anyGap ? "Rebuilt rounds; differs from lifetime" : "Sum of captured rounds"
+            }
             className="rounded-xl border border-line bg-[rgba(74,222,128,0.05)]"
           />
           <DerivedMetricCell
