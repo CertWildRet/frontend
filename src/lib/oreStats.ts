@@ -399,7 +399,9 @@ export type OreMinerDetail = {
      *  too thin. Optional: NULL when the scan soft-timed out; older payloads omit it. */
     avg_round_tiles?: number | null;
   } | null;
-  hit_stats: { rounds: number; hits: number; won_sol: string | null; dep_sol: string | null } | null;
+  hit_stats: {
+    /** gross_ore: whole-history GROSS ORE won (grams), same attribution as the chart; powers the hero's claim-fee bridge. */
+    rounds: number; hits: number; won_sol: string | null; dep_sol: string | null; gross_ore?: string | null; } | null;
   claims: { claim_type: number; amount: string; n: number }[];
   managed_by: { pubkey: string; n: number; service?: OreServiceTag | null }[];
   /** The autominer platform this wallet is fingerprinted to, if any. */

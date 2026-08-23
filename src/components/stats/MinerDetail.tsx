@@ -252,6 +252,16 @@ export function MinerDetail({ pubkey, collapsible = false }: { pubkey: string; c
     : d.series.reduce((a, p) => a + (p.n ?? 1), 0);
   const avgPerRoundUsd = pnlUsd != null && roundsAll > 0 ? pnlUsd / roundsAll : null;
   const fmtSignedUsd = (v: number, dec = 2) => `${v >= 0 ? "+" : "-"}$${formatNum(Math.abs(v), dec)}`;
+  // The one-line bridge on the hero: gross round winnings minus the claiming tax equals
+  // the lifetime figure. Gross comes from the whole-history aggregates (hs), never the
+  // fetched chart window, so it does not shrink with the timeframe toggle. Shown only
+  // when the gap is fee-shaped.
+  const grossOreLifetime = hs?.gross_ore != null ? Number(hs.gross_ore) / 1e11 : null;
+  const grossNetSolLifetime = hs?.won_sol != null && hs?.dep_sol != null
+    ? (Number(hs.won_sol) - Number(hs.dep_sol)) / 1e9 : null;
+  const grossUsd = grossOreLifetime != null && grossNetSolLifetime != null && solNow != null && oreNow != null
+    ? grossNetSolLifetime * solNow + grossOreLifetime * oreNow : null;
+  const claimFeeUsd = grossUsd != null && pnlUsd != null && grossUsd - pnlUsd > 1 ? grossUsd - pnlUsd : null;
 
   // Page 0 falls back to the embedded newest-50 while (or if) the endpoint
   // fetch is in flight; deeper pages only ever come from the endpoint.
@@ -362,6 +372,13 @@ export function MinerDetail({ pubkey, collapsible = false }: { pubkey: string; c
                   ORE <span className={netTone(oreLegUsd ?? 0)}>{fmtSignedUsd(oreLegUsd ?? 0)}</span>
                   <span className="text-[#5A6284]"> at current prices</span>
                 </span>
+                {claimFeeUsd != null && grossUsd != null && (
+                  <span className="num text-[13px] text-[#8B93B4]">
+                    gross <span className={netTone(grossUsd)}>{fmtSignedUsd(grossUsd)}</span>
+                    <span className="text-[#5A6284]"> - </span>
+                    <span className="text-[#FFC061]">${formatNum(claimFeeUsd, 2)} claim fees</span>
+                  </span>
+                )}
               </>
             ) : (
               <div className="flex items-baseline gap-2 whitespace-nowrap">
@@ -1304,16 +1321,7 @@ function MinerTrend({ pubkey, series, derived, pricesNow, oreLifetime, netSolLif
               </span>
             }
             unit={cur === "sol" ? "SOL" : undefined}
-            hint={
-              // The one-line bridge to the hero. Gross round winnings minus claim fees is
-              // what the wallet kept, and that difference is why this tile and the
-              // Lifetime Net P&L disagree on a claim-heavy wallet. Shown only on the
-              // whole-history USD view, where the subtraction is actually meaningful, and
-              // only when the gap is fee-shaped (lifetime below gross).
-              wholeHistory && cur === "usd" && lifetimePnlUsd != null && cum - lifetimePnlUsd > 1
-                ? `${cum >= 0 ? "+" : "-"}$${formatNum(Math.abs(cum), 2)} - $${formatNum(cum - lifetimePnlUsd, 2)} claim fees = ${lifetimePnlUsd >= 0 ? "+" : "-"}$${formatNum(Math.abs(lifetimePnlUsd), 2)} lifetime`
-                : anyGap ? "Rebuilt rounds; differs from lifetime" : "Sum of captured rounds"
-            }
+            hint={anyGap ? "Rebuilt rounds; differs from lifetime" : "Sum of captured rounds"}
             className="rounded-xl border border-line bg-[rgba(74,222,128,0.05)]"
           />
           <DerivedMetricCell
