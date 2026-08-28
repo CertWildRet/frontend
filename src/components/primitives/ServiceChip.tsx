@@ -21,9 +21,11 @@ export function ServiceChip({
    *  tagged row keeps exactly the same height as an untagged one. */
   compact?: boolean;
 }) {
+  // No CSS `uppercase` — registry / analytics labels are already Title Case
+  // (Ore.com, Orestack, …); forcing caps turned them into ORE.COM.
   const base = compact
-    ? "rounded border px-1 text-[10px] font-semibold uppercase leading-4 tracking-[0.06em]"
-    : "rounded border px-1.5 py-0.5 text-[12px] font-semibold uppercase tracking-[0.1em]";
+    ? "rounded border px-1 text-[10px] font-semibold leading-4 tracking-[0.06em]"
+    : "rounded border px-1.5 py-0.5 text-[12px] font-semibold tracking-[0.1em]";
   if (service) {
     return (
       <span
