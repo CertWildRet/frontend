@@ -193,12 +193,11 @@ export function countMinersByProvider(miners: ProviderMinerSignal[]): ProviderHi
     }
   }
 
-  const rows: ProviderHistogramBucket[] = ORE_PROVIDERS.map((p) => ({
-    id: p.id,
-    label: p.label,
-    color: p.color,
-    count: counts.get(p.id) ?? 0,
-  }));
+  const rows: ProviderHistogramBucket[] = [];
+  for (const p of ORE_PROVIDERS) {
+    const count = counts.get(p.id) ?? 0;
+    if (count > 0) rows.push({ id: p.id, label: p.label, color: p.color, count });
+  }
 
   const manyCount = counts.get("many") ?? 0;
   if (manyCount > 0) rows.push({ ...MANY, count: manyCount });

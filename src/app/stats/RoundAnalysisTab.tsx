@@ -45,7 +45,7 @@ export function RoundAnalysisTab() {
       color: b.color,
     }));
   }, [d]);
-  const taggedProviders = providerBars.filter((b) => b.label !== "Independent" && b.value > 0).length;
+  const taggedProviders = providerBars.filter((b) => b.label !== "Independent").length;
 
   return (
     <div className="space-y-5">
