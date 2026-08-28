@@ -8,6 +8,7 @@ import { ServiceChip } from "@/components/primitives/ServiceChip";
 import { Refreshing } from "@/components/primitives/Skeleton";
 import { ChartCard } from "@/components/stats/Charts";
 import { usePolled } from "@/hooks/useOreStats";
+import { resolveOreService } from "@/lib/oreProviders";
 import {
   fetchOreRounds, fetchOreParticipants,
   lamportsToSol, roundTileDeployRange, roundMaxSpreadFrac,
@@ -96,7 +97,7 @@ function RoundParticipants({ roundId }: { roundId: number }) {
                     </button>
                     {p.won && <span title="staked on the winning tile" className="rounded bg-pos/15 px-1 text-[10px] text-pos">Won</span>}
                     {p.is_solo_winner && <span title="also won the round's separate ~1-ORE base prize" className="rounded bg-gold/15 px-1 text-[10px] text-gold">Solo ORE</span>}
-                    <ServiceChip service={p.service} compact />
+                    <ServiceChip service={resolveOreService({ service: p.service })} compact />
                   </span>
                 </td>
                 <td className={`${td} num hidden text-right text-gray-300 sm:table-cell`}>{p.tiles_covered}</td>
@@ -220,7 +221,7 @@ export function RoundsTab() {
                     {r.is_split ? "Split" : (
                       <span className="inline-flex items-center gap-1.5">
                         <CopyAddress address={r.top_miner} />
-                        <ServiceChip service={r.top_miner_service} compact />
+                        <ServiceChip service={resolveOreService({ service: r.top_miner_service })} compact />
                       </span>
                     )}
                   </td>

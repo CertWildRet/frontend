@@ -8,6 +8,8 @@
  */
 import { ANALYTICS_URL, ANALYTICS_WS_URL, analyticsAuthHeaders, lamportsToSol, oreGramsToOre } from "./analytics";
 import { getOpsToken, clearOpsToken, OpsUnauthorizedError } from "./opsAuth";
+import { MOCK } from "./mock";
+import { mockOreCompetition, mockOreLeaderboard } from "./oreStatsMock";
 
 export { lamportsToSol, oreGramsToOre };
 
@@ -586,7 +588,9 @@ export const fetchOreRounds = (limit = 200, offset = 0) =>
 export const fetchOreRound = (roundId: number | string) =>
   get<{ round: OreRoundDetail }>(`/ore/round/${roundId}`);
 export const fetchOreLeaderboard = (sort = "net_sol", minDeployed = 0, offset = 0, limit = 50) =>
-  get<OreLeaderboard>(`/ore/leaderboard?sort=${sort}&min_deployed=${minDeployed}&offset=${offset}&limit=${limit}`);
+  MOCK
+    ? Promise.resolve(mockOreLeaderboard())
+    : get<OreLeaderboard>(`/ore/leaderboard?sort=${sort}&min_deployed=${minDeployed}&offset=${offset}&limit=${limit}`);
 export const fetchOreMiners = (opts: { sort?: string; minDeployed?: number; offset?: number; limit?: number; q?: string } = {}) => {
   const p = new URLSearchParams();
   if (opts.sort) p.set("sort", opts.sort);
@@ -766,7 +770,10 @@ export const fetchOreParticipants = async (roundId: number, sort: "deployed" | "
   if (env.data?.has_participants) writeRoundCache(key, env); // only once fully ingested
   return env;
 };
-export const fetchOreCompetition = (rounds = 10) => get<OreCompetition>(`/ore/competition?rounds=${rounds}`);
+export const fetchOreCompetition = (rounds = 10) =>
+  MOCK
+    ? Promise.resolve(mockOreCompetition(rounds))
+    : get<OreCompetition>(`/ore/competition?rounds=${rounds}`);
 export const fetchStatsOverview = () => get<StatsOverview>("/stats/overview");
 
 /** Rake bps -> percent (10.5% ≈ 1050 bps). */

@@ -24,6 +24,7 @@ import { HitRate } from "@/components/stats/HitRate";
 import { PnlChart, type TPt } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
 import { useTicker } from "@/hooks/useTicker";
+import { resolveOreService } from "@/lib/oreProviders";
 import {
   fetchOreMiner,
   fetchOreMinerHistory,
@@ -279,7 +280,7 @@ export function MinerDetail({ pubkey, collapsible = false }: { pubkey: string; c
       right={
         <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2" data-no-capture="true">
           <div className="flex min-w-0 items-center gap-1.5">
-            <ServiceChip service={d.service} />
+            <ServiceChip service={resolveOreService({ service: d.service, managedBy: d.managed_by })} />
             <CopyAddress address={pubkey} iconOnly className="text-fog-muted" />
             <a
               href={`https://solscan.io/account/${pubkey}`}
@@ -318,18 +319,19 @@ export function MinerDetail({ pubkey, collapsible = false }: { pubkey: string; c
       {d.managed_by.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-2 font-mono text-[12.5px] text-[#B7BDD2]">
           managed by
-          {d.managed_by.map((m) => (
-            m.service ? (
-              <span key={m.pubkey} className="rounded border px-1.5 py-0.5" title={`${m.service.label} executor ${m.pubkey}`}
-                style={{ color: m.service.color, borderColor: `${m.service.color}55`, backgroundColor: `${m.service.color}14` }}>
-                {m.service.label} {short(m.pubkey)}
+          {d.managed_by.map((m) => {
+            const tag = resolveOreService({ service: m.service, viaPool: m.pubkey });
+            return tag ? (
+              <span key={m.pubkey} className="rounded border px-1.5 py-0.5" title={`${tag.label} executor ${m.pubkey}`}
+                style={{ color: tag.color, borderColor: `${tag.color}55`, backgroundColor: `${tag.color}14` }}>
+                {tag.label} {short(m.pubkey)}
               </span>
             ) : (
               <span key={m.pubkey} className="rounded border border-line px-1.5 py-0.5" title={m.pubkey}>
                 pool {short(m.pubkey)}
               </span>
-            )
-          ))}
+            );
+          })}
         </div>
       )}
 

@@ -451,36 +451,41 @@ export function Bars({
   );
 }
 
-/** Horizontal percentile-band bars (leaderboard ROI bands). */
+/** Horizontal percentile-band bars (leaderboard ROI bands / categorical counts). */
 export function HBars({
   rows,
   color = CHART.steel,
   fmt = (v) => v.toFixed(2) + "×",
 }: {
-  rows: { label: string; value: number }[];
+  rows: { label: string; value: number; color?: string }[];
   color?: string;
   fmt?: (v: number) => string;
 }) {
   const max = niceMax(Math.max(...rows.map((r) => r.value), 1));
   return (
     <div className="space-y-2">
-      {rows.map((r) => (
-        <div key={r.label} className="flex items-center gap-3">
-          <span className="w-16 shrink-0 font-mono text-[13px] font-bold text-[#bcc3da]">{r.label}</span>
-          <div className="relative h-4 flex-1 overflow-hidden rounded bg-ink-700">
-            <div
-              className="h-full rounded"
-              style={{
-                width: `${Math.min(100, (r.value / max) * 100)}%`,
-                background: `linear-gradient(90deg, ${color}, #5B6CFF 52%, #9A6BFF)`,
-                boxShadow: "0 0 16px rgba(91,108,255,0.45)",
-                opacity: 0.82,
-              }}
-            />
+      {rows.map((r) => {
+        const fill = r.color ?? color;
+        return (
+          <div key={r.label} className="flex items-center gap-3">
+            <span className="w-[6.5rem] shrink-0 font-mono text-[13px] font-bold text-[#bcc3da]">{r.label}</span>
+            <div className="relative h-4 flex-1 overflow-hidden rounded bg-ink-700">
+              <div
+                className="h-full rounded"
+                style={{
+                  width: `${Math.min(100, (r.value / max) * 100)}%`,
+                  background: r.color
+                    ? fill
+                    : `linear-gradient(90deg, ${color}, #5B6CFF 52%, #9A6BFF)`,
+                  boxShadow: r.color ? `0 0 12px ${fill}55` : "0 0 16px rgba(91,108,255,0.45)",
+                  opacity: 0.82,
+                }}
+              />
+            </div>
+            <span className="num w-16 shrink-0 text-right text-[13px] font-semibold text-gray-100">{fmt(r.value)}</span>
           </div>
-          <span className="num w-16 shrink-0 text-right text-[13px] font-semibold text-gray-100">{fmt(r.value)}</span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

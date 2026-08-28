@@ -1,9 +1,10 @@
 /**
  * ServiceChip — the autominer-service tag rendered beside a wallet pubkey.
- * `service` (from the analytics API: {id, label, color}) names the platform that
- * runs the wallet (Accumulana / Orestack / Ore.com / Refinore / Ruby), colored by
- * the service's registry hue. When only a generic crank is known (`poolCrank`),
- * falls back to the neutral POOL chip. Renders nothing without either.
+ * `service` ({id, label, color}) names the platform that runs the wallet
+ * (Ore.com / Orestack / Minemore / Refinore / Accumulana / …), usually from
+ * analytics or `resolveOreService` in `@/lib/oreProviders`. When only a generic
+ * crank is known (`poolCrank`), falls back to the neutral POOL chip. Renders
+ * nothing without either. Keep this chip generic — provider ids live in the registry.
  */
 export type OreServiceTag = { id: string; label: string; color: string };
 
