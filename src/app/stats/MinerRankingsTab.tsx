@@ -8,6 +8,7 @@ import { SegmentedControl } from "@/components/primitives/TabBar";
 import { Refreshing } from "@/components/primitives/Skeleton";
 import { HBars, ChartCard } from "@/components/stats/Charts";
 import { usePolled } from "@/hooks/useOreStats";
+import { resolveOreService } from "@/lib/oreProviders";
 import { fetchOreLeaderboard, type OreEnvelope, type OreBands } from "@/lib/oreStats";
 import { formatNum, formatPct } from "@/lib/format";
 import { PAGE, Pager, Caveats } from "./shared";
@@ -50,7 +51,7 @@ export function MinerRankingsTab() {
       roi: m.roi,
       unclaimed: null,
       refined: null,
-      service: m.service ?? null,
+      service: resolveOreService({ service: m.service }),
     }));
     return {
       ...env,

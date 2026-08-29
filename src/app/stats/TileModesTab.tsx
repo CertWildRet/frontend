@@ -16,6 +16,7 @@ import { DualLine, type TPt } from "@/components/stats/TrendCharts";
 import { RefreshIconButton } from "@/components/primitives/RefreshIconButton";
 import { RowsSkeleton } from "@/components/primitives/Skeleton";
 import { usePolled } from "@/hooks/useOreStats";
+import { resolveOreService } from "@/lib/oreProviders";
 import {
   roundTileModes, soloSplitDeployStats,
   type TileMode, type SoloSplitDeployStats,
@@ -287,7 +288,7 @@ function RoundDetail({ round, modes }: { round: OreRound; modes: TileMode[] }) {
           {splitWin ? (
             <>Split tile won — the ~1 ORE base is <span className="text-white">shared pro-rata</span> across the winning tile&apos;s stakers.</>
           ) : (
-            <>Solo tile won — the full <span className="text-white">~1 ORE</span> goes to <span className="text-white">{shortKey(round.top_miner)}</span><ServiceChip service={round.top_miner_service} className="ml-1.5" />.</>
+            <>Solo tile won — the full <span className="text-white">~1 ORE</span> goes to <span className="text-white">{shortKey(round.top_miner)}</span><ServiceChip service={resolveOreService({ service: round.top_miner_service })} className="ml-1.5" />.</>
           )}
         </p>
       )}

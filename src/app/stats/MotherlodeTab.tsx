@@ -8,6 +8,7 @@ import { ServiceChip } from "@/components/primitives/ServiceChip";
 import { AreaLine, ChartCard, type Pt } from "@/components/stats/Charts";
 import { MotherlodeReachChart } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
+import { resolveOreService } from "@/lib/oreProviders";
 import {
   fetchOreMotherlode, fetchOreMotherlodePop,
   motherlodeOdds, oreGramsToOre,
@@ -92,7 +93,7 @@ function PopDrilldown({ roundId }: { roundId: number }) {
                       </svg>
                     </button>
                     {s.is_solo_winner && <span title="also won the round's separate ~1-ORE base prize (one winner per round)" className="rounded bg-gold/15 px-1 text-[10px] text-gold">Solo ORE</span>}
-                    <ServiceChip service={s.service} compact />
+                    <ServiceChip service={resolveOreService({ service: s.service })} compact />
                   </span>
                 </td>
                 <td className={`${td} num hidden text-right text-gray-300 sm:table-cell`}>{s.tiles_covered}</td>
@@ -218,7 +219,7 @@ export function MotherlodeTab() {
                           : (
                             <span className="text-[11px] text-gray-400">
                               Solo{h.top_miner && <span className="hidden sm:inline"> · {short(h.top_miner)}</span>}
-                              <ServiceChip service={h.top_miner_service} compact className="ml-1.5" />
+                              <ServiceChip service={resolveOreService({ service: h.top_miner_service })} compact className="ml-1.5" />
                             </span>
                           )}
                       </td>

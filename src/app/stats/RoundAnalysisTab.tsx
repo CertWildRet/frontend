@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { SegmentedControl } from "@/components/primitives/TabBar";
 import { CopyAddress } from "@/components/primitives/CopyAddress";
 import { ServiceChip } from "@/components/primitives/ServiceChip";
 import { RowsSkeleton } from "@/components/primitives/Skeleton";
-import { ChartCard } from "@/components/stats/Charts";
+import { ChartCard, HBars } from "@/components/stats/Charts";
 import { usePolled } from "@/hooks/useOreStats";
+import { countMinersByProvider, resolveOreService } from "@/lib/oreProviders";
 import { fetchOreCompetition } from "@/lib/oreStats";
-import { formatSol } from "@/lib/format";
+import { formatNum, formatSol } from "@/lib/format";
 import {
   SkeletonRows, Caveats,
   tableWrap, theadRow, th, td, bodyRow, oursRow,
@@ -24,6 +25,27 @@ export function RoundAnalysisTab() {
   const d = c.data;
   const thr = d?.thresholds.find((t) => t.rank === rank);
   const n = d?.window.rounds_analyzed ?? rounds; // fall back to the REQUESTED window while loading (never "last 0 rounds")
+  const providerBars = useMemo(() => {
+    if (!d) return [];
+    const signals = [
+      ...d.regulars.map((r) => ({
+        authority: r.authority,
+        service: r.service,
+        viaPool: r.via_pool,
+      })),
+      ...(d.latest?.players ?? []).map((p) => ({
+        authority: p.authority,
+        service: p.service,
+        viaPool: p.via_pool,
+      })),
+    ];
+    return countMinersByProvider(signals).map((b) => ({
+      label: b.label,
+      value: b.count,
+      color: b.color,
+    }));
+  }, [d]);
+  const taggedProviders = providerBars.filter((b) => b.label !== "Independent").length;
 
   return (
     <div className="space-y-5">
@@ -131,7 +153,11 @@ export function RoundAnalysisTab() {
                   <td className={`${td} text-fog-muted`}>{i + 1}</td>
                   <td className={`${td} ${r.is_ours ? "text-steel" : "text-white"}`}>
                     <CopyAddress address={r.authority} />{r.is_ours ? " ◆ ours" : ""}
-                    <ServiceChip service={r.service} poolCrank={r.via_pool} className="ml-1.5" />
+                    <ServiceChip
+                      service={resolveOreService({ service: r.service, viaPool: r.via_pool })}
+                      poolCrank={r.via_pool}
+                      className="ml-1.5"
+                    />
                   </td>
                   <td className={`${td} text-right text-gray-300`}>{r.rounds_active}/{n}</td>
                   <td className={`${td} num text-right text-gold`}>{formatSol(r.avg_sol, 3)}</td>
@@ -141,6 +167,21 @@ export function RoundAnalysisTab() {
             </tbody>
           </table>
         </div>
+      </ChartCard>
+
+      <ChartCard
+        title="Miners by Provider"
+        titleInfo={`Unique wallets among competition regulars and the latest round's players over the last ${n} rounds. A miner matched to two or more autominer platforms counts only in Many — never double-counted. Independent is the unlabeled remainder.`}
+      >
+        {providerBars.length > 0 && taggedProviders > 0 ? (
+          <div className="max-w-3xl">
+            <HBars rows={providerBars} fmt={(v) => formatNum(v, 0)} />
+          </div>
+        ) : c.loading && !d ? (
+          <RowsSkeleton rows={5} />
+        ) : (
+          <p className="font-mono text-xs text-fog-muted">No tagged providers in this window yet.</p>
+        )}
       </ChartCard>
       <Caveats provenance={c.provenance} error={c.error} onRetry={c.refresh} />
     </div>
