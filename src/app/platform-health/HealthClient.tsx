@@ -17,7 +17,7 @@
 import { useMemo, useState } from "react";
 import { Refreshing } from "@/components/primitives/Skeleton";
 import { ChartCard } from "@/components/stats/Charts";
-import { Caveats } from "@/app/stats/shared";
+import { FetchError } from "@/app/stats/shared";
 import { ApiUsage } from "./ApiUsage";
 import { usePolled } from "@/hooks/useOreStats";
 import { useReadonlyRpc } from "@/hooks/useReadonlyRpc";
@@ -610,7 +610,7 @@ export function HealthClient() {
       {/* API gateway usage — who calls this service, how much, and what it costs. */}
       <ApiUsage />
 
-      <Caveats provenance={spine.provenance} error={spine.error} onRetry={spine.refresh} />
+      <FetchError error={spine.error} onRetry={spine.refresh} />
     </div>
   );
 }

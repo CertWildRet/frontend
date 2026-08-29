@@ -105,31 +105,15 @@ export function popEcon(h: OreMotherlodeHit) {
   return { mlOre, mlUsd, depSol, depUsd, underwater };
 }
 
-// ── caveats / provenance footer ──────────────────────────────────────────────
-export function Caveats({ provenance, error, onRetry }: { provenance: any; error: string | null; onRetry?: () => void }) {
-  if (error) {
-    return (
-      <div className="card flex flex-wrap items-center gap-x-3 gap-y-2 border-amber/30 px-4 py-3 font-mono text-[13px] text-amber">
-        <span>{error} The ORE ingest may be disabled or the free-tier host may be waking up.</span>
-        {onRetry && (
-          <RefreshIconButton onClick={onRetry} variant="amber" title="Retry" />
-        )}
-      </div>
-    );
-  }
-  if (!provenance) return null;
+/** Amber fetch-error card with optional retry (kept after removing the caveats footer). */
+export function FetchError({ error, onRetry }: { error: string | null; onRetry?: () => void }) {
+  if (!error) return null;
   return (
-    <details className="card px-4 py-3">
-      <summary className="cursor-pointer select-none font-mono text-[13px] text-fog-muted">
-        data &amp; caveats · spine → #{formatNum(Number(provenance.ore_max_round || 0))}
-        {provenance.census_snapshot_ts ? ` · census ${new Date(provenance.census_snapshot_ts).toLocaleDateString()}` : ""}
-        {provenance.ingest_enabled ? "" : " · ingest OFF"}
-      </summary>
-      <ul className="mt-2 space-y-1.5">
-        {(provenance.caveats ?? []).map((c: string, i: number) => (
-          <li key={i} className="font-mono text-[13px] leading-snug text-fog-muted">• {c}</li>
-        ))}
-      </ul>
-    </details>
+    <div className="card flex flex-wrap items-center gap-x-3 gap-y-2 border-amber/30 px-4 py-3 font-mono text-[13px] text-amber">
+      <span>{error} The ORE ingest may be disabled or the free-tier host may be waking up.</span>
+      {onRetry && (
+        <RefreshIconButton onClick={onRetry} variant="amber" title="Retry" />
+      )}
+    </div>
   );
 }

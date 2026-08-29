@@ -16,7 +16,7 @@ import {
 import { formatSol, formatNum, formatPct } from "@/lib/format";
 import { participantDisplayReturnSol } from "@/lib/oreSettlement";
 import {
-  PAGE, POP_PAGE, Pager, SkeletonRows, Caveats, solOf, netTone,
+  PAGE, POP_PAGE, Pager, SkeletonRows, FetchError, solOf, netTone,
   tableWrap, theadRow, th, td, bodyRow, oursRow,
   fmtDust, fmtPctDust,
   MinerNavContext,
@@ -254,7 +254,7 @@ export function RoundsTab() {
         </div>
         <Pager offset={offset} total={total} onPage={setOffset} unit="rounds" loading={rounds.loading && !rounds.data} />
       </ChartCard>
-      <Caveats provenance={rounds.provenance} error={rounds.error} onRetry={rounds.refresh} />
+      <FetchError error={rounds.error} onRetry={rounds.refresh} />
     </div>
   );
 }

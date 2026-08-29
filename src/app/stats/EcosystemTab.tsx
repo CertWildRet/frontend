@@ -16,7 +16,7 @@ import { fetchOreEcosystem, fetchOreTrends, type OreEcoPoint } from "@/lib/oreSt
 import { completeUtcDays, type CompleteUtcDayRange } from "@/lib/completeUtcDays";
 import { CHART } from "@/lib/chartColors";
 import { formatSol, formatNum } from "@/lib/format";
-import { Caveats } from "./shared";
+import { FetchError } from "./shared";
 
 const ECO_RANGES: { id: CompleteUtcDayRange; label: string }[] = [
   { id: "30d", label: "30D" }, { id: "90d", label: "90D" }, { id: "all", label: "All" },
@@ -114,7 +114,7 @@ export function EcosystemTab() {
             fmt={(v) => formatNum(v, 1) + "%"} yFmt={(v) => formatNum(v, 0) + "%"} loading={eco.loading} />
         </ChartCard>
       </div>
-      <Caveats provenance={eco.provenance} error={eco.error} onRetry={eco.refresh} />
+      <FetchError error={eco.error} onRetry={eco.refresh} />
     </div>
   );
 }

@@ -11,7 +11,7 @@ import { countMinersByProvider, resolveOreService } from "@/lib/oreProviders";
 import { fetchOreCompetition } from "@/lib/oreStats";
 import { formatNum, formatSol } from "@/lib/format";
 import {
-  SkeletonRows, Caveats,
+  SkeletonRows, FetchError,
   tableWrap, theadRow, th, td, bodyRow, oursRow,
 } from "./shared";
 
@@ -183,7 +183,7 @@ export function RoundAnalysisTab() {
           <p className="font-mono text-xs text-fog-muted">No tagged providers in this window yet.</p>
         )}
       </ChartCard>
-      <Caveats provenance={c.provenance} error={c.error} onRetry={c.refresh} />
+      <FetchError error={c.error} onRetry={c.refresh} />
     </div>
   );
 }
