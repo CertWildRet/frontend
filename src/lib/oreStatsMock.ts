@@ -1,6 +1,7 @@
 /**
  * Opt-in Ore stats fixtures for NEXT_PUBLIC_MOCK=1.
- * Keeps provider chips + the Miners by Provider chart renderable without live analytics.
+ * Keeps provider chips + Miners by Provider / Deployed SOL by Provider charts
+ * renderable without live analytics.
  * Not loaded unless MOCK is explicitly enabled — never the default path.
  */
 import type { OreCompetition, OreEnvelope, OreLeaderboard, OreProvenance } from "@/lib/oreStats";
@@ -51,10 +52,15 @@ export function mockOreCompetition(rounds = 10): OreEnvelope<OreCompetition> {
     latest: {
       round_id: 100,
       coverage: 1,
+      // total_sol is lamports. Includes every provider + Many so SOL-share chart exercises overlaps.
       players: [
         { rank: 1, authority: "MockIndependent11111111111111111111111", is_ours: false, total_sol: "1100000000", deploys: 5, tiles: 25, max_single: "300000000", via_pool: null, service: null },
-        { rank: 2, authority: "MockOrecom1111111111111111111111111111111", is_ours: false, total_sol: "500000000", deploys: 3, tiles: 18, max_single: "500000000", via_pool: ORECOM_CRANK, service: tag("orecom") },
-        { rank: 3, authority: "MockOrestack11111111111111111111111111111", is_ours: false, total_sol: "400000000", deploys: 4, tiles: 20, max_single: "200000000", via_pool: null, service: tag("orestack") },
+        { rank: 2, authority: "MockManyProviders111111111111111111111", is_ours: false, total_sol: "600000000", deploys: 4, tiles: 22, max_single: "300000000", via_pool: MINEMORE, service: tag("orecom") },
+        { rank: 3, authority: "MockOrecom1111111111111111111111111111111", is_ours: false, total_sol: "500000000", deploys: 3, tiles: 18, max_single: "500000000", via_pool: ORECOM_CRANK, service: tag("orecom") },
+        { rank: 4, authority: "MockOrestack11111111111111111111111111111", is_ours: false, total_sol: "400000000", deploys: 4, tiles: 20, max_single: "200000000", via_pool: null, service: tag("orestack") },
+        { rank: 5, authority: "MockMinemore1111111111111111111111111111", is_ours: false, total_sol: "300000000", deploys: 2, tiles: 12, max_single: "200000000", via_pool: MINEMORE, service: null },
+        { rank: 6, authority: "MockRefinore1111111111111111111111111111", is_ours: false, total_sol: "250000000", deploys: 2, tiles: 10, max_single: "150000000", via_pool: REFINORE, service: null },
+        { rank: 7, authority: "MockAccumulana1111111111111111111111111", is_ours: false, total_sol: "220000000", deploys: 3, tiles: 14, max_single: "120000000", via_pool: ACCUMULANA, service: null },
       ],
     },
     threshold_series: [{ round_id: 100, rank10_sol: 0.15 }],
