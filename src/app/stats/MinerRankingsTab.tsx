@@ -11,7 +11,7 @@ import { usePolled } from "@/hooks/useOreStats";
 import { resolveOreService } from "@/lib/oreProviders";
 import { fetchOreLeaderboard, type OreEnvelope, type OreBands } from "@/lib/oreStats";
 import { formatNum, formatPct } from "@/lib/format";
-import { PAGE, Pager, Caveats } from "./shared";
+import { PAGE, Pager, FetchError } from "./shared";
 import {
   RANKING_SORTS, MIN_DEP, MinerTable,
   type MinerRow,
@@ -147,7 +147,7 @@ export function MinerRankingsTab() {
       <ChartCard title="Gross ROI by percentile band" titleInfo={b ? `${formatNum(b.n)} miners with a deploy · a size-neutral view` : undefined}>
         {b ? <div className="max-w-3xl"><HBars rows={bandRows} /></div> : <p className="font-mono text-xs text-fog-muted">No census yet.</p>}
       </ChartCard>
-      <Caveats provenance={polled.provenance} error={polled.error} onRetry={polled.refresh} />
+      <FetchError error={polled.error} onRetry={polled.refresh} />
     </div>
   );
 }

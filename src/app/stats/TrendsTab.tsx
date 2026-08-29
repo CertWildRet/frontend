@@ -13,7 +13,7 @@ import {
   type OreTrendPoint,
 } from "@/lib/oreStats";
 import { formatNum } from "@/lib/format";
-import { Caveats } from "./shared";
+import { FetchError } from "./shared";
 
 // ── Trends: the miner-actionable dashboard (quant layout spec, ORE_PC v2) ─────
 // Charts answering "should I deploy right now": prices, production cost vs
@@ -257,7 +257,7 @@ export function TrendsTab() {
         </div>
       </div>
 
-      <Caveats provenance={trends.provenance} error={trends.error} onRetry={trends.refresh} />
+      <FetchError error={trends.error} onRetry={trends.refresh} />
     </div>
   );
 }

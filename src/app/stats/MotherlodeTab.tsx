@@ -16,7 +16,7 @@ import {
 import { formatNum, formatPct } from "@/lib/format";
 import { CHART } from "@/lib/chartColors";
 import {
-  PAGE, POP_PAGE, Pager, SkeletonRows, Caveats, solOf, short, netTone,
+  PAGE, POP_PAGE, Pager, SkeletonRows, FetchError, solOf, short, netTone,
   tableWrap, theadRow, th, td, bodyRow, oursRow,
   fmtUsd, fmtDust, fmtPctDust, fmtWhen, popEcon,
   MinerNavContext,
@@ -243,7 +243,7 @@ export function MotherlodeTab() {
         </div>
         <Pager offset={offset} total={total} onPage={setOffset} unit="hits" loading={ml.loading && !ml.data} />
       </ChartCard>
-      <Caveats provenance={ml.provenance} error={ml.error} onRetry={ml.refresh} />
+      <FetchError error={ml.error} onRetry={ml.refresh} />
     </div>
   );
 }
