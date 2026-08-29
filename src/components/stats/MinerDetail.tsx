@@ -94,7 +94,16 @@ function timeAgo(d: Date): string {
   return `${Math.round(s / 86400)}d ago`;
 }
 
-export function MinerDetail({ pubkey, collapsible = false }: { pubkey: string; collapsible?: boolean }) {
+export function MinerDetail({
+  pubkey,
+  collapsible = false,
+  onReady,
+}: {
+  pubkey: string;
+  collapsible?: boolean;
+  /** Fires once the first fetch settles (success or error) so /search can swap its loading shell. */
+  onReady?: () => void;
+}) {
   const [roundsWin, setRoundsWin] = useState("500");
   const [expanded, setExpanded] = useState(false);
   // History pagination: page 0 renders instantly from the envelope's embedded
@@ -107,6 +116,11 @@ export function MinerDetail({ pubkey, collapsible = false }: { pubkey: string; c
   const histPage = usePolled(() => fetchOreMinerHistory(pubkey, PAGE, histOffset), 0, [pubkey, histOffset]);
   useEffect(() => { setHistOffset(0); }, [pubkey]);
   useEffect(() => { setExpanded(false); }, [pubkey]);
+  useEffect(() => {
+    // First settle only — success or error. Parent (/search) swaps its loading shell.
+    if (!onReady || det.loading) return;
+    onReady();
+  }, [det.loading, onReady]);
   // Retire the "fetching full history" notice the moment the payload lands, or the user
   // moves off All. Raised on click down in MinerTrend; cleared here, because this is where
   // the fetch state actually lives.
@@ -133,6 +147,8 @@ export function MinerDetail({ pubkey, collapsible = false }: { pubkey: string; c
   }, [roundsWin, det.fetching, pubkey, dismissToast]);
   const d = det.data;
   if (det.loading && !d) {
+    // /search owns the loading shell via onReady — stay mounted so the fetch continues.
+    if (onReady) return null;
     return <div className="grid grid-cols-2 gap-3 md:grid-cols-4"><TileSkeleton /><TileSkeleton /><TileSkeleton /><TileSkeleton /></div>;
   }
   if (!d) {

@@ -3,13 +3,13 @@
  * Shows only the MinerDetail P&L panel (no leaderboard table).
  */
 import { Suspense } from "react";
-import { SearchClient } from "./SearchClient";
+import { MinerSearchLoading, SearchClient } from "./SearchClient";
 import styles from "@/app/stats/stats.module.css";
 
 export default function SearchPage() {
   return (
     <div className={styles.page}>
-      <Suspense fallback={null}>
+      <Suspense fallback={<MinerSearchLoading />}>
         <SearchClient />
       </Suspense>
     </div>
