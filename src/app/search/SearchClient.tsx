@@ -72,8 +72,6 @@ export function SearchClient() {
     setDetailLoading(Boolean(exactAddress));
   }, [exactAddress]);
 
-  const onDetailReady = useCallback(() => setDetailLoading(false), []);
-
   const showLoading = awaitingCommit || (!!exactAddress && detailLoading);
   const showDetail = !!exactAddress && !awaitingCommit;
 
@@ -89,11 +87,13 @@ export function SearchClient() {
 
       {showLoading && <MinerSearchLoading />}
       {showDetail && (
-        <MinerDetail
-          key={exactAddress}
-          pubkey={exactAddress}
-          onReady={onDetailReady}
-        />
+        <div className={detailLoading ? "hidden" : undefined} aria-hidden={detailLoading}>
+          <MinerDetail
+            key={exactAddress}
+            pubkey={exactAddress}
+            onInitialLoadChange={setDetailLoading}
+          />
+        </div>
       )}
     </div>
   );
