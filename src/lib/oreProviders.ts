@@ -207,3 +207,60 @@ export function countMinersByProvider(miners: ProviderMinerSignal[]): ProviderHi
 
   return rows;
 }
+
+export type ProviderSolSignal = {
+  authority: string;
+  /** Deployed SOL for this wallet (already converted from lamports when needed). */
+  sol: number;
+} & ProviderMatchInput;
+
+export type ProviderSolBucket = {
+  id: ProviderHistogramBucketId;
+  label: string;
+  color: string;
+  sol: number;
+};
+
+/**
+ * Deployed SOL per provider. Same Many / Independent bucketing as
+ * `countMinersByProvider`: overlaps contribute only to Many; unlabeled →
+ * Independent. Dedupes by `authority` (first row wins). Zero-SOL and
+ * zero-count buckets are omitted.
+ */
+export function sumSolByProvider(miners: ProviderSolSignal[]): ProviderSolBucket[] {
+  const seen = new Set<string>();
+  const sums = new Map<ProviderHistogramBucketId, number>();
+  for (const p of ORE_PROVIDERS) sums.set(p.id, 0);
+  sums.set("many", 0);
+  sums.set("independent", 0);
+
+  for (const m of miners) {
+    if (seen.has(m.authority)) continue;
+    seen.add(m.authority);
+    const sol = Number.isFinite(m.sol) && m.sol > 0 ? m.sol : 0;
+    if (sol <= 0) continue;
+    const ids = matchProviderIds(m);
+    if (ids.length === 0) {
+      sums.set("independent", (sums.get("independent") ?? 0) + sol);
+    } else if (ids.length === 1) {
+      const id = ids[0]!;
+      sums.set(id, (sums.get(id) ?? 0) + sol);
+    } else {
+      sums.set("many", (sums.get("many") ?? 0) + sol);
+    }
+  }
+
+  const rows: ProviderSolBucket[] = [];
+  for (const p of ORE_PROVIDERS) {
+    const sol = sums.get(p.id) ?? 0;
+    if (sol > 0) rows.push({ id: p.id, label: p.label, color: p.color, sol });
+  }
+
+  const manySol = sums.get("many") ?? 0;
+  if (manySol > 0) rows.push({ ...MANY, sol: manySol });
+
+  const indepSol = sums.get("independent") ?? 0;
+  if (indepSol > 0) rows.push({ ...INDEPENDENT, sol: indepSol });
+
+  return rows;
+}

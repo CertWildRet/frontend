@@ -3,16 +3,24 @@
 /**
  * Ecosystem — investor metrics: supply, buybacks, pools, whales, claims.
  * Joins /ore/trends market_ratio_sol onto daily ecosystem points for the
- * Buyback pressure dual-axis chart.
+ * Buyback pressure dual-axis chart. Provider SOL share reuses the competition
+ * payload (same as Round Analysis) — no extra analytics endpoint.
  */
 import { useMemo, useState } from "react";
 import { StatTile } from "@/components/primitives/Stat";
 import { SegmentedControl } from "@/components/primitives/TabBar";
-import { TileSkeleton, Refreshing } from "@/components/primitives/Skeleton";
-import { AreaLine, ChartCard, compactNum, type Pt } from "@/components/stats/Charts";
+import { TileSkeleton, RowsSkeleton, Refreshing } from "@/components/primitives/Skeleton";
+import { AreaLine, ChartCard, HBars, compactNum, type Pt } from "@/components/stats/Charts";
 import { DualLine, BarsLine, type TPt } from "@/components/stats/TrendCharts";
 import { usePolled } from "@/hooks/useOreStats";
-import { fetchOreEcosystem, fetchOreTrends, type OreEcoPoint } from "@/lib/oreStats";
+import { sumSolByProvider } from "@/lib/oreProviders";
+import {
+  fetchOreCompetition,
+  fetchOreEcosystem,
+  fetchOreTrends,
+  lamportsToSol,
+  type OreEcoPoint,
+} from "@/lib/oreStats";
 import { completeUtcDays, type CompleteUtcDayRange } from "@/lib/completeUtcDays";
 import { CHART } from "@/lib/chartColors";
 import { formatSol, formatNum } from "@/lib/format";
@@ -22,6 +30,9 @@ const ECO_RANGES: { id: CompleteUtcDayRange; label: string }[] = [
   { id: "30d", label: "30D" }, { id: "90d", label: "90D" }, { id: "all", label: "All" },
 ];
 
+/** Competition window for provider SOL share (matches Round Analysis default). */
+const PROVIDER_SOL_ROUNDS = 10;
+
 function indexByTs<T extends { day_ts?: number }>(rows: T[], key: "day_ts"): Map<number, T> {
   return new Map(rows.map((r) => [r[key] as number, r]));
 }
@@ -30,6 +41,7 @@ export function EcosystemTab() {
   const [range, setRange] = useState<CompleteUtcDayRange>("90d");
   const eco = usePolled(() => fetchOreEcosystem(range), 60_000, [range]);
   const trends = usePolled(() => fetchOreTrends(range), 60_000, [range]);
+  const competition = usePolled(() => fetchOreCompetition(PROVIDER_SOL_ROUNDS), 60_000, []);
   const pts = useMemo(
     () => completeUtcDays(eco.data?.points ?? [], range),
     [eco.data?.points, range],
@@ -50,6 +62,48 @@ export function EcosystemTab() {
     label: dayLbl(p.day_ts),
     value: marketByDay.get(p.day_ts)?.market_ratio_sol ?? null,
   }));
+
+  /** Prefer latest-round deployed SOL (lamports); fall back to regulars' avg_sol. */
+  const providerSolShare = useMemo(() => {
+    const d = competition.data;
+    if (!d) return { bars: [] as { label: string; value: number; color?: string }[], source: null as null | "latest" | "regulars", roundId: null as number | null };
+
+    const latestPlayers = d.latest?.players ?? [];
+    if (latestPlayers.length > 0) {
+      const bars = sumSolByProvider(
+        latestPlayers.map((p) => ({
+          authority: p.authority,
+          sol: lamportsToSol(p.total_sol),
+          service: p.service,
+          viaPool: p.via_pool,
+        })),
+      ).map((b) => ({ label: b.label, value: b.sol, color: b.color }));
+      return { bars, source: "latest" as const, roundId: d.latest?.round_id ?? null };
+    }
+
+    if (d.regulars.length > 0) {
+      const bars = sumSolByProvider(
+        d.regulars.map((r) => ({
+          authority: r.authority,
+          sol: r.avg_sol,
+          service: r.service,
+          viaPool: r.via_pool,
+        })),
+      ).map((b) => ({ label: b.label, value: b.sol, color: b.color }));
+      return { bars, source: "regulars" as const, roundId: null };
+    }
+
+    return { bars: [], source: null, roundId: null };
+  }, [competition.data]);
+
+  const taggedProviderSol = providerSolShare.bars.filter((b) => b.label !== "Independent").length;
+
+  const providerSolTitleInfo =
+    providerSolShare.source === "regulars"
+      ? `Fallback: average deploy (SOL) among competition regulars over the last ${PROVIDER_SOL_ROUNDS} rounds — latest-round player totals were unavailable. Unique wallets; overlaps count only in Many.`
+      : providerSolShare.roundId != null
+        ? `Latest competition round #${providerSolShare.roundId} deployed SOL (unique wallets). A miner matched to two or more autominer platforms contributes only to Many — never double-counted. Independent is the unlabeled remainder.`
+        : "Latest competition round's deployed SOL (unique wallets). A miner matched to two or more autominer platforms contributes only to Many — never double-counted. Independent is the unlabeled remainder.";
 
   return (
     <div className="space-y-5">
@@ -113,8 +167,27 @@ export function EcosystemTab() {
           <AreaLine fill points={mkP((p) => p.top10_share_pct)} height={200} zeroBaseline={false} color="#E8881A"
             fmt={(v) => formatNum(v, 1) + "%"} yFmt={(v) => formatNum(v, 0) + "%"} loading={eco.loading} />
         </ChartCard>
+        <div className="lg:col-span-2">
+          <ChartCard
+            variant="dispersion"
+            cutCorner="bl"
+            title="Deployed SOL by Provider"
+            titleInfo={providerSolTitleInfo}
+          >
+            {providerSolShare.bars.length > 0 && taggedProviderSol > 0 ? (
+              <div className="max-w-3xl">
+                <HBars rows={providerSolShare.bars} fmt={(v) => formatSol(v, 2)} />
+              </div>
+            ) : competition.loading && !competition.data ? (
+              <RowsSkeleton rows={5} />
+            ) : (
+              <p className="font-mono text-xs text-fog-muted">No tagged provider SOL in the latest competition round yet.</p>
+            )}
+          </ChartCard>
+        </div>
       </div>
       <FetchError error={eco.error} onRetry={eco.refresh} />
+      <FetchError error={competition.error} onRetry={competition.refresh} />
     </div>
   );
 }
